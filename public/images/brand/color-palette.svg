@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" width="800" height="200">
+  <rect x="0" y="0" width="160" height="150" rx="12" fill="#7c3aed"/>
+  <text x="80" y="180" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">Primary Purple</text>
+  <text x="80" y="195" font-family="Arial" font-size="11" fill="#666" text-anchor="middle">#7c3aed</text>
+
+  <rect x="160" y="0" width="160" height="150" rx="12" fill="#4c1d95"/>
+  <text x="240" y="180" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">Dark Purple</text>
+  <text x="240" y="195" font-family="Arial" font-size="11" fill="#666" text-anchor="middle">#4c1d95</text>
+
+  <rect x="320" y="0" width="160" height="150" rx="12" fill="#f59e0b"/>
+  <text x="400" y="180" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">Sacred Gold</text>
+  <text x="400" y="195" font-family="Arial" font-size="11" fill="#666" text-anchor="middle">#f59e0b</text>
+
+  <rect x="480" y="0" width="160" height="150" rx="12" fill="#d97706"/>
+  <text x="560" y="180" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">Dark Gold</text>
+  <text x="560" y="195" font-family="Arial" font-size="11" fill="#666" text-anchor="middle">#d97706</text>
+
+  <rect x="640" y="0" width="160" height="150" rx="12" fill="#1a0a2e"/>
+  <text x="720" y="180" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">Vedic Dark</text>
+  <text x="720" y="195" font-family="Arial" font-size="11" fill="#666" text-anchor="middle">#1a0a2e</text>
+</svg>

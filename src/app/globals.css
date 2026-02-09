@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-body text-vedic-text bg-white antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading;
+  }
+
+  /* Smooth transitions on all interactive elements */
+  a,
+  button {
+    @apply transition-all duration-200;
+  }
+
+  /* Selection color */
+  ::selection {
+    @apply bg-primary-200 text-primary-900;
+  }
+}
+
+@layer components {
+  .vedic-section {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  .vedic-section-dark {
+    @apply bg-dark-gradient py-16 sm:py-20 lg:py-24;
+  }
+
+  .vedic-link {
+    @apply text-primary-600 underline-offset-4 transition-colors hover:text-primary-800 hover:underline;
+  }
+
+  .vedic-divider {
+    @apply mx-auto my-8 h-1 w-16 rounded-full bg-gold-gradient;
+  }
+
+  /* Animated underline for links */
+  .vedic-link-animated {
+    @apply relative text-primary-600 transition-colors hover:text-primary-800;
+  }
+  .vedic-link-animated::after {
+    content: "";
+    @apply absolute bottom-0 left-0 h-0.5 w-0 bg-primary-600 transition-all duration-300;
+  }
+  .vedic-link-animated:hover::after {
+    @apply w-full;
+  }
+
+  /* Glassmorphism card */
+  .vedic-glass {
+    @apply border border-white/10 bg-white/5 backdrop-blur-md;
+  }
+
+  /* Shimmer effect for loading */
+  .vedic-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-gradient-gold {
+    @apply bg-gold-gradient bg-clip-text text-transparent;
+  }
+
+  .text-gradient-purple {
+    @apply bg-vedic-gradient bg-clip-text text-transparent;
+  }
+
+  /* Perspective for 3D transforms */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  /* Hide scrollbar but keep scrollability */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
