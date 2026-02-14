@@ -38,7 +38,9 @@ function Header() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <a
-                href={`tel:${siteConfig.contact.phone}`}
+                href={`https://wa.me/${siteConfig.contact.whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-1.5 transition-colors hover:text-gold-400"
               >
                 <Phone className="h-3.5 w-3.5" />

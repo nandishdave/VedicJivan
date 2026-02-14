@@ -143,12 +143,14 @@ export default function ContactPage() {
                     </h3>
                     <div className="mt-5 space-y-4">
                       <a
-                        href={`tel:${siteConfig.contact.phone}`}
+                        href={`https://wa.me/${siteConfig.contact.whatsapp}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-start gap-3 text-gray-600 hover:text-primary-600"
                       >
                         <Phone className="mt-0.5 h-5 w-5 shrink-0 text-primary-600" />
                         <div>
-                          <p className="font-semibold text-vedic-dark">Phone</p>
+                          <p className="font-semibold text-vedic-dark">WhatsApp</p>
                           <p className="text-sm">{siteConfig.contact.phone}</p>
                         </div>
                       </a>

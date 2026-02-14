@@ -8,6 +8,7 @@ import { siteConfig } from "@/config/site";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { WhatsAppFloat } from "@/components/ui/WhatsAppFloat";
 import "./globals.css";
 
 const inter = Inter({
@@ -84,6 +85,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <BackToTop />
+        <WhatsAppFloat />
       </body>
     </html>
   );

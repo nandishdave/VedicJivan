@@ -37,7 +37,9 @@ function Footer() {
               </p>
               <div className="mt-6 space-y-3">
                 <a
-                  href={`tel:${siteConfig.contact.phone}`}
+                  href={`https://wa.me/${siteConfig.contact.whatsapp}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm transition-colors hover:text-gold-400"
                 >
                   <Phone className="h-4 w-4 text-gold-500" />
