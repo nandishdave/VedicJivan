@@ -7,7 +7,8 @@ export interface Service {
   priceEUR: string;
   duration: string | null;
   icon: string;
-  category: "consultation" | "report" | "guidance";
+  image: string;
+  category: "consultation" | "report" | "guidance" | "wellness";
   features: string[];
   process: { step: number; title: string; description: string }[];
   faqs: { question: string; answer: string }[];
@@ -17,6 +18,7 @@ export const services: Service[] = [
   {
     slug: "call-consultation",
     title: "Call Consultation",
+    image: "https://images.unsplash.com/photo-1655947716360-eee99bc3b056?w=800&q=80",
     shortDescription:
       "Get personalized astrology guidance over a phone call. Discuss your career, relationships, health, and more.",
     description:
@@ -82,6 +84,7 @@ export const services: Service[] = [
   {
     slug: "video-consultation",
     title: "Video Consultation",
+    image: "https://images.unsplash.com/photo-1521624213010-9fb0f30dcd20?w=800&q=80",
     shortDescription:
       "Face-to-face video session with our expert astrologer. Get detailed analysis with screen-shared birth chart.",
     description:
@@ -147,6 +150,7 @@ export const services: Service[] = [
   {
     slug: "premium-kundli",
     title: "Premium Kundli Report",
+    image: "https://images.unsplash.com/photo-1533294455009-a77b7557d2d1?w=800&q=80",
     shortDescription:
       "Comprehensive 40+ page personalized Kundli report covering all aspects of your life.",
     description:
@@ -214,6 +218,7 @@ export const services: Service[] = [
   {
     slug: "numerology-report",
     title: "Numerology Report",
+    image: "https://images.unsplash.com/photo-1561148493-89acae53e6a1?w=800&q=80",
     shortDescription:
       "Discover the power of numbers in your life. Detailed numerology analysis based on your name and birth date.",
     description:
@@ -280,6 +285,7 @@ export const services: Service[] = [
   {
     slug: "vastu-consultation",
     title: "Vastu Consultation",
+    image: "https://images.unsplash.com/photo-1628744876490-19b035ecf9c3?w=800&q=80",
     shortDescription:
       "Expert Vastu Shastra guidance for your home or office. Optimize your space for prosperity.",
     description:
@@ -346,6 +352,7 @@ export const services: Service[] = [
   {
     slug: "matchmaking",
     title: "Kundli Matching",
+    image: "https://images.unsplash.com/photo-1583878545126-2f1ca0142714?w=800&q=80",
     shortDescription:
       "Comprehensive compatibility analysis for marriage. Detailed Guna Milan and Mangal Dosha check.",
     description:
@@ -406,6 +413,207 @@ export const services: Service[] = [
         question: "Can this be done for couples already married?",
         answer:
           "Yes, Kundli matching can help married couples understand their dynamics better and provide remedies for any challenges they face.",
+      },
+    ],
+  },
+  {
+    slug: "astrological-consulting",
+    title: "Astrological Consulting",
+    image: "https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?w=800&q=80",
+    shortDescription:
+      "Birth chart analysis, planetary transits, and astrological timing. Personalized guidance for life decisions, relationships, career, and personal growth through cosmic wisdom.",
+    description:
+      "Our Astrological Consulting service goes beyond traditional horoscope readings to offer deep, transformative guidance rooted in Vedic wisdom. Through meticulous birth chart analysis, planetary transit mapping, and astrological timing techniques, we help you navigate life's most important decisions with cosmic clarity. Whether you're seeking direction in your career, understanding relationship dynamics, or looking for the right timing for major life changes — our consulting integrates ancient astrological knowledge with a modern, practical approach to personal growth.",
+    priceINR: "\u20B93,499",
+    priceEUR: "\u20AC45",
+    duration: "60 min",
+    icon: "Compass",
+    category: "wellness",
+    features: [
+      "In-depth birth chart (Kundli) analysis",
+      "Planetary transit & Dasha period guidance",
+      "Astrological timing for key decisions",
+      "Career & professional path insights",
+      "Relationship & compatibility guidance",
+      "Personalized growth roadmap",
+      "Remedy recommendations (gemstones, mantras)",
+      "Follow-up email summary with action steps",
+    ],
+    process: [
+      {
+        step: 1,
+        title: "Initial Consultation",
+        description:
+          "Share your birth details and specific life areas you'd like guidance on.",
+      },
+      {
+        step: 2,
+        title: "Chart Analysis",
+        description:
+          "Our astrologer prepares a detailed analysis of your birth chart, transits, and Dasha periods.",
+      },
+      {
+        step: 3,
+        title: "Guidance Session",
+        description:
+          "A 60-minute one-on-one session covering your chart insights, practical advice, and cosmic timing.",
+      },
+      {
+        step: 4,
+        title: "Action Plan",
+        description:
+          "Receive a personalized summary with remedies, timing recommendations, and actionable next steps.",
+      },
+    ],
+    faqs: [
+      {
+        question: "How is this different from a regular astrology consultation?",
+        answer:
+          "Astrological Consulting is a holistic, growth-oriented service. Beyond predictions, it focuses on using cosmic wisdom for personal development, decision-making, and life alignment — combining traditional Vedic methods with a modern coaching perspective.",
+      },
+      {
+        question: "What areas of life can I get guidance on?",
+        answer:
+          "Career transitions, relationship decisions, financial timing, health awareness, relocation, education choices, spiritual growth — any area where cosmic timing and planetary influences can offer clarity.",
+      },
+      {
+        question: "Do I need to know anything about astrology beforehand?",
+        answer:
+          "Not at all. Our consulting is designed for everyone, from curious beginners to seasoned astrology enthusiasts. We explain everything in simple, practical terms.",
+      },
+    ],
+  },
+  {
+    slug: "personal-growth-coaching",
+    title: "Personal Growth Coaching",
+    image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&q=80",
+    shortDescription:
+      "Mindfulness, philosophy, and transformative practices. Guidance for personal development, building resilience, and creating a meaningful life aligned with your values.",
+    description:
+      "Our Personal Growth Coaching service blends ancient Vedic philosophy with modern personal development methodologies to help you unlock your fullest potential. Through guided sessions on mindfulness, self-awareness, and transformative practices, we support you in building resilience, overcoming limiting beliefs, and creating a life of purpose and meaning. Whether you're navigating a life transition, seeking clarity on your values, or working towards personal goals — our coaching provides the tools and guidance to help you grow authentically.",
+    priceINR: "\u20B94,999",
+    priceEUR: "\u20AC59",
+    duration: "60 min",
+    icon: "Leaf",
+    category: "wellness",
+    features: [
+      "One-on-one personalized coaching session",
+      "Mindfulness & meditation techniques",
+      "Values clarification & goal setting",
+      "Resilience & stress management tools",
+      "Vedic philosophy for modern living",
+      "Limiting belief identification & reframing",
+      "Accountability & progress tracking",
+      "Guided journaling & reflection exercises",
+    ],
+    process: [
+      {
+        step: 1,
+        title: "Discovery Call",
+        description:
+          "A brief intake to understand your goals, challenges, and what you hope to achieve through coaching.",
+      },
+      {
+        step: 2,
+        title: "Personalized Plan",
+        description:
+          "Based on your discovery session, a tailored coaching plan is created focusing on your growth areas.",
+      },
+      {
+        step: 3,
+        title: "Coaching Session",
+        description:
+          "A 60-minute deep-dive session with practical exercises, mindfulness techniques, and actionable guidance.",
+      },
+      {
+        step: 4,
+        title: "Integration Support",
+        description:
+          "Receive follow-up resources, exercises, and a summary to integrate learnings into your daily life.",
+      },
+    ],
+    faqs: [
+      {
+        question: "Is this related to astrology?",
+        answer:
+          "While our coaching is rooted in Vedic wisdom and philosophy, it focuses primarily on practical personal development — mindfulness, self-awareness, goal-setting, and building resilience. Astrological insights can be optionally integrated if desired.",
+      },
+      {
+        question: "Who is this coaching suitable for?",
+        answer:
+          "Anyone seeking personal growth — whether you're going through a life transition, feeling stuck, wanting to build better habits, or simply looking to live more intentionally and aligned with your values.",
+      },
+      {
+        question: "Can I book multiple sessions?",
+        answer:
+          "Absolutely. Many clients benefit from a series of sessions. We offer package options for ongoing coaching support with progress tracking between sessions.",
+      },
+    ],
+  },
+  {
+    slug: "therapeutic-healing",
+    title: "Therapeutic Healing",
+    image: "https://images.unsplash.com/photo-1556760544-74068565f05c?w=800&q=80",
+    shortDescription:
+      "Professional therapeutic support for emotional well-being. Integrated counseling techniques, mindfulness practices, and transformative methodologies for genuine healing.",
+    description:
+      "Our Therapeutic Healing service provides compassionate, professional support for emotional well-being and inner transformation. Combining integrated counseling techniques, mindfulness-based practices, and transformative healing methodologies, we create a safe space for you to process emotions, release past patterns, and cultivate genuine inner peace. Whether you're dealing with stress, anxiety, grief, relationship challenges, or simply seeking deeper emotional balance — our therapeutic approach honors both modern psychology and ancient wisdom traditions to support your healing journey.",
+    priceINR: "\u20B95,999",
+    priceEUR: "\u20AC69",
+    duration: "75 min",
+    icon: "HeartHandshake",
+    category: "wellness",
+    features: [
+      "75-minute private therapeutic session",
+      "Integrated counseling techniques",
+      "Mindfulness-based stress reduction",
+      "Emotional processing & release work",
+      "Trauma-informed approach",
+      "Guided meditation & breathwork",
+      "Coping strategies & self-care tools",
+      "Confidential & compassionate space",
+    ],
+    process: [
+      {
+        step: 1,
+        title: "Intake & Assessment",
+        description:
+          "Share your concerns and goals in a confidential intake form. This helps tailor the session to your needs.",
+      },
+      {
+        step: 2,
+        title: "Therapeutic Session",
+        description:
+          "A 75-minute session using integrated counseling, mindfulness, and healing techniques in a safe, supportive space.",
+      },
+      {
+        step: 3,
+        title: "Healing Practices",
+        description:
+          "Learn personalized mindfulness exercises, breathwork, and coping strategies to continue your healing between sessions.",
+      },
+      {
+        step: 4,
+        title: "Ongoing Support",
+        description:
+          "Receive a follow-up care plan with resources, practices, and recommendations for continued well-being.",
+      },
+    ],
+    faqs: [
+      {
+        question: "Is this a substitute for clinical therapy or psychiatric care?",
+        answer:
+          "Our Therapeutic Healing service is a holistic wellness offering that complements professional mental health care. It is not a replacement for clinical therapy, psychiatry, or medical treatment. If you are in crisis, please contact a licensed mental health professional.",
+      },
+      {
+        question: "What healing methodologies are used?",
+        answer:
+          "We integrate mindfulness-based cognitive techniques, breathwork, guided meditation, somatic awareness, and principles from Vedic wisdom traditions — all within a compassionate, trauma-informed framework.",
+      },
+      {
+        question: "Is everything discussed kept confidential?",
+        answer:
+          "Absolutely. Confidentiality is foundational to our practice. Everything shared during sessions is kept strictly private and is never disclosed to third parties.",
       },
     ],
   },

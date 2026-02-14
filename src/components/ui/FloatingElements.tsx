@@ -106,6 +106,29 @@ function FloatingElements() {
           scale: { duration: 10, repeat: Infinity, ease: "easeInOut" },
         }}
       />
+
+      {/* Drifting sparkle particles */}
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={`sparkle-${i}`}
+          className="absolute h-1 w-1 rounded-full bg-gold-400/40"
+          style={{
+            left: `${15 + i * 15}%`,
+            bottom: `${10 + (i % 3) * 20}%`,
+          }}
+          animate={{
+            y: [0, -60, -120],
+            opacity: [0, 0.8, 0],
+            scale: [0.5, 1, 0.5],
+          }}
+          transition={{
+            duration: 4 + i * 0.5,
+            repeat: Infinity,
+            delay: i * 0.8,
+            ease: "easeOut",
+          }}
+        />
+      ))}
     </div>
   );
 }

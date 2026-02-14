@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/utils/cn";
+import { motion } from "framer-motion";
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "gold";
@@ -12,14 +15,14 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-lg shadow-primary-600/25",
+    "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-lg shadow-primary-600/25 hover:shadow-xl hover:shadow-primary-600/40",
   secondary:
-    "bg-vedic-dark text-white hover:bg-vedic-text active:bg-primary-950",
+    "bg-vedic-dark text-white hover:bg-vedic-text active:bg-primary-950 hover:shadow-xl hover:shadow-vedic-dark/30",
   outline:
-    "border-2 border-primary-600 text-primary-600 hover:bg-primary-50 active:bg-primary-100",
+    "border-2 border-primary-600 text-primary-600 hover:bg-primary-50 active:bg-primary-100 hover:shadow-lg hover:shadow-primary-600/20",
   ghost:
     "text-primary-600 hover:bg-primary-50 active:bg-primary-100",
-  gold: "bg-gold-gradient text-white hover:opacity-90 active:opacity-80 shadow-lg shadow-gold-500/25",
+  gold: "bg-gold-gradient text-white hover:opacity-90 active:opacity-80 shadow-lg shadow-gold-500/25 hover:shadow-xl hover:shadow-gold-500/40",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -37,21 +40,26 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       isLoading = false,
       disabled,
       children,
-      ...props
+      onClick,
+      type,
     },
     ref
   ) => {
     return (
-      <button
+      <motion.button
         ref={ref}
+        whileHover={disabled || isLoading ? {} : { scale: 1.05 }}
+        whileTap={disabled || isLoading ? {} : { scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "btn-shine relative inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
           variantStyles[variant],
           sizeStyles[size],
           className
         )}
         disabled={disabled || isLoading}
-        {...props}
+        onClick={onClick}
+        type={type}
       >
         {isLoading && (
           <svg
@@ -76,7 +84,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {children}
-      </button>
+      </motion.button>
     );
   }
 );

@@ -7,7 +7,6 @@ import {
   Instagram,
   Youtube,
   Facebook,
-  Twitter,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { siteConfig } from "@/config/site";
@@ -51,9 +50,13 @@ function Footer() {
                   <Mail className="h-4 w-4 text-gold-500" />
                   {siteConfig.contact.email}
                 </a>
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-gold-500" />
-                  {siteConfig.contact.address}
+                <div className="flex items-start gap-2 text-sm">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold-500" />
+                  <div>
+                    {siteConfig.contact.address.map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -119,11 +122,6 @@ function Footer() {
                   href={siteConfig.social.facebook}
                   icon={<Facebook className="h-4 w-4" />}
                   label="Facebook"
-                />
-                <SocialLink
-                  href={siteConfig.social.twitter}
-                  icon={<Twitter className="h-4 w-4" />}
-                  label="Twitter"
                 />
               </div>
 

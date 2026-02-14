@@ -6,16 +6,15 @@ export const siteConfig = {
   url: process.env.NEXT_PUBLIC_APP_URL || "https://vedicjivan.nandishdave.world",
   ogImage: "/images/og/default.jpg",
   contact: {
-    email: "contact@vedicjivan.com",
-    phone: "+91 98765 43210",
-    whatsapp: "+919876543210",
-    address: "New Delhi, India",
+    email: "vedic.jivan33@gmail.com",
+    phone: "+91 98242 92212",
+    whatsapp: "+919824292212",
+    address: ["Ahmedabad, Gujarat", "Eindhoven, Netherlands"],
   },
   social: {
-    instagram: "https://instagram.com/vedicjivan",
-    youtube: "https://youtube.com/@vedicjivan",
-    facebook: "https://facebook.com/vedicjivan",
-    twitter: "https://twitter.com/vedicjivan",
+    instagram: "https://www.instagram.com/vedicjivan333",
+    youtube: "https://www.youtube.com/@VedicJivan333",
+    facebook: "https://www.facebook.com/groups/1625796561636761",
   },
   stats: {
     consultations: "50,000+",

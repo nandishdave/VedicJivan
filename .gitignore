@@ -46,9 +46,9 @@ Thumbs.db
 # logs
 *.log
 
-# claude code artifacts
+# local project files
+.local/
 nul
-PROJECT_PLAN.md
 scripts/
 
 # claude

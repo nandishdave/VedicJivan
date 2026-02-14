@@ -1,10 +1,18 @@
 "use client";
 
+import React from "react";
 import { motion, type Variants } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { cn } from "@/lib/utils/cn";
 
-type AnimationType = "fadeUp" | "fadeIn" | "fadeLeft" | "fadeRight" | "scaleIn";
+type AnimationType =
+  | "fadeUp"
+  | "fadeIn"
+  | "fadeLeft"
+  | "fadeRight"
+  | "scaleIn"
+  | "slideUpBig"
+  | "blurIn";
 
 interface AnimateOnScrollProps {
   children: React.ReactNode;
@@ -36,6 +44,14 @@ const animations: Record<AnimationType, Variants> = {
     hidden: { opacity: 0, scale: 0.9 },
     visible: { opacity: 1, scale: 1 },
   },
+  slideUpBig: {
+    hidden: { opacity: 0, y: 80 },
+    visible: { opacity: 1, y: 0 },
+  },
+  blurIn: {
+    hidden: { opacity: 0, filter: "blur(10px)", y: 20 },
+    visible: { opacity: 1, filter: "blur(0px)", y: 0 },
+  },
 };
 
 function AnimateOnScroll({
@@ -65,4 +81,53 @@ function AnimateOnScroll({
   );
 }
 
-export { AnimateOnScroll };
+interface StaggerGridProps {
+  children: React.ReactNode;
+  className?: string;
+  staggerDelay?: number;
+  animation?: AnimationType;
+  once?: boolean;
+}
+
+function StaggerGrid({
+  children,
+  className,
+  staggerDelay = 0.1,
+  animation = "fadeUp",
+  once = true,
+}: StaggerGridProps) {
+  const { ref, inView } = useInView({
+    triggerOnce: once,
+    threshold: 0.1,
+  });
+
+  const container: Variants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: staggerDelay,
+      },
+    },
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={inView ? "visible" : "hidden"}
+      variants={container}
+      className={className}
+    >
+      {React.Children.map(children, (child) => (
+        <motion.div
+          variants={animations[animation]}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
+          {child}
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
+
+export { AnimateOnScroll, StaggerGrid };

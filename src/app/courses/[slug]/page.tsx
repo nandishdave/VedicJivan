@@ -78,7 +78,7 @@ export default function CourseDetailPage({
       />
 
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-dark-gradient py-16 sm:py-24">
+      <section className="relative overflow-hidden vedic-hero-gradient py-16 sm:py-24">
         <div className="pointer-events-none absolute inset-0 opacity-10">
           <div className="absolute -left-40 top-0 h-80 w-80 rounded-full bg-primary-500 blur-3xl" />
         </div>
@@ -283,7 +283,7 @@ export default function CourseDetailPage({
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="relative overflow-hidden bg-vedic-gradient py-16">
+      <section className="relative overflow-hidden vedic-cta-gradient py-16">
         <Container className="relative z-10">
           <AnimateOnScroll animation="scaleIn">
             <div className="mx-auto max-w-3xl text-center">

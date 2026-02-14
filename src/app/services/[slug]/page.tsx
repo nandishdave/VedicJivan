@@ -11,6 +11,9 @@ import {
   ArrowRight,
   Clock,
   CheckCircle2,
+  Compass,
+  Leaf,
+  HeartHandshake,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
@@ -29,6 +32,9 @@ const iconMap: Record<string, React.ReactNode> = {
   Hash: <Hash className="h-8 w-8" />,
   Home: <Home className="h-8 w-8" />,
   Heart: <Heart className="h-8 w-8" />,
+  Compass: <Compass className="h-8 w-8" />,
+  Leaf: <Leaf className="h-8 w-8" />,
+  HeartHandshake: <HeartHandshake className="h-8 w-8" />,
 };
 
 const iconMapSmall: Record<string, React.ReactNode> = {
@@ -38,6 +44,9 @@ const iconMapSmall: Record<string, React.ReactNode> = {
   Hash: <Hash className="h-6 w-6" />,
   Home: <Home className="h-6 w-6" />,
   Heart: <Heart className="h-6 w-6" />,
+  Compass: <Compass className="h-6 w-6" />,
+  Leaf: <Leaf className="h-6 w-6" />,
+  HeartHandshake: <HeartHandshake className="h-6 w-6" />,
 };
 
 export function generateStaticParams() {
@@ -97,7 +106,15 @@ export default function ServiceDetailPage({
       />
 
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-dark-gradient py-16 sm:py-24">
+      <section className="relative overflow-hidden py-16 sm:py-24">
+        <div className="absolute inset-0">
+          <img
+            src={service.image}
+            alt={service.title}
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-vedic-dark/95 via-vedic-dark/85 to-vedic-dark/70" />
+        </div>
         <FloatingElements />
         <Container className="relative z-10">
           <AnimateOnScroll animation="fadeIn">
@@ -280,7 +297,7 @@ export default function ServiceDetailPage({
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="relative overflow-hidden bg-vedic-gradient py-16">
+      <section className="relative overflow-hidden vedic-cta-gradient py-16">
         <Container className="relative z-10">
           <AnimateOnScroll animation="scaleIn">
             <div className="mx-auto max-w-3xl text-center">

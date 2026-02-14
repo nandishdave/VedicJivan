@@ -38,7 +38,11 @@
   }
 
   .vedic-section-dark {
-    @apply bg-dark-gradient py-16 sm:py-20 lg:py-24;
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  .vedic-section-accent {
+    @apply bg-gradient-to-br from-gold-50 via-cream to-primary-50 py-16 sm:py-20 lg:py-24;
   }
 
   .vedic-link {
@@ -77,6 +81,60 @@
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
   }
+
+  /* Animated gradient background for hero sections */
+  .vedic-hero-gradient {
+    background: linear-gradient(
+      -45deg,
+      #1e0f3d,
+      #2d1b4e,
+      #441390,
+      #6025c0,
+      #2d1b4e,
+      #1e0f3d
+    );
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+  }
+
+  /* Animated gradient background for CTA sections */
+  .vedic-cta-gradient {
+    background: linear-gradient(
+      -45deg,
+      #6025c0,
+      #9333ea,
+      #b366ff,
+      #f5a623,
+      #9333ea,
+      #6025c0
+    );
+    background-size: 400% 400%;
+    animation: gradientShift 12s ease infinite;
+  }
+
+  /* Button shine sweep effect */
+  .btn-shine {
+    overflow: hidden;
+  }
+  .btn-shine::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      transparent 100%
+    );
+    transition: left 0.5s ease;
+    pointer-events: none;
+  }
+  .btn-shine:hover::before {
+    left: 100%;
+  }
 }
 
 @layer utilities {
@@ -113,5 +171,17 @@
   }
   100% {
     background-position: 200% 0;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }

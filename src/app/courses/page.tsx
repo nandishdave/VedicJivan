@@ -15,6 +15,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Badge } from "@/components/ui/Badge";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { FloatingElements } from "@/components/ui/FloatingElements";
+import { GradientText } from "@/components/ui/GradientText";
 import { courses } from "@/data/courses";
 
 export const metadata: Metadata = {
@@ -34,7 +35,7 @@ export default function CoursesPage() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-dark-gradient py-20 sm:py-28">
+      <section className="relative overflow-hidden vedic-hero-gradient py-20 sm:py-28">
         <FloatingElements />
         <Container className="relative z-10">
           <AnimateOnScroll animation="fadeIn">
@@ -44,7 +45,7 @@ export default function CoursesPage() {
               </span>
               <h1 className="font-heading text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
                 Master the Ancient{" "}
-                <span className="text-gradient-gold">Vedic Sciences</span>
+                <GradientText variant="gold">Vedic Sciences</GradientText>
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
                 Structured, comprehensive courses in Vedic astrology, numerology,
@@ -185,7 +186,7 @@ export default function CoursesPage() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="relative overflow-hidden bg-vedic-gradient py-20">
+      <section className="relative overflow-hidden vedic-cta-gradient py-20">
         <Container className="relative z-10">
           <AnimateOnScroll animation="scaleIn">
             <div className="mx-auto max-w-3xl text-center">

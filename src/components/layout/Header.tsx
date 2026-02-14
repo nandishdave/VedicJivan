@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { Menu, X, ChevronDown, Phone } from "lucide-react";
+import { Menu, X, ChevronDown, Phone, Instagram, Youtube, Facebook } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { mainNav, type NavItem } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
@@ -57,18 +57,28 @@ function Header() {
                 href={siteConfig.social.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Instagram"
                 className="transition-colors hover:text-gold-400"
               >
-                Instagram
+                <Instagram className="h-4 w-4" />
               </a>
-              <span className="text-gray-600">|</span>
               <a
                 href={siteConfig.social.youtube}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="YouTube"
                 className="transition-colors hover:text-gold-400"
               >
-                YouTube
+                <Youtube className="h-4 w-4" />
+              </a>
+              <a
+                href={siteConfig.social.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="transition-colors hover:text-gold-400"
+              >
+                <Facebook className="h-4 w-4" />
               </a>
             </div>
           </div>

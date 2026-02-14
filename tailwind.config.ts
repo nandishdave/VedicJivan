@@ -10,29 +10,29 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          50: "#faf5ff",
-          100: "#f3e8ff",
-          200: "#e9d5ff",
-          300: "#d8b4fe",
-          400: "#c084fc",
-          500: "#a855f7",
+          50: "#f5f0ff",
+          100: "#ede5ff",
+          200: "#daccff",
+          300: "#c4a6ff",
+          400: "#b366ff",
+          500: "#9333ea",
           600: "#7c3aed",
-          700: "#6d28d9",
-          800: "#5b21b6",
-          900: "#4c1d95",
-          950: "#2e1065",
+          700: "#6025c0",
+          800: "#5119a8",
+          900: "#441390",
+          950: "#2a0b5e",
         },
         gold: {
-          50: "#fffbeb",
-          100: "#fef3c7",
-          200: "#fde68a",
-          300: "#fcd34d",
-          400: "#fbbf24",
-          500: "#f59e0b",
-          600: "#d97706",
-          700: "#b45309",
-          800: "#92400e",
-          900: "#78350f",
+          50: "#fff9eb",
+          100: "#ffefc2",
+          200: "#ffe08a",
+          300: "#fbbf24",
+          400: "#f5a623",
+          500: "#e88d00",
+          600: "#c96800",
+          700: "#a34e04",
+          800: "#873e08",
+          900: "#72340c",
         },
         saffron: {
           300: "#fdba74",
@@ -52,16 +52,17 @@ const config: Config = {
       },
       backgroundImage: {
         "vedic-gradient":
-          "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #a855f7 100%)",
+          "linear-gradient(135deg, #6025c0 0%, #9333ea 50%, #b366ff 100%)",
         "gold-gradient":
-          "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+          "linear-gradient(135deg, #f5a623 0%, #e88d00 100%)",
         "dark-gradient":
-          "linear-gradient(180deg, #1a0a2e 0%, #2d1b4e 100%)",
+          "linear-gradient(180deg, #1e0f3d 0%, #2d1b4e 100%)",
       },
       animation: {
         "fade-in": "fadeIn 0.6s ease-out forwards",
         "slide-up": "slideUp 0.6s ease-out forwards",
         "float": "float 6s ease-in-out infinite",
+        "gradient-text": "gradientText 4s ease infinite",
       },
       keyframes: {
         fadeIn: {
@@ -75,6 +76,10 @@ const config: Config = {
         float: {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
+        },
+        gradientText: {
+          "0%, 100%": { backgroundPosition: "0% center" },
+          "50%": { backgroundPosition: "100% center" },
         },
       },
     },

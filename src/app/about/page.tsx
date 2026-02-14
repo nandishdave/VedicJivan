@@ -35,7 +35,7 @@ export default function AboutPage() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-dark-gradient py-20 sm:py-28">
+      <section className="relative overflow-hidden vedic-hero-gradient py-20 sm:py-28">
         <FloatingElements />
         <Container className="relative z-10">
           <AnimateOnScroll animation="fadeIn">
@@ -188,7 +188,7 @@ export default function AboutPage() {
       </section>
 
       {/* ===== CREDENTIALS ===== */}
-      <section className="vedic-section-dark">
+      <section className="vedic-section-dark vedic-hero-gradient">
         <Container>
           <AnimateOnScroll animation="fadeUp">
             <SectionHeading
@@ -217,7 +217,7 @@ export default function AboutPage() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="relative overflow-hidden bg-vedic-gradient py-20">
+      <section className="relative overflow-hidden vedic-cta-gradient py-20">
         <Container className="relative z-10">
           <AnimateOnScroll animation="scaleIn">
             <div className="mx-auto max-w-3xl text-center">

@@ -8,12 +8,16 @@ import {
   Send,
   MessageCircle,
   ArrowRight,
+  Instagram,
+  Youtube,
+  Facebook,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { FloatingElements } from "@/components/ui/FloatingElements";
+import { GradientText } from "@/components/ui/GradientText";
 import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -33,7 +37,7 @@ export default function ContactPage() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-dark-gradient py-20 sm:py-28">
+      <section className="relative overflow-hidden vedic-hero-gradient py-20 sm:py-28">
         <FloatingElements />
         <Container className="relative z-10">
           <AnimateOnScroll animation="fadeIn">
@@ -43,7 +47,7 @@ export default function ContactPage() {
               </span>
               <h1 className="font-heading text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
                 We&apos;d Love to{" "}
-                <span className="text-gradient-gold">Hear From You</span>
+                <GradientText variant="gold">Hear From You</GradientText>
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
                 Have questions about our services, courses, or need guidance on
@@ -164,7 +168,9 @@ export default function ContactPage() {
                           <p className="font-semibold text-vedic-dark">
                             Location
                           </p>
-                          <p className="text-sm">{siteConfig.contact.address}</p>
+                          {siteConfig.contact.address.map((line, i) => (
+                            <p key={i} className="text-sm">{line}</p>
+                          ))}
                         </div>
                       </div>
                       <div className="flex items-start gap-3 text-gray-600">
@@ -212,6 +218,7 @@ export default function ContactPage() {
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:text-primary-600"
                         >
+                          {social.icon}
                           {social.name}
                         </a>
                       ))}
@@ -237,7 +244,7 @@ export default function ContactPage() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="relative overflow-hidden bg-vedic-gradient py-20">
+      <section className="relative overflow-hidden vedic-cta-gradient py-20">
         <Container className="relative z-10">
           <AnimateOnScroll animation="scaleIn">
             <div className="mx-auto max-w-3xl text-center">
@@ -265,8 +272,7 @@ export default function ContactPage() {
 }
 
 const socialLinks = [
-  { name: "Instagram", url: siteConfig.social.instagram },
-  { name: "YouTube", url: siteConfig.social.youtube },
-  { name: "Facebook", url: siteConfig.social.facebook },
-  { name: "Twitter", url: siteConfig.social.twitter },
+  { name: "Instagram", url: siteConfig.social.instagram, icon: <Instagram className="h-4 w-4" /> },
+  { name: "YouTube", url: siteConfig.social.youtube, icon: <Youtube className="h-4 w-4" /> },
+  { name: "Facebook", url: siteConfig.social.facebook, icon: <Facebook className="h-4 w-4" /> },
 ];

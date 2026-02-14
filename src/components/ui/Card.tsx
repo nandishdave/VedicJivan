@@ -1,23 +1,42 @@
+"use client";
+
 import { cn } from "@/lib/utils/cn";
+import { motion } from "framer-motion";
 import { HTMLAttributes } from "react";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   hover?: boolean;
 }
 
-function Card({ className, hover = true, children, ...props }: CardProps) {
+function Card({ className, hover = true, children }: CardProps) {
+  if (!hover) {
+    return (
+      <div
+        className={cn(
+          "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm",
+          className
+        )}
+      >
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <div
+    <motion.div
+      whileHover={{
+        y: -8,
+        transition: { type: "spring", stiffness: 300, damping: 20 },
+      }}
       className={cn(
-        "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm",
-        hover &&
-          "transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary-100/50",
+        "group/card relative rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow duration-300 hover:border-primary-200 hover:shadow-xl hover:shadow-primary-200/40",
         className
       )}
-      {...props}
     >
+      {/* Top gradient accent line on hover */}
+      <div className="absolute left-0 right-0 top-0 h-0.5 rounded-t-2xl bg-vedic-gradient opacity-0 transition-opacity duration-300 group-hover/card:opacity-100" />
       {children}
-    </div>
+    </motion.div>
   );
 }
 

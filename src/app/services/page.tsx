@@ -10,6 +10,9 @@ import {
   ArrowRight,
   Clock,
   CheckCircle2,
+  Compass,
+  Leaf,
+  HeartHandshake,
 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
@@ -19,17 +22,21 @@ import { Badge } from "@/components/ui/Badge";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { FAQAccordion } from "@/components/ui/FAQAccordion";
 import { FloatingElements } from "@/components/ui/FloatingElements";
+import { GradientText } from "@/components/ui/GradientText";
 import { services } from "@/data/services";
+
+const astrologyServices = services.filter((s) => s.category !== "wellness");
+const wellnessServices = services.filter((s) => s.category === "wellness");
 
 export const metadata: Metadata = {
   title: "Services",
   description:
-    "Explore VedicJivan's astrology services — consultations, Kundli reports, numerology, Vastu guidance, and matchmaking. Book your session today.",
+    "Explore VedicJivan's astrology and wellness services — consultations, Kundli reports, numerology, Vastu, personal growth coaching, and therapeutic healing.",
   alternates: { canonical: "/services" },
   openGraph: {
     title: "Services | VedicJivan",
     description:
-      "Explore VedicJivan's astrology services — consultations, Kundli reports, numerology, Vastu guidance, and matchmaking.",
+      "Explore VedicJivan's astrology and wellness services — consultations, Kundli reports, numerology, Vastu, personal growth coaching, and therapeutic healing.",
     url: "/services",
   },
 };
@@ -41,13 +48,16 @@ const iconMap: Record<string, React.ReactNode> = {
   Hash: <Hash className="h-6 w-6" />,
   Home: <Home className="h-6 w-6" />,
   Heart: <Heart className="h-6 w-6" />,
+  Compass: <Compass className="h-6 w-6" />,
+  Leaf: <Leaf className="h-6 w-6" />,
+  HeartHandshake: <HeartHandshake className="h-6 w-6" />,
 };
 
 export default function ServicesPage() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden bg-dark-gradient py-20 sm:py-28">
+      <section className="relative overflow-hidden vedic-hero-gradient py-20 sm:py-28">
         <FloatingElements />
         <Container className="relative z-10">
           <AnimateOnScroll animation="fadeIn">
@@ -56,87 +66,175 @@ export default function ServicesPage() {
                 Our Services
               </span>
               <h1 className="font-heading text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
-                Vedic Guidance for{" "}
-                <span className="text-gradient-gold">Every Need</span>
+                Astrology & Wellness{" "}
+                <GradientText variant="gold">Services</GradientText>
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
-                From personal consultations to comprehensive reports — choose the
-                service that best fits your needs and begin your journey to clarity.
+                From astrology consultations and Kundli reports to personal growth
+                coaching and therapeutic healing — choose the service that supports
+                your journey to clarity and well-being.
               </p>
             </div>
           </AnimateOnScroll>
         </Container>
       </section>
 
-      {/* ===== SERVICES GRID ===== */}
+      {/* ===== ASTROLOGY SERVICES ===== */}
       <section className="vedic-section">
         <Container>
+          <AnimateOnScroll animation="fadeUp">
+            <SectionHeading
+              subtitle="Astrology"
+              title="Vedic Astrology Services"
+              description="Authentic consultations, detailed reports, and expert guidance rooted in time-tested Vedic traditions."
+            />
+          </AnimateOnScroll>
+
           <div className="grid gap-8 lg:grid-cols-2">
-            {services.map((service, i) => (
+            {astrologyServices.map((service, i) => (
               <AnimateOnScroll key={service.slug} animation="fadeUp" delay={i * 0.08}>
-                <Card className="group h-full overflow-hidden">
+                <Card className="group h-full overflow-hidden" hover={false}>
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    <Badge variant="gold" className="absolute left-4 top-4">
+                      {service.category}
+                    </Badge>
+                  </div>
                   <CardContent>
-                    <div className="flex flex-col gap-6 sm:flex-row">
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 transition-colors group-hover:bg-primary-600 group-hover:text-white">
-                        {iconMap[service.icon] || <FileText className="h-6 w-6" />}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div>
-                            <Badge variant="gold" className="mb-2">
-                              {service.category}
-                            </Badge>
-                            <h3 className="font-heading text-2xl font-bold text-vedic-dark">
-                              {service.title}
-                            </h3>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-primary-600">
-                              {service.priceINR}
-                            </p>
-                            <p className="text-sm text-gray-400">
-                              {service.priceEUR}
-                            </p>
-                          </div>
-                        </div>
-
-                        <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                          {service.shortDescription}
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <h3 className="font-heading text-2xl font-bold text-vedic-dark">
+                        {service.title}
+                      </h3>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary-600">
+                          {service.priceINR}
                         </p>
-
-                        {service.duration && (
-                          <div className="mt-3 flex items-center gap-1.5 text-sm text-gray-500">
-                            <Clock className="h-4 w-4" />
-                            {service.duration}
-                          </div>
-                        )}
-
-                        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-                          {service.features.slice(0, 4).map((feature, j) => (
-                            <li
-                              key={j}
-                              className="flex items-center gap-2 text-sm text-gray-600"
-                            >
-                              <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-
-                        <div className="mt-6 flex flex-wrap gap-3">
-                          <Link href={`/services/${service.slug}`}>
-                            <Button variant="primary" size="sm">
-                              Learn More
-                              <ArrowRight className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                          <Link href={`/services/${service.slug}`}>
-                            <Button variant="gold" size="sm">
-                              Book Now
-                            </Button>
-                          </Link>
-                        </div>
+                        <p className="text-sm text-gray-400">
+                          {service.priceEUR}
+                        </p>
                       </div>
+                    </div>
+
+                    <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                      {service.shortDescription}
+                    </p>
+
+                    {service.duration && (
+                      <div className="mt-3 flex items-center gap-1.5 text-sm text-gray-500">
+                        <Clock className="h-4 w-4" />
+                        {service.duration}
+                      </div>
+                    )}
+
+                    <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                      {service.features.slice(0, 4).map((feature, j) => (
+                        <li
+                          key={j}
+                          className="flex items-center gap-2 text-sm text-gray-600"
+                        >
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <Link href={`/services/${service.slug}`}>
+                        <Button variant="primary" size="sm">
+                          Learn More
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <Link href={`/services/${service.slug}`}>
+                        <Button variant="gold" size="sm">
+                          Book Now
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </AnimateOnScroll>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ===== WELLNESS SERVICES ===== */}
+      <section className="vedic-section bg-cream">
+        <Container>
+          <AnimateOnScroll animation="fadeUp">
+            <SectionHeading
+              subtitle="Wellness"
+              title="Holistic Wellness Services"
+              description="Integrating astrological guidance, personal growth coaching, and therapeutic healing to support transformation and well-being."
+            />
+          </AnimateOnScroll>
+
+          <div className="grid gap-8 lg:grid-cols-3">
+            {wellnessServices.map((service, i) => (
+              <AnimateOnScroll key={service.slug} animation="fadeUp" delay={i * 0.1}>
+                <Card className="group h-full overflow-hidden" hover={false}>
+                  <div className="relative h-52 overflow-hidden">
+                    <img
+                      src={service.image}
+                      alt={service.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    <div className="absolute bottom-4 left-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-gold-600">
+                      {iconMap[service.icon] || <FileText className="h-5 w-5" />}
+                    </div>
+                  </div>
+                  <CardContent>
+                    <h3 className="font-heading text-2xl font-bold text-vedic-dark">
+                      {service.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                      {service.shortDescription}
+                    </p>
+
+                    <div className="mt-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-xl font-bold text-primary-600">
+                          {service.priceINR}
+                        </p>
+                        <p className="text-xs text-gray-400">{service.priceEUR}</p>
+                      </div>
+                      {service.duration && (
+                        <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                          <Clock className="h-4 w-4" />
+                          {service.duration}
+                        </div>
+                      )}
+                    </div>
+
+                    <ul className="mt-4 space-y-2">
+                      {service.features.slice(0, 4).map((feature, j) => (
+                        <li
+                          key={j}
+                          className="flex items-center gap-2 text-sm text-gray-600"
+                        >
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="mt-6">
+                      <Link href={`/services/${service.slug}`}>
+                        <Button variant="primary" size="sm" className="w-full">
+                          Learn More
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>
@@ -164,7 +262,7 @@ export default function ServicesPage() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="relative overflow-hidden bg-vedic-gradient py-20">
+      <section className="relative overflow-hidden vedic-cta-gradient py-20">
         <Container className="relative z-10">
           <AnimateOnScroll animation="scaleIn">
             <div className="mx-auto max-w-3xl text-center">

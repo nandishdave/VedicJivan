@@ -32,7 +32,6 @@ export function OrganizationJsonLd() {
       siteConfig.social.instagram,
       siteConfig.social.youtube,
       siteConfig.social.facebook,
-      siteConfig.social.twitter,
     ],
     address: {
       "@type": "PostalAddress",
