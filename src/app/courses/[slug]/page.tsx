@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { courses, getCourseBySlug } from "@/data/courses";
+import { CourseJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 export function generateStaticParams() {
   return courses.map((c) => ({ slug: c.slug }));
@@ -33,6 +34,15 @@ export function generateMetadata({
   return {
     title: course.title,
     description: course.shortDescription,
+    alternates: {
+      canonical: `/courses/${params.slug}`,
+    },
+    openGraph: {
+      title: course.title,
+      description: course.shortDescription,
+      type: "website",
+      url: `/courses/${params.slug}`,
+    },
   };
 }
 
@@ -49,8 +59,24 @@ export default function CourseDetailPage({
     0
   );
 
+  const BASE_URL = "https://vedicjivan.nandishdave.world";
+
   return (
     <>
+      <CourseJsonLd
+        name={course.title}
+        description={course.shortDescription}
+        priceINR={course.priceINR}
+        url={`${BASE_URL}/courses/${course.slug}`}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: BASE_URL },
+          { name: "Courses", url: `${BASE_URL}/courses` },
+          { name: course.title, url: `${BASE_URL}/courses/${course.slug}` },
+        ]}
+      />
+
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden bg-dark-gradient py-16 sm:py-24">
         <div className="pointer-events-none absolute inset-0 opacity-10">

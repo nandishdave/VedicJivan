@@ -25,6 +25,13 @@ export const metadata: Metadata = {
   title: "Services",
   description:
     "Explore VedicJivan's astrology services — consultations, Kundli reports, numerology, Vastu guidance, and matchmaking. Book your session today.",
+  alternates: { canonical: "/services" },
+  openGraph: {
+    title: "Services | VedicJivan",
+    description:
+      "Explore VedicJivan's astrology services — consultations, Kundli reports, numerology, Vastu guidance, and matchmaking.",
+    url: "/services",
+  },
 };
 
 const iconMap: Record<string, React.ReactNode> = {

@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/Container";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description: "VedicJivan's terms of service — the rules and guidelines governing your use of our website and services.",
+  alternates: { canonical: "/terms" },
 };
 
 export default function TermsPage() {

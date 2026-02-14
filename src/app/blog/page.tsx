@@ -14,6 +14,13 @@ export const metadata: Metadata = {
   title: "Blog",
   description:
     "Explore articles on Vedic astrology, numerology, Vastu Shastra, planetary transits, and spiritual wisdom from VedicJivan.",
+  alternates: { canonical: "/blog" },
+  openGraph: {
+    title: "Blog | VedicJivan",
+    description:
+      "Explore articles on Vedic astrology, numerology, Vastu Shastra, planetary transits, and spiritual wisdom from VedicJivan.",
+    url: "/blog",
+  },
 };
 
 export default function BlogPage() {

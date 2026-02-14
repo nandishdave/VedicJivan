@@ -20,6 +20,7 @@ import { FAQAccordion } from "@/components/ui/FAQAccordion";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { TiltCard } from "@/components/ui/TiltCard";
 import { services, getServiceBySlug, getRelatedServices } from "@/data/services";
+import { ServiceJsonLd, FAQJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 const iconMap: Record<string, React.ReactNode> = {
   Phone: <Phone className="h-8 w-8" />,
@@ -54,6 +55,15 @@ export function generateMetadata({
   return {
     title: service.title,
     description: service.shortDescription,
+    alternates: {
+      canonical: `/services/${params.slug}`,
+    },
+    openGraph: {
+      title: service.title,
+      description: service.shortDescription,
+      type: "website",
+      url: `/services/${params.slug}`,
+    },
   };
 }
 
@@ -67,8 +77,25 @@ export default function ServiceDetailPage({
 
   const related = getRelatedServices(params.slug);
 
+  const BASE_URL = "https://vedicjivan.nandishdave.world";
+
   return (
     <>
+      <ServiceJsonLd
+        name={service.title}
+        description={service.shortDescription}
+        priceINR={service.priceINR}
+        url={`${BASE_URL}/services/${service.slug}`}
+      />
+      <FAQJsonLd faqs={service.faqs} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: BASE_URL },
+          { name: "Services", url: `${BASE_URL}/services` },
+          { name: service.title, url: `${BASE_URL}/services/${service.slug}` },
+        ]}
+      />
+
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden bg-dark-gradient py-16 sm:py-24">
         <FloatingElements />

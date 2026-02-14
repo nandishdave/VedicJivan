@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/Container";
 export const metadata: Metadata = {
   title: "Refund Policy",
   description: "VedicJivan's refund policy — understand our refund terms for consultations, reports, and courses.",
+  alternates: { canonical: "/refund-policy" },
 };
 
 export default function RefundPolicyPage() {

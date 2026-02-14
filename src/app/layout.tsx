@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { BackToTop } from "@/components/ui/BackToTop";
 import { siteConfig } from "@/config/site";
+import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import "./globals.css";
 
 const inter = Inter({
@@ -44,6 +45,10 @@ export const metadata: Metadata = {
     ],
     apple: "/icon.svg",
   },
+  metadataBase: new URL(siteConfig.url),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "en_IN",
@@ -67,6 +72,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body className="flex min-h-screen flex-col">
+        <OrganizationJsonLd />
+        <WebSiteJsonLd />
         <ScrollProgress />
         <Header />
         <main className="flex-1">{children}</main>

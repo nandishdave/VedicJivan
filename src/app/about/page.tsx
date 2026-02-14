@@ -22,6 +22,13 @@ export const metadata: Metadata = {
   title: "About Us",
   description:
     "Learn about VedicJivan's journey, philosophy, and mission to bring authentic Vedic astrology wisdom to seekers worldwide.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About Us | VedicJivan",
+    description:
+      "Learn about VedicJivan's journey, philosophy, and mission to bring authentic Vedic astrology wisdom to seekers worldwide.",
+    url: "/about",
+  },
 };
 
 export default function AboutPage() {

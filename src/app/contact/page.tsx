@@ -20,6 +20,13 @@ export const metadata: Metadata = {
   title: "Contact Us",
   description:
     "Get in touch with VedicJivan. Reach out for consultations, course queries, or any questions about our Vedic astrology services.",
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact Us | VedicJivan",
+    description:
+      "Get in touch with VedicJivan. Reach out for consultations, course queries, or any questions about our Vedic astrology services.",
+    url: "/contact",
+  },
 };
 
 export default function ContactPage() {

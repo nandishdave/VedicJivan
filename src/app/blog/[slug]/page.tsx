@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { blogPosts, getBlogPostBySlug, getRelatedPosts } from "@/data/blog";
+import { BlogPostJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 export function generateStaticParams() {
   return blogPosts.map((p) => ({ slug: p.slug }));
@@ -31,6 +32,17 @@ export function generateMetadata({
   return {
     title: post.title,
     description: post.excerpt,
+    alternates: {
+      canonical: `/blog/${params.slug}`,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      type: "article",
+      url: `/blog/${params.slug}`,
+      publishedTime: post.date,
+      authors: [post.author],
+    },
   };
 }
 
@@ -44,8 +56,25 @@ export default function BlogPostPage({
 
   const related = getRelatedPosts(params.slug);
 
+  const BASE_URL = "https://vedicjivan.nandishdave.world";
+
   return (
     <>
+      <BlogPostJsonLd
+        title={post.title}
+        excerpt={post.excerpt}
+        author={post.author}
+        date={post.date}
+        url={`${BASE_URL}/blog/${post.slug}`}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: BASE_URL },
+          { name: "Blog", url: `${BASE_URL}/blog` },
+          { name: post.title, url: `${BASE_URL}/blog/${post.slug}` },
+        ]}
+      />
+
       {/* ===== HEADER ===== */}
       <section className="relative overflow-hidden bg-dark-gradient py-16 sm:py-24">
         <div className="pointer-events-none absolute inset-0 opacity-10">

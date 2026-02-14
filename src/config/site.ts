@@ -3,7 +3,7 @@ export const siteConfig = {
   tagline: "Transform Your Life Through Vedic Wisdom",
   description:
     "VedicJivan offers authentic Vedic astrology consultations, personalized Kundli reports, numerology, Vastu guidance, and astrology courses. Book your consultation today.",
-  url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  url: process.env.NEXT_PUBLIC_APP_URL || "https://vedicjivan.nandishdave.world",
   ogImage: "/images/og/default.jpg",
   contact: {
     email: "contact@vedicjivan.com",

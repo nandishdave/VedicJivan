@@ -21,6 +21,13 @@ export const metadata: Metadata = {
   title: "Courses",
   description:
     "Learn Vedic astrology, numerology, and Vastu Shastra from expert instructors. Structured courses for beginners to advanced learners.",
+  alternates: { canonical: "/courses" },
+  openGraph: {
+    title: "Courses | VedicJivan",
+    description:
+      "Learn Vedic astrology, numerology, and Vastu Shastra from expert instructors. Structured courses for beginners to advanced learners.",
+    url: "/courses",
+  },
 };
 
 export default function CoursesPage() {
