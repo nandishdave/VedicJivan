@@ -24,6 +24,7 @@ export const mainNav: NavItem[] = [
   },
   { label: "Courses", href: "/courses" },
   { label: "Blog", href: "/blog" },
+  { label: "Videos", href: "/videos" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -44,7 +45,7 @@ export const footerNav = {
     { label: "Blog", href: "/blog" },
     { label: "Courses", href: "/courses" },
     { label: "Contact", href: "/contact" },
-    { label: "Podcast", href: "/podcast" },
+    { label: "Videos", href: "/videos" },
   ],
   legal: [
     { label: "Privacy Policy", href: "/privacy-policy" },
