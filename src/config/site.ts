@@ -20,7 +20,7 @@ export const siteConfig = {
     consultations: "50,000+",
     countries: "40+",
     experience: "15+",
-    awards: "10+",
+    services: "9+",
     students: "2,000+",
   },
 };

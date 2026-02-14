@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Award,
+  Briefcase,
   BookOpen,
   Globe,
   Heart,
@@ -267,7 +267,7 @@ const stats = [
     value: "15+",
     label: "Years Experience",
   },
-  { icon: <Award className="h-5 w-5" />, value: "10+", label: "Awards" },
+  { icon: <Briefcase className="h-5 w-5" />, value: "9+", label: "Services Offered" },
 ];
 
 const timeline = [
@@ -299,7 +299,7 @@ const timeline = [
     year: "2022",
     title: "50,000+ Consultations",
     description:
-      "Crossed the milestone of 50,000 consultations spanning 40+ countries. Received multiple awards for excellence in Vedic astrology.",
+      "Crossed the milestone of 50,000 consultations spanning 40+ countries, with an ever-expanding suite of Vedic services.",
   },
   {
     year: "2024",
@@ -341,7 +341,7 @@ const philosophies = [
       "Ancient wisdom, delivered through modern technology. Consult from anywhere via phone, video, or detailed written reports.",
   },
   {
-    icon: <Award className="h-6 w-6" />,
+    icon: <Briefcase className="h-6 w-6" />,
     title: "Continuous Learning",
     description:
       "Our astrologers are lifelong students of Jyotish, constantly studying, researching, and refining their knowledge and techniques.",
@@ -364,9 +364,9 @@ const credentials = [
       "A track record of helping tens of thousands of clients across the globe.",
   },
   {
-    title: "10+ Industry Awards",
+    title: "9+ Specialized Services",
     description:
-      "Recognized by leading astrology organizations for accuracy and service excellence.",
+      "A comprehensive suite of Vedic services including astrology, numerology, Vastu, healing, and coaching.",
   },
   {
     title: "Published Author",

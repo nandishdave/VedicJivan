@@ -6,7 +6,7 @@ import {
   Star,
   Users,
   Globe,
-  Award,
+  Briefcase,
   ArrowRight,
   Sparkles,
   CheckCircle2,
@@ -101,9 +101,9 @@ export default function HomePage() {
               </div>
               <div className="text-center">
                 <p className="font-heading text-3xl font-bold text-gold-400 sm:text-4xl">
-                  <AnimatedCounter end={10} suffix="+" />
+                  <AnimatedCounter end={9} suffix="+" />
                 </p>
-                <p className="mt-1 text-sm text-gray-400">Awards</p>
+                <p className="mt-1 text-sm text-gray-400">Services Offered</p>
               </div>
             </div>
           </AnimateOnScroll>
@@ -453,10 +453,10 @@ const wellnessServices = [
 
 const features = [
   {
-    icon: <Award className="h-7 w-7" />,
-    title: "Award-Winning Expertise",
+    icon: <Briefcase className="h-7 w-7" />,
+    title: "Comprehensive Services",
     description:
-      "Recognized with 10+ prestigious astrology awards for accuracy and authenticity.",
+      "9+ specialized services spanning astrology, numerology, Vastu, healing, and personal growth coaching.",
   },
   {
     icon: <Star className="h-7 w-7" />,
