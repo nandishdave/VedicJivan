@@ -19,7 +19,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install --frozen-lockfile || npm install
+        run: npm install
 
       - name: Build static site
         run: npm run build
