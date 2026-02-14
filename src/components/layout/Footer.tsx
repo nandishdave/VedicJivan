@@ -1,13 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Phone,
   Mail,
   MapPin,
   Instagram,
   Youtube,
   Facebook,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { Container } from "@/components/ui/Container";
 import { siteConfig } from "@/config/site";
 import { footerNav } from "@/config/navigation";
@@ -42,7 +42,7 @@ function Footer() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm transition-colors hover:text-gold-400"
                 >
-                  <Phone className="h-4 w-4 text-gold-500" />
+                  <WhatsAppIcon className="h-4 w-4 text-gold-500" />
                   {siteConfig.contact.phone}
                 </a>
                 <a

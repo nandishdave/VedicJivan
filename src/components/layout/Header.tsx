@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { Menu, X, ChevronDown, Phone, Instagram, Youtube, Facebook } from "lucide-react";
+import { Menu, X, ChevronDown, Instagram, Youtube, Facebook } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { cn } from "@/lib/utils/cn";
 import { mainNav, type NavItem } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
@@ -43,7 +44,7 @@ function Header() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 transition-colors hover:text-gold-400"
               >
-                <Phone className="h-3.5 w-3.5" />
+                <WhatsAppIcon className="h-3.5 w-3.5" />
                 {siteConfig.contact.phone}
               </a>
               <span className="text-gray-600">|</span>

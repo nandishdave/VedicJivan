@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Phone,
   Mail,
   MapPin,
   Clock,
@@ -12,6 +11,7 @@ import {
   Youtube,
   Facebook,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -148,7 +148,7 @@ export default function ContactPage() {
                         rel="noopener noreferrer"
                         className="flex items-start gap-3 text-gray-600 hover:text-primary-600"
                       >
-                        <Phone className="mt-0.5 h-5 w-5 shrink-0 text-primary-600" />
+                        <WhatsAppIcon className="mt-0.5 h-5 w-5 shrink-0 text-primary-600" />
                         <div>
                           <p className="font-semibold text-vedic-dark">WhatsApp</p>
                           <p className="text-sm">{siteConfig.contact.phone}</p>
