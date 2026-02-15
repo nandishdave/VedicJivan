@@ -1,6 +1,7 @@
 export interface NavItem {
   label: string;
   href: string;
+  external?: boolean;
   children?: NavItem[];
 }
 
@@ -23,12 +24,19 @@ export const mainNav: NavItem[] = [
     ],
   },
   { label: "Courses", href: "/courses" },
-  { label: "Blog", href: "/blog" },
+  {
+    label: "Blog",
+    href: "/blog",
+    children: [
+      { label: "Articles", href: "/blog" },
+      { label: "Nandish Dave Blog", href: "https://blog.nandishdave.world/vedicjivan/", external: true },
+    ],
+  },
   { label: "Videos", href: "/videos" },
   { label: "Contact", href: "/contact" },
 ];
 
-export const footerNav = {
+export const footerNav: Record<string, NavItem[]> = {
   services: [
     { label: "Call Consultation", href: "/services/call-consultation" },
     { label: "Video Consultation", href: "/services/video-consultation" },
@@ -43,6 +51,7 @@ export const footerNav = {
   company: [
     { label: "About Us", href: "/about" },
     { label: "Blog", href: "/blog" },
+    { label: "Nandish Dave Blog", href: "https://blog.nandishdave.world/vedicjivan/", external: true },
     { label: "Courses", href: "/courses" },
     { label: "Contact", href: "/contact" },
     { label: "Videos", href: "/videos" },

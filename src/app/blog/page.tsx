@@ -186,13 +186,26 @@ export default function BlogPage() {
                 While our blog offers general insights, a personal consultation
                 provides answers tailored specifically to your birth chart.
               </p>
-              <div className="mt-8">
+              <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link href="/services">
                   <Button variant="gold" size="lg">
                     Book a Consultation
                     <ArrowRight className="h-5 w-5" />
                   </Button>
                 </Link>
+                <a
+                  href="https://blog.nandishdave.world/vedicjivan/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="border-white/30 text-white hover:bg-white/10"
+                  >
+                    Read More on Nandish Dave Blog
+                  </Button>
+                </a>
               </div>
             </div>
           </AnimateOnScroll>

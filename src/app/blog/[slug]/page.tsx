@@ -384,6 +384,19 @@ export default function BlogPostPage({
                     More Articles
                   </Button>
                 </Link>
+                <a
+                  href="https://blog.nandishdave.world/vedicjivan/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="border-white/30 text-white hover:bg-white/10"
+                  >
+                    Nandish Dave Blog
+                  </Button>
+                </a>
               </div>
             </div>
           </AnimateOnScroll>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { Menu, X, ChevronDown, Instagram, Youtube, Facebook } from "lucide-react";
+import { Menu, X, ChevronDown, Instagram, Youtube, Facebook, ExternalLink } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { cn } from "@/lib/utils/cn";
 import { mainNav, type NavItem } from "@/config/navigation";
@@ -234,20 +234,33 @@ function NavLink({
               : "invisible -translate-y-2 opacity-0"
           )}
         >
-          {item.children!.map((child) => (
-            <Link
-              key={child.href}
-              href={child.href}
-              className={cn(
-                "block px-4 py-2.5 text-sm transition-colors",
-                pathname === child.href
-                  ? "bg-primary-50 text-primary-600"
-                  : "text-vedic-text hover:bg-primary-50 hover:text-primary-600"
-              )}
-            >
-              {child.label}
-            </Link>
-          ))}
+          {item.children!.map((child) =>
+            child.external ? (
+              <a
+                key={child.href}
+                href={child.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-vedic-text transition-colors hover:bg-primary-50 hover:text-primary-600"
+              >
+                {child.label}
+                <ExternalLink className="h-3 w-3 opacity-50" />
+              </a>
+            ) : (
+              <Link
+                key={child.href}
+                href={child.href}
+                className={cn(
+                  "block px-4 py-2.5 text-sm transition-colors",
+                  pathname === child.href
+                    ? "bg-primary-50 text-primary-600"
+                    : "text-vedic-text hover:bg-primary-50 hover:text-primary-600"
+                )}
+              >
+                {child.label}
+              </Link>
+            )
+          )}
         </div>
       </div>
     );
@@ -313,20 +326,33 @@ function MobileNavLink({
           )}
         >
           <div className="ml-4 space-y-1 border-l-2 border-primary-200 pl-4 pt-1">
-            {item.children!.map((child) => (
-              <Link
-                key={child.href}
-                href={child.href}
-                className={cn(
-                  "block rounded-lg px-3 py-2 text-sm transition-colors",
-                  pathname === child.href
-                    ? "text-primary-600 font-medium"
-                    : "text-gray-600 hover:text-primary-600"
-                )}
-              >
-                {child.label}
-              </Link>
-            ))}
+            {item.children!.map((child) =>
+              child.external ? (
+                <a
+                  key={child.href}
+                  href={child.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:text-primary-600"
+                >
+                  {child.label}
+                  <ExternalLink className="h-3 w-3 opacity-50" />
+                </a>
+              ) : (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  className={cn(
+                    "block rounded-lg px-3 py-2 text-sm transition-colors",
+                    pathname === child.href
+                      ? "text-primary-600 font-medium"
+                      : "text-gray-600 hover:text-primary-600"
+                  )}
+                >
+                  {child.label}
+                </Link>
+              )
+            )}
           </div>
         </div>
       </div>

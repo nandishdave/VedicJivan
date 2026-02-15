@@ -15,6 +15,7 @@ export const siteConfig = {
     instagram: "https://www.instagram.com/vedicjivan333",
     youtube: "https://www.youtube.com/@VedicJivan333",
     facebook: "https://www.facebook.com/groups/1625796561636761",
+    blog: "https://blog.nandishdave.world/vedicjivan/",
   },
   stats: {
     consultations: "50,000+",
@@ -41,5 +42,6 @@ export const navLinks = [
   },
   { label: "Courses", href: "/courses" },
   { label: "Blog", href: "/blog" },
+  { label: "Nandish Dave Blog", href: "https://blog.nandishdave.world/vedicjivan/" },
   { label: "Contact", href: "/contact" },
 ];
