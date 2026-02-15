@@ -159,10 +159,12 @@ export default function ServiceDetailPage({
                     {service.priceINR}
                   </p>
                   <p className="text-sm text-gray-400">{service.priceEUR}</p>
-                  <Button variant="gold" size="lg" className="mt-6 w-full">
-                    Book Now
-                    <ArrowRight className="h-5 w-5" />
-                  </Button>
+                  <Link href={`/book/${service.slug}`}>
+                    <Button variant="gold" size="lg" className="mt-6 w-full">
+                      Book Now
+                      <ArrowRight className="h-5 w-5" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -309,10 +311,12 @@ export default function ServiceDetailPage({
                 session today.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Button variant="gold" size="lg">
-                  Book Now — {service.priceINR}
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
+                <Link href={`/book/${service.slug}`}>
+                  <Button variant="gold" size="lg">
+                    Book Now — {service.priceINR}
+                    <ArrowRight className="h-5 w-5" />
+                  </Button>
+                </Link>
                 <Link href="/contact">
                   <Button
                     variant="outline"

@@ -48,6 +48,11 @@ Thumbs.db
 
 # local project files
 .local/
+
+# python
+__pycache__/
+*.py[cod]
+api/.env
 nul
 scripts/
 
