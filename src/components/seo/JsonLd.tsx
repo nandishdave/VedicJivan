@@ -147,6 +147,35 @@ export function CourseJsonLd({
   return <JsonLd data={data} />;
 }
 
+export function PersonJsonLd() {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Nandish Dave",
+    url: siteConfig.url,
+    jobTitle: "Vedic Astrologer & Numerologist",
+    worksFor: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      url: siteConfig.url,
+    },
+    sameAs: [
+      siteConfig.social.instagram,
+      siteConfig.social.youtube,
+      siteConfig.social.facebook,
+    ],
+    knowsAbout: [
+      "Vedic Astrology",
+      "Numerology",
+      "Vastu Shastra",
+      "Kundli Reading",
+      "Horoscope Analysis",
+    ],
+  };
+
+  return <JsonLd data={data} />;
+}
+
 export function BlogPostJsonLd({
   title,
   excerpt,
@@ -168,6 +197,7 @@ export function BlogPostJsonLd({
     author: {
       "@type": "Person",
       name: author,
+      url: siteConfig.url,
     },
     publisher: {
       "@type": "Organization",

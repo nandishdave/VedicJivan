@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { ScrollProgress } from "@/components/ui/ScrollProgress";
 import { BackToTop } from "@/components/ui/BackToTop";
 import { siteConfig } from "@/config/site";
-import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
+import { OrganizationJsonLd, WebSiteJsonLd, PersonJsonLd } from "@/components/seo/JsonLd";
 import { PageTransition } from "@/components/ui/PageTransition";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { WhatsAppFloat } from "@/components/ui/WhatsAppFloat";
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     "birth chart",
     "vedic wisdom",
   ],
-  authors: [{ name: siteConfig.name }],
+  authors: [{ name: "Nandish Dave", url: "https://vedicjivan.nandishdave.world" }],
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
@@ -78,6 +78,7 @@ export default function RootLayout({
         <GoogleAnalytics />
         <OrganizationJsonLd />
         <WebSiteJsonLd />
+        <PersonJsonLd />
         <ScrollProgress />
         <Header />
         <main className="flex-1">
