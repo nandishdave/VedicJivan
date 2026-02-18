@@ -37,7 +37,7 @@ variable "acm_certificate_arn" {
 # ── Backend Infrastructure ──
 
 variable "api_domain_name" {
-  description = "Custom domain for the API (ALB)"
+  description = "Custom domain for the API (API Gateway)"
   type        = string
   default     = "api.vedicjivan.nandishdave.world"
 }
@@ -70,4 +70,10 @@ variable "api_desired_count" {
   description = "Number of running API tasks"
   type        = number
   default     = 1
+}
+
+variable "alarm_email" {
+  description = "Email address for CloudWatch alarm notifications"
+  type        = string
+  default     = "vedic.jivan33@gmail.com"
 }

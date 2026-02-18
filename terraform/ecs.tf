@@ -97,10 +97,11 @@ resource "aws_ecs_service" "api" {
     assign_public_ip = true # Required for Fargate in public subnets (to pull ECR images and reach internet)
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.api.arn
-    container_name   = "${lower(var.project_name)}-api"
-    container_port   = var.api_container_port
+  # Service discovery registration (for API Gateway VPC Link)
+  service_registries {
+    registry_arn   = aws_service_discovery_service.api.arn
+    container_name = "${lower(var.project_name)}-api"
+    container_port = var.api_container_port
   }
 
   # Allow ECS to manage task placement during deployments
@@ -111,8 +112,6 @@ resource "aws_ecs_service" "api" {
   lifecycle {
     ignore_changes = [desired_count]
   }
-
-  depends_on = [aws_lb_listener.https]
 
   tags = {
     Project = var.project_name

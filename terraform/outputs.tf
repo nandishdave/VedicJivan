@@ -53,9 +53,9 @@ output "ecs_service_name" {
   value       = aws_ecs_service.api.name
 }
 
-output "alb_dns_name" {
-  description = "ALB DNS name"
-  value       = aws_lb.api.dns_name
+output "api_gateway_endpoint" {
+  description = "API Gateway endpoint URL"
+  value       = aws_apigatewayv2_api.api.api_endpoint
 }
 
 output "api_url" {
