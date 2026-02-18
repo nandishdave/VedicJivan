@@ -79,14 +79,14 @@ export default function RootLayout({
         <OrganizationJsonLd />
         <WebSiteJsonLd />
         <PersonJsonLd />
-        <ScrollProgress />
-        <Header />
+        <div className="site-scroll-progress"><ScrollProgress /></div>
+        <div className="site-header"><Header /></div>
         <main className="flex-1">
           <PageTransition>{children}</PageTransition>
         </main>
-        <Footer />
-        <BackToTop />
-        <WhatsAppFloat />
+        <div className="site-footer"><Footer /></div>
+        <div className="site-back-to-top"><BackToTop /></div>
+        <div className="site-whatsapp-float"><WhatsAppFloat /></div>
       </body>
     </html>
   );

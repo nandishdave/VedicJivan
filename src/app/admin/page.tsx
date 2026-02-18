@@ -4,16 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
+
   Calendar,
   CreditCard,
   Clock,
   Users,
   TrendingUp,
   Settings,
-  LogOut,
 } from "lucide-react";
-import { Container } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
 import { adminApi, authApi } from "@/lib/api";
 import { getToken, clearTokens } from "@/lib/auth";
 
@@ -71,15 +69,10 @@ export default function AdminDashboard() {
     fetchData();
   }, [router]);
 
-  const handleLogout = () => {
-    clearTokens();
-    router.push("/admin/login");
-  };
-
   if (loading) {
     return (
       <section className="min-h-screen bg-gray-50 py-12">
-        <Container>
+        <div className="mx-auto max-w-6xl px-6">
           <div className="animate-pulse space-y-6">
             <div className="h-8 w-48 rounded bg-gray-200" />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -88,7 +81,7 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
-        </Container>
+        </div>
       </section>
     );
   }
@@ -104,24 +97,13 @@ export default function AdminDashboard() {
 
   return (
     <section className="min-h-screen bg-gray-50 py-8">
-      <Container>
+      <div className="mx-auto max-w-6xl px-6">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-vedic-dark">
-              Admin Dashboard
-            </h1>
-            <p className="text-sm text-gray-500">Welcome back, {userName}</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/" className="text-sm text-gray-500 hover:text-primary-600">
-              View Site
-            </Link>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
+        <div className="mb-8">
+          <h1 className="font-heading text-2xl font-bold text-vedic-dark">
+            Dashboard
+          </h1>
+          <p className="text-sm text-gray-500">Welcome back, {userName}</p>
         </div>
 
         {/* Stats cards */}
@@ -242,7 +224,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
-      </Container>
+      </div>
     </section>
   );
 }

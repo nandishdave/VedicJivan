@@ -1,22 +1,26 @@
+name: vedicjivan
+
 services:
-  api:
+  vedicjivan-api:
     build: .
+    container_name: vedicjivan-api
     ports:
       - "8000:8000"
     env_file: .env
     depends_on:
-      - mongo
+      - vedicjivan-mongo
     volumes:
       - ./app:/app/app
     restart: unless-stopped
 
-  mongo:
+  vedicjivan-mongo:
     image: mongo:7
+    container_name: vedicjivan-mongo
     ports:
       - "27017:27017"
     volumes:
-      - mongo_data:/data/db
+      - vedicjivan_mongo_data:/data/db
     restart: unless-stopped
 
 volumes:
-  mongo_data:
+  vedicjivan_mongo_data:
