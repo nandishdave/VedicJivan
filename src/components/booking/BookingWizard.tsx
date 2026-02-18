@@ -201,15 +201,22 @@ export function BookingWizard({ service }: BookingWizardProps) {
         <p className="mt-2 text-gray-600">
           Thank you, {formData.name}. Your {service.title} has been booked successfully.
         </p>
-        {!isReport && (
-          <div className="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-700">
-            <p><strong>Date:</strong> {selectedDate}</p>
-            <p><strong>Time:</strong> {selectedSlot}</p>
-            <p><strong>Duration:</strong> {selectedDuration} minutes</p>
-          </div>
-        )}
+        <div className="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-700 space-y-1">
+          <p><strong>Booking ID:</strong> <span className="font-mono text-xs">{bookingId}</span></p>
+          {!isReport && (
+            <>
+              <p><strong>Date:</strong> {selectedDate}</p>
+              <p><strong>Time:</strong> {selectedSlot}</p>
+              <p><strong>Duration:</strong> {selectedDuration} minutes</p>
+            </>
+          )}
+          <p><strong>Amount Paid:</strong> {"\u20B9"}{price}</p>
+        </div>
         <p className="mt-4 text-sm text-gray-500">
-          A confirmation email has been sent to {formData.email}.
+          A confirmation email with meeting details has been sent to {formData.email}.
+        </p>
+        <p className="mt-1 text-xs text-gray-400">
+          Please save your Booking ID for reference.
         </p>
       </div>
     );

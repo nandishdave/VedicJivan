@@ -15,6 +15,10 @@ from app.models.payment import (
     PaymentStatus,
     PaymentVerify,
 )
+from app.services.email_service import (
+    send_admin_booking_notification,
+    send_booking_confirmation,
+)
 from app.utils.exceptions import BadRequestError, NotFoundError
 
 router = APIRouter(prefix="/api/payments", tags=["Payments"])
@@ -107,6 +111,37 @@ async def verify_payment(data: PaymentVerify):
             {"date": booking["date"], "slots.start": booking["time_slot"]},
             {"$set": {"slots.$.booked": True}},
         )
+
+        # Send confirmation email to customer
+        try:
+            await send_booking_confirmation(
+                to_email=booking["user_email"],
+                user_name=booking["user_name"],
+                service_title=booking["service_title"],
+                date=booking["date"],
+                time_slot=booking["time_slot"],
+                duration_minutes=booking["duration_minutes"],
+                price_inr=booking["price_inr"],
+                booking_id=data.booking_id,
+            )
+        except Exception as e:
+            print(f"[EMAIL ERROR] Customer confirmation: {e}")
+
+        # Send notification email to admin
+        try:
+            await send_admin_booking_notification(
+                user_name=booking["user_name"],
+                user_email=booking["user_email"],
+                user_phone=booking["user_phone"],
+                service_title=booking["service_title"],
+                date=booking["date"],
+                time_slot=booking["time_slot"],
+                duration_minutes=booking["duration_minutes"],
+                price_inr=booking["price_inr"],
+                booking_id=data.booking_id,
+            )
+        except Exception as e:
+            print(f"[EMAIL ERROR] Admin notification: {e}")
 
     return {"status": "success", "message": "Payment verified and booking confirmed"}
 

@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     # Email
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = "noreply@vedicjivan.com"
+    ADMIN_EMAIL: str = "vedic.jivan33@gmail.com"
 
     class Config:
         env_file = ".env"

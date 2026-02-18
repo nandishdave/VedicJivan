@@ -7,6 +7,7 @@ pydantic-settings==2.7.1
 python-jose[cryptography]==3.3.0
 bcrypt==4.2.1
 razorpay==1.4.2
+setuptools<71
 resend==2.21.0
 python-dotenv==1.0.1
 httpx==0.28.1
