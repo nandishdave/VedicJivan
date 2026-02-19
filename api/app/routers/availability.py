@@ -111,9 +111,19 @@ async def get_available_slots(
 
     # Generate slots only within business hours and filter
     all_slots = _generate_all_slots(day_config.open_time, day_config.close_time)
+
+    # If requested date is today, calculate current time to filter past slots
+    now = datetime.now()
+    is_today = requested_date == now.date()
+    now_minutes = now.hour * 60 + now.minute if is_today else 0
+
     available = []
 
     for slot in all_slots:
+        # Skip slots that have already started if date is today
+        if is_today and _time_to_minutes(slot["start"]) <= now_minutes:
+            continue
+
         blocked = False
 
         for u_start, u_end in unavailable:
