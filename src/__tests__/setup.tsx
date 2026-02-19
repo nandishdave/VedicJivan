@@ -58,6 +58,7 @@ vi.mock("framer-motion", () => {
 vi.mock("recharts", () => {
   const container = (name: string) => (props: Record<string, unknown>) =>
     React.createElement("div", { "data-testid": `chart-${name}` }, props.children as React.ReactNode);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const noop = (_name: string) => () => null;
 
   return {

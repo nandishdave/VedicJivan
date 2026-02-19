@@ -230,7 +230,7 @@ export default function AdminDashboard() {
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={30} />
                     <Tooltip
                       labelFormatter={(label) => formatShortDate(label as string)}
-                      formatter={(value: number) => [value, "Bookings"]}
+                      formatter={(value) => [Number(value), "Bookings"]}
                     />
                     <Bar dataKey="bookings" fill="#3b82f6" radius={[2, 2, 0, 0]} />
                   </BarChart>
@@ -267,7 +267,7 @@ export default function AdminDashboard() {
                     />
                     <Tooltip
                       labelFormatter={(label) => formatShortDate(label as string)}
-                      formatter={(value: number) => [`\u20B9${value.toLocaleString()}`, "Revenue"]}
+                      formatter={(value) => [`\u20B9${Number(value).toLocaleString()}`, "Revenue"]}
                     />
                     <Area
                       type="monotone"
@@ -309,7 +309,7 @@ export default function AdminDashboard() {
                           <Cell key={index} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number) => [value, "Bookings"]} />
+                      <Tooltip formatter={(value) => [Number(value), "Bookings"]} />
                       <Legend
                         verticalAlign="bottom"
                         height={36}
@@ -347,7 +347,7 @@ export default function AdminDashboard() {
                         tick={{ fontSize: 11 }}
                       />
                       <Tooltip
-                        formatter={(value: number) => [`\u20B9${value.toLocaleString()}`, "Revenue"]}
+                        formatter={(value) => [`\u20B9${Number(value).toLocaleString()}`, "Revenue"]}
                       />
                       <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
                         {stats.revenue_by_service.map((_, index) => (
