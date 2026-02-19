@@ -16,7 +16,7 @@ import { TimeSlotPicker } from "./TimeSlotPicker";
 import { DateOfBirthPicker } from "./DateOfBirthPicker";
 import { TimeOfBirthPicker } from "./TimeOfBirthPicker";
 import { PlaceOfBirthAutocomplete } from "./PlaceOfBirthAutocomplete";
-import { bookingsApi, paymentsApi } from "@/lib/api";
+import { bookingsApi, paymentsApi, availabilityApi } from "@/lib/api";
 import type { Service } from "@/data/services";
 
 interface BookingWizardProps {
@@ -61,6 +61,11 @@ const DURATION_OPTIONS: Record<string, { label: string; minutes: number }[]> = {
 // Reports don't need scheduling
 const REPORT_SERVICES = ["premium-kundli", "numerology-report", "matchmaking"];
 
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
 declare global {
   interface Window {
     Razorpay: new (options: Record<string, unknown>) => { open: () => void };
@@ -88,6 +93,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
     birthLatitude: 0,
     birthLongitude: 0,
   });
+  const [closeTime, setCloseTime] = useState(""); // "HH:MM" for selected day
   const [bookingId, setBookingId] = useState("");
   const [price, setPrice] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -284,6 +290,15 @@ export function BookingWizard({ service }: BookingWizardProps) {
               onDateSelect={(date) => {
                 setSelectedDate(date);
                 setSelectedSlot("");
+                setSelectedDuration(0);
+                // Fetch close time for this day
+                availabilityApi.getSettings().then((settings) => {
+                  const dayOfWeek = new Date(date + "T00:00:00").getDay();
+                  // JS getDay(): 0=Sun, 1=Mon ... 6=Sat → convert to Python: 0=Mon ... 6=Sun
+                  const pyDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                  const dayConfig = settings.weekly_hours.find((d) => d.day === pyDay);
+                  setCloseTime(dayConfig?.is_open ? dayConfig.close_time : "");
+                }).catch(() => setCloseTime(""));
               }}
             />
           </div>
@@ -298,7 +313,10 @@ export function BookingWizard({ service }: BookingWizardProps) {
             <TimeSlotPicker
               date={selectedDate}
               selectedSlot={selectedSlot}
-              onSlotSelect={setSelectedSlot}
+              onSlotSelect={(slot) => {
+                setSelectedSlot(slot);
+                setSelectedDuration(0);
+              }}
             />
           </div>
         )}
@@ -307,20 +325,33 @@ export function BookingWizard({ service }: BookingWizardProps) {
           <div>
             <h3 className="mb-4 font-heading text-xl font-bold">Select Duration</h3>
             <div className="grid gap-3 sm:grid-cols-3">
-              {durations.map((d) => (
-                <button
-                  key={d.minutes}
-                  onClick={() => setSelectedDuration(d.minutes)}
-                  className={`rounded-xl border-2 p-4 text-center transition-colors ${
-                    selectedDuration === d.minutes
-                      ? "border-primary-600 bg-primary-50"
-                      : "border-gray-200 hover:border-primary-300"
-                  }`}
-                >
-                  <Clock className="mx-auto mb-2 h-6 w-6 text-primary-600" />
-                  <p className="font-semibold">{d.label}</p>
-                </button>
-              ))}
+              {durations.map((d) => {
+                const slotEnd = selectedSlot && closeTime
+                  ? timeToMinutes(selectedSlot) + d.minutes
+                  : 0;
+                const exceeds = closeTime ? slotEnd > timeToMinutes(closeTime) : false;
+
+                return (
+                  <button
+                    key={d.minutes}
+                    onClick={() => !exceeds && setSelectedDuration(d.minutes)}
+                    disabled={exceeds}
+                    className={`rounded-xl border-2 p-4 text-center transition-colors ${
+                      exceeds
+                        ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-50"
+                        : selectedDuration === d.minutes
+                          ? "border-primary-600 bg-primary-50"
+                          : "border-gray-200 hover:border-primary-300"
+                    }`}
+                  >
+                    <Clock className={`mx-auto mb-2 h-6 w-6 ${exceeds ? "text-gray-400" : "text-primary-600"}`} />
+                    <p className="font-semibold">{d.label}</p>
+                    {exceeds && (
+                      <p className="mt-1 text-xs text-red-500">Exceeds business hours</p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
