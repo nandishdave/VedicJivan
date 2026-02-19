@@ -22,11 +22,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Reset Docker config and login to ECR
         id: ecr-login
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
+          # Clear any credential helpers that interfere with ECR push
+          mkdir -p ~/.docker
+          echo '{}' > ~/.docker/config.json
+
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
@@ -34,6 +38,7 @@ jobs:
 
       - name: Build and push Docker image
         env:
+          DOCKER_BUILDKIT: "0"
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
