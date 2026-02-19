@@ -7,10 +7,11 @@ import { availabilityApi, type AvailableSlot } from "@/lib/api";
 interface TimeSlotPickerProps {
   date: string;
   onSlotSelect: (slot: string) => void;
+  onSlotsLoaded?: (slots: AvailableSlot[]) => void;
   selectedSlot: string;
 }
 
-export function TimeSlotPicker({ date, onSlotSelect, selectedSlot }: TimeSlotPickerProps) {
+export function TimeSlotPicker({ date, onSlotSelect, onSlotsLoaded, selectedSlot }: TimeSlotPickerProps) {
   const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -22,14 +23,17 @@ export function TimeSlotPicker({ date, onSlotSelect, selectedSlot }: TimeSlotPic
       try {
         const data = await availabilityApi.getSlots(date);
         setSlots(data);
+        onSlotsLoaded?.(data);
       } catch {
         setSlots([]);
+        onSlotsLoaded?.([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchSlots();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
   if (loading) {

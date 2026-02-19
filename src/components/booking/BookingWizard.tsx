@@ -16,7 +16,7 @@ import { TimeSlotPicker } from "./TimeSlotPicker";
 import { DateOfBirthPicker } from "./DateOfBirthPicker";
 import { TimeOfBirthPicker } from "./TimeOfBirthPicker";
 import { PlaceOfBirthAutocomplete } from "./PlaceOfBirthAutocomplete";
-import { bookingsApi, paymentsApi, availabilityApi } from "@/lib/api";
+import { bookingsApi, paymentsApi, availabilityApi, type AvailableSlot } from "@/lib/api";
 import type { Service } from "@/data/services";
 
 interface BookingWizardProps {
@@ -93,6 +93,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
     birthLatitude: 0,
     birthLongitude: 0,
   });
+  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
   const [closeTime, setCloseTime] = useState(""); // "HH:MM" for selected day
   const [bookingId, setBookingId] = useState("");
   const [price, setPrice] = useState(0);
@@ -319,6 +320,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
             <TimeSlotPicker
               date={selectedDate}
               selectedSlot={selectedSlot}
+              onSlotsLoaded={setAvailableSlots}
               onSlotSelect={(slot) => {
                 setSelectedSlot(slot);
                 setSelectedDuration(0);
@@ -332,28 +334,50 @@ export function BookingWizard({ service }: BookingWizardProps) {
             <h3 className="mb-4 font-heading text-xl font-bold">Select Duration</h3>
             <div className="grid gap-3 sm:grid-cols-3">
               {durations.map((d) => {
-                const slotEnd = selectedSlot && closeTime
-                  ? timeToMinutes(selectedSlot) + d.minutes
-                  : 0;
+                const startMin = selectedSlot ? timeToMinutes(selectedSlot) : 0;
+                const slotEnd = startMin + d.minutes;
                 const exceeds = closeTime ? slotEnd > timeToMinutes(closeTime) : false;
+
+                // Check that all consecutive 30-min slots needed are available
+                const slotStarts = new Set(availableSlots.map((s) => s.start));
+                let hasConflict = false;
+                if (!exceeds && selectedSlot) {
+                  const slotsNeeded = Math.ceil(d.minutes / 30);
+                  for (let i = 0; i < slotsNeeded; i++) {
+                    const mins = startMin + i * 30;
+                    const hh = String(Math.floor(mins / 60)).padStart(2, "0");
+                    const mm = String(mins % 60).padStart(2, "0");
+                    if (!slotStarts.has(`${hh}:${mm}`)) {
+                      hasConflict = true;
+                      break;
+                    }
+                  }
+                }
+
+                const disabled = exceeds || hasConflict;
+                const reason = exceeds
+                  ? "Exceeds business hours"
+                  : hasConflict
+                    ? "Overlaps with an existing booking"
+                    : "";
 
                 return (
                   <button
                     key={d.minutes}
-                    onClick={() => !exceeds && setSelectedDuration(d.minutes)}
-                    disabled={exceeds}
+                    onClick={() => !disabled && setSelectedDuration(d.minutes)}
+                    disabled={disabled}
                     className={`rounded-xl border-2 p-4 text-center transition-colors ${
-                      exceeds
+                      disabled
                         ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-50"
                         : selectedDuration === d.minutes
                           ? "border-primary-600 bg-primary-50"
                           : "border-gray-200 hover:border-primary-300"
                     }`}
                   >
-                    <Clock className={`mx-auto mb-2 h-6 w-6 ${exceeds ? "text-gray-400" : "text-primary-600"}`} />
+                    <Clock className={`mx-auto mb-2 h-6 w-6 ${disabled ? "text-gray-400" : "text-primary-600"}`} />
                     <p className="font-semibold">{d.label}</p>
-                    {exceeds && (
-                      <p className="mt-1 text-xs text-red-500">Exceeds business hours</p>
+                    {reason && (
+                      <p className="mt-1 text-xs text-red-500">{reason}</p>
                     )}
                   </button>
                 );
