@@ -73,6 +73,18 @@ export interface Unavailability {
   reason: string;
 }
 
+export interface DayHours {
+  day: number; // 0=Mon, 1=Tue, ..., 6=Sun
+  is_open: boolean;
+  open_time: string; // "HH:MM"
+  close_time: string; // "HH:MM"
+}
+
+export interface BusinessHoursSettings {
+  timezone: string;
+  weekly_hours: DayHours[];
+}
+
 export const availabilityApi = {
   getSlots: (date: string) =>
     apiRequest<AvailableSlot[]>(`/api/availability/slots?date=${date}`),
@@ -107,6 +119,16 @@ export const availabilityApi = {
   removeUnavailable: (id: string, token: string) =>
     apiRequest<{ message: string }>(`/api/availability/unavailable/${id}`, {
       method: "DELETE",
+      token,
+    }),
+
+  getSettings: () =>
+    apiRequest<BusinessHoursSettings>("/api/availability/settings"),
+
+  updateSettings: (data: BusinessHoursSettings, token: string) =>
+    apiRequest<BusinessHoursSettings>("/api/availability/settings", {
+      method: "PUT",
+      body: data,
       token,
     }),
 };

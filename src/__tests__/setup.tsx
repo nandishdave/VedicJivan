@@ -85,6 +85,9 @@ vi.mock("lucide-react", () => {
     CalendarOff: icon("CalendarOff"),
     Trash2: icon("Trash2"),
     Plus: icon("Plus"),
+    // Settings page
+    Globe: icon("Globe"),
+    Save: icon("Save"),
     // Button
     Loader2: icon("Loader2"),
   };

@@ -1,3 +1,5 @@
+from datetime import date
+
 from bson import ObjectId
 from fastapi import APIRouter, Depends, Query
 
@@ -10,6 +12,7 @@ from app.models.booking import (
     BookingStatus,
     BookingStatusUpdate,
 )
+from app.services.settings import get_business_hours
 from app.utils.exceptions import BadRequestError, ForbiddenError, NotFoundError
 
 router = APIRouter(prefix="/api/bookings", tags=["Bookings"])
@@ -68,6 +71,22 @@ async def create_booking(data: BookingCreate):
     # Calculate booking time range
     booking_start = _time_to_minutes(data.time_slot)
     booking_end = booking_start + max(data.duration_minutes, 30)
+
+    # Check business hours for the day
+    bh_settings = await get_business_hours()
+    requested_date = date.fromisoformat(data.date)
+    day_of_week = requested_date.weekday()
+
+    day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)
+    if not day_config or not day_config.is_open:
+        raise BadRequestError("Bookings are not available on this day")
+
+    bh_open = _time_to_minutes(day_config.open_time)
+    bh_close = _time_to_minutes(day_config.close_time)
+    if booking_start < bh_open or booking_end > bh_close:
+        raise BadRequestError(
+            f"Booking must be within business hours ({day_config.open_time} - {day_config.close_time})"
+        )
 
     # Check against unavailable periods
     cursor = db.unavailability.find({"date": data.date, "is_holiday": False})

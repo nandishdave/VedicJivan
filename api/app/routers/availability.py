@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, Query
@@ -7,9 +7,12 @@ from app.database import get_db
 from app.dependencies import require_admin
 from app.models.availability import (
     AvailableSlot,
+    BusinessHoursResponse,
+    BusinessHoursSettings,
     UnavailabilityCreate,
     UnavailabilityResponse,
 )
+from app.services.settings import get_business_hours
 from app.utils.exceptions import BadRequestError, NotFoundError
 
 router = APIRouter(prefix="/api/availability", tags=["Availability"])
@@ -17,11 +20,18 @@ router = APIRouter(prefix="/api/availability", tags=["Availability"])
 SLOT_DURATION_MINUTES = 30
 
 
-def _generate_all_slots() -> list[dict]:
-    """Generate all 30-minute slots for a full day (00:00 - 23:30)."""
+def _generate_all_slots(
+    open_time: str = "00:00",
+    close_time: str = "24:00",
+) -> list[dict]:
+    """Generate 30-minute slots between open_time and close_time."""
     slots = []
-    current = datetime(2000, 1, 1, 0, 0)
-    end = datetime(2000, 1, 2, 0, 0)
+    oh, om = map(int, open_time.split(":"))
+    current = datetime(2000, 1, 1, oh, om)
+
+    ch, cm = map(int, close_time.split(":"))
+    end = datetime(2000, 1, 2, 0, 0) if (ch == 24 and cm == 0) else datetime(2000, 1, 1, ch, cm)
+
     delta = timedelta(minutes=SLOT_DURATION_MINUTES)
 
     while current + delta <= end:
@@ -61,18 +71,27 @@ def _doc_to_response(doc: dict) -> UnavailabilityResponse:
 
 @router.get("/slots", response_model=list[AvailableSlot])
 async def get_available_slots(
-    date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    date_str: str = Query(..., alias="date", pattern=r"^\d{4}-\d{2}-\d{2}$"),
 ):
-    """Get available 30-min slots for a date (all slots minus unavailable and booked)."""
+    """Get available 30-min slots for a date, respecting business hours."""
     db = get_db()
 
+    # Load business hours and determine day-of-week
+    bh_settings = await get_business_hours()
+    requested_date = date.fromisoformat(date_str)
+    day_of_week = requested_date.weekday()  # 0=Mon, 6=Sun
+
+    day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)
+    if not day_config or not day_config.is_open:
+        return []
+
     # Check if entire day is a holiday
-    holiday = await db.unavailability.find_one({"date": date, "is_holiday": True})
+    holiday = await db.unavailability.find_one({"date": date_str, "is_holiday": True})
     if holiday:
         return []
 
     # Get unavailable periods for the date
-    cursor = db.unavailability.find({"date": date, "is_holiday": False})
+    cursor = db.unavailability.find({"date": date_str, "is_holiday": False})
     unavailable = []
     async for doc in cursor:
         if doc.get("start_time") and doc.get("end_time"):
@@ -80,7 +99,7 @@ async def get_available_slots(
 
     # Get confirmed bookings for the date
     booking_cursor = db.bookings.find({
-        "date": date,
+        "date": date_str,
         "status": {"$in": ["pending", "confirmed"]},
     })
     booked = []
@@ -90,21 +109,19 @@ async def get_available_slots(
         hours, mins = divmod(end_min, 60)
         booked.append((b["time_slot"], f"{hours:02d}:{mins:02d}"))
 
-    # Generate all slots and filter
-    all_slots = _generate_all_slots()
+    # Generate slots only within business hours and filter
+    all_slots = _generate_all_slots(day_config.open_time, day_config.close_time)
     available = []
 
     for slot in all_slots:
         blocked = False
 
-        # Check against unavailable periods
         for u_start, u_end in unavailable:
             if _overlaps(slot["start"], slot["end"], u_start, u_end):
                 blocked = True
                 break
 
         if not blocked:
-            # Check against existing bookings
             for b_start, b_end in booked:
                 if _overlaps(slot["start"], slot["end"], b_start, b_end):
                     blocked = True
@@ -213,3 +230,35 @@ async def remove_unavailability(
     if result.deleted_count == 0:
         raise NotFoundError("Unavailability block not found")
     return {"message": "Removed"}
+
+
+# ── Business Hours Settings ──
+
+
+@router.get("/settings", response_model=BusinessHoursResponse)
+async def get_business_hours_settings():
+    """Get business hours configuration (public)."""
+    settings = await get_business_hours()
+    return BusinessHoursResponse(
+        timezone=settings.timezone,
+        weekly_hours=settings.weekly_hours,
+    )
+
+
+@router.put("/settings", response_model=BusinessHoursResponse)
+async def update_business_hours_settings(
+    data: BusinessHoursSettings,
+    _admin: dict = Depends(require_admin),
+):
+    """Update business hours configuration (admin only)."""
+    db = get_db()
+    doc = {
+        "_id": "business_hours",
+        "timezone": data.timezone,
+        "weekly_hours": [dh.model_dump() for dh in data.weekly_hours],
+    }
+    await db.settings.replace_one({"_id": "business_hours"}, doc, upsert=True)
+    return BusinessHoursResponse(
+        timezone=data.timezone,
+        weekly_hours=data.weekly_hours,
+    )

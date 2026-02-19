@@ -18,7 +18,7 @@ from tests.conftest import MockAggregationCursor, MockCursor
 # ═══════════════════════════════════════
 
 
-def test_generate_all_slots_count():
+def test_generate_all_slots_full_day():
     assert len(_generate_all_slots()) == 48
 
 
@@ -30,6 +30,20 @@ def test_generate_all_slots_first_slot():
 def test_generate_all_slots_last_slot():
     slots = _generate_all_slots()
     assert slots[-1] == {"start": "23:30", "end": "00:00"}
+
+
+def test_generate_all_slots_business_hours():
+    slots = _generate_all_slots("10:00", "18:00")
+    assert len(slots) == 16
+    assert slots[0] == {"start": "10:00", "end": "10:30"}
+    assert slots[-1] == {"start": "17:30", "end": "18:00"}
+
+
+def test_generate_all_slots_short_window():
+    slots = _generate_all_slots("14:00", "15:00")
+    assert len(slots) == 2
+    assert slots[0] == {"start": "14:00", "end": "14:30"}
+    assert slots[1] == {"start": "14:30", "end": "15:00"}
 
 
 def test_time_to_minutes_midnight():
@@ -74,23 +88,35 @@ def test_overlaps_reverse_containment():
 
 
 async def test_get_available_slots_no_blocks(client, mock_db):
-    """With no unavailability and no bookings, all 48 slots returned."""
+    """With default hours (10:00-18:00) on a Monday, 16 slots returned."""
     mock_db.unavailability.find_one = AsyncMock(return_value=None)
     mock_db.unavailability.find = MagicMock(return_value=MockCursor([]))
     mock_db.bookings.find = MagicMock(return_value=MockCursor([]))
 
+    # 2026-03-16 is a Monday
+    resp = await client.get("/api/availability/slots?date=2026-03-16")
+    assert resp.status_code == 200
+    slots = resp.json()
+    assert len(slots) == 16
+    assert slots[0]["start"] == "10:00"
+    assert slots[-1]["start"] == "17:30"
+
+
+async def test_get_available_slots_sunday_closed(client, mock_db):
+    """Sunday is closed by default, should return empty."""
+    # 2026-03-15 is a Sunday
     resp = await client.get("/api/availability/slots?date=2026-03-15")
     assert resp.status_code == 200
-    assert len(resp.json()) == 48
+    assert resp.json() == []
 
 
 async def test_get_available_slots_holiday(client, mock_db):
     """If the date is a holiday, return empty list."""
     mock_db.unavailability.find_one = AsyncMock(
-        return_value={"_id": ObjectId(), "date": "2026-03-15", "is_holiday": True}
+        return_value={"_id": ObjectId(), "date": "2026-03-16", "is_holiday": True}
     )
 
-    resp = await client.get("/api/availability/slots?date=2026-03-15")
+    resp = await client.get("/api/availability/slots?date=2026-03-16")
     assert resp.status_code == 200
     assert resp.json() == []
 
@@ -105,7 +131,7 @@ async def test_get_available_slots_with_unavailable_block(client, mock_db):
     )
     mock_db.bookings.find = MagicMock(return_value=MockCursor([]))
 
-    resp = await client.get("/api/availability/slots?date=2026-03-15")
+    resp = await client.get("/api/availability/slots?date=2026-03-16")
     assert resp.status_code == 200
     slots = resp.json()
     start_times = [s["start"] for s in slots]
@@ -114,7 +140,6 @@ async def test_get_available_slots_with_unavailable_block(client, mock_db):
     assert "10:30" not in start_times
     assert "11:00" not in start_times
     assert "11:30" not in start_times
-    assert "09:30" in start_times
     assert "12:00" in start_times
 
 
@@ -128,7 +153,7 @@ async def test_get_available_slots_with_booking(client, mock_db):
         ])
     )
 
-    resp = await client.get("/api/availability/slots?date=2026-03-15")
+    resp = await client.get("/api/availability/slots?date=2026-03-16")
     assert resp.status_code == 200
     slots = resp.json()
     start_times = [s["start"] for s in slots]
@@ -292,3 +317,86 @@ async def test_remove_unavailability_requires_admin(client, mock_db, user_token)
         headers={"Authorization": f"Bearer {user_token}"},
     )
     assert resp.status_code == 403
+
+
+# ═══════════════════════════════════════
+# Business Hours Settings endpoint tests
+# ═══════════════════════════════════════
+
+
+async def test_get_settings_returns_defaults(client, mock_db):
+    """When no settings doc exists, return defaults."""
+    resp = await client.get("/api/availability/settings")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["timezone"] == "Asia/Kolkata"
+    assert len(data["weekly_hours"]) == 7
+    assert data["weekly_hours"][6]["is_open"] is False  # Sunday
+
+
+async def test_get_settings_returns_stored(client, mock_db):
+    """When settings doc exists, return stored values."""
+    mock_db.settings.find_one = AsyncMock(return_value={
+        "_id": "business_hours",
+        "timezone": "America/New_York",
+        "weekly_hours": [
+            {"day": i, "is_open": i < 5, "open_time": "09:00", "close_time": "17:00"}
+            for i in range(7)
+        ],
+    })
+
+    resp = await client.get("/api/availability/settings")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["timezone"] == "America/New_York"
+    assert data["weekly_hours"][5]["is_open"] is False  # Saturday
+
+
+async def test_update_settings_success(client, mock_db, admin_token):
+    payload = {
+        "timezone": "Asia/Kolkata",
+        "weekly_hours": [
+            {"day": i, "is_open": i < 6, "open_time": "10:00", "close_time": "18:00"}
+            for i in range(7)
+        ],
+    }
+    resp = await client.put(
+        "/api/availability/settings",
+        json=payload,
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["timezone"] == "Asia/Kolkata"
+    mock_db.settings.replace_one.assert_called_once()
+
+
+async def test_update_settings_requires_admin(client, mock_db, user_token):
+    payload = {
+        "timezone": "Asia/Kolkata",
+        "weekly_hours": [
+            {"day": i, "is_open": True, "open_time": "10:00", "close_time": "18:00"}
+            for i in range(7)
+        ],
+    }
+    resp = await client.put(
+        "/api/availability/settings",
+        json=payload,
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert resp.status_code == 403
+
+
+async def test_update_settings_invalid_timezone(client, mock_db, admin_token):
+    payload = {
+        "timezone": "Invalid/Timezone",
+        "weekly_hours": [
+            {"day": i, "is_open": True, "open_time": "10:00", "close_time": "18:00"}
+            for i in range(7)
+        ],
+    }
+    resp = await client.put(
+        "/api/availability/settings",
+        json=payload,
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 422

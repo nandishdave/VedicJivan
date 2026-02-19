@@ -4,16 +4,18 @@ import userEvent from "@testing-library/user-event";
 import { BookingWizard } from "@/components/booking/BookingWizard";
 import type { Service } from "@/data/services";
 
-const { mockCreate, mockGetHolidays, mockGetSlots } = vi.hoisted(() => ({
+const { mockCreate, mockGetHolidays, mockGetSlots, mockGetSettings } = vi.hoisted(() => ({
   mockCreate: vi.fn(),
   mockGetHolidays: vi.fn(),
   mockGetSlots: vi.fn(),
+  mockGetSettings: vi.fn(),
 }));
 
 vi.mock("@/lib/api", () => ({
   availabilityApi: {
     getHolidays: mockGetHolidays,
     getSlots: mockGetSlots,
+    getSettings: mockGetSettings,
   },
   bookingsApi: {
     create: mockCreate,
@@ -66,6 +68,18 @@ describe("BookingWizard", () => {
     vi.clearAllMocks();
     cleanup();
     mockGetHolidays.mockResolvedValue([]);
+    mockGetSettings.mockResolvedValue({
+      timezone: "Asia/Kolkata",
+      weekly_hours: [
+        { day: 0, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 1, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 2, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 3, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 4, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 5, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 6, is_open: false, open_time: "10:00", close_time: "18:00" },
+      ],
+    });
     mockGetSlots.mockResolvedValue([
       { start: "09:00", end: "09:30" },
       { start: "10:00", end: "10:30" },

@@ -66,7 +66,7 @@ def test_overlaps_contained():
 _VALID_BOOKING_DATA = {
     "service_slug": "call-consultation",
     "service_title": "Call Consultation",
-    "date": "2026-03-15",
+    "date": "2026-03-16",  # Monday
     "time_slot": "10:00",
     "duration_minutes": 30,
     "user_name": "John Doe",
@@ -101,7 +101,7 @@ async def test_create_booking_success(client, mock_db):
 
 async def test_create_booking_holiday(client, mock_db):
     mock_db.unavailability.find_one = AsyncMock(
-        return_value={"_id": ObjectId(), "date": "2026-03-15", "is_holiday": True}
+        return_value={"_id": ObjectId(), "date": "2026-03-16", "is_holiday": True}
     )
 
     resp = await client.post("/api/bookings", json=_VALID_BOOKING_DATA)
@@ -292,3 +292,30 @@ async def test_update_status_requires_admin(client, mock_db, user_token, sample_
         headers={"Authorization": f"Bearer {user_token}"},
     )
     assert resp.status_code == 403
+
+
+# ═══════════════════════════════════════
+# Business hours validation tests
+# ═══════════════════════════════════════
+
+
+async def test_create_booking_closed_day(client, mock_db):
+    """Booking on a closed day (Sunday with defaults) should fail."""
+    mock_db.unavailability.find_one = AsyncMock(return_value=None)
+
+    data = {**_VALID_BOOKING_DATA, "date": "2026-03-15"}  # Sunday
+    resp = await client.post("/api/bookings", json=data)
+    assert resp.status_code == 400
+    assert "not available on this day" in resp.json()["detail"].lower()
+
+
+async def test_create_booking_outside_business_hours(client, mock_db):
+    """Booking outside business hours should fail."""
+    mock_db.unavailability.find_one = AsyncMock(return_value=None)
+    mock_db.unavailability.find = MagicMock(return_value=MockCursor([]))
+    mock_db.bookings.find = MagicMock(return_value=MockCursor([]))
+
+    data = {**_VALID_BOOKING_DATA, "time_slot": "08:00"}  # Before 10:00
+    resp = await client.post("/api/bookings", json=data)
+    assert resp.status_code == 400
+    assert "business hours" in resp.json()["detail"].lower()

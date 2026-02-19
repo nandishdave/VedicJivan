@@ -6,6 +6,18 @@ import { BookingCalendar } from "@/components/booking/BookingCalendar";
 vi.mock("@/lib/api", () => ({
   availabilityApi: {
     getHolidays: vi.fn().mockResolvedValue([]),
+    getSettings: vi.fn().mockResolvedValue({
+      timezone: "Asia/Kolkata",
+      weekly_hours: [
+        { day: 0, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 1, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 2, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 3, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 4, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 5, is_open: true, open_time: "10:00", close_time: "18:00" },
+        { day: 6, is_open: false, open_time: "10:00", close_time: "18:00" },
+      ],
+    }),
   },
 }));
 
@@ -85,6 +97,7 @@ describe("BookingCalendar", () => {
     await waitFor(() => {
       expect(screen.getAllByText("Available").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("Holiday").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Closed").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("Past").length).toBeGreaterThanOrEqual(1);
     });
   });

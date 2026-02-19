@@ -99,7 +99,7 @@ def sample_booking_doc():
         "user_phone": "1234567890",
         "service_slug": "call-consultation",
         "service_title": "Call Consultation",
-        "date": "2026-03-15",
+        "date": "2026-03-16",
         "time_slot": "10:00",
         "duration_minutes": 30,
         "price_inr": 1999,
@@ -120,6 +120,7 @@ def _make_mock_collection():
     col.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
     col.update_one = AsyncMock(return_value=MagicMock(modified_count=1))
     col.delete_one = AsyncMock(return_value=MagicMock(deleted_count=1))
+    col.replace_one = AsyncMock(return_value=MagicMock(modified_count=1))
     col.count_documents = AsyncMock(return_value=0)
     col.find = MagicMock(return_value=MockCursor([]))
     col.aggregate = MagicMock(return_value=MockAggregationCursor([]))
@@ -135,6 +136,7 @@ def mock_db():
     db.payments = _make_mock_collection()
     db.unavailability = _make_mock_collection()
     db.availability = _make_mock_collection()
+    db.settings = _make_mock_collection()
 
     with patch("app.database.db", db), patch("app.database.get_db", return_value=db):
         yield db

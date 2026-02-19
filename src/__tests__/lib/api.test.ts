@@ -210,6 +210,34 @@ describe("availabilityApi", () => {
       })
     );
   });
+
+  it("getSettings calls GET /api/availability/settings", async () => {
+    await availabilityApi.getSettings();
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/availability/settings"),
+      expect.objectContaining({ method: "GET" })
+    );
+  });
+
+  it("updateSettings calls PUT with token", async () => {
+    const settings = {
+      timezone: "Asia/Kolkata",
+      weekly_hours: Array.from({ length: 7 }, (_, i) => ({
+        day: i,
+        is_open: true,
+        open_time: "10:00",
+        close_time: "18:00",
+      })),
+    };
+    await availabilityApi.updateSettings(settings, "admin-token");
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/availability/settings"),
+      expect.objectContaining({
+        method: "PUT",
+        headers: expect.objectContaining({ Authorization: "Bearer admin-token" }),
+      })
+    );
+  });
 });
 
 describe("bookingsApi", () => {

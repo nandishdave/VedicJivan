@@ -12,7 +12,23 @@ interface BookingCalendarProps {
 export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [holidays, setHolidays] = useState<Set<string>>(new Set());
+  const [closedDays, setClosedDays] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
+
+  // Fetch closed days from business hours settings (once)
+  useEffect(() => {
+    availabilityApi
+      .getSettings()
+      .then((settings) => {
+        const closed = new Set(
+          settings.weekly_hours
+            .filter((d) => !d.is_open)
+            .map((d) => (d.day + 1) % 7) // Convert Mon=0 to JS Sun=0 convention
+        );
+        setClosedDays(closed);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -57,7 +73,8 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
     const date = new Date(year, month, day);
     const isPast = date < today;
     const isHoliday = holidays.has(dateStr);
-    const isAvailable = !isPast && !isHoliday;
+    const isClosed = closedDays.has(date.getDay());
+    const isAvailable = !isPast && !isHoliday && !isClosed;
     const isSelected = dateStr === selectedDate;
 
     days.push(
@@ -70,6 +87,7 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
           ${isSelected ? "bg-primary-600 text-white" : ""}
           ${!isSelected && isAvailable ? "bg-green-50 text-green-700 hover:bg-green-100" : ""}
           ${isHoliday && !isPast ? "bg-red-50 text-red-400 cursor-not-allowed" : ""}
+          ${isClosed && !isPast && !isHoliday ? "text-gray-400 cursor-not-allowed" : ""}
           ${isPast ? "text-gray-300 cursor-not-allowed" : ""}
         `}
       >
@@ -106,12 +124,15 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
           : days}
       </div>
 
-      <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded bg-green-50 border border-green-200" /> Available
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded bg-red-50 border border-red-200" /> Holiday
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-3 w-3 rounded border border-gray-300" /> Closed
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded bg-gray-100" /> Past

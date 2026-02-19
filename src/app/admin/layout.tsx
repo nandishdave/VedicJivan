@@ -8,6 +8,7 @@ import {
   Calendar,
   Clock,
   CreditCard,
+  Settings,
   LogOut,
   ExternalLink,
 } from "lucide-react";
@@ -19,6 +20,7 @@ const adminNav = [
   { label: "Bookings", href: "/admin/bookings", icon: Calendar },
   { label: "Availability", href: "/admin/availability", icon: Clock },
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 const hideChrome = `.site-header, .site-footer, .site-whatsapp-float, .site-back-to-top, .site-scroll-progress { display: none !important; }`;

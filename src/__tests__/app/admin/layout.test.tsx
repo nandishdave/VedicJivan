@@ -70,6 +70,7 @@ describe("AdminLayout", () => {
       expect(screen.getAllByText("Bookings").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("Availability").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("Payments").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Settings").length).toBeGreaterThanOrEqual(1);
     });
   });
 
