@@ -131,6 +131,12 @@ export function BookingWizard({ service }: BookingWizardProps) {
   };
 
   const handleCreateBooking = async () => {
+    // If booking was already created (user came back from payment), skip to payment
+    if (bookingId) {
+      setStep("payment");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -539,6 +545,14 @@ export function BookingWizard({ service }: BookingWizardProps) {
             <p className="mt-4 text-xs text-gray-400">
               Secured by Razorpay. Supports UPI, Cards, Wallets & Netbanking.
             </p>
+            <button
+              type="button"
+              onClick={() => setStep("review")}
+              className="mt-4 inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-800 underline"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Go back & edit details
+            </button>
           </div>
         )}
       </div>
