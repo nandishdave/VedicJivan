@@ -13,6 +13,9 @@ import {
 import { Button } from "@/components/ui/Button";
 import { BookingCalendar } from "./BookingCalendar";
 import { TimeSlotPicker } from "./TimeSlotPicker";
+import { DateOfBirthPicker } from "./DateOfBirthPicker";
+import { TimeOfBirthPicker } from "./TimeOfBirthPicker";
+import { PlaceOfBirthAutocomplete } from "./PlaceOfBirthAutocomplete";
 import { bookingsApi, paymentsApi } from "@/lib/api";
 import type { Service } from "@/data/services";
 
@@ -76,6 +79,14 @@ export function BookingWizard({ service }: BookingWizardProps) {
     email: "",
     phone: "",
     notes: "",
+    dateOfBirth: "",
+    birthTimeHour: "12",
+    birthTimeMinute: "00",
+    birthTimePeriod: "AM" as "AM" | "PM",
+    birthTimeUnknown: false,
+    placeOfBirth: "",
+    birthLatitude: 0,
+    birthLongitude: 0,
   });
   const [bookingId, setBookingId] = useState("");
   const [price, setPrice] = useState(0);
@@ -128,6 +139,14 @@ export function BookingWizard({ service }: BookingWizardProps) {
         user_email: formData.email,
         user_phone: formData.phone,
         notes: formData.notes,
+        date_of_birth: formData.dateOfBirth,
+        time_of_birth: formData.birthTimeUnknown
+          ? null
+          : `${formData.birthTimeHour}:${formData.birthTimeMinute} ${formData.birthTimePeriod}`,
+        birth_time_unknown: formData.birthTimeUnknown,
+        place_of_birth: formData.placeOfBirth,
+        birth_latitude: formData.birthLatitude,
+        birth_longitude: formData.birthLongitude,
       });
 
       setBookingId(booking.id);
@@ -341,13 +360,63 @@ export function BookingWizard({ service }: BookingWizardProps) {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Notes (optional)</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Notes *</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                  placeholder="Any specific questions or topics you'd like to discuss?"
+                  placeholder="Please describe what you'd like to discuss or need help with"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">Date of Birth *</label>
+                <DateOfBirthPicker
+                  selectedDate={formData.dateOfBirth}
+                  onDateSelect={(date) => setFormData({ ...formData, dateOfBirth: date })}
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">Time of Birth</label>
+                <TimeOfBirthPicker
+                  value={
+                    formData.birthTimeUnknown
+                      ? null
+                      : {
+                          hour: formData.birthTimeHour,
+                          minute: formData.birthTimeMinute,
+                          period: formData.birthTimePeriod,
+                        }
+                  }
+                  isUnknown={formData.birthTimeUnknown}
+                  onTimeChange={(time) =>
+                    setFormData({
+                      ...formData,
+                      birthTimeHour: time.hour,
+                      birthTimeMinute: time.minute,
+                      birthTimePeriod: time.period,
+                    })
+                  }
+                  onUnknownChange={(unknown) =>
+                    setFormData({ ...formData, birthTimeUnknown: unknown })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">Place of Birth *</label>
+                <PlaceOfBirthAutocomplete
+                  value={formData.placeOfBirth}
+                  onPlaceSelect={(place) =>
+                    setFormData({
+                      ...formData,
+                      placeOfBirth: place.name,
+                      birthLatitude: place.latitude,
+                      birthLongitude: place.longitude,
+                    })
+                  }
                 />
               </div>
             </div>
@@ -389,6 +458,28 @@ export function BookingWizard({ service }: BookingWizardProps) {
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Phone</span>
                 <span className="font-medium">{formData.phone}</span>
+              </div>
+              {formData.notes && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Notes</span>
+                  <span className="font-medium max-w-[60%] text-right">{formData.notes}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Date of Birth</span>
+                <span className="font-medium">{formData.dateOfBirth}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Time of Birth</span>
+                <span className="font-medium">
+                  {formData.birthTimeUnknown
+                    ? "Unknown"
+                    : `${formData.birthTimeHour}:${formData.birthTimeMinute} ${formData.birthTimePeriod}`}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Place of Birth</span>
+                <span className="font-medium max-w-[60%] text-right">{formData.placeOfBirth}</span>
               </div>
               <hr className="border-gray-200" />
               <div className="flex justify-between text-base font-bold">
@@ -450,7 +541,13 @@ export function BookingWizard({ service }: BookingWizardProps) {
                 (step === "date" && !selectedDate) ||
                 (step === "time" && !selectedSlot) ||
                 (step === "duration" && !selectedDuration) ||
-                (step === "details" && (!formData.name || !formData.email || !formData.phone))
+                (step === "details" &&
+                  (!formData.name ||
+                    !formData.email ||
+                    !formData.phone ||
+                    !formData.notes ||
+                    !formData.dateOfBirth ||
+                    !formData.placeOfBirth))
               }
             >
               Next

@@ -119,6 +119,12 @@ async def create_booking(data: BookingCreate):
         duration_minutes=data.duration_minutes,
         price_inr=price,
         notes=data.notes,
+        date_of_birth=data.date_of_birth,
+        time_of_birth=data.time_of_birth,
+        birth_time_unknown=data.birth_time_unknown,
+        place_of_birth=data.place_of_birth,
+        birth_latitude=data.birth_latitude,
+        birth_longitude=data.birth_longitude,
     )
 
     result = await db.bookings.insert_one(booking.model_dump())
@@ -221,4 +227,10 @@ def _to_response(doc: dict) -> BookingResponse:
         payment_id=doc.get("payment_id"),
         notes=doc.get("notes", ""),
         created_at=doc["created_at"],
+        date_of_birth=doc.get("date_of_birth", ""),
+        time_of_birth=doc.get("time_of_birth"),
+        birth_time_unknown=doc.get("birth_time_unknown", False),
+        place_of_birth=doc.get("place_of_birth", ""),
+        birth_latitude=doc.get("birth_latitude", 0.0),
+        birth_longitude=doc.get("birth_longitude", 0.0),
     )

@@ -105,8 +105,14 @@ def sample_booking_doc():
         "price_inr": 1999,
         "status": "pending",
         "payment_id": None,
-        "notes": "",
+        "notes": "Test notes",
         "created_at": datetime.now(timezone.utc),
+        "date_of_birth": "1990-05-15",
+        "time_of_birth": "08:30 AM",
+        "birth_time_unknown": False,
+        "place_of_birth": "Mumbai, India",
+        "birth_latitude": 19.076,
+        "birth_longitude": 72.8777,
     }
 
 

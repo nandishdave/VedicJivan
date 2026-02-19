@@ -93,5 +93,10 @@ vi.mock("lucide-react", () => {
     X: icon("X"),
     // Button
     Loader2: icon("Loader2"),
+    // PlaceOfBirthAutocomplete
+    MapPin: icon("MapPin"),
+    // Login page
+    Eye: icon("Eye"),
+    EyeOff: icon("EyeOff"),
   };
 });

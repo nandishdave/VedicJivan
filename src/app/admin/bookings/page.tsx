@@ -131,6 +131,14 @@ export default function BookingsPage() {
                     <span>{booking.date} at {booking.time_slot} &middot; {booking.duration_minutes}m</span>
                     <span className="font-medium text-gray-700">{"\u20B9"}{booking.price_inr}</span>
                   </div>
+                  {booking.date_of_birth && (
+                    <div className="mt-1 text-[var(--text-sm)] text-gray-500">
+                      <span>DOB: {booking.date_of_birth}</span>
+                      {booking.place_of_birth && (
+                        <span> &middot; Born: {booking.place_of_birth}</span>
+                      )}
+                    </div>
+                  )}
                   <div className="mt-2">{actionButtons(booking)}</div>
                 </div>
               ))}
@@ -151,6 +159,8 @@ export default function BookingsPage() {
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Date</th>
                     <th className="hidden px-[var(--space-md)] py-[var(--space-sm)] md:table-cell">Time</th>
                     <th className="hidden px-[var(--space-md)] py-[var(--space-sm)] lg:table-cell">Duration</th>
+                    <th className="hidden px-[var(--space-md)] py-[var(--space-sm)] xl:table-cell">DOB</th>
+                    <th className="hidden px-[var(--space-md)] py-[var(--space-sm)] xl:table-cell">Birth Place</th>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Amount</th>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Status</th>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Actions</th>
@@ -167,6 +177,8 @@ export default function BookingsPage() {
                       <td className="px-[var(--space-md)] py-[var(--space-sm)] whitespace-nowrap">{booking.date}</td>
                       <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] md:table-cell">{booking.time_slot}</td>
                       <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] lg:table-cell">{booking.duration_minutes}m</td>
+                      <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] xl:table-cell whitespace-nowrap">{booking.date_of_birth || "—"}</td>
+                      <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] xl:table-cell max-w-[200px] truncate">{booking.place_of_birth || "—"}</td>
                       <td className="px-[var(--space-md)] py-[var(--space-sm)]">{"\u20B9"}{booking.price_inr}</td>
                       <td className="px-[var(--space-md)] py-[var(--space-sm)]">
                         <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[booking.status] || ""}`}>
@@ -178,7 +190,7 @@ export default function BookingsPage() {
                   ))}
                   {bookings.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="px-[var(--space-md)] py-[var(--space-lg)] text-center text-gray-400">
+                      <td colSpan={10} className="px-[var(--space-md)] py-[var(--space-lg)] text-center text-gray-400">
                         No bookings found
                       </td>
                     </tr>

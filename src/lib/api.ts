@@ -149,6 +149,12 @@ export interface Booking {
   payment_id: string | null;
   notes: string;
   created_at: string;
+  date_of_birth: string;
+  time_of_birth: string | null;
+  birth_time_unknown: boolean;
+  place_of_birth: string;
+  birth_latitude: number;
+  birth_longitude: number;
 }
 
 export const bookingsApi = {
@@ -161,7 +167,13 @@ export const bookingsApi = {
     user_name: string;
     user_email: string;
     user_phone: string;
-    notes?: string;
+    notes: string;
+    date_of_birth: string;
+    time_of_birth: string | null;
+    birth_time_unknown: boolean;
+    place_of_birth: string;
+    birth_latitude: number;
+    birth_longitude: number;
   }) =>
     apiRequest<Booking>("/api/bookings", { method: "POST", body: data }),
 

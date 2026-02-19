@@ -72,6 +72,22 @@ _VALID_BOOKING_DATA = {
     "user_name": "John Doe",
     "user_email": "john@test.com",
     "user_phone": "1234567890",
+    "notes": "I need a consultation",
+    "date_of_birth": "1990-05-15",
+    "time_of_birth": "08:30 AM",
+    "birth_time_unknown": False,
+    "place_of_birth": "Mumbai, India",
+    "birth_latitude": 19.076,
+    "birth_longitude": 72.8777,
+}
+
+_BIRTH_FIELDS = {
+    "date_of_birth": "1990-05-15",
+    "time_of_birth": "08:30 AM",
+    "birth_time_unknown": False,
+    "place_of_birth": "Mumbai, India",
+    "birth_latitude": 19.076,
+    "birth_longitude": 72.8777,
 }
 
 
@@ -86,7 +102,6 @@ async def test_create_booking_success(client, mock_db):
         "price_inr": 1999,
         "status": "pending",
         "payment_id": None,
-        "notes": "",
         "created_at": "2026-03-01T00:00:00",
     }
     mock_db.bookings.insert_one = AsyncMock(return_value=MagicMock(inserted_id=BOOKING_ID))
@@ -97,6 +112,8 @@ async def test_create_booking_success(client, mock_db):
     data = resp.json()
     assert data["price_inr"] == 1999
     assert data["status"] == "pending"
+    assert data["date_of_birth"] == "1990-05-15"
+    assert data["place_of_birth"] == "Mumbai, India"
 
 
 async def test_create_booking_holiday(client, mock_db):
@@ -157,7 +174,6 @@ async def test_list_bookings_admin_sees_all(client, mock_db, admin_token):
             "price_inr": 1999,
             "status": "pending",
             "payment_id": None,
-            "notes": "",
             "created_at": "2026-03-01T00:00:00",
         }
     ]

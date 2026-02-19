@@ -116,6 +116,13 @@ _VALID_BOOKING = dict(
     user_name="John Doe",
     user_email="john@test.com",
     user_phone="1234567890",
+    notes="I need help with my birth chart",
+    date_of_birth="1990-05-15",
+    time_of_birth="08:30 AM",
+    birth_time_unknown=False,
+    place_of_birth="Mumbai, India",
+    birth_latitude=19.076,
+    birth_longitude=72.8777,
 )
 
 
@@ -179,9 +186,66 @@ def test_booking_create_user_email_invalid():
         BookingCreate(**{**_VALID_BOOKING, "user_email": "bad"})
 
 
-def test_booking_create_notes_default_empty():
-    b = BookingCreate(**_VALID_BOOKING)
-    assert b.notes == ""
+def test_booking_create_notes_required():
+    data = {**_VALID_BOOKING}
+    del data["notes"]
+    with pytest.raises(ValidationError):
+        BookingCreate(**data)
+
+
+def test_booking_create_notes_empty_rejected():
+    with pytest.raises(ValidationError):
+        BookingCreate(**{**_VALID_BOOKING, "notes": ""})
+
+
+def test_booking_create_dob_invalid_format():
+    with pytest.raises(ValidationError):
+        BookingCreate(**{**_VALID_BOOKING, "date_of_birth": "15-05-1990"})
+
+
+def test_booking_create_dob_valid():
+    b = BookingCreate(**{**_VALID_BOOKING, "date_of_birth": "1990-05-15"})
+    assert b.date_of_birth == "1990-05-15"
+
+
+def test_booking_create_time_of_birth_valid():
+    b = BookingCreate(**{**_VALID_BOOKING, "time_of_birth": "08:30 AM"})
+    assert b.time_of_birth == "08:30 AM"
+
+
+def test_booking_create_time_of_birth_invalid_format():
+    with pytest.raises(ValidationError):
+        BookingCreate(**{**_VALID_BOOKING, "time_of_birth": "8:30 am"})
+
+
+def test_booking_create_birth_time_unknown_clears_time():
+    b = BookingCreate(
+        **{**_VALID_BOOKING, "birth_time_unknown": True, "time_of_birth": "08:30 AM"}
+    )
+    assert b.time_of_birth is None
+    assert b.birth_time_unknown is True
+
+
+def test_booking_create_requires_time_or_unknown():
+    with pytest.raises(ValidationError):
+        BookingCreate(
+            **{**_VALID_BOOKING, "time_of_birth": None, "birth_time_unknown": False}
+        )
+
+
+def test_booking_create_latitude_out_of_range():
+    with pytest.raises(ValidationError):
+        BookingCreate(**{**_VALID_BOOKING, "birth_latitude": 91.0})
+
+
+def test_booking_create_longitude_out_of_range():
+    with pytest.raises(ValidationError):
+        BookingCreate(**{**_VALID_BOOKING, "birth_longitude": 181.0})
+
+
+def test_booking_create_place_of_birth_min_length():
+    with pytest.raises(ValidationError):
+        BookingCreate(**{**_VALID_BOOKING, "place_of_birth": ""})
 
 
 def test_booking_status_enum_values():
@@ -206,6 +270,12 @@ def test_booking_in_db_defaults():
     assert b.status == BookingStatus.PENDING
     assert b.payment_id is None
     assert b.notes == ""
+    assert b.date_of_birth == ""
+    assert b.time_of_birth is None
+    assert b.birth_time_unknown is False
+    assert b.place_of_birth == ""
+    assert b.birth_latitude == 0.0
+    assert b.birth_longitude == 0.0
 
 
 def test_booking_status_update_valid():

@@ -31,6 +31,40 @@ vi.mock("@/lib/api", () => ({
   },
 }));
 
+// Mock the new birth detail components
+vi.mock("@/components/booking/DateOfBirthPicker", () => ({
+  DateOfBirthPicker: ({ onDateSelect, selectedDate }: { onDateSelect: (d: string) => void; selectedDate: string }) => (
+    <button data-testid="mock-dob-picker" onClick={() => onDateSelect("1990-05-15")}>
+      {selectedDate || "Select DOB"}
+    </button>
+  ),
+}));
+
+vi.mock("@/components/booking/TimeOfBirthPicker", () => ({
+  TimeOfBirthPicker: ({ isUnknown, onUnknownChange }: { isUnknown: boolean; onUnknownChange: (v: boolean) => void }) => (
+    <label>
+      <input
+        type="checkbox"
+        data-testid="mock-birth-time-unknown"
+        checked={isUnknown}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => onUnknownChange(e.target.checked)}
+      />
+      Unknown birth time
+    </label>
+  ),
+}));
+
+vi.mock("@/components/booking/PlaceOfBirthAutocomplete", () => ({
+  PlaceOfBirthAutocomplete: ({ onPlaceSelect, value }: { onPlaceSelect: (p: { name: string; latitude: number; longitude: number }) => void; value: string }) => (
+    <button
+      data-testid="mock-place-picker"
+      onClick={() => onPlaceSelect({ name: "Mumbai, India", latitude: 19.076, longitude: 72.877 })}
+    >
+      {value || "Select place"}
+    </button>
+  ),
+}));
+
 const consultationService: Service = {
   slug: "call-consultation",
   title: "Call Consultation",
@@ -62,6 +96,24 @@ const reportService: Service = {
   process: [],
   faqs: [],
 };
+
+/** Fill in all required details fields including birth info */
+async function fillDetailsForm(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByPlaceholderText("Enter your full name"), "John Doe");
+  await user.type(screen.getByPlaceholderText("you@example.com"), "john@test.com");
+  await user.type(screen.getByPlaceholderText(/\+91/), "9876543210");
+  await user.type(
+    screen.getByPlaceholderText(/describe what you/i),
+    "Need consultation"
+  );
+
+  // Select DOB via mock
+  fireEvent.click(screen.getByTestId("mock-dob-picker"));
+  // Check birth time unknown
+  fireEvent.click(screen.getByTestId("mock-birth-time-unknown"));
+  // Select place via mock
+  fireEvent.click(screen.getByTestId("mock-place-picker"));
+}
 
 describe("BookingWizard", () => {
   beforeEach(() => {
@@ -99,12 +151,10 @@ describe("BookingWizard", () => {
 
   it("consultation has more progress steps than report", () => {
     const { unmount } = render(<BookingWizard service={consultationService} />);
-    // Consultation should have "Date" step label in the progress bar
     expect(screen.getAllByText("Date").length).toBeGreaterThanOrEqual(1);
     unmount();
 
     render(<BookingWizard service={reportService} />);
-    // Report should NOT have "Date" step label
     expect(screen.queryByText("Date")).not.toBeInTheDocument();
   });
 
@@ -123,18 +173,36 @@ describe("BookingWizard", () => {
 
   it("has notes textarea on details step", () => {
     render(<BookingWizard service={reportService} />);
-    expect(screen.getByPlaceholderText(/specific questions/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/describe what you/i)).toBeInTheDocument();
+  });
+
+  it("renders birth detail pickers on details step", () => {
+    render(<BookingWizard service={reportService} />);
+    expect(screen.getByTestId("mock-dob-picker")).toBeInTheDocument();
+    expect(screen.getByTestId("mock-birth-time-unknown")).toBeInTheDocument();
+    expect(screen.getByTestId("mock-place-picker")).toBeInTheDocument();
+  });
+
+  it("Next button disabled without notes", async () => {
+    const user = userEvent.setup();
+    render(<BookingWizard service={reportService} />);
+
+    await user.type(screen.getByPlaceholderText("Enter your full name"), "John");
+    await user.type(screen.getByPlaceholderText("you@example.com"), "j@t.com");
+    await user.type(screen.getByPlaceholderText(/\+91/), "123");
+    // Don't fill notes, DOB, or place
+
+    const allButtons = screen.getAllByRole("button");
+    const nextBtn = allButtons.find(b => b.textContent?.includes("Next"));
+    expect(nextBtn).toHaveAttribute("disabled");
   });
 
   it("navigates to review step when form is filled for report", async () => {
     const user = userEvent.setup();
     render(<BookingWizard service={reportService} />);
 
-    await user.type(screen.getByPlaceholderText("Enter your full name"), "John Doe");
-    await user.type(screen.getByPlaceholderText("you@example.com"), "john@test.com");
-    await user.type(screen.getByPlaceholderText(/\+91/), "9876543210");
+    await fillDetailsForm(user);
 
-    // Find and click the enabled Next button
     const allButtons = screen.getAllByRole("button");
     const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
     expect(nextBtn).toBeTruthy();
@@ -149,9 +217,7 @@ describe("BookingWizard", () => {
     const user = userEvent.setup();
     render(<BookingWizard service={reportService} />);
 
-    await user.type(screen.getByPlaceholderText("Enter your full name"), "John");
-    await user.type(screen.getByPlaceholderText("you@example.com"), "j@t.com");
-    await user.type(screen.getByPlaceholderText(/\+91/), "123");
+    await fillDetailsForm(user);
 
     const allButtons = screen.getAllByRole("button");
     const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
@@ -159,8 +225,25 @@ describe("BookingWizard", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Premium Kundli Report")).toBeInTheDocument();
-      expect(screen.getByText("John")).toBeInTheDocument();
-      expect(screen.getByText("j@t.com")).toBeInTheDocument();
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+      expect(screen.getByText("john@test.com")).toBeInTheDocument();
+    });
+  });
+
+  it("review step shows birth details", async () => {
+    const user = userEvent.setup();
+    render(<BookingWizard service={reportService} />);
+
+    await fillDetailsForm(user);
+
+    const allButtons = screen.getAllByRole("button");
+    const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
+    fireEvent.click(nextBtn!);
+
+    await waitFor(() => {
+      expect(screen.getByText("1990-05-15")).toBeInTheDocument();
+      expect(screen.getByText("Unknown")).toBeInTheDocument();
+      expect(screen.getByText("Mumbai, India")).toBeInTheDocument();
     });
   });
 
@@ -168,9 +251,7 @@ describe("BookingWizard", () => {
     const user = userEvent.setup();
     render(<BookingWizard service={reportService} />);
 
-    await user.type(screen.getByPlaceholderText("Enter your full name"), "John");
-    await user.type(screen.getByPlaceholderText("you@example.com"), "j@t.com");
-    await user.type(screen.getByPlaceholderText(/\+91/), "123");
+    await fillDetailsForm(user);
 
     const allButtons = screen.getAllByRole("button");
     const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
@@ -183,9 +264,13 @@ describe("BookingWizard", () => {
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           service_slug: "premium-kundli",
-          user_name: "John",
-          user_email: "j@t.com",
-          user_phone: "123",
+          user_name: "John Doe",
+          user_email: "john@test.com",
+          date_of_birth: "1990-05-15",
+          birth_time_unknown: true,
+          place_of_birth: "Mumbai, India",
+          birth_latitude: 19.076,
+          birth_longitude: 72.877,
         })
       );
     });
@@ -197,9 +282,7 @@ describe("BookingWizard", () => {
     const user = userEvent.setup();
     render(<BookingWizard service={reportService} />);
 
-    await user.type(screen.getByPlaceholderText("Enter your full name"), "John");
-    await user.type(screen.getByPlaceholderText("you@example.com"), "j@t.com");
-    await user.type(screen.getByPlaceholderText(/\+91/), "123");
+    await fillDetailsForm(user);
 
     const allButtons = screen.getAllByRole("button");
     const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
@@ -217,9 +300,7 @@ describe("BookingWizard", () => {
     const user = userEvent.setup();
     render(<BookingWizard service={reportService} />);
 
-    await user.type(screen.getByPlaceholderText("Enter your full name"), "John");
-    await user.type(screen.getByPlaceholderText("you@example.com"), "j@t.com");
-    await user.type(screen.getByPlaceholderText(/\+91/), "123");
+    await fillDetailsForm(user);
 
     const allButtons = screen.getAllByRole("button");
     const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
@@ -237,9 +318,6 @@ describe("BookingWizard", () => {
     render(<BookingWizard service={consultationService} />);
     expect(screen.getByRole("heading", { name: "Select a Date" })).toBeInTheDocument();
 
-    // Simulate selecting a date via the BookingCalendar
-    // The BookingCalendar calls onDateSelect, which sets selectedDate
-    // We need to find the calendar and click a future date
     await waitFor(() => {
       const now = new Date();
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -248,7 +326,6 @@ describe("BookingWizard", () => {
       if (clickable) fireEvent.click(clickable);
     });
 
-    // After selecting a date, the Next button should be enabled
     const allButtons = screen.getAllByRole("button");
     const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
     if (nextBtn) {
@@ -262,7 +339,6 @@ describe("BookingWizard", () => {
   it("consultation: navigates from time to duration step", async () => {
     render(<BookingWizard service={consultationService} />);
 
-    // Select a date
     await waitFor(() => {
       const now = new Date();
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -276,13 +352,11 @@ describe("BookingWizard", () => {
     if (nextBtn) {
       fireEvent.click(nextBtn);
 
-      // Now on time step - select a slot
       await waitFor(() => {
         expect(screen.getByText("09:00")).toBeInTheDocument();
       });
       fireEvent.click(screen.getByText("09:00"));
 
-      // Click Next to go to duration step
       allButtons = screen.getAllByRole("button");
       nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
       if (nextBtn) {
@@ -312,7 +386,7 @@ describe("BookingWizard", () => {
 
     let allButtons = screen.getAllByRole("button");
     let nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
-    if (!nextBtn) return; // Date may not be selectable in test env
+    if (!nextBtn) return;
     fireEvent.click(nextBtn);
 
     // Step 2: Select time
@@ -339,9 +413,7 @@ describe("BookingWizard", () => {
     await waitFor(() => {
       expect(screen.getByPlaceholderText("Enter your full name")).toBeInTheDocument();
     });
-    await user.type(screen.getByPlaceholderText("Enter your full name"), "Alice");
-    await user.type(screen.getByPlaceholderText("you@example.com"), "alice@test.com");
-    await user.type(screen.getByPlaceholderText(/\+91/), "9876543210");
+    await fillDetailsForm(user);
 
     allButtons = screen.getAllByRole("button");
     nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
@@ -351,17 +423,18 @@ describe("BookingWizard", () => {
     await waitFor(() => {
       expect(screen.getByText("Review Your Booking")).toBeInTheDocument();
       expect(screen.getByText("Call Consultation")).toBeInTheDocument();
-      expect(screen.getByText("Alice")).toBeInTheDocument();
-      expect(screen.getByText("alice@test.com")).toBeInTheDocument();
+      expect(screen.getByText("John Doe")).toBeInTheDocument();
+      expect(screen.getByText("john@test.com")).toBeInTheDocument();
       expect(screen.getByText("09:00")).toBeInTheDocument();
       expect(screen.getByText("30 minutes")).toBeInTheDocument();
+      expect(screen.getByText("1990-05-15")).toBeInTheDocument();
+      expect(screen.getByText("Mumbai, India")).toBeInTheDocument();
     });
   });
 
   it("consultation: back button navigates to previous step", async () => {
     render(<BookingWizard service={consultationService} />);
 
-    // Select a date
     await waitFor(() => {
       const now = new Date();
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -378,7 +451,6 @@ describe("BookingWizard", () => {
         expect(screen.getByRole("heading", { name: "Select a Time Slot" })).toBeInTheDocument();
       });
 
-      // Click Back
       const backBtn = screen.getAllByRole("button").find(b => b.textContent?.includes("Back") && !b.hasAttribute("disabled"));
       if (backBtn) {
         fireEvent.click(backBtn);
@@ -396,9 +468,7 @@ describe("BookingWizard", () => {
     const user = userEvent.setup();
     render(<BookingWizard service={reportService} />);
 
-    await user.type(screen.getByPlaceholderText("Enter your full name"), "John");
-    await user.type(screen.getByPlaceholderText("you@example.com"), "j@t.com");
-    await user.type(screen.getByPlaceholderText(/\+91/), "123");
+    await fillDetailsForm(user);
 
     const allButtons = screen.getAllByRole("button");
     const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
@@ -409,7 +479,6 @@ describe("BookingWizard", () => {
 
     await waitFor(() => screen.getByText("Complete Payment"));
 
-    // Click the Pay button
     const payBtn = screen.getAllByRole("button").find(b => b.textContent?.includes("Pay"));
     fireEvent.click(payBtn!);
 
@@ -422,9 +491,7 @@ describe("BookingWizard", () => {
     const user = userEvent.setup();
     render(<BookingWizard service={reportService} />);
 
-    await user.type(screen.getByPlaceholderText("Enter your full name"), "John");
-    await user.type(screen.getByPlaceholderText("you@example.com"), "j@t.com");
-    await user.type(screen.getByPlaceholderText(/\+91/), "123");
+    await fillDetailsForm(user);
 
     const allButtons = screen.getAllByRole("button");
     const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
