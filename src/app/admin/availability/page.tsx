@@ -104,37 +104,37 @@ export default function AvailabilityPage() {
   };
 
   return (
-    <section className="min-h-screen bg-gray-50 py-8">
+    <section className="min-h-screen bg-gray-50 py-[var(--space-lg)]">
       <Container>
-        <div className="mb-6 flex items-center gap-3">
+        <div className="mb-[var(--space-md)] flex items-center gap-[var(--space-sm)]">
           <Link href="/admin" className="rounded-lg p-2 hover:bg-gray-200">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="font-heading text-2xl font-bold">Manage Availability</h1>
+          <h1 className="font-heading text-[var(--text-xl)] font-bold">Manage Availability</h1>
         </div>
 
-        <p className="mb-6 text-sm text-gray-500">
+        <p className="mb-[var(--space-md)] text-[var(--text-sm)] text-gray-500">
           You are available 24/7 by default. Use this page to mark specific dates or time periods as unavailable.
         </p>
 
         {message && (
-          <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700">
+          <div className="mb-[var(--space-sm)] rounded-lg bg-green-50 border border-green-200 p-[var(--space-sm)] text-[var(--text-sm)] text-green-700">
             {message}
           </div>
         )}
 
         {/* Add unavailability form */}
-        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 font-heading text-lg font-semibold flex items-center gap-2">
+        <div className="mb-[var(--space-lg)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+          <h2 className="mb-[var(--space-sm)] font-heading text-[var(--text-lg)] font-semibold flex items-center gap-2">
             <Plus className="h-5 w-5" />
             Block Time
           </h2>
 
           {/* Mode toggle */}
-          <div className="mb-5 flex gap-2">
+          <div className="mb-[var(--space-md)] flex flex-wrap gap-[var(--space-xs)]">
             <button
               onClick={() => setMode("time-block")}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+              className={`rounded-full px-4 py-1.5 text-[var(--text-sm)] font-medium ${
                 mode === "time-block" ? "bg-primary-600 text-white" : "bg-white text-gray-600 border"
               }`}
             >
@@ -143,7 +143,7 @@ export default function AvailabilityPage() {
             </button>
             <button
               onClick={() => setMode("holiday")}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+              className={`rounded-full px-4 py-1.5 text-[var(--text-sm)] font-medium ${
                 mode === "holiday" ? "bg-red-600 text-white" : "bg-white text-gray-600 border"
               }`}
             >
@@ -152,45 +152,45 @@ export default function AvailabilityPage() {
             </button>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-[var(--space-sm)] sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium">Date</label>
+              <label className="mb-1 block text-[var(--text-sm)] font-medium">Date</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
+                className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
               />
             </div>
 
             {mode === "time-block" && (
               <>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Reason (optional)</label>
+                  <label className="mb-1 block text-[var(--text-sm)] font-medium">Reason (optional)</label>
                   <input
                     type="text"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="e.g. Personal, Meeting"
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
+                    className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">From</label>
+                  <label className="mb-1 block text-[var(--text-sm)] font-medium">From</label>
                   <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
+                    className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">To</label>
+                  <label className="mb-1 block text-[var(--text-sm)] font-medium">To</label>
                   <input
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
+                    className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
                   />
                 </div>
               </>
@@ -198,19 +198,19 @@ export default function AvailabilityPage() {
 
             {mode === "holiday" && (
               <div>
-                <label className="mb-1 block text-sm font-medium">Reason (optional)</label>
+                <label className="mb-1 block text-[var(--text-sm)] font-medium">Reason (optional)</label>
                 <input
                   type="text"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="e.g. Diwali, Personal day"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
+                  className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
                 />
               </div>
             )}
           </div>
 
-          <div className="mt-5">
+          <div className="mt-[var(--space-md)]">
             <Button
               variant="primary"
               onClick={handleAdd}
@@ -226,17 +226,17 @@ export default function AvailabilityPage() {
         </div>
 
         {/* View existing blocks */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 font-heading text-lg font-semibold">Blocked Periods</h2>
+        <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+          <h2 className="mb-[var(--space-sm)] font-heading text-[var(--text-lg)] font-semibold">Blocked Periods</h2>
 
-          <div className="mb-4 flex items-center gap-3">
+          <div className="mb-[var(--space-sm)] flex flex-wrap items-center gap-[var(--space-sm)]">
             <div>
               <label className="mb-1 block text-xs text-gray-500">From</label>
               <input
                 type="date"
                 value={viewStart}
                 onChange={(e) => setViewStart(e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2 text-[var(--text-sm)]"
               />
             </div>
             <div>
@@ -245,40 +245,40 @@ export default function AvailabilityPage() {
                 type="date"
                 value={viewEnd}
                 onChange={(e) => setViewEnd(e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2 text-[var(--text-sm)]"
               />
             </div>
           </div>
 
           {viewLoading ? (
-            <div className="space-y-3">
+            <div className="space-y-[var(--space-sm)]">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="h-14 animate-pulse rounded-lg bg-gray-100" />
               ))}
             </div>
           ) : blocks.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-400">
+            <p className="py-[var(--space-lg)] text-center text-[var(--text-sm)] text-gray-400">
               No blocked periods in this range. You are fully available!
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-[var(--space-xs)]">
               {blocks.map((block) => (
                 <div
                   key={block.id}
-                  className={`flex items-center justify-between rounded-lg border p-3 ${
+                  className={`flex items-center justify-between rounded-lg border p-[var(--space-sm)] ${
                     block.is_holiday
                       ? "border-red-200 bg-red-50"
                       : "border-orange-200 bg-orange-50"
                   }`}
                 >
                   <div>
-                    <span className="font-medium text-sm">{block.date}</span>
+                    <span className="font-medium text-[var(--text-sm)]">{block.date}</span>
                     {block.is_holiday ? (
                       <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
                         Holiday
                       </span>
                     ) : (
-                      <span className="ml-2 text-sm text-gray-600">
+                      <span className="ml-2 text-[var(--text-sm)] text-gray-600">
                         {block.start_time} - {block.end_time}
                       </span>
                     )}

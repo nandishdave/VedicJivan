@@ -88,6 +88,9 @@ vi.mock("lucide-react", () => {
     // Settings page
     Globe: icon("Globe"),
     Save: icon("Save"),
+    // Mobile nav
+    Menu: icon("Menu"),
+    X: icon("X"),
     // Button
     Loader2: icon("Loader2"),
   };

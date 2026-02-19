@@ -11,6 +11,8 @@ import {
   Settings,
   LogOut,
   ExternalLink,
+  Menu,
+  X,
 } from "lucide-react";
 import { getToken, clearTokens } from "@/lib/auth";
 import { authApi } from "@/lib/api";
@@ -35,6 +37,12 @@ export default function AdminLayout({
   const isLoginPage = pathname === "/admin/login";
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (isLoginPage) {
@@ -108,64 +116,103 @@ export default function AdminLayout({
     );
   }
 
+  const sidebarContent = (
+    <div className="flex h-full flex-col">
+      {/* Logo / Brand */}
+      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-5">
+        <div>
+          <Link href="/admin" className="font-heading text-lg font-bold text-primary-600">
+            VedicJivan
+          </Link>
+          <p className="text-xs text-gray-400">Admin Panel</p>
+        </div>
+        {/* Close button — mobile only */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 lg:hidden"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Nav Links */}
+      <nav className="flex-1 space-y-1 px-3 py-4">
+        {adminNav.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary-50 text-primary-600"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              }`}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div className="border-t border-gray-200 p-3 space-y-1">
+        <Link
+          href="/"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-100"
+        >
+          <ExternalLink className="h-4 w-4" />
+          View Site
+        </Link>
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-600 hover:bg-red-50"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <style>{`${hideChrome} main { padding: 0 !important; }`}</style>
       <div className="flex min-h-screen bg-gray-50">
-        {/* Sidebar */}
-        <aside className="fixed left-0 top-0 z-40 h-screen w-56 border-r border-gray-200 bg-white">
-          <div className="flex h-full flex-col">
-            {/* Logo / Brand */}
-            <div className="border-b border-gray-200 px-4 py-5">
-              <Link href="/admin" className="font-heading text-lg font-bold text-primary-600">
-                VedicJivan
-              </Link>
-              <p className="text-xs text-gray-400">Admin Panel</p>
-            </div>
+        {/* Mobile top bar */}
+        <div className="fixed left-0 right-0 top-0 z-30 flex items-center border-b border-gray-200 bg-white px-[var(--space-md)] py-[var(--space-sm)] lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <span className="ml-3 font-heading text-sm font-bold text-primary-600">
+            VedicJivan Admin
+          </span>
+        </div>
 
-            {/* Nav Links */}
-            <nav className="flex-1 space-y-1 px-3 py-4">
-              {adminNav.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-primary-50 text-primary-600"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
 
-            {/* Footer */}
-            <div className="border-t border-gray-200 p-3 space-y-1">
-              <Link
-                href="/"
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-100"
-              >
-                <ExternalLink className="h-4 w-4" />
-                View Site
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-600 hover:bg-red-50"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          </div>
+        {/* Sidebar — desktop: always visible, mobile: slide-in overlay */}
+        <aside
+          className={`fixed left-0 top-0 z-50 h-screen w-64 border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out lg:z-40 lg:w-56 lg:translate-x-0 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {sidebarContent}
         </aside>
 
-        {/* Main Content */}
-        <div className="ml-56 flex-1">
+        {/* Main Content — offset for desktop sidebar, padded-top for mobile bar */}
+        <div className="min-w-0 flex-1 pt-14 lg:ml-56 lg:pt-0">
           {children}
         </div>
       </div>

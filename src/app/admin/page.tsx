@@ -71,11 +71,11 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <section className="min-h-screen bg-gray-50 py-12">
-        <div className="mx-auto max-w-6xl px-6">
+      <section className="min-h-screen bg-gray-50 py-[var(--space-lg)]">
+        <div className="mx-auto max-w-6xl px-[var(--space-md)]">
           <div className="animate-pulse space-y-6">
             <div className="h-8 w-48 rounded bg-gray-200" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-[var(--space-sm)] sm:grid-cols-2 lg:grid-cols-4">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="h-24 rounded-xl bg-gray-200" />
               ))}
@@ -96,53 +96,53 @@ export default function AdminDashboard() {
   };
 
   return (
-    <section className="min-h-screen bg-gray-50 py-8">
-      <div className="mx-auto max-w-6xl px-6">
+    <section className="min-h-screen bg-gray-50 py-[var(--space-lg)]">
+      <div className="mx-auto max-w-6xl px-[var(--space-md)]">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="font-heading text-2xl font-bold text-vedic-dark">
+        <div className="mb-[var(--space-lg)]">
+          <h1 className="font-heading text-[var(--text-xl)] font-bold text-vedic-dark">
             Dashboard
           </h1>
-          <p className="text-sm text-gray-500">Welcome back, {userName}</p>
+          <p className="text-[var(--text-sm)] text-gray-500">Welcome back, {userName}</p>
         </div>
 
         {/* Stats cards */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="flex items-center gap-3">
+        <div className="mb-[var(--space-lg)] grid gap-[var(--space-sm)] sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+            <div className="flex items-center gap-[var(--space-sm)]">
               <div className="rounded-lg bg-blue-100 p-2">
                 <Calendar className="h-5 w-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{data.today_bookings}</p>
-                <p className="text-xs text-gray-500">Today&apos;s Bookings</p>
+                <p className="text-[var(--text-sm)] text-gray-500">Today&apos;s Bookings</p>
               </div>
             </div>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+            <div className="flex items-center gap-[var(--space-sm)]">
               <div className="rounded-lg bg-green-100 p-2">
                 <Clock className="h-5 w-5 text-green-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{data.upcoming_bookings}</p>
-                <p className="text-xs text-gray-500">Upcoming</p>
+                <p className="text-[var(--text-sm)] text-gray-500">Upcoming</p>
               </div>
             </div>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+            <div className="flex items-center gap-[var(--space-sm)]">
               <div className="rounded-lg bg-purple-100 p-2">
                 <TrendingUp className="h-5 w-5 text-purple-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{"\u20B9"}{data.total_revenue.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">Total Revenue</p>
+                <p className="text-[var(--text-sm)] text-gray-500">Total Revenue</p>
               </div>
             </div>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+            <div className="flex items-center gap-[var(--space-sm)]">
               <div className="rounded-lg bg-yellow-100 p-2">
                 <Users className="h-5 w-5 text-yellow-600" />
               </div>
@@ -150,31 +150,31 @@ export default function AdminDashboard() {
                 <p className="text-2xl font-bold">
                   {Object.values(data.bookings_by_status).reduce((a, b) => a + b, 0)}
                 </p>
-                <p className="text-xs text-gray-500">Total Bookings</p>
+                <p className="text-[var(--text-sm)] text-gray-500">Total Bookings</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Quick links */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        <div className="mb-[var(--space-lg)] grid gap-[var(--space-sm)] sm:grid-cols-3">
           <Link
             href="/admin/bookings"
-            className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-primary-300"
+            className="flex items-center gap-[var(--space-sm)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)] transition-colors hover:border-primary-300"
           >
             <Calendar className="h-5 w-5 text-primary-600" />
             <span className="font-medium">Manage Bookings</span>
           </Link>
           <Link
             href="/admin/availability"
-            className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-primary-300"
+            className="flex items-center gap-[var(--space-sm)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)] transition-colors hover:border-primary-300"
           >
             <Settings className="h-5 w-5 text-primary-600" />
             <span className="font-medium">Set Availability</span>
           </Link>
           <Link
             href="/admin/payments"
-            className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-primary-300"
+            className="flex items-center gap-[var(--space-sm)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)] transition-colors hover:border-primary-300"
           >
             <CreditCard className="h-5 w-5 text-primary-600" />
             <span className="font-medium">Payment History</span>
@@ -183,30 +183,56 @@ export default function AdminDashboard() {
 
         {/* Recent bookings */}
         <div className="rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h2 className="font-heading text-lg font-semibold">Recent Bookings</h2>
+          <div className="border-b border-gray-200 px-[var(--space-md)] py-[var(--space-sm)]">
+            <h2 className="font-heading text-[var(--text-lg)] font-semibold">Recent Bookings</h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+
+          {/* Mobile cards */}
+          <div className="divide-y divide-gray-100 sm:hidden">
+            {data.recent_bookings.map((booking) => (
+              <div key={booking.id} className="p-[var(--space-md)]">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-[var(--text-base)]">{booking.user_name}</p>
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[booking.status] || "bg-gray-100"}`}>
+                    {booking.status}
+                  </span>
+                </div>
+                <p className="mt-1 text-[var(--text-sm)] text-gray-500">{booking.service_title}</p>
+                <div className="mt-1 flex items-center justify-between text-[var(--text-sm)] text-gray-500">
+                  <span>{booking.date} at {booking.time_slot}</span>
+                  <span className="font-medium text-gray-700">{"\u20B9"}{booking.price_inr}</span>
+                </div>
+              </div>
+            ))}
+            {data.recent_bookings.length === 0 && (
+              <div className="p-[var(--space-lg)] text-center text-[var(--text-sm)] text-gray-400">
+                No bookings yet
+              </div>
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto sm:block">
+            <table className="w-full text-[var(--text-sm)]">
               <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-6 py-3">Customer</th>
-                  <th className="px-6 py-3">Service</th>
-                  <th className="px-6 py-3">Date & Time</th>
-                  <th className="px-6 py-3">Amount</th>
-                  <th className="px-6 py-3">Status</th>
+                  <th className="px-[var(--space-md)] py-[var(--space-sm)]">Customer</th>
+                  <th className="px-[var(--space-md)] py-[var(--space-sm)]">Service</th>
+                  <th className="px-[var(--space-md)] py-[var(--space-sm)]">Date & Time</th>
+                  <th className="px-[var(--space-md)] py-[var(--space-sm)]">Amount</th>
+                  <th className="px-[var(--space-md)] py-[var(--space-sm)]">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {data.recent_bookings.map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 font-medium">{booking.user_name}</td>
-                    <td className="px-6 py-3">{booking.service_title}</td>
-                    <td className="px-6 py-3">
+                    <td className="px-[var(--space-md)] py-[var(--space-sm)] font-medium">{booking.user_name}</td>
+                    <td className="px-[var(--space-md)] py-[var(--space-sm)]">{booking.service_title}</td>
+                    <td className="px-[var(--space-md)] py-[var(--space-sm)]">
                       {booking.date} at {booking.time_slot}
                     </td>
-                    <td className="px-6 py-3">{"\u20B9"}{booking.price_inr}</td>
-                    <td className="px-6 py-3">
+                    <td className="px-[var(--space-md)] py-[var(--space-sm)]">{"\u20B9"}{booking.price_inr}</td>
+                    <td className="px-[var(--space-md)] py-[var(--space-sm)]">
                       <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[booking.status] || "bg-gray-100"}`}>
                         {booking.status}
                       </span>
@@ -215,7 +241,7 @@ export default function AdminDashboard() {
                 ))}
                 {data.recent_bookings.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                    <td colSpan={5} className="px-[var(--space-md)] py-[var(--space-lg)] text-center text-gray-400">
                       No bookings yet
                     </td>
                   </tr>

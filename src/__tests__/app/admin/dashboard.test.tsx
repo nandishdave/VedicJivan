@@ -102,7 +102,7 @@ describe("AdminDashboard", () => {
     render(<AdminDashboard />);
     await waitFor(() => {
       expect(screen.getAllByText("Recent Bookings").length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText("John Doe")).toBeInTheDocument();
+      expect(screen.getAllByText("John Doe").length).toBeGreaterThanOrEqual(1);
     });
   });
 
