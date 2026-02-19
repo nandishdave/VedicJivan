@@ -137,7 +137,7 @@ describe("AvailabilityPage", () => {
     expect(pulseElements.length).toBeGreaterThan(0);
   });
 
-  it("handles delete block", async () => {
+  it("handles delete block with confirmation dialog", async () => {
     mockGetToken.mockReturnValue("admin-token");
     mockRemoveUnavailable.mockResolvedValue({});
     mockGetUnavailableRange.mockResolvedValue([
@@ -149,13 +149,50 @@ describe("AvailabilityPage", () => {
       expect(screen.getAllByText("2026-03-01").length).toBeGreaterThanOrEqual(1);
     });
 
-    // Click delete button (the trash icon button)
+    // Click delete button (the trash icon button) — opens confirmation dialog
     const deleteBtn = document.querySelector('button[title*="Remove"]') as HTMLButtonElement;
     fireEvent.click(deleteBtn);
+
+    // Confirmation dialog should appear
+    await waitFor(() => {
+      expect(screen.getByText("Confirm Deletion")).toBeInTheDocument();
+      expect(screen.getByText(/Are you sure/)).toBeInTheDocument();
+    });
+
+    // Click "Delete" in the confirmation dialog
+    fireEvent.click(screen.getByText("Delete"));
 
     await waitFor(() => {
       expect(mockRemoveUnavailable).toHaveBeenCalledWith("u1", "admin-token");
     });
+  });
+
+  it("cancels delete when clicking Cancel in confirmation dialog", async () => {
+    mockGetToken.mockReturnValue("admin-token");
+    mockGetUnavailableRange.mockResolvedValue([
+      { id: "u1", date: "2026-03-01", is_holiday: true, reason: "Holi" },
+    ]);
+    render(<AvailabilityPage />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText("2026-03-01").length).toBeGreaterThanOrEqual(1);
+    });
+
+    // Click delete button — opens confirmation dialog
+    const deleteBtn = document.querySelector('button[title*="Remove"]') as HTMLButtonElement;
+    fireEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText("Confirm Deletion")).toBeInTheDocument();
+    });
+
+    // Click "Cancel" — dialog should close, no delete
+    fireEvent.click(screen.getByText("Cancel"));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Confirm Deletion")).not.toBeInTheDocument();
+    });
+    expect(mockRemoveUnavailable).not.toHaveBeenCalled();
   });
 
   it("adds a time block", async () => {

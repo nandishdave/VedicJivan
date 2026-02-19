@@ -2,12 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import AdminDashboard from "@/app/admin/page";
 
-const { mockPush, mockGetToken, mockClearTokens, mockAuthMe, mockDashboard } = vi.hoisted(() => ({
+const { mockPush, mockGetToken, mockClearTokens, mockAuthMe, mockDashboard, mockStats } = vi.hoisted(() => ({
   mockPush: vi.fn(),
   mockGetToken: vi.fn(),
   mockClearTokens: vi.fn(),
   mockAuthMe: vi.fn(),
   mockDashboard: vi.fn(),
+  mockStats: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -21,7 +22,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/api", () => ({
-  adminApi: { dashboard: mockDashboard },
+  adminApi: { dashboard: mockDashboard, stats: mockStats },
   authApi: { me: mockAuthMe },
 }));
 
@@ -48,6 +49,24 @@ const mockDashboardData = {
   ],
 };
 
+const mockStatsData = {
+  total_users: 50,
+  total_bookings: 22,
+  total_payments: 15,
+  revenue_by_service: [
+    { service: "Call Consultation", bookings: 10, revenue: 19990 },
+    { service: "Premium Kundli", bookings: 5, revenue: 24995 },
+  ],
+  daily_bookings: Array.from({ length: 30 }, (_, i) => ({
+    date: `2026-02-${String(i + 1).padStart(2, "0")}`,
+    bookings: Math.floor(Math.random() * 5),
+  })),
+  daily_revenue: Array.from({ length: 30 }, (_, i) => ({
+    date: `2026-02-${String(i + 1).padStart(2, "0")}`,
+    revenue: Math.floor(Math.random() * 5000),
+  })),
+};
+
 describe("AdminDashboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,6 +85,7 @@ describe("AdminDashboard", () => {
     mockGetToken.mockReturnValue("token-123");
     mockAuthMe.mockResolvedValue({ name: "User", role: "user" });
     mockDashboard.mockResolvedValue(mockDashboardData);
+    mockStats.mockResolvedValue(mockStatsData);
     render(<AdminDashboard />);
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith("/admin/login");
@@ -76,6 +96,7 @@ describe("AdminDashboard", () => {
     mockGetToken.mockReturnValue("admin-token");
     mockAuthMe.mockResolvedValue({ name: "Admin User", role: "admin" });
     mockDashboard.mockResolvedValue(mockDashboardData);
+    mockStats.mockResolvedValue(mockStatsData);
     render(<AdminDashboard />);
     await waitFor(() => {
       expect(screen.getAllByText("Dashboard").length).toBeGreaterThanOrEqual(1);
@@ -87,6 +108,7 @@ describe("AdminDashboard", () => {
     mockGetToken.mockReturnValue("admin-token");
     mockAuthMe.mockResolvedValue({ name: "Admin", role: "admin" });
     mockDashboard.mockResolvedValue(mockDashboardData);
+    mockStats.mockResolvedValue(mockStatsData);
     render(<AdminDashboard />);
     await waitFor(() => {
       expect(screen.getByText("5")).toBeInTheDocument();
@@ -99,10 +121,25 @@ describe("AdminDashboard", () => {
     mockGetToken.mockReturnValue("admin-token");
     mockAuthMe.mockResolvedValue({ name: "Admin", role: "admin" });
     mockDashboard.mockResolvedValue(mockDashboardData);
+    mockStats.mockResolvedValue(mockStatsData);
     render(<AdminDashboard />);
     await waitFor(() => {
       expect(screen.getAllByText("Recent Bookings").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("John Doe").length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("renders chart containers when stats are loaded", async () => {
+    mockGetToken.mockReturnValue("admin-token");
+    mockAuthMe.mockResolvedValue({ name: "Admin", role: "admin" });
+    mockDashboard.mockResolvedValue(mockDashboardData);
+    mockStats.mockResolvedValue(mockStatsData);
+    render(<AdminDashboard />);
+    await waitFor(() => {
+      expect(screen.getByText("Bookings (Last 30 Days)")).toBeInTheDocument();
+      expect(screen.getByText("Revenue (Last 30 Days)")).toBeInTheDocument();
+      expect(screen.getByText("Booking Status Distribution")).toBeInTheDocument();
+      expect(screen.getByText("Revenue by Service")).toBeInTheDocument();
     });
   });
 
@@ -120,6 +157,7 @@ describe("AdminDashboard", () => {
     mockGetToken.mockReturnValue("token");
     mockAuthMe.mockReturnValue(new Promise(() => {}));
     mockDashboard.mockReturnValue(new Promise(() => {}));
+    mockStats.mockReturnValue(new Promise(() => {}));
     render(<AdminDashboard />);
     const pulseElements = document.querySelectorAll(".animate-pulse");
     expect(pulseElements.length).toBeGreaterThan(0);

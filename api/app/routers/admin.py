@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
 
@@ -94,9 +94,60 @@ async def stats(_admin: dict = Depends(require_admin)):
             }
         )
 
+    # Daily bookings for last 30 days
+    today = datetime.now(timezone.utc)
+    thirty_days_ago = (today - timedelta(days=29)).strftime("%Y-%m-%d")
+    today_str = today.strftime("%Y-%m-%d")
+
+    daily_pipeline = [
+        {"$match": {"date": {"$gte": thirty_days_ago, "$lte": today_str}}},
+        {"$group": {"_id": "$date", "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}},
+    ]
+    daily_bookings: dict[str, int] = {}
+    async for doc in db.bookings.aggregate(daily_pipeline):
+        daily_bookings[doc["_id"]] = doc["count"]
+
+    # Fill in missing days with 0
+    daily_series = []
+    for i in range(30):
+        d = (today - timedelta(days=29 - i)).strftime("%Y-%m-%d")
+        daily_series.append({"date": d, "bookings": daily_bookings.get(d, 0)})
+
+    # Daily revenue for last 30 days
+    daily_rev_pipeline = [
+        {
+            "$match": {
+                "status": "captured",
+                "created_at": {
+                    "$gte": today - timedelta(days=29),
+                },
+            }
+        },
+        {
+            "$group": {
+                "_id": {
+                    "$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}
+                },
+                "revenue": {"$sum": "$amount_inr"},
+            }
+        },
+        {"$sort": {"_id": 1}},
+    ]
+    daily_revenue: dict[str, int] = {}
+    async for doc in db.payments.aggregate(daily_rev_pipeline):
+        daily_revenue[doc["_id"]] = doc["revenue"]
+
+    revenue_series = []
+    for i in range(30):
+        d = (today - timedelta(days=29 - i)).strftime("%Y-%m-%d")
+        revenue_series.append({"date": d, "revenue": daily_revenue.get(d, 0)})
+
     return {
         "total_users": total_users,
         "total_bookings": total_bookings,
         "total_payments": total_payments,
         "revenue_by_service": services,
+        "daily_bookings": daily_series,
+        "daily_revenue": revenue_series,
     }

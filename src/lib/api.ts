@@ -264,5 +264,7 @@ export const adminApi = {
         bookings: number;
         revenue: number;
       }[];
+      daily_bookings: { date: string; bookings: number }[];
+      daily_revenue: { date: string; revenue: number }[];
     }>("/api/admin/stats", { token }),
 };

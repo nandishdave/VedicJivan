@@ -27,6 +27,9 @@ export default function AvailabilityPage() {
   const [blocks, setBlocks] = useState<Unavailability[]>([]);
   const [viewLoading, setViewLoading] = useState(false);
 
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<Unavailability | null>(null);
+
   // Initialize view range to current month
   useEffect(() => {
     const now = new Date();
@@ -91,15 +94,18 @@ export default function AvailabilityPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     const token = getToken();
     if (!token) { router.push("/admin/login"); return; }
 
     try {
-      await availabilityApi.removeUnavailable(id, token);
-      setBlocks(blocks.filter((b) => b.id !== id));
+      await availabilityApi.removeUnavailable(deleteTarget.id, token);
+      setBlocks(blocks.filter((b) => b.id !== deleteTarget.id));
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Failed to remove");
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -287,7 +293,7 @@ export default function AvailabilityPage() {
                     )}
                   </div>
                   <button
-                    onClick={() => handleDelete(block.id)}
+                    onClick={() => setDeleteTarget(block)}
                     className="rounded-lg p-2 text-gray-400 hover:bg-white hover:text-red-600"
                     title="Remove block (make available again)"
                   >
@@ -299,6 +305,39 @@ export default function AvailabilityPage() {
           )}
         </div>
       </Container>
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-[var(--space-md)] shadow-xl">
+            <h3 className="mb-2 font-heading text-[var(--text-lg)] font-semibold text-gray-900">
+              Confirm Deletion
+            </h3>
+            <p className="mb-1 text-[var(--text-sm)] text-gray-600">
+              Are you sure you want to remove this blocked period?
+            </p>
+            <p className="mb-[var(--space-md)] text-[var(--text-sm)] font-medium text-gray-800">
+              {deleteTarget.date}
+              {deleteTarget.is_holiday
+                ? " (Holiday)"
+                : ` ${deleteTarget.start_time} - ${deleteTarget.end_time}`}
+              {deleteTarget.reason ? ` — ${deleteTarget.reason}` : ""}
+            </p>
+            <div className="flex justify-end gap-[var(--space-sm)]">
+              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleDelete}
+                className="!bg-red-600 hover:!bg-red-700"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

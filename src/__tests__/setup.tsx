@@ -54,6 +54,30 @@ vi.mock("framer-motion", () => {
   };
 });
 
+// Mock recharts to render plain divs (no SVG rendering in jsdom)
+vi.mock("recharts", () => {
+  const container = (name: string) => (props: Record<string, unknown>) =>
+    React.createElement("div", { "data-testid": `chart-${name}` }, props.children as React.ReactNode);
+  const noop = (_name: string) => () => null;
+
+  return {
+    ResponsiveContainer: (props: Record<string, unknown>) =>
+      React.createElement("div", { "data-testid": "responsive-container" }, props.children as React.ReactNode),
+    AreaChart: container("area"),
+    BarChart: container("bar"),
+    PieChart: container("pie"),
+    Area: noop("Area"),
+    Bar: noop("Bar"),
+    Pie: noop("Pie"),
+    Cell: noop("Cell"),
+    XAxis: noop("XAxis"),
+    YAxis: noop("YAxis"),
+    CartesianGrid: noop("CartesianGrid"),
+    Tooltip: noop("Tooltip"),
+    Legend: noop("Legend"),
+  };
+});
+
 // Mock lucide-react icons as simple spans — explicit exports instead of Proxy
 vi.mock("lucide-react", () => {
   const icon = (name: string) => (props: Record<string, unknown>) =>
@@ -98,5 +122,7 @@ vi.mock("lucide-react", () => {
     // Login page
     Eye: icon("Eye"),
     EyeOff: icon("EyeOff"),
+    // Dashboard charts
+    BarChart3: icon("BarChart3"),
   };
 });

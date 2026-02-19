@@ -116,7 +116,13 @@ async def test_stats_returns_totals(client, mock_db, admin_token):
     mock_db.users.count_documents = AsyncMock(return_value=10)
     mock_db.bookings.count_documents = AsyncMock(return_value=25)
     mock_db.payments.count_documents = AsyncMock(return_value=20)
-    mock_db.bookings.aggregate = MagicMock(return_value=MockAggregationCursor([]))
+    mock_db.bookings.aggregate = MagicMock(side_effect=[
+        MockAggregationCursor([]),  # revenue_by_service
+        MockAggregationCursor([]),  # daily_bookings
+    ])
+    mock_db.payments.aggregate = MagicMock(
+        return_value=MockAggregationCursor([])  # daily_revenue
+    )
 
     resp = await client.get(
         "/api/admin/stats",
@@ -127,16 +133,22 @@ async def test_stats_returns_totals(client, mock_db, admin_token):
     assert data["total_users"] == 10
     assert data["total_bookings"] == 25
     assert data["total_payments"] == 20
+    assert len(data["daily_bookings"]) == 30
+    assert len(data["daily_revenue"]) == 30
 
 
 async def test_stats_returns_revenue_by_service(client, mock_db, admin_token):
     mock_db.users.count_documents = AsyncMock(return_value=0)
     mock_db.bookings.count_documents = AsyncMock(return_value=0)
     mock_db.payments.count_documents = AsyncMock(return_value=0)
-    mock_db.bookings.aggregate = MagicMock(
-        return_value=MockAggregationCursor([
+    mock_db.bookings.aggregate = MagicMock(side_effect=[
+        MockAggregationCursor([
             {"_id": "Call Consultation", "count": 5, "revenue": 9995},
-        ])
+        ]),  # revenue_by_service
+        MockAggregationCursor([]),  # daily_bookings
+    ])
+    mock_db.payments.aggregate = MagicMock(
+        return_value=MockAggregationCursor([])  # daily_revenue
     )
 
     resp = await client.get(
@@ -147,6 +159,37 @@ async def test_stats_returns_revenue_by_service(client, mock_db, admin_token):
     assert len(services) == 1
     assert services[0]["service"] == "Call Consultation"
     assert services[0]["revenue"] == 9995
+
+
+async def test_stats_returns_daily_bookings_with_data(client, mock_db, admin_token):
+    mock_db.users.count_documents = AsyncMock(return_value=0)
+    mock_db.bookings.count_documents = AsyncMock(return_value=0)
+    mock_db.payments.count_documents = AsyncMock(return_value=0)
+    mock_db.bookings.aggregate = MagicMock(side_effect=[
+        MockAggregationCursor([]),  # revenue_by_service
+        MockAggregationCursor([
+            {"_id": "2026-02-19", "count": 3},
+        ]),  # daily_bookings
+    ])
+    mock_db.payments.aggregate = MagicMock(
+        return_value=MockAggregationCursor([
+            {"_id": "2026-02-19", "revenue": 5997},
+        ])  # daily_revenue
+    )
+
+    resp = await client.get(
+        "/api/admin/stats",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    data = resp.json()
+    # Should have 30 days, with most being 0 and one being 3
+    assert len(data["daily_bookings"]) == 30
+    matching = [d for d in data["daily_bookings"] if d["bookings"] == 3]
+    assert len(matching) == 1
+    # Revenue series should also have 30 days
+    assert len(data["daily_revenue"]) == 30
+    rev_matching = [d for d in data["daily_revenue"] if d["revenue"] == 5997]
+    assert len(rev_matching) == 1
 
 
 async def test_stats_requires_admin(client, mock_db, user_token):
