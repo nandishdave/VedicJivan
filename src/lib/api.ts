@@ -59,43 +59,54 @@ export const authApi = {
 };
 
 // ── Availability ──
-export interface TimeSlot {
+export interface AvailableSlot {
   start: string;
   end: string;
-  booked: boolean;
 }
 
-export interface Availability {
+export interface Unavailability {
   id: string;
   date: string;
-  slots: TimeSlot[];
+  start_time: string | null;
+  end_time: string | null;
   is_holiday: boolean;
+  reason: string;
 }
 
 export const availabilityApi = {
-  getByDate: (date: string) =>
-    apiRequest<Availability | null>(`/api/availability?date=${date}`),
+  getSlots: (date: string) =>
+    apiRequest<AvailableSlot[]>(`/api/availability/slots?date=${date}`),
 
-  getRange: (start: string, end: string) =>
-    apiRequest<Availability[]>(`/api/availability/range?start=${start}&end=${end}`),
+  getHolidays: (start: string, end: string) =>
+    apiRequest<string[]>(`/api/availability/holidays?start=${start}&end=${end}`),
 
-  create: (data: { date: string; slots: TimeSlot[]; is_holiday: boolean }, token: string) =>
-    apiRequest<Availability>("/api/availability", { method: "POST", body: data, token }),
+  getUnavailable: (date: string) =>
+    apiRequest<Unavailability[]>(`/api/availability/unavailable?date=${date}`),
 
-  createBulk: (
+  getUnavailableRange: (start: string, end: string) =>
+    apiRequest<Unavailability[]>(
+      `/api/availability/unavailable/range?start=${start}&end=${end}`
+    ),
+
+  addUnavailable: (
     data: {
-      start_date: string;
-      end_date: string;
-      working_days: number[];
-      start_time: string;
-      end_time: string;
-      slot_duration_minutes: number;
+      date: string;
+      start_time?: string;
+      end_time?: string;
+      is_holiday?: boolean;
+      reason?: string;
     },
     token: string
   ) =>
-    apiRequest<{ created: number; message: string }>("/api/availability/bulk", {
+    apiRequest<Unavailability>("/api/availability/unavailable", {
       method: "POST",
       body: data,
+      token,
+    }),
+
+  removeUnavailable: (id: string, token: string) =>
+    apiRequest<{ message: string }>(`/api/availability/unavailable/${id}`, {
+      method: "DELETE",
       token,
     }),
 };

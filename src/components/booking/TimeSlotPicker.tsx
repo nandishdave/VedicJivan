@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
-import { availabilityApi, type TimeSlot } from "@/lib/api";
+import { availabilityApi, type AvailableSlot } from "@/lib/api";
 
 interface TimeSlotPickerProps {
   date: string;
@@ -11,7 +11,7 @@ interface TimeSlotPickerProps {
 }
 
 export function TimeSlotPicker({ date, onSlotSelect, selectedSlot }: TimeSlotPickerProps) {
-  const [slots, setSlots] = useState<TimeSlot[]>([]);
+  const [slots, setSlots] = useState<AvailableSlot[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -20,8 +20,8 @@ export function TimeSlotPicker({ date, onSlotSelect, selectedSlot }: TimeSlotPic
     const fetchSlots = async () => {
       setLoading(true);
       try {
-        const data = await availabilityApi.getByDate(date);
-        setSlots(data?.slots || []);
+        const data = await availabilityApi.getSlots(date);
+        setSlots(data);
       } catch {
         setSlots([]);
       } finally {
@@ -42,9 +42,7 @@ export function TimeSlotPicker({ date, onSlotSelect, selectedSlot }: TimeSlotPic
     );
   }
 
-  const availableSlots = slots.filter((s) => !s.booked);
-
-  if (availableSlots.length === 0) {
+  if (slots.length === 0) {
     return (
       <p className="text-center text-sm text-gray-500 py-8">
         No available slots for this date. Please select another date.
@@ -54,7 +52,7 @@ export function TimeSlotPicker({ date, onSlotSelect, selectedSlot }: TimeSlotPic
 
   return (
     <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-      {availableSlots.map((slot) => (
+      {slots.map((slot) => (
         <button
           key={slot.start}
           onClick={() => onSlotSelect(slot.start)}

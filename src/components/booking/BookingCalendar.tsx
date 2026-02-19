@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { availabilityApi, type Availability } from "@/lib/api";
+import { availabilityApi } from "@/lib/api";
 
 interface BookingCalendarProps {
   onDateSelect: (date: string) => void;
@@ -11,11 +11,11 @@ interface BookingCalendarProps {
 
 export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [availability, setAvailability] = useState<Availability[]>([]);
+  const [holidays, setHolidays] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchAvailability = async () => {
+    const fetchHolidays = async () => {
       setLoading(true);
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth();
@@ -24,16 +24,16 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
       const end = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
       try {
-        const data = await availabilityApi.getRange(start, end);
-        setAvailability(data);
+        const data = await availabilityApi.getHolidays(start, end);
+        setHolidays(new Set(data));
       } catch {
-        setAvailability([]);
+        setHolidays(new Set());
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAvailability();
+    fetchHolidays();
   }, [currentMonth]);
 
   const today = new Date();
@@ -44,17 +44,10 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const availableDates = new Set(
-    availability
-      .filter((a) => !a.is_holiday && a.slots.some((s) => !s.booked))
-      .map((a) => a.date)
-  );
-
   const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
 
   const days = [];
-  // Empty cells before first day
   for (let i = 0; i < firstDayOfMonth; i++) {
     days.push(<div key={`empty-${i}`} />);
   }
@@ -63,19 +56,21 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const date = new Date(year, month, day);
     const isPast = date < today;
-    const isAvailable = availableDates.has(dateStr);
+    const isHoliday = holidays.has(dateStr);
+    const isAvailable = !isPast && !isHoliday;
     const isSelected = dateStr === selectedDate;
 
     days.push(
       <button
         key={day}
-        onClick={() => isAvailable && !isPast && onDateSelect(dateStr)}
-        disabled={isPast || !isAvailable}
+        onClick={() => isAvailable && onDateSelect(dateStr)}
+        disabled={!isAvailable}
         className={`
           flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-colors
           ${isSelected ? "bg-primary-600 text-white" : ""}
-          ${!isSelected && isAvailable && !isPast ? "bg-green-50 text-green-700 hover:bg-green-100" : ""}
-          ${isPast || !isAvailable ? "text-gray-300 cursor-not-allowed" : "cursor-pointer"}
+          ${!isSelected && isAvailable ? "bg-green-50 text-green-700 hover:bg-green-100" : ""}
+          ${isHoliday && !isPast ? "bg-red-50 text-red-400 cursor-not-allowed" : ""}
+          ${isPast ? "text-gray-300 cursor-not-allowed" : ""}
         `}
       >
         {day}
@@ -116,7 +111,10 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
           <span className="inline-block h-3 w-3 rounded bg-green-50 border border-green-200" /> Available
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded bg-gray-100" /> Unavailable
+          <span className="inline-block h-3 w-3 rounded bg-red-50 border border-red-200" /> Holiday
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block h-3 w-3 rounded bg-gray-100" /> Past
         </span>
       </div>
     </div>

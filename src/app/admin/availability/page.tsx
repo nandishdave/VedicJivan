@@ -1,63 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarOff, Clock, Trash2, Plus } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { availabilityApi, type TimeSlot } from "@/lib/api";
+import { availabilityApi, type Unavailability } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
 export default function AvailabilityPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"single" | "bulk">("bulk");
 
-  // Single day
+  // Form state
+  const [mode, setMode] = useState<"time-block" | "holiday">("time-block");
   const [date, setDate] = useState("");
-  const [slots, setSlots] = useState<TimeSlot[]>([
-    { start: "10:00", end: "11:00", booked: false },
-  ]);
-
-  // Bulk
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [startTime, setStartTime] = useState("10:00");
-  const [endTime, setEndTime] = useState("18:00");
-  const [slotDuration, setSlotDuration] = useState(60);
-  const [workingDays, setWorkingDays] = useState([0, 1, 2, 3, 4]); // Mon-Fri
-
+  const [startTime, setStartTime] = useState("00:00");
+  const [endTime, setEndTime] = useState("10:00");
+  const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const addSlot = () => {
-    const last = slots[slots.length - 1];
-    setSlots([...slots, { start: last.end, end: last.end, booked: false }]);
-  };
+  // View existing blocks
+  const [viewStart, setViewStart] = useState("");
+  const [viewEnd, setViewEnd] = useState("");
+  const [blocks, setBlocks] = useState<Unavailability[]>([]);
+  const [viewLoading, setViewLoading] = useState(false);
 
-  const removeSlot = (index: number) => {
-    setSlots(slots.filter((_, i) => i !== index));
-  };
+  // Initialize view range to current month
+  useEffect(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const start = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const end = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    setViewStart(start);
+    setViewEnd(end);
+  }, []);
 
-  const updateSlot = (index: number, field: "start" | "end", value: string) => {
-    setSlots(slots.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
-  };
+  const fetchBlocks = useCallback(async () => {
+    if (!viewStart || !viewEnd) return;
+    setViewLoading(true);
+    try {
+      const data = await availabilityApi.getUnavailableRange(viewStart, viewEnd);
+      setBlocks(data);
+    } catch {
+      setBlocks([]);
+    } finally {
+      setViewLoading(false);
+    }
+  }, [viewStart, viewEnd]);
 
-  const toggleDay = (day: number) => {
-    setWorkingDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
-    );
-  };
+  useEffect(() => {
+    fetchBlocks();
+  }, [fetchBlocks]);
 
-  const handleSingle = async () => {
+  const handleAdd = async () => {
     const token = getToken();
     if (!token) { router.push("/admin/login"); return; }
+
+    if (!date) {
+      setMessage("Please select a date");
+      return;
+    }
 
     setLoading(true);
     setMessage("");
     try {
-      await availabilityApi.create({ date, slots, is_holiday: false }, token);
-      setMessage(`Availability set for ${date}`);
+      if (mode === "holiday") {
+        await availabilityApi.addUnavailable(
+          { date, is_holiday: true, reason },
+          token
+        );
+        setMessage(`${date} marked as holiday`);
+      } else {
+        await availabilityApi.addUnavailable(
+          { date, start_time: startTime, end_time: endTime, reason },
+          token
+        );
+        setMessage(`Blocked ${startTime} - ${endTime} on ${date}`);
+      }
+      setDate("");
+      setReason("");
+      fetchBlocks();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -65,33 +91,17 @@ export default function AvailabilityPage() {
     }
   };
 
-  const handleBulk = async () => {
+  const handleDelete = async (id: string) => {
     const token = getToken();
     if (!token) { router.push("/admin/login"); return; }
 
-    setLoading(true);
-    setMessage("");
     try {
-      const result = await availabilityApi.createBulk(
-        {
-          start_date: startDate,
-          end_date: endDate,
-          working_days: workingDays,
-          start_time: startTime,
-          end_time: endTime,
-          slot_duration_minutes: slotDuration,
-        },
-        token
-      );
-      setMessage(result.message);
+      await availabilityApi.removeUnavailable(id, token);
+      setBlocks(blocks.filter((b) => b.id !== id));
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Failed");
-    } finally {
-      setLoading(false);
+      setMessage(err instanceof Error ? err.message : "Failed to remove");
     }
   };
-
-  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   return (
     <section className="min-h-screen bg-gray-50 py-8">
@@ -100,24 +110,12 @@ export default function AvailabilityPage() {
           <Link href="/admin" className="rounded-lg p-2 hover:bg-gray-200">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="font-heading text-2xl font-bold">Set Availability</h1>
+          <h1 className="font-heading text-2xl font-bold">Manage Availability</h1>
         </div>
 
-        {/* Mode toggle */}
-        <div className="mb-6 flex gap-2">
-          <button
-            onClick={() => setMode("bulk")}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium ${mode === "bulk" ? "bg-primary-600 text-white" : "bg-white text-gray-600"}`}
-          >
-            Bulk (Date Range)
-          </button>
-          <button
-            onClick={() => setMode("single")}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium ${mode === "single" ? "bg-primary-600 text-white" : "bg-white text-gray-600"}`}
-          >
-            Single Day
-          </button>
-        </div>
+        <p className="mb-6 text-sm text-gray-500">
+          You are available 24/7 by default. Use this page to mark specific dates or time periods as unavailable.
+        </p>
 
         {message && (
           <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700">
@@ -125,31 +123,60 @@ export default function AvailabilityPage() {
           </div>
         )}
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
-          {mode === "bulk" ? (
-            <div className="space-y-5">
-              <h2 className="font-heading text-lg font-semibold">Bulk Create Slots</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
+        {/* Add unavailability form */}
+        <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="mb-4 font-heading text-lg font-semibold flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Block Time
+          </h2>
+
+          {/* Mode toggle */}
+          <div className="mb-5 flex gap-2">
+            <button
+              onClick={() => setMode("time-block")}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+                mode === "time-block" ? "bg-primary-600 text-white" : "bg-white text-gray-600 border"
+              }`}
+            >
+              <Clock className="mr-1 inline h-3.5 w-3.5" />
+              Time Block
+            </button>
+            <button
+              onClick={() => setMode("holiday")}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+                mode === "holiday" ? "bg-red-600 text-white" : "bg-white text-gray-600 border"
+              }`}
+            >
+              <CalendarOff className="mr-1 inline h-3.5 w-3.5" />
+              Full Day Holiday
+            </button>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Date</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
+              />
+            </div>
+
+            {mode === "time-block" && (
+              <>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Start Date</label>
+                  <label className="mb-1 block text-sm font-medium">Reason (optional)</label>
                   <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    type="text"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="e.g. Personal, Meeting"
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">End Date</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">Start Time</label>
+                  <label className="mb-1 block text-sm font-medium">From</label>
                   <input
                     type="time"
                     value={startTime}
@@ -158,7 +185,7 @@ export default function AvailabilityPage() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium">End Time</label>
+                  <label className="mb-1 block text-sm font-medium">To</label>
                   <input
                     type="time"
                     value={endTime}
@@ -166,93 +193,108 @@ export default function AvailabilityPage() {
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
                   />
                 </div>
-              </div>
+              </>
+            )}
+
+            {mode === "holiday" && (
               <div>
-                <label className="mb-1 block text-sm font-medium">Slot Duration</label>
-                <select
-                  value={slotDuration}
-                  onChange={(e) => setSlotDuration(Number(e.target.value))}
-                  className="rounded-lg border border-gray-300 px-4 py-2.5"
-                >
-                  <option value={30}>30 minutes</option>
-                  <option value={45}>45 minutes</option>
-                  <option value={60}>60 minutes</option>
-                  <option value={90}>90 minutes</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium">Working Days</label>
-                <div className="flex gap-2">
-                  {dayNames.map((name, i) => (
-                    <button
-                      key={name}
-                      onClick={() => toggleDay(i)}
-                      className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-                        workingDays.includes(i)
-                          ? "bg-primary-600 text-white"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <Button
-                variant="primary"
-                onClick={handleBulk}
-                disabled={loading || !startDate || !endDate}
-              >
-                {loading ? "Creating..." : "Create Availability"}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-5">
-              <h2 className="font-heading text-lg font-semibold">Single Day Slots</h2>
-              <div>
-                <label className="mb-1 block text-sm font-medium">Date</label>
+                <label className="mb-1 block text-sm font-medium">Reason (optional)</label>
                 <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="rounded-lg border border-gray-300 px-4 py-2.5"
+                  type="text"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="e.g. Diwali, Personal day"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">Time Slots</label>
-                {slots.map((slot, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      type="time"
-                      value={slot.start}
-                      onChange={(e) => updateSlot(i, "start", e.target.value)}
-                      className="rounded-lg border border-gray-300 px-3 py-2"
-                    />
-                    <span className="text-gray-400">to</span>
-                    <input
-                      type="time"
-                      value={slot.end}
-                      onChange={(e) => updateSlot(i, "end", e.target.value)}
-                      className="rounded-lg border border-gray-300 px-3 py-2"
-                    />
-                    {slots.length > 1 && (
-                      <button onClick={() => removeSlot(i)} className="text-red-400 hover:text-red-600">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <Button
+              variant="primary"
+              onClick={handleAdd}
+              disabled={loading || !date}
+            >
+              {loading
+                ? "Saving..."
+                : mode === "holiday"
+                  ? "Mark as Holiday"
+                  : "Block Time Period"}
+            </Button>
+          </div>
+        </div>
+
+        {/* View existing blocks */}
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="mb-4 font-heading text-lg font-semibold">Blocked Periods</h2>
+
+          <div className="mb-4 flex items-center gap-3">
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">From</label>
+              <input
+                type="date"
+                value={viewStart}
+                onChange={(e) => setViewStart(e.target.value)}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">To</label>
+              <input
+                type="date"
+                value={viewEnd}
+                onChange={(e) => setViewEnd(e.target.value)}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+
+          {viewLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-14 animate-pulse rounded-lg bg-gray-100" />
+              ))}
+            </div>
+          ) : blocks.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-400">
+              No blocked periods in this range. You are fully available!
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {blocks.map((block) => (
+                <div
+                  key={block.id}
+                  className={`flex items-center justify-between rounded-lg border p-3 ${
+                    block.is_holiday
+                      ? "border-red-200 bg-red-50"
+                      : "border-orange-200 bg-orange-50"
+                  }`}
+                >
+                  <div>
+                    <span className="font-medium text-sm">{block.date}</span>
+                    {block.is_holiday ? (
+                      <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                        Holiday
+                      </span>
+                    ) : (
+                      <span className="ml-2 text-sm text-gray-600">
+                        {block.start_time} - {block.end_time}
+                      </span>
+                    )}
+                    {block.reason && (
+                      <span className="ml-2 text-xs text-gray-500">({block.reason})</span>
                     )}
                   </div>
-                ))}
-                <button onClick={addSlot} className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700">
-                  <Plus className="h-4 w-4" /> Add Slot
-                </button>
-              </div>
-              <Button
-                variant="primary"
-                onClick={handleSingle}
-                disabled={loading || !date}
-              >
-                {loading ? "Saving..." : "Save Availability"}
-              </Button>
+                  <button
+                    onClick={() => handleDelete(block.id)}
+                    className="rounded-lg p-2 text-gray-400 hover:bg-white hover:text-red-600"
+                    title="Remove block (make available again)"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>

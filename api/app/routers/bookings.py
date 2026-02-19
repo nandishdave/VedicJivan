@@ -44,6 +44,15 @@ def get_price(service_slug: str, duration_minutes: int) -> int:
     return price
 
 
+def _time_to_minutes(t: str) -> int:
+    h, m = t.split(":")
+    return int(h) * 60 + int(m)
+
+
+def _overlaps(s1: int, e1: int, s2: int, e2: int) -> bool:
+    return s1 < e2 and s2 < e1
+
+
 @router.post("", response_model=BookingResponse)
 async def create_booking(data: BookingCreate):
     db = get_db()
@@ -51,24 +60,34 @@ async def create_booking(data: BookingCreate):
     # Validate price
     price = get_price(data.service_slug, data.duration_minutes)
 
-    # Check slot availability
-    avail = await db.availability.find_one({"date": data.date})
-    if not avail:
-        raise BadRequestError("No availability on this date")
-
-    if avail.get("is_holiday"):
+    # Check if date is a holiday
+    holiday = await db.unavailability.find_one({"date": data.date, "is_holiday": True})
+    if holiday:
         raise BadRequestError("This date is a holiday")
 
-    slot_found = False
-    for slot in avail["slots"]:
-        if slot["start"] == data.time_slot:
-            if slot["booked"]:
-                raise BadRequestError("This time slot is already booked")
-            slot_found = True
-            break
+    # Calculate booking time range
+    booking_start = _time_to_minutes(data.time_slot)
+    booking_end = booking_start + max(data.duration_minutes, 30)
 
-    if not slot_found:
-        raise BadRequestError("Time slot not available")
+    # Check against unavailable periods
+    cursor = db.unavailability.find({"date": data.date, "is_holiday": False})
+    async for block in cursor:
+        if block.get("start_time") and block.get("end_time"):
+            block_start = _time_to_minutes(block["start_time"])
+            block_end = _time_to_minutes(block["end_time"])
+            if _overlaps(booking_start, booking_end, block_start, block_end):
+                raise BadRequestError("This time slot is unavailable")
+
+    # Check against existing bookings
+    existing_cursor = db.bookings.find({
+        "date": data.date,
+        "status": {"$in": ["pending", "confirmed"]},
+    })
+    async for existing in existing_cursor:
+        ex_start = _time_to_minutes(existing["time_slot"])
+        ex_end = ex_start + existing.get("duration_minutes", 30)
+        if _overlaps(booking_start, booking_end, ex_start, ex_end):
+            raise BadRequestError("This time slot is already booked")
 
     booking = BookingInDB(
         user_name=data.user_name,
@@ -137,12 +156,6 @@ async def cancel_booking(booking_id: str, current_user: dict = Depends(get_curre
 
     if doc["status"] in [BookingStatus.COMPLETED, BookingStatus.CANCELLED]:
         raise BadRequestError(f"Cannot cancel a {doc['status']} booking")
-
-    # Free up the time slot
-    await db.availability.update_one(
-        {"date": doc["date"], "slots.start": doc["time_slot"]},
-        {"$set": {"slots.$.booked": False}},
-    )
 
     await db.bookings.update_one(
         {"_id": ObjectId(booking_id)},
