@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils/cn";
 import { motion } from "framer-motion";
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "gold";
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "gold" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -23,6 +23,8 @@ const variantStyles: Record<ButtonVariant, string> = {
   ghost:
     "text-primary-600 hover:bg-primary-50 active:bg-primary-100",
   gold: "bg-gold-gradient text-white hover:opacity-90 active:opacity-80 shadow-lg shadow-gold-500/25 hover:shadow-xl hover:shadow-gold-500/40",
+  danger:
+    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-lg shadow-red-600/25 hover:shadow-xl hover:shadow-red-600/40",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

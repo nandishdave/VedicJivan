@@ -20,6 +20,7 @@ export default function AvailabilityPage() {
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<"success" | "warning" | "error">("success");
 
   // View existing blocks
   const [viewStart, setViewStart] = useState("");
@@ -64,6 +65,7 @@ export default function AvailabilityPage() {
     if (!token) { router.push("/admin/login"); return; }
 
     if (!date) {
+      setMessageType("warning");
       setMessage("Please select a date");
       return;
     }
@@ -76,18 +78,21 @@ export default function AvailabilityPage() {
           { date, is_holiday: true, reason },
           token
         );
+        setMessageType("success");
         setMessage(`${date} marked as holiday`);
       } else {
         await availabilityApi.addUnavailable(
           { date, start_time: startTime, end_time: endTime, reason },
           token
         );
+        setMessageType("success");
         setMessage(`Blocked ${startTime} - ${endTime} on ${date}`);
       }
       setDate("");
       setReason("");
       fetchBlocks();
     } catch (err) {
+      setMessageType("error");
       setMessage(err instanceof Error ? err.message : "Failed");
     } finally {
       setLoading(false);
@@ -99,10 +104,17 @@ export default function AvailabilityPage() {
     const token = getToken();
     if (!token) { router.push("/admin/login"); return; }
 
+    const label = deleteTarget.is_holiday
+      ? `${deleteTarget.date} (Holiday)`
+      : `${deleteTarget.date} ${deleteTarget.start_time} - ${deleteTarget.end_time}`;
+
     try {
       await availabilityApi.removeUnavailable(deleteTarget.id, token);
       setBlocks(blocks.filter((b) => b.id !== deleteTarget.id));
+      setMessageType("success");
+      setMessage(`Removed: ${label}`);
     } catch (err) {
+      setMessageType("error");
       setMessage(err instanceof Error ? err.message : "Failed to remove");
     } finally {
       setDeleteTarget(null);
@@ -124,7 +136,15 @@ export default function AvailabilityPage() {
         </p>
 
         {message && (
-          <div className="mb-[var(--space-sm)] rounded-lg bg-green-50 border border-green-200 p-[var(--space-sm)] text-[var(--text-sm)] text-green-700">
+          <div
+            className={`mb-[var(--space-sm)] rounded-lg border p-[var(--space-sm)] text-[var(--text-sm)] ${
+              messageType === "success"
+                ? "border-green-200 bg-green-50 text-green-700"
+                : messageType === "warning"
+                  ? "border-yellow-200 bg-yellow-50 text-yellow-700"
+                  : "border-red-200 bg-red-50 text-red-700"
+            }`}
+          >
             {message}
           </div>
         )}
@@ -324,14 +344,10 @@ export default function AvailabilityPage() {
               {deleteTarget.reason ? ` — ${deleteTarget.reason}` : ""}
             </p>
             <div className="flex justify-end gap-[var(--space-sm)]">
-              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+              <Button variant="outline" onClick={() => setDeleteTarget(null)}>
                 Cancel
               </Button>
-              <Button
-                variant="primary"
-                onClick={handleDelete}
-                className="!bg-red-600 hover:!bg-red-700"
-              >
+              <Button variant="danger" onClick={handleDelete}>
                 Delete
               </Button>
             </div>
