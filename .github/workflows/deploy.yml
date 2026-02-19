@@ -27,6 +27,7 @@ jobs:
           NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
           NEXT_PUBLIC_YOUTUBE_API_KEY: ${{ secrets.NEXT_PUBLIC_YOUTUBE_API_KEY }}
           NEXT_PUBLIC_YOUTUBE_CHANNEL_ID: ${{ secrets.NEXT_PUBLIC_YOUTUBE_CHANNEL_ID }}
+          NEXT_PUBLIC_GOOGLE_PLACES_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY }}
           NEXT_PUBLIC_API_URL: https://api.vedicjivan.nandishdave.world
 
       - name: Configure AWS credentials
