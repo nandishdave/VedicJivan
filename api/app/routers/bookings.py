@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, Query
@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from app.database import get_db
 from app.dependencies import get_current_user, require_admin
 from app.models.booking import (
+    PENDING_EXPIRY_MINUTES,
     BookingCreate,
     BookingInDB,
     BookingResponse,
@@ -97,10 +98,14 @@ async def create_booking(data: BookingCreate):
             if _overlaps(booking_start, booking_end, block_start, block_end):
                 raise BadRequestError("This time slot is unavailable")
 
-    # Check against existing bookings
+    # Check against existing bookings (ignore expired pending bookings)
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
     existing_cursor = db.bookings.find({
         "date": data.date,
-        "status": {"$in": ["pending", "confirmed"]},
+        "$or": [
+            {"status": "confirmed"},
+            {"status": "pending", "created_at": {"$gte": cutoff}},
+        ],
     })
     async for existing in existing_cursor:
         ex_start = _time_to_minutes(existing["time_slot"])
@@ -154,6 +159,30 @@ async def list_bookings(
     async for doc in cursor:
         results.append(_to_response(doc))
     return results
+
+
+@router.get("/{booking_id}/resume", response_model=BookingResponse)
+async def resume_booking(booking_id: str):
+    """Check if a pending booking is still valid for resumption (public)."""
+    db = get_db()
+
+    try:
+        doc = await db.bookings.find_one({"_id": ObjectId(booking_id)})
+    except Exception:
+        raise NotFoundError("Booking not found")
+
+    if not doc:
+        raise NotFoundError("Booking not found")
+
+    if doc["status"] != BookingStatus.PENDING:
+        raise BadRequestError("Booking is no longer pending")
+
+    created_at = doc["created_at"]
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
+    if created_at < cutoff:
+        raise BadRequestError("Booking has expired")
+
+    return _to_response(doc)
 
 
 @router.get("/{booking_id}", response_model=BookingResponse)

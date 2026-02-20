@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, Query
@@ -12,6 +12,7 @@ from app.models.availability import (
     UnavailabilityCreate,
     UnavailabilityResponse,
 )
+from app.models.booking import PENDING_EXPIRY_MINUTES
 from app.services.settings import get_business_hours
 from app.utils.exceptions import BadRequestError, NotFoundError
 
@@ -97,10 +98,14 @@ async def get_available_slots(
         if doc.get("start_time") and doc.get("end_time"):
             unavailable.append((doc["start_time"], doc["end_time"]))
 
-    # Get confirmed bookings for the date
+    # Get confirmed + recent pending bookings for the date
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
     booking_cursor = db.bookings.find({
         "date": date_str,
-        "status": {"$in": ["pending", "confirmed"]},
+        "$or": [
+            {"status": "confirmed"},
+            {"status": "pending", "created_at": {"$gte": cutoff}},
+        ],
     })
     booked = []
     async for b in booking_cursor:

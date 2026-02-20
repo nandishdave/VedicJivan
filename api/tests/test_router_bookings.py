@@ -1,6 +1,7 @@
 """Tests for app.routers.bookings — pricing, overlap, and booking CRUD."""
 
 import pytest
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 from bson import ObjectId
@@ -335,3 +336,47 @@ async def test_create_booking_outside_business_hours(client, mock_db):
     resp = await client.post("/api/bookings", json=data)
     assert resp.status_code == 400
     assert "business hours" in resp.json()["detail"].lower()
+
+
+# ═══════════════════════════════════════
+# Resume endpoint tests
+# ═══════════════════════════════════════
+
+
+async def test_resume_booking_valid(client, mock_db, sample_booking_doc):
+    """Resume returns booking if pending and not expired."""
+    mock_db.bookings.find_one = AsyncMock(return_value=sample_booking_doc)
+
+    resp = await client.get(f"/api/bookings/{BOOKING_ID}/resume")
+    assert resp.status_code == 200
+    assert resp.json()["id"] == str(BOOKING_ID)
+    assert resp.json()["status"] == "pending"
+
+
+async def test_resume_booking_expired(client, mock_db, sample_booking_doc):
+    """Resume returns 400 if pending booking is older than 15 minutes."""
+    sample_booking_doc["created_at"] = datetime.now(timezone.utc) - timedelta(minutes=20)
+    mock_db.bookings.find_one = AsyncMock(return_value=sample_booking_doc)
+
+    resp = await client.get(f"/api/bookings/{BOOKING_ID}/resume")
+    assert resp.status_code == 400
+    assert "expired" in resp.json()["detail"].lower()
+
+
+async def test_resume_booking_not_found(client, mock_db):
+    """Resume returns 404 for nonexistent booking."""
+    mock_db.bookings.find_one = AsyncMock(return_value=None)
+    fake_id = str(ObjectId())
+
+    resp = await client.get(f"/api/bookings/{fake_id}/resume")
+    assert resp.status_code == 404
+
+
+async def test_resume_booking_already_confirmed(client, mock_db, sample_booking_doc):
+    """Resume returns 400 if booking is no longer pending."""
+    sample_booking_doc["status"] = "confirmed"
+    mock_db.bookings.find_one = AsyncMock(return_value=sample_booking_doc)
+
+    resp = await client.get(f"/api/bookings/{BOOKING_ID}/resume")
+    assert resp.status_code == 400
+    assert "no longer pending" in resp.json()["detail"].lower()

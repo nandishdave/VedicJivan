@@ -5,6 +5,9 @@ from enum import Enum
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
+PENDING_EXPIRY_MINUTES = 15
+
+
 class BookingStatus(str, Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"

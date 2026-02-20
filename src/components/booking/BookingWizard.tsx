@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
@@ -16,7 +16,7 @@ import { TimeSlotPicker } from "./TimeSlotPicker";
 import { DateOfBirthPicker } from "./DateOfBirthPicker";
 import { TimeOfBirthPicker } from "./TimeOfBirthPicker";
 import { PlaceOfBirthAutocomplete } from "./PlaceOfBirthAutocomplete";
-import { bookingsApi, paymentsApi, availabilityApi, type AvailableSlot } from "@/lib/api";
+import { bookingsApi, paymentsApi, availabilityApi, type AvailableSlot, type Booking } from "@/lib/api";
 import type { Service } from "@/data/services";
 
 interface BookingWizardProps {
@@ -99,6 +99,46 @@ export function BookingWizard({ service }: BookingWizardProps) {
   const [price, setPrice] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resumeBooking, setResumeBooking] = useState<Booking | null>(null);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [checkingResume, setCheckingResume] = useState(true);
+
+  const storageKey = `vedicjivan_pending_booking_${service.slug}`;
+
+  // Check for a pending booking in localStorage on mount
+  useEffect(() => {
+    const checkPendingBooking = async () => {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (!stored) {
+          setCheckingResume(false);
+          return;
+        }
+
+        const record = JSON.parse(stored);
+
+        // Client-side expiry check (15 min)
+        const elapsed = Date.now() - new Date(record.createdAt).getTime();
+        if (elapsed > 15 * 60 * 1000) {
+          localStorage.removeItem(storageKey);
+          setCheckingResume(false);
+          return;
+        }
+
+        // Server-side validation
+        const booking = await bookingsApi.resume(record.bookingId);
+        setResumeBooking(booking);
+        setShowResumePrompt(true);
+      } catch {
+        localStorage.removeItem(storageKey);
+      } finally {
+        setCheckingResume(false);
+      }
+    };
+
+    checkPendingBooking();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const durations = DURATION_OPTIONS[service.slug] || [];
 
@@ -129,6 +169,29 @@ export function BookingWizard({ service }: BookingWizardProps) {
     if (currentStepIndex > 0) {
       setStep(steps[currentStepIndex - 1].key);
     }
+  };
+
+  const handleResumeBooking = () => {
+    if (!resumeBooking) return;
+    setBookingId(resumeBooking.id);
+    setPrice(resumeBooking.price_inr);
+    setSelectedDate(resumeBooking.date);
+    setSelectedSlot(resumeBooking.time_slot);
+    setSelectedDuration(resumeBooking.duration_minutes);
+    setFormData((prev) => ({
+      ...prev,
+      name: resumeBooking.user_name,
+      email: resumeBooking.user_email,
+      phone: resumeBooking.user_phone,
+    }));
+    setShowResumePrompt(false);
+    setStep("payment");
+  };
+
+  const handleStartFresh = () => {
+    localStorage.removeItem(storageKey);
+    setShowResumePrompt(false);
+    setResumeBooking(null);
   };
 
   const handleCreateBooking = async () => {
@@ -164,6 +227,17 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
       setBookingId(booking.id);
       setPrice(booking.price_inr);
+
+      // Save to localStorage so user can resume if they leave
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          bookingId: booking.id,
+          createdAt: new Date().toISOString(),
+          serviceSlug: service.slug,
+        })
+      );
+
       setStep("payment");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create booking");
@@ -201,6 +275,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
                 razorpay_signature: response.razorpay_signature,
                 booking_id: bookingId,
               });
+              localStorage.removeItem(storageKey);
               setStep("confirmed");
             } catch {
               setError("Payment verification failed. Please contact support.");
@@ -222,6 +297,14 @@ export function BookingWizard({ service }: BookingWizardProps) {
       setLoading(false);
     }
   };
+
+  if (checkingResume) {
+    return (
+      <div className="mx-auto max-w-2xl text-center py-8 text-gray-500">
+        Loading...
+      </div>
+    );
+  }
 
   if (step === "confirmed") {
     return (
@@ -280,6 +363,27 @@ export function BookingWizard({ service }: BookingWizardProps) {
           </div>
         ))}
       </div>
+
+      {showResumePrompt && resumeBooking && (
+        <div className="mb-6 rounded-xl border-2 border-amber-300 bg-amber-50 p-5">
+          <h3 className="font-heading text-lg font-bold text-amber-800">
+            Resume Your Booking?
+          </h3>
+          <p className="mt-1 text-sm text-amber-700">
+            You have a pending {resumeBooking.service_title} booking
+            {resumeBooking.duration_minutes > 0 && ` for ${resumeBooking.date} at ${resumeBooking.time_slot}`}.
+            Would you like to continue to payment?
+          </p>
+          <div className="mt-4 flex gap-3">
+            <Button variant="primary" onClick={handleResumeBooking}>
+              Resume & Pay
+            </Button>
+            <Button variant="ghost" onClick={handleStartFresh}>
+              Start Fresh
+            </Button>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">

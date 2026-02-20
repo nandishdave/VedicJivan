@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { BookingWizard } from "@/components/booking/BookingWizard";
 import type { Service } from "@/data/services";
 
-const { mockCreate, mockGetHolidays, mockGetSlots, mockGetSettings } = vi.hoisted(() => ({
+const { mockCreate, mockResume, mockGetHolidays, mockGetSlots, mockGetSettings } = vi.hoisted(() => ({
   mockCreate: vi.fn(),
+  mockResume: vi.fn(),
   mockGetHolidays: vi.fn(),
   mockGetSlots: vi.fn(),
   mockGetSettings: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("@/lib/api", () => ({
   },
   bookingsApi: {
     create: mockCreate,
+    resume: mockResume,
   },
   paymentsApi: {
     createOrder: vi.fn().mockResolvedValue({
@@ -119,6 +121,8 @@ describe("BookingWizard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     cleanup();
+    localStorage.clear();
+    mockResume.mockRejectedValue(new Error("not found"));
     mockGetHolidays.mockResolvedValue([]);
     mockGetSettings.mockResolvedValue({
       timezone: "Asia/Kolkata",
@@ -139,46 +143,62 @@ describe("BookingWizard", () => {
     mockCreate.mockResolvedValue({ id: "booking-123", price_inr: 1999 });
   });
 
-  it("renders date step first for consultation services", () => {
+  it("renders date step first for consultation services", async () => {
     render(<BookingWizard service={consultationService} />);
-    expect(screen.getByRole("heading", { name: "Select a Date" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Select a Date" })).toBeInTheDocument();
+    });
   });
 
-  it("renders details step first for report services", () => {
+  it("renders details step first for report services", async () => {
     render(<BookingWizard service={reportService} />);
-    expect(screen.getByRole("heading", { name: "Your Details" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Your Details" })).toBeInTheDocument();
+    });
   });
 
-  it("consultation has more progress steps than report", () => {
+  it("consultation has more progress steps than report", async () => {
     const { unmount } = render(<BookingWizard service={consultationService} />);
-    expect(screen.getAllByText("Date").length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => {
+      expect(screen.getAllByText("Date").length).toBeGreaterThanOrEqual(1);
+    });
     unmount();
 
     render(<BookingWizard service={reportService} />);
-    expect(screen.queryByText("Date")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText("Date")).not.toBeInTheDocument();
+    });
   });
 
-  it("has disabled Back button on first step", () => {
+  it("has disabled Back button on first step", async () => {
     const { container } = render(<BookingWizard service={consultationService} />);
-    const buttons = container.querySelectorAll("button[disabled]");
-    expect(buttons.length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => {
+      const buttons = container.querySelectorAll("button[disabled]");
+      expect(buttons.length).toBeGreaterThanOrEqual(1);
+    });
   });
 
-  it("renders form fields on details step for report", () => {
+  it("renders form fields on details step for report", async () => {
     render(<BookingWizard service={reportService} />);
-    expect(screen.getByPlaceholderText("Enter your full name")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("Enter your full name")).toBeInTheDocument();
+    });
     expect(screen.getByPlaceholderText("you@example.com")).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/\+91/)).toBeInTheDocument();
   });
 
-  it("has notes textarea on details step", () => {
+  it("has notes textarea on details step", async () => {
     render(<BookingWizard service={reportService} />);
-    expect(screen.getByPlaceholderText(/describe what you/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/describe what you/i)).toBeInTheDocument();
+    });
   });
 
-  it("renders birth detail pickers on details step", () => {
+  it("renders birth detail pickers on details step", async () => {
     render(<BookingWizard service={reportService} />);
-    expect(screen.getByTestId("mock-dob-picker")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-dob-picker")).toBeInTheDocument();
+    });
     expect(screen.getByTestId("mock-birth-time-unknown")).toBeInTheDocument();
     expect(screen.getByTestId("mock-place-picker")).toBeInTheDocument();
   });
@@ -504,6 +524,102 @@ describe("BookingWizard", () => {
       const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.time_slot).toBe("00:00");
       expect(callArgs.duration_minutes).toBe(0);
+    });
+  });
+
+  // ═══════════════════════════════════════
+  // Resume pending booking tests
+  // ═══════════════════════════════════════
+
+  it("shows resume prompt when localStorage has a valid pending booking", async () => {
+    const record = {
+      bookingId: "booking-resume-1",
+      createdAt: new Date().toISOString(),
+      serviceSlug: "premium-kundli",
+    };
+    localStorage.setItem("vedicjivan_pending_booking_premium-kundli", JSON.stringify(record));
+
+    mockResume.mockResolvedValueOnce({
+      id: "booking-resume-1",
+      price_inr: 4999,
+      status: "pending",
+      service_title: "Premium Kundli Report",
+      service_slug: "premium-kundli",
+      date: "2026-03-16",
+      time_slot: "00:00",
+      duration_minutes: 0,
+      user_name: "John Doe",
+      user_email: "john@test.com",
+      user_phone: "1234567890",
+    });
+
+    render(<BookingWizard service={reportService} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Resume Your Booking?")).toBeInTheDocument();
+    });
+  });
+
+  it("clears resume prompt when Start Fresh is clicked", async () => {
+    const record = {
+      bookingId: "booking-resume-2",
+      createdAt: new Date().toISOString(),
+      serviceSlug: "premium-kundli",
+    };
+    localStorage.setItem("vedicjivan_pending_booking_premium-kundli", JSON.stringify(record));
+
+    mockResume.mockResolvedValueOnce({
+      id: "booking-resume-2",
+      price_inr: 4999,
+      status: "pending",
+      service_title: "Premium Kundli Report",
+      service_slug: "premium-kundli",
+      date: "2026-03-16",
+      time_slot: "00:00",
+      duration_minutes: 0,
+      user_name: "John Doe",
+      user_email: "john@test.com",
+      user_phone: "1234567890",
+    });
+
+    render(<BookingWizard service={reportService} />);
+
+    await waitFor(() => screen.getByText("Start Fresh"));
+    fireEvent.click(screen.getByText("Start Fresh"));
+
+    expect(screen.queryByText("Resume Your Booking?")).not.toBeInTheDocument();
+    expect(localStorage.getItem("vedicjivan_pending_booking_premium-kundli")).toBeNull();
+  });
+
+  it("navigates to payment step when Resume & Pay is clicked", async () => {
+    const record = {
+      bookingId: "booking-resume-3",
+      createdAt: new Date().toISOString(),
+      serviceSlug: "premium-kundli",
+    };
+    localStorage.setItem("vedicjivan_pending_booking_premium-kundli", JSON.stringify(record));
+
+    mockResume.mockResolvedValueOnce({
+      id: "booking-resume-3",
+      price_inr: 4999,
+      status: "pending",
+      service_title: "Premium Kundli Report",
+      service_slug: "premium-kundli",
+      date: "2026-03-16",
+      time_slot: "00:00",
+      duration_minutes: 0,
+      user_name: "John Doe",
+      user_email: "john@test.com",
+      user_phone: "1234567890",
+    });
+
+    render(<BookingWizard service={reportService} />);
+
+    await waitFor(() => screen.getByText("Resume & Pay"));
+    fireEvent.click(screen.getByText("Resume & Pay"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Complete Payment")).toBeInTheDocument();
     });
   });
 });

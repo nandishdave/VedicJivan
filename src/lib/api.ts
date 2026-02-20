@@ -197,6 +197,9 @@ export const bookingsApi = {
       body: { status },
       token,
     }),
+
+  resume: (id: string) =>
+    apiRequest<Booking>(`/api/bookings/${id}/resume`),
 };
 
 // ── Payments ──
