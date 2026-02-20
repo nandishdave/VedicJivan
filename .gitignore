@@ -53,6 +53,7 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 api/.env
+api/.coverage
 nul
 scripts/
 
@@ -65,3 +66,4 @@ terraform/*.tfstate
 terraform/*.tfstate.backup
 terraform/*.tfvars
 terraform/.terraform.lock.hcl
+terraform/tfplan
