@@ -622,4 +622,77 @@ describe("BookingWizard", () => {
       expect(screen.getByText("Complete Payment")).toBeInTheDocument();
     });
   });
+
+  // ═══════════════════════════════════════
+  // Partial progress restore tests
+  // ═══════════════════════════════════════
+
+  it("restores partial progress (date + time) and jumps to duration step", async () => {
+    const record = {
+      serviceSlug: "call-consultation",
+      serviceTitle: "Call Consultation",
+      date: "2026-03-20",
+      timeSlot: "10:00",
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem("vedicjivan_pending_booking_call-consultation", JSON.stringify(record));
+
+    render(<BookingWizard service={consultationService} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Select Duration" })).toBeInTheDocument();
+    });
+  });
+
+  it("restores partial progress (date + time + duration) and jumps to details step", async () => {
+    const record = {
+      serviceSlug: "call-consultation",
+      serviceTitle: "Call Consultation",
+      date: "2026-03-20",
+      timeSlot: "10:00",
+      duration: 30,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem("vedicjivan_pending_booking_call-consultation", JSON.stringify(record));
+
+    render(<BookingWizard service={consultationService} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Your Details" })).toBeInTheDocument();
+    });
+  });
+
+  it("saves partial progress to localStorage when a time slot is selected", async () => {
+    render(<BookingWizard service={consultationService} />);
+
+    // Step 1: Select date
+    await waitFor(() => {
+      const now = new Date();
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const dayButtons = screen.getAllByText(String(lastDay));
+      const clickable = dayButtons.find(btn => !btn.hasAttribute("disabled"));
+      if (clickable) fireEvent.click(clickable);
+    });
+
+    const allButtons = screen.getAllByRole("button");
+    const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
+    if (!nextBtn) return;
+    fireEvent.click(nextBtn);
+
+    // Step 2: Select time slot
+    await waitFor(() => {
+      expect(screen.getByText("09:00")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText("09:00"));
+
+    // Verify localStorage was set with partial progress
+    const stored = localStorage.getItem("vedicjivan_pending_booking_call-consultation");
+    expect(stored).not.toBeNull();
+    const parsed = JSON.parse(stored!);
+    expect(parsed.serviceSlug).toBe("call-consultation");
+    expect(parsed.serviceTitle).toBe("Call Consultation");
+    expect(parsed.timeSlot).toBe("09:00");
+    expect(parsed.savedAt).toBeDefined();
+    expect(parsed.bookingId).toBeUndefined();
+  });
 });
