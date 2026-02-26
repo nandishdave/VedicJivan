@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, X } from "lucide-react";
+import { Clock, X, ArrowRight } from "lucide-react";
 
 interface PendingRecord {
   serviceSlug: string;
@@ -94,45 +94,69 @@ export function PendingBookingBanner() {
   if (isBookingPage || dismissed || !record) return null;
 
   const isPendingPayment = !!record.bookingId;
+  const serviceLabel = record.serviceTitle || "booking";
 
   return (
-    <div className="bg-amber-50 border-b border-amber-200">
-      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <Clock className="h-5 w-5 flex-shrink-0 text-amber-600" />
-            <p className="text-sm text-amber-800 truncate">
-              {isPendingPayment ? (
-                <>
-                  Your <strong>{record.serviceTitle || "booking"}</strong> expires in{" "}
-                  <strong>{minutesLeft} min</strong> —{" "}
-                  <Link
-                    href={`/book/${record.serviceSlug}`}
-                    className="font-semibold underline hover:text-amber-900"
-                  >
-                    click here to complete payment
-                  </Link>
-                </>
-              ) : (
-                <>
-                  You have an unfinished <strong>{record.serviceTitle || "booking"}</strong> —{" "}
-                  <Link
-                    href={`/book/${record.serviceSlug}`}
-                    className="font-semibold underline hover:text-amber-900"
-                  >
-                    click here to continue
-                  </Link>
-                </>
-              )}
-            </p>
+    <div className="fixed bottom-0 inset-x-0 z-40 animate-slide-in-up pointer-events-none">
+      <div className="pointer-events-auto mx-0 sm:mx-4 sm:mb-4 mb-0">
+        <div className="bg-gradient-to-r from-primary-800 via-primary-700 to-primary-900 text-white shadow-2xl shadow-primary-900/40 sm:rounded-xl">
+          <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              {/* Left: icon + message */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex-shrink-0 rounded-full bg-white/15 p-2">
+                  <Clock className="h-5 w-5 text-gold-300" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm sm:text-base truncate">
+                    {isPendingPayment ? (
+                      <>
+                        Your <strong>{serviceLabel}</strong> is waiting!
+                      </>
+                    ) : (
+                      <>
+                        You have an unfinished <strong>{serviceLabel}</strong>
+                      </>
+                    )}
+                  </p>
+                  <p className="text-xs sm:text-sm text-white/70 truncate">
+                    {isPendingPayment ? (
+                      <>
+                        <span className="inline-flex items-center gap-1.5">
+                          Expires in{" "}
+                          <span className="relative inline-block rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-gold-200">
+                            <span className="banner-shimmer absolute inset-0 rounded-full" />
+                            <span className="relative">{minutesLeft} min</span>
+                          </span>
+                          {" "}— complete your payment
+                        </span>
+                      </>
+                    ) : (
+                      "Continue where you left off"
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: CTA + dismiss */}
+              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                <Link
+                  href={`/book/${record.serviceSlug}`}
+                  className="banner-glow-btn inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-primary-800 transition-all hover:bg-gold-100 hover:scale-105 active:scale-95 w-full sm:w-auto justify-center"
+                >
+                  {isPendingPayment ? "Complete Payment" : "Continue Booking"}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <button
+                  onClick={() => setDismissed(true)}
+                  className="flex-shrink-0 rounded-full p-2 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={() => setDismissed(true)}
-            className="flex-shrink-0 rounded p-1 text-amber-600 hover:bg-amber-100 hover:text-amber-800"
-            aria-label="Dismiss"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
       </div>
     </div>

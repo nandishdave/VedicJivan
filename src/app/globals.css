@@ -180,6 +180,23 @@
   }
 }
 
+/* Pending booking banner — CTA glow pulse */
+.banner-glow-btn {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Pending booking banner — timer badge shimmer */
+.banner-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;

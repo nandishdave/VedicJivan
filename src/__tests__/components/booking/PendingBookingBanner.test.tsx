@@ -27,7 +27,7 @@ describe("PendingBookingBanner", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("shows banner with continue link for partial progress booking", async () => {
+  it("shows banner with Continue Booking button for partial progress", async () => {
     localStorage.setItem(
       "vedicjivan_pending_booking_call-consultation",
       JSON.stringify({
@@ -46,12 +46,12 @@ describe("PendingBookingBanner", () => {
       expect(screen.getByText(/Call Consultation/)).toBeInTheDocument();
     });
 
-    const link = screen.getByText(/click here to continue/i);
+    const link = screen.getByText(/Continue Booking/i);
     expect(link).toBeInTheDocument();
     expect(link.closest("a")).toHaveAttribute("href", "/book/call-consultation");
   });
 
-  it("shows banner with expiry countdown for pending-payment booking", async () => {
+  it("shows banner with Complete Payment button for pending-payment booking", async () => {
     localStorage.setItem(
       "vedicjivan_pending_booking_call-consultation",
       JSON.stringify({
@@ -65,11 +65,12 @@ describe("PendingBookingBanner", () => {
     render(<PendingBookingBanner />);
 
     await waitFor(() => {
-      expect(screen.getByText(/expires in/i)).toBeInTheDocument();
+      expect(screen.getByText(/waiting/i)).toBeInTheDocument();
       expect(screen.getByText(/Call Consultation/)).toBeInTheDocument();
+      expect(screen.getByText(/Expires in/i)).toBeInTheDocument();
     });
 
-    const link = screen.getByText(/click here to complete payment/i);
+    const link = screen.getByText(/Complete Payment/i);
     expect(link).toBeInTheDocument();
     expect(link.closest("a")).toHaveAttribute("href", "/book/call-consultation");
   });
@@ -132,9 +133,7 @@ describe("PendingBookingBanner", () => {
     const { container } = render(<PendingBookingBanner />);
 
     // Banner should not render for expired booking
-    await waitFor(() => {
-      expect(container.querySelector(".bg-amber-50")).not.toBeInTheDocument();
-    });
+    expect(container.innerHTML).toBe("");
 
     // localStorage entry should be cleaned up
     expect(localStorage.getItem("vedicjivan_pending_booking_call-consultation")).toBeNull();

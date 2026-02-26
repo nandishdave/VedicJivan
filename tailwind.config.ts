@@ -63,6 +63,8 @@ const config: Config = {
         "slide-up": "slideUp 0.6s ease-out forwards",
         "float": "float 6s ease-in-out infinite",
         "gradient-text": "gradientText 4s ease infinite",
+        "slide-in-up": "slideInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards",
+        "pulse-glow": "pulseGlow 2s ease-in-out infinite",
       },
       keyframes: {
         fadeIn: {
@@ -80,6 +82,14 @@ const config: Config = {
         gradientText: {
           "0%, 100%": { backgroundPosition: "0% center" },
           "50%": { backgroundPosition: "100% center" },
+        },
+        slideInUp: {
+          "0%": { opacity: "0", transform: "translateY(100%)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        pulseGlow: {
+          "0%, 100%": { boxShadow: "0 0 8px 2px rgba(180, 130, 255, 0.4)" },
+          "50%": { boxShadow: "0 0 20px 6px rgba(180, 130, 255, 0.7)" },
         },
       },
     },

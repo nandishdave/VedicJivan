@@ -82,11 +82,11 @@ export default function RootLayout({
         <PersonJsonLd />
         <div className="site-scroll-progress"><ScrollProgress /></div>
         <div className="site-header"><Header /></div>
-        <PendingBookingBanner />
         <main className="flex-1">
           <PageTransition>{children}</PageTransition>
         </main>
         <div className="site-footer"><Footer /></div>
+        <PendingBookingBanner />
         <div className="site-back-to-top"><BackToTop /></div>
         <div className="site-whatsapp-float"><WhatsAppFloat /></div>
       </body>
