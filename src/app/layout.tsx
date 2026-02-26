@@ -9,6 +9,7 @@ import { OrganizationJsonLd, WebSiteJsonLd, PersonJsonLd } from "@/components/se
 import { PageTransition } from "@/components/ui/PageTransition";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { WhatsAppFloat } from "@/components/ui/WhatsAppFloat";
+import { PendingBookingBanner } from "@/components/booking/PendingBookingBanner";
 import "./globals.css";
 
 const inter = Inter({
@@ -81,6 +82,7 @@ export default function RootLayout({
         <PersonJsonLd />
         <div className="site-scroll-progress"><ScrollProgress /></div>
         <div className="site-header"><Header /></div>
+        <PendingBookingBanner />
         <main className="flex-1">
           <PageTransition>{children}</PageTransition>
         </main>

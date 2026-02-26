@@ -117,18 +117,50 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
         const record = JSON.parse(stored);
 
-        // Client-side expiry check (15 min)
-        const elapsed = Date.now() - new Date(record.createdAt).getTime();
-        if (elapsed > 15 * 60 * 1000) {
-          localStorage.removeItem(storageKey);
-          setCheckingResume(false);
-          return;
-        }
+        if (record.bookingId) {
+          // Full booking exists — check 15-min expiry
+          const elapsed = Date.now() - new Date(record.createdAt).getTime();
+          if (elapsed > 15 * 60 * 1000) {
+            localStorage.removeItem(storageKey);
+            setCheckingResume(false);
+            return;
+          }
 
-        // Server-side validation
-        const booking = await bookingsApi.resume(record.bookingId);
-        setResumeBooking(booking);
-        setShowResumePrompt(true);
+          // Server-side validation
+          const booking = await bookingsApi.resume(record.bookingId);
+          setResumeBooking(booking);
+          setShowResumePrompt(true);
+        } else {
+          // Partial progress — restore selections and fetch needed data
+          if (record.date) {
+            setSelectedDate(record.date);
+            // Fetch close time for the restored date
+            try {
+              const settings = await availabilityApi.getSettings();
+              const dayOfWeek = new Date(record.date + "T00:00:00").getDay();
+              const pyDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+              const dayConfig = settings.weekly_hours.find((d: { day: number }) => d.day === pyDay);
+              setCloseTime(dayConfig?.is_open ? dayConfig.close_time : "");
+            } catch { /* proceed without close time */ }
+
+            // Fetch available slots for the restored date
+            try {
+              const slots = await availabilityApi.getSlots(record.date);
+              setAvailableSlots(slots);
+            } catch { /* proceed without slots */ }
+          }
+          if (record.timeSlot) setSelectedSlot(record.timeSlot);
+          if (record.duration) setSelectedDuration(record.duration);
+
+          // Jump to the furthest step
+          if (record.duration) {
+            setStep("details");
+          } else if (record.timeSlot) {
+            setStep("duration");
+          } else if (record.date) {
+            setStep("time");
+          }
+        }
       } catch {
         localStorage.removeItem(storageKey);
       } finally {
@@ -235,6 +267,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
           bookingId: booking.id,
           createdAt: new Date().toISOString(),
           serviceSlug: service.slug,
+          serviceTitle: service.title,
         })
       );
 
@@ -428,6 +461,17 @@ export function BookingWizard({ service }: BookingWizardProps) {
               onSlotSelect={(slot) => {
                 setSelectedSlot(slot);
                 setSelectedDuration(0);
+                // Save partial progress
+                localStorage.setItem(
+                  storageKey,
+                  JSON.stringify({
+                    serviceSlug: service.slug,
+                    serviceTitle: service.title,
+                    date: selectedDate,
+                    timeSlot: slot,
+                    savedAt: new Date().toISOString(),
+                  })
+                );
               }}
             />
           </div>
@@ -468,7 +512,22 @@ export function BookingWizard({ service }: BookingWizardProps) {
                 return (
                   <button
                     key={d.minutes}
-                    onClick={() => !disabled && setSelectedDuration(d.minutes)}
+                    onClick={() => {
+                      if (disabled) return;
+                      setSelectedDuration(d.minutes);
+                      // Update partial progress with duration
+                      localStorage.setItem(
+                        storageKey,
+                        JSON.stringify({
+                          serviceSlug: service.slug,
+                          serviceTitle: service.title,
+                          date: selectedDate,
+                          timeSlot: selectedSlot,
+                          duration: d.minutes,
+                          savedAt: new Date().toISOString(),
+                        })
+                      );
+                    }}
                     disabled={disabled}
                     className={`rounded-xl border-2 p-4 text-center transition-colors ${
                       disabled
