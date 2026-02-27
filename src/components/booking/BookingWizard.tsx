@@ -131,7 +131,14 @@ export function BookingWizard({ service }: BookingWizardProps) {
           setResumeBooking(booking);
           setShowResumePrompt(true);
         } else {
-          // Partial progress — restore selections and fetch needed data
+          // Partial progress — check 2-hour expiry
+          const savedAt = record.savedAt ? new Date(record.savedAt).getTime() : 0;
+          if (savedAt && Date.now() - savedAt > 2 * 60 * 60 * 1000) {
+            localStorage.removeItem(storageKey);
+            setCheckingResume(false);
+            return;
+          }
+          // Restore selections and fetch needed data
           if (record.date) {
             setSelectedDate(record.date);
             // Fetch close time for the restored date

@@ -138,4 +138,27 @@ describe("PendingBookingBanner", () => {
     // localStorage entry should be cleaned up
     expect(localStorage.getItem("vedicjivan_pending_booking_call-consultation")).toBeNull();
   });
+
+  it("removes expired partial progress from localStorage after 2 hours", () => {
+    // Partial progress saved 3 hours ago — expired
+    const expiredTime = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+    localStorage.setItem(
+      "vedicjivan_pending_booking_call-consultation",
+      JSON.stringify({
+        serviceSlug: "call-consultation",
+        serviceTitle: "Call Consultation",
+        date: "2026-03-20",
+        timeSlot: "10:00",
+        savedAt: expiredTime,
+      })
+    );
+
+    const { container } = render(<PendingBookingBanner />);
+
+    // Banner should not render for expired partial progress
+    expect(container.innerHTML).toBe("");
+
+    // localStorage entry should be cleaned up
+    expect(localStorage.getItem("vedicjivan_pending_booking_call-consultation")).toBeNull();
+  });
 });

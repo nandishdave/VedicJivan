@@ -16,7 +16,8 @@ interface PendingRecord {
 }
 
 const STORAGE_PREFIX = "vedicjivan_pending_booking_";
-const EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
+const PAYMENT_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes for pending-payment
+const PARTIAL_EXPIRY_MS = 2 * 60 * 60 * 1000; // 2 hours for partial progress
 
 export function PendingBookingBanner() {
   const pathname = usePathname();
@@ -47,8 +48,16 @@ export function PendingBookingBanner() {
 
         if (!timestamp) continue;
 
-        // For bookings with bookingId, check 15-min expiry
-        if (data.bookingId && Date.now() - timestamp > EXPIRY_MS) {
+        const age = Date.now() - timestamp;
+
+        // Pending-payment bookings expire after 15 min
+        if (data.bookingId && age > PAYMENT_EXPIRY_MS) {
+          localStorage.removeItem(key);
+          continue;
+        }
+
+        // Partial progress expires after 2 hours
+        if (!data.bookingId && age > PARTIAL_EXPIRY_MS) {
           localStorage.removeItem(key);
           continue;
         }
@@ -66,7 +75,7 @@ export function PendingBookingBanner() {
       setRecord(best.data);
       if (best.data.bookingId && best.data.createdAt) {
         const elapsed = Date.now() - new Date(best.data.createdAt).getTime();
-        setMinutesLeft(Math.max(1, Math.ceil((EXPIRY_MS - elapsed) / 60000)));
+        setMinutesLeft(Math.max(1, Math.ceil((PAYMENT_EXPIRY_MS - elapsed) / 60000)));
       }
     }
   }, [isBookingPage, pathname]);
@@ -77,7 +86,7 @@ export function PendingBookingBanner() {
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - new Date(record.createdAt!).getTime();
-      const remaining = Math.ceil((EXPIRY_MS - elapsed) / 60000);
+      const remaining = Math.ceil((PAYMENT_EXPIRY_MS - elapsed) / 60000);
       if (remaining <= 0) {
         // Expired — remove from localStorage and hide
         const key = `${STORAGE_PREFIX}${record.serviceSlug}`;
