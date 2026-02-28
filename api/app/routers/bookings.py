@@ -64,54 +64,58 @@ async def create_booking(data: BookingCreate):
     # Validate price
     price = get_price(data.service_slug, data.duration_minutes)
 
-    # Check if date is a holiday
-    holiday = await db.unavailability.find_one({"date": data.date, "is_holiday": True})
-    if holiday:
-        raise BadRequestError("This date is a holiday")
+    is_report = data.duration_minutes == 0
 
-    # Calculate booking time range
-    booking_start = _time_to_minutes(data.time_slot)
-    booking_end = booking_start + max(data.duration_minutes, 30)
+    # Scheduling checks only apply to consultation/session bookings, not reports
+    if not is_report:
+        # Check if date is a holiday
+        holiday = await db.unavailability.find_one({"date": data.date, "is_holiday": True})
+        if holiday:
+            raise BadRequestError("This date is a holiday")
 
-    # Check business hours for the day
-    bh_settings = await get_business_hours()
-    requested_date = date.fromisoformat(data.date)
-    day_of_week = requested_date.weekday()
+        # Calculate booking time range
+        booking_start = _time_to_minutes(data.time_slot)
+        booking_end = booking_start + max(data.duration_minutes, 30)
 
-    day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)
-    if not day_config or not day_config.is_open:
-        raise BadRequestError("Bookings are not available on this day")
+        # Check business hours for the day
+        bh_settings = await get_business_hours()
+        requested_date = date.fromisoformat(data.date)
+        day_of_week = requested_date.weekday()
 
-    bh_open = _time_to_minutes(day_config.open_time)
-    bh_close = _time_to_minutes(day_config.close_time)
-    if booking_start < bh_open or booking_end > bh_close:
-        raise BadRequestError(
-            f"Booking must be within business hours ({day_config.open_time} - {day_config.close_time})"
-        )
+        day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)
+        if not day_config or not day_config.is_open:
+            raise BadRequestError("Bookings are not available on this day")
 
-    # Check against unavailable periods
-    cursor = db.unavailability.find({"date": data.date, "is_holiday": False})
-    async for block in cursor:
-        if block.get("start_time") and block.get("end_time"):
-            block_start = _time_to_minutes(block["start_time"])
-            block_end = _time_to_minutes(block["end_time"])
-            if _overlaps(booking_start, booking_end, block_start, block_end):
-                raise BadRequestError("This time slot is unavailable")
+        bh_open = _time_to_minutes(day_config.open_time)
+        bh_close = _time_to_minutes(day_config.close_time)
+        if booking_start < bh_open or booking_end > bh_close:
+            raise BadRequestError(
+                f"Booking must be within business hours ({day_config.open_time} - {day_config.close_time})"
+            )
 
-    # Check against existing bookings (ignore expired pending bookings)
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
-    existing_cursor = db.bookings.find({
-        "date": data.date,
-        "$or": [
-            {"status": "confirmed"},
-            {"status": "pending", "created_at": {"$gte": cutoff}},
-        ],
-    })
-    async for existing in existing_cursor:
-        ex_start = _time_to_minutes(existing["time_slot"])
-        ex_end = ex_start + existing.get("duration_minutes", 30)
-        if _overlaps(booking_start, booking_end, ex_start, ex_end):
-            raise BadRequestError("This time slot is already booked")
+        # Check against unavailable periods
+        cursor = db.unavailability.find({"date": data.date, "is_holiday": False})
+        async for block in cursor:
+            if block.get("start_time") and block.get("end_time"):
+                block_start = _time_to_minutes(block["start_time"])
+                block_end = _time_to_minutes(block["end_time"])
+                if _overlaps(booking_start, booking_end, block_start, block_end):
+                    raise BadRequestError("This time slot is unavailable")
+
+        # Check against existing bookings (ignore expired pending bookings)
+        cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
+        existing_cursor = db.bookings.find({
+            "date": data.date,
+            "$or": [
+                {"status": "confirmed"},
+                {"status": "pending", "created_at": {"$gte": cutoff}},
+            ],
+        })
+        async for existing in existing_cursor:
+            ex_start = _time_to_minutes(existing["time_slot"])
+            ex_end = ex_start + existing.get("duration_minutes", 30)
+            if _overlaps(booking_start, booking_end, ex_start, ex_end):
+                raise BadRequestError("This time slot is already booked")
 
     booking = BookingInDB(
         user_name=data.user_name,

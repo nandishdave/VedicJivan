@@ -153,12 +153,17 @@ def test_booking_create_time_slot_valid():
 
 def test_booking_create_duration_too_short():
     with pytest.raises(ValidationError):
-        BookingCreate(**{**_VALID_BOOKING, "duration_minutes": 14})
+        BookingCreate(**{**_VALID_BOOKING, "duration_minutes": -1})
 
 
 def test_booking_create_duration_too_long():
     with pytest.raises(ValidationError):
         BookingCreate(**{**_VALID_BOOKING, "duration_minutes": 121})
+
+
+def test_booking_create_duration_zero_for_reports():
+    b = BookingCreate(**{**_VALID_BOOKING, "duration_minutes": 0})
+    assert b.duration_minutes == 0
 
 
 def test_booking_create_duration_boundary_min():

@@ -20,7 +20,7 @@ class BookingCreate(BaseModel):
     service_title: str
     date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     time_slot: str = Field(..., pattern=r"^\d{2}:\d{2}$")
-    duration_minutes: int = Field(..., ge=15, le=120)
+    duration_minutes: int = Field(..., ge=0, le=120)
     user_name: str = Field(..., min_length=2, max_length=100)
     user_email: EmailStr
     user_phone: str = Field(..., min_length=10, max_length=20)
