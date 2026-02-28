@@ -85,6 +85,15 @@ function Header() {
               >
                 <Facebook className="h-4 w-4" />
               </a>
+              <span className="text-gray-600">|</span>
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-1.5 transition-colors hover:text-gold-400"
+                aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+              >
+                {resolvedTheme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+                <span>{resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+              </button>
             </div>
           </div>
         </Container>
@@ -128,13 +137,6 @@ function Header() {
 
             {/* Desktop CTA */}
             <div className="hidden items-center gap-3 lg:flex">
-              <button
-                onClick={toggleTheme}
-                className="rounded-lg p-2 text-vedic-dark transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
-                aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
-              >
-                {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
               <Link href="/login">
                 <Button variant="ghost" size="sm">
                   Login
