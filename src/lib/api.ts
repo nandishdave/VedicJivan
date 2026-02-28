@@ -28,7 +28,16 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: "Request failed" }));
-    throw new Error(error.detail || `HTTP ${response.status}`);
+    let message: string;
+    if (typeof error.detail === "string") {
+      message = error.detail;
+    } else if (Array.isArray(error.detail)) {
+      // FastAPI validation errors: [{loc, msg, type}, ...]
+      message = error.detail.map((e: { msg?: string }) => e.msg || "Validation error").join("; ");
+    } else {
+      message = error.message || `HTTP ${response.status}`;
+    }
+    throw new Error(message);
   }
 
   return response.json();

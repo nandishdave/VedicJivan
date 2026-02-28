@@ -79,6 +79,23 @@ describe("apiRequest", () => {
     await expect(apiRequest("/api/test")).rejects.toThrow("Bad request");
   });
 
+  it("formats FastAPI validation errors (array detail) into readable message", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      json: () =>
+        Promise.resolve({
+          detail: [
+            { loc: ["body", "email"], msg: "field required", type: "value_error.missing" },
+            { loc: ["body", "phone"], msg: "invalid format", type: "value_error" },
+          ],
+        }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(apiRequest("/api/test")).rejects.toThrow("field required; invalid format");
+  });
+
   it("throws HTTP status when no detail in response", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
