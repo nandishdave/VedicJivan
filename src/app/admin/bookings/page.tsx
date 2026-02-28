@@ -50,10 +50,10 @@ export default function BookingsPage() {
   };
 
   const statusColors: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-700",
-    confirmed: "bg-green-100 text-green-700",
-    completed: "bg-blue-100 text-blue-700",
-    cancelled: "bg-red-100 text-red-700",
+    pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300",
+    confirmed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    completed: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300",
+    cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
   };
 
   const actionButtons = (booking: Booking) => (
@@ -69,7 +69,7 @@ export default function BookingsPage() {
         </Button>
       )}
       {!["completed", "cancelled"].includes(booking.status) && (
-        <Button variant="ghost" size="sm" onClick={() => handleStatusUpdate(booking.id, "cancelled")} className="text-red-600 hover:text-red-700">
+        <Button variant="ghost" size="sm" onClick={() => handleStatusUpdate(booking.id, "cancelled")} className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
           Cancel
         </Button>
       )}
@@ -77,11 +77,11 @@ export default function BookingsPage() {
   );
 
   return (
-    <section className="min-h-screen bg-gray-50 py-[var(--space-lg)]">
+    <section className="min-h-screen bg-gray-50 dark:bg-dark-surface py-[var(--space-lg)]">
       <Container>
         <div className="mb-[var(--space-md)] flex items-center justify-between">
           <div className="flex items-center gap-[var(--space-sm)]">
-            <Link href="/admin" className="rounded-lg p-2 hover:bg-gray-200">
+            <Link href="/admin" className="rounded-lg p-2 hover:bg-gray-200 dark:hover:bg-white/10">
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <h1 className="font-heading text-[var(--text-xl)] font-bold">Manage Bookings</h1>
@@ -97,7 +97,7 @@ export default function BookingsPage() {
               className={`rounded-full px-4 py-1.5 text-[var(--text-sm)] font-medium transition-colors ${
                 filter === s
                   ? "bg-primary-600 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-100"
+                  : "bg-white dark:bg-dark-surface-card text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10"
               }`}
             >
               {s || "All"}
@@ -108,13 +108,13 @@ export default function BookingsPage() {
         {loading ? (
           <div className="space-y-[var(--space-sm)]">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-gray-200" />
+              <div key={i} className="h-16 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
             ))}
           </div>
         ) : (
-          <div className="rounded-xl border border-gray-200 bg-white">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card">
             {/* Mobile card layout */}
-            <div className="divide-y divide-gray-100 sm:hidden">
+            <div className="divide-y divide-gray-100 dark:divide-white/10 sm:hidden">
               {bookings.map((booking) => (
                 <div key={booking.id} className="p-[var(--space-md)]">
                   <div className="flex items-center justify-between">
@@ -126,10 +126,10 @@ export default function BookingsPage() {
                       {booking.status}
                     </span>
                   </div>
-                  <p className="mt-1 text-[var(--text-sm)] text-gray-600">{booking.service_title}</p>
+                  <p className="mt-1 text-[var(--text-sm)] text-gray-600 dark:text-gray-400">{booking.service_title}</p>
                   <div className="mt-1 flex items-center justify-between text-[var(--text-sm)] text-gray-500">
                     <span>{booking.date} at {booking.time_slot} &middot; {booking.duration_minutes}m</span>
-                    <span className="font-medium text-gray-700">{"\u20B9"}{booking.price_inr}</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{"\u20B9"}{booking.price_inr}</span>
                   </div>
                   {booking.date_of_birth && (
                     <div className="mt-1 text-[var(--text-sm)] text-gray-500">
@@ -152,7 +152,7 @@ export default function BookingsPage() {
             {/* Desktop table */}
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full text-[var(--text-sm)]">
-                <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                <thead className="bg-gray-50 dark:bg-dark-surface text-left text-xs uppercase text-gray-500">
                   <tr>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Customer</th>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Service</th>
@@ -166,9 +166,9 @@ export default function BookingsPage() {
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-white/10">
                   {bookings.map((booking) => (
-                    <tr key={booking.id} className="hover:bg-gray-50">
+                    <tr key={booking.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
                       <td className="px-[var(--space-md)] py-[var(--space-sm)]">
                         <p className="font-medium">{booking.user_name}</p>
                         <p className="text-xs text-gray-400">{booking.user_email}</p>
@@ -177,8 +177,8 @@ export default function BookingsPage() {
                       <td className="px-[var(--space-md)] py-[var(--space-sm)] whitespace-nowrap">{booking.date}</td>
                       <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] md:table-cell">{booking.time_slot}</td>
                       <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] lg:table-cell">{booking.duration_minutes}m</td>
-                      <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] xl:table-cell whitespace-nowrap">{booking.date_of_birth || "—"}</td>
-                      <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] xl:table-cell max-w-[200px] truncate">{booking.place_of_birth || "—"}</td>
+                      <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] xl:table-cell whitespace-nowrap">{booking.date_of_birth || "\u2014"}</td>
+                      <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] xl:table-cell max-w-[200px] truncate">{booking.place_of_birth || "\u2014"}</td>
                       <td className="px-[var(--space-md)] py-[var(--space-sm)]">{"\u20B9"}{booking.price_inr}</td>
                       <td className="px-[var(--space-md)] py-[var(--space-sm)]">
                         <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[booking.status] || ""}`}>

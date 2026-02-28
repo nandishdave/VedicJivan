@@ -10,6 +10,7 @@ import { PageTransition } from "@/components/ui/PageTransition";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { WhatsAppFloat } from "@/components/ui/WhatsAppFloat";
 import { PendingBookingBanner } from "@/components/booking/PendingBookingBanner";
+import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -74,21 +75,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable} no-transitions`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('vedicjivan_theme');var d=t==='dark'||(!t||t==='system')&&window.matchMedia('(prefers-color-scheme:dark)').matches;if(d)document.documentElement.classList.add('dark')}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="flex min-h-screen flex-col">
-        <GoogleAnalytics />
-        <OrganizationJsonLd />
-        <WebSiteJsonLd />
-        <PersonJsonLd />
-        <div className="site-scroll-progress"><ScrollProgress /></div>
-        <div className="site-header"><Header /></div>
-        <main className="flex-1">
-          <PageTransition>{children}</PageTransition>
-        </main>
-        <div className="site-footer"><Footer /></div>
-        <PendingBookingBanner />
-        <div className="site-back-to-top"><BackToTop /></div>
-        <div className="site-whatsapp-float"><WhatsAppFloat /></div>
+        <ThemeProvider>
+          <GoogleAnalytics />
+          <OrganizationJsonLd />
+          <WebSiteJsonLd />
+          <PersonJsonLd />
+          <div className="site-scroll-progress"><ScrollProgress /></div>
+          <div className="site-header"><Header /></div>
+          <main className="flex-1">
+            <PageTransition>{children}</PageTransition>
+          </main>
+          <div className="site-footer"><Footer /></div>
+          <PendingBookingBanner />
+          <div className="site-back-to-top"><BackToTop /></div>
+          <div className="site-whatsapp-float"><WhatsAppFloat /></div>
+        </ThemeProvider>
       </body>
     </html>
   );

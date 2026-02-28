@@ -23,7 +23,7 @@ export default function TermsPage() {
 
       <section className="vedic-section">
         <Container size="narrow">
-          <div className="prose prose-lg max-w-none prose-headings:font-heading prose-headings:text-vedic-dark prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-vedic-dark">
+          <div className="prose prose-lg max-w-none prose-headings:font-heading prose-headings:text-vedic-dark dark:prose-headings:text-gray-100 prose-p:text-gray-600 dark:prose-p:text-gray-400 prose-li:text-gray-600 dark:prose-li:text-gray-400 prose-strong:text-vedic-dark dark:prose-strong:text-gray-100">
             <h2>1. Acceptance of Terms</h2>
             <p>
               By accessing or using the VedicJivan website and services, you agree

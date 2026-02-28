@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { Menu, X, ChevronDown, Instagram, Youtube, Facebook, ExternalLink } from "lucide-react";
+import { Menu, X, ChevronDown, Instagram, Youtube, Facebook, ExternalLink, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/components/ui/ThemeProvider";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { cn } from "@/lib/utils/cn";
 import { mainNav, type NavItem } from "@/config/navigation";
@@ -17,6 +18,7 @@ function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const pathname = usePathname();
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -93,8 +95,8 @@ function Header() {
         className={cn(
           "sticky top-0 z-50 w-full transition-all duration-300",
           isScrolled
-            ? "bg-white/95 shadow-lg shadow-primary-900/5 backdrop-blur-md"
-            : "bg-white"
+            ? "bg-white/95 shadow-lg shadow-primary-900/5 backdrop-blur-md dark:bg-dark-surface/95 dark:shadow-black/20"
+            : "bg-white dark:bg-dark-surface"
         )}
       >
         <Container>
@@ -106,7 +108,7 @@ function Header() {
                 alt="VedicJivan — Connect The Divine Within"
                 width={336}
                 height={142}
-                className="h-14 w-auto sm:h-16 lg:h-[72px]"
+                className="h-14 w-auto sm:h-16 lg:h-[72px] dark:brightness-0 dark:invert"
                 priority
               />
             </Link>
@@ -126,6 +128,13 @@ function Header() {
 
             {/* Desktop CTA */}
             <div className="hidden items-center gap-3 lg:flex">
+              <button
+                onClick={toggleTheme}
+                className="rounded-lg p-2 text-vedic-dark transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
+                aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+              >
+                {resolvedTheme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
               <Link href="/login">
                 <Button variant="ghost" size="sm">
                   Login
@@ -140,7 +149,7 @@ function Header() {
 
             {/* Mobile Menu Button */}
             <button
-              className="rounded-lg p-2 text-vedic-dark transition-colors hover:bg-gray-100 lg:hidden"
+              className="rounded-lg p-2 text-vedic-dark transition-colors hover:bg-gray-100 lg:hidden dark:text-gray-300 dark:hover:bg-white/10"
               onClick={() => setIsOpen(!isOpen)}
               aria-label={isOpen ? "Close menu" : "Open menu"}
             >
@@ -152,7 +161,7 @@ function Header() {
         {/* Mobile Navigation */}
         <div
           className={cn(
-            "overflow-hidden border-t border-gray-100 bg-white transition-all duration-300 lg:hidden",
+            "overflow-hidden border-t border-gray-100 bg-white transition-all duration-300 lg:hidden dark:border-white/10 dark:bg-dark-surface",
             isOpen ? "max-h-[80vh] opacity-100" : "max-h-0 opacity-0"
           )}
         >
@@ -167,7 +176,14 @@ function Header() {
                   setOpenDropdown={setOpenDropdown}
                 />
               ))}
-              <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4">
+              <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4 dark:border-white/10">
+                <button
+                  onClick={toggleTheme}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-vedic-text transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
+                >
+                  {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
+                </button>
                 <Link href="/login">
                   <Button variant="outline" size="sm" className="w-full">
                     Login
@@ -215,7 +231,7 @@ function NavLink({
             "flex items-center gap-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
             isActive
               ? "text-primary-600"
-              : "text-vedic-text hover:bg-primary-50 hover:text-primary-600"
+              : "text-vedic-text hover:bg-primary-50 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-primary-900/20"
           )}
         >
           {item.label}
@@ -228,7 +244,7 @@ function NavLink({
         </button>
         <div
           className={cn(
-            "absolute left-0 top-full min-w-[220px] rounded-xl border border-gray-100 bg-white py-2 shadow-xl shadow-primary-900/10 transition-all duration-200",
+            "absolute left-0 top-full min-w-[220px] rounded-xl border border-gray-100 bg-white py-2 shadow-xl shadow-primary-900/10 transition-all duration-200 dark:border-white/10 dark:bg-dark-surface-card dark:shadow-black/30",
             isDropdownOpen
               ? "visible translate-y-0 opacity-100"
               : "invisible -translate-y-2 opacity-0"
@@ -241,7 +257,7 @@ function NavLink({
                 href={child.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-vedic-text transition-colors hover:bg-primary-50 hover:text-primary-600"
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-vedic-text transition-colors hover:bg-primary-50 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-primary-900/20"
               >
                 {child.label}
                 <ExternalLink className="h-3 w-3 opacity-50" />
@@ -253,8 +269,8 @@ function NavLink({
                 className={cn(
                   "block px-4 py-2.5 text-sm transition-colors",
                   pathname === child.href
-                    ? "bg-primary-50 text-primary-600"
-                    : "text-vedic-text hover:bg-primary-50 hover:text-primary-600"
+                    ? "bg-primary-50 text-primary-600 dark:bg-primary-900/20"
+                    : "text-vedic-text hover:bg-primary-50 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-primary-900/20"
                 )}
               >
                 {child.label}
@@ -273,7 +289,7 @@ function NavLink({
         "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
         isActive
           ? "text-primary-600"
-          : "text-vedic-text hover:bg-primary-50 hover:text-primary-600"
+          : "text-vedic-text hover:bg-primary-50 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-primary-900/20"
       )}
     >
       {item.label}
@@ -307,8 +323,8 @@ function MobileNavLink({
           className={cn(
             "flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-medium transition-colors",
             isActive
-              ? "bg-primary-50 text-primary-600"
-              : "text-vedic-text hover:bg-gray-50"
+              ? "bg-primary-50 text-primary-600 dark:bg-primary-900/20"
+              : "text-vedic-text hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
           )}
         >
           {item.label}
@@ -325,7 +341,7 @@ function MobileNavLink({
             isDropdownOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
           )}
         >
-          <div className="ml-4 space-y-1 border-l-2 border-primary-200 pl-4 pt-1">
+          <div className="ml-4 space-y-1 border-l-2 border-primary-200 pl-4 pt-1 dark:border-primary-700">
             {item.children!.map((child) =>
               child.external ? (
                 <a
@@ -333,7 +349,7 @@ function MobileNavLink({
                   href={child.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:text-primary-600"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:text-primary-600 dark:text-gray-400"
                 >
                   {child.label}
                   <ExternalLink className="h-3 w-3 opacity-50" />
@@ -346,7 +362,7 @@ function MobileNavLink({
                     "block rounded-lg px-3 py-2 text-sm transition-colors",
                     pathname === child.href
                       ? "text-primary-600 font-medium"
-                      : "text-gray-600 hover:text-primary-600"
+                      : "text-gray-600 hover:text-primary-600 dark:text-gray-400"
                   )}
                 >
                   {child.label}
@@ -365,8 +381,8 @@ function MobileNavLink({
       className={cn(
         "block rounded-lg px-4 py-3 text-sm font-medium transition-colors",
         isActive
-          ? "bg-primary-50 text-primary-600"
-          : "text-vedic-text hover:bg-gray-50"
+          ? "bg-primary-50 text-primary-600 dark:bg-primary-900/20"
+          : "text-vedic-text hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
       )}
     >
       {item.label}

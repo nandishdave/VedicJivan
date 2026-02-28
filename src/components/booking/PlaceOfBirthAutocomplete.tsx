@@ -161,13 +161,13 @@ export function PlaceOfBirthAutocomplete({
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
         <input
           type="text"
           value={inputValue}
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-          className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-4 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-4 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
           placeholder={
             apiKey
               ? "Start typing a city name..."
@@ -182,14 +182,14 @@ export function PlaceOfBirthAutocomplete({
 
       {/* Suggestions dropdown */}
       {showDropdown && suggestions.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto">
+        <ul className="absolute z-50 mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card shadow-lg dark:shadow-black/20 max-h-60 overflow-y-auto">
           {suggestions.map((s) => (
             <li
               key={s.place_id}
               onClick={() => handleSelect(s)}
-              className="flex items-center gap-2 px-3 py-2.5 text-sm cursor-pointer hover:bg-primary-50 transition-colors"
+              className="flex items-center gap-2 px-3 py-2.5 text-sm cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors dark:text-gray-300"
             >
-              <MapPin className="h-4 w-4 flex-shrink-0 text-gray-400" />
+              <MapPin className="h-4 w-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
               <span>{s.description}</span>
             </li>
           ))}

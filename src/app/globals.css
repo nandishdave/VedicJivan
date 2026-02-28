@@ -24,6 +24,7 @@
 
   body {
     @apply font-body text-vedic-text bg-white antialiased;
+    @apply dark:bg-dark-surface dark:text-gray-300;
   }
 
   h1,
@@ -44,6 +45,7 @@
   /* Selection color */
   ::selection {
     @apply bg-primary-200 text-primary-900;
+    @apply dark:bg-primary-800 dark:text-primary-100;
   }
 }
 
@@ -58,10 +60,12 @@
 
   .vedic-section-accent {
     @apply bg-gradient-to-br from-gold-50 via-cream to-primary-50 py-16 sm:py-20 lg:py-24;
+    @apply dark:from-dark-surface dark:via-dark-surface-warm dark:to-dark-surface;
   }
 
   .vedic-link {
     @apply text-primary-600 underline-offset-4 transition-colors hover:text-primary-800 hover:underline;
+    @apply dark:text-primary-400 dark:hover:text-primary-300;
   }
 
   .vedic-divider {
@@ -71,10 +75,12 @@
   /* Animated underline for links */
   .vedic-link-animated {
     @apply relative text-primary-600 transition-colors hover:text-primary-800;
+    @apply dark:text-primary-400 dark:hover:text-primary-300;
   }
   .vedic-link-animated::after {
     content: "";
     @apply absolute bottom-0 left-0 h-0.5 w-0 bg-primary-600 transition-all duration-300;
+    @apply dark:bg-primary-400;
   }
   .vedic-link-animated:hover::after {
     @apply w-full;
@@ -204,6 +210,18 @@
   100% {
     background-position: 200% 0;
   }
+}
+
+/* Smooth dark mode transitions */
+html:not(.no-transitions) * {
+  transition-property: background-color, border-color, color;
+  transition-timing-function: ease-in-out;
+  transition-duration: 150ms;
+}
+
+/* Disable transitions during initial load to prevent flash */
+html.no-transitions * {
+  transition: none !important;
 }
 
 @keyframes gradientShift {

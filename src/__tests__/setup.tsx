@@ -79,6 +79,17 @@ vi.mock("recharts", () => {
   };
 });
 
+// Mock ThemeProvider — provide stable context so components using useTheme() don't crash
+vi.mock("@/components/ui/ThemeProvider", () => ({
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
+  useTheme: () => ({
+    theme: "system" as const,
+    resolvedTheme: "light" as const,
+    setTheme: vi.fn(),
+    toggleTheme: vi.fn(),
+  }),
+}));
+
 // Mock lucide-react icons as simple spans — explicit exports instead of Proxy
 vi.mock("lucide-react", () => {
   const icon = (name: string) => (props: Record<string, unknown>) =>
@@ -125,5 +136,14 @@ vi.mock("lucide-react", () => {
     EyeOff: icon("EyeOff"),
     // Dashboard charts
     BarChart3: icon("BarChart3"),
+    // Header — theme toggle + nav
+    Sun: icon("Sun"),
+    Moon: icon("Moon"),
+    ChevronDown: icon("ChevronDown"),
+    Instagram: icon("Instagram"),
+    Youtube: icon("Youtube"),
+    Facebook: icon("Facebook"),
+    // VideoCard
+    Play: icon("Play"),
   };
 });

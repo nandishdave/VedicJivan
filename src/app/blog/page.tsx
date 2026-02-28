@@ -54,7 +54,7 @@ export default function BlogPage() {
       </section>
 
       {/* ===== CATEGORIES ===== */}
-      <section className="border-b border-gray-100 bg-white py-4">
+      <section className="border-b border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card py-4">
         <Container>
           <div className="flex flex-wrap gap-2">
             {blogCategories.map((cat) => (
@@ -63,7 +63,7 @@ export default function BlogPage() {
                 className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                   cat === "All"
                     ? "bg-primary-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-primary-50 hover:text-primary-600"
+                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-primary-50 hover:text-primary-600"
                 }`}
               >
                 {cat}
@@ -75,23 +75,23 @@ export default function BlogPage() {
 
       {/* ===== FEATURED POST ===== */}
       {featured && (
-        <section className="vedic-section bg-cream">
+        <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
           <Container>
             <AnimateOnScroll animation="fadeUp">
               <Link href={`/blog/${featured.slug}`}>
-                <div className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-lg">
+                <div className="group overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card shadow-sm dark:shadow-black/20 transition-all hover:shadow-lg">
                   <div className="grid lg:grid-cols-2">
-                    <div className="flex h-48 items-center justify-center bg-gradient-to-br from-primary-100 to-gold-100 lg:h-full">
+                    <div className="flex h-48 items-center justify-center bg-gradient-to-br from-primary-100 to-gold-100 dark:from-primary-900/30 dark:to-gold-900/30 lg:h-full">
                       <span className="font-heading text-6xl text-primary-200">
                         {featured.title.charAt(0)}
                       </span>
                     </div>
                     <div className="p-8 lg:p-10">
                       <Badge variant="gold">Featured</Badge>
-                      <h2 className="mt-4 font-heading text-2xl font-bold text-vedic-dark transition-colors group-hover:text-primary-600 sm:text-3xl">
+                      <h2 className="mt-4 font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100 transition-colors group-hover:text-primary-600 sm:text-3xl">
                         {featured.title}
                       </h2>
-                      <p className="mt-3 text-gray-600">{featured.excerpt}</p>
+                      <p className="mt-3 text-gray-600 dark:text-gray-400">{featured.excerpt}</p>
                       <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
@@ -140,7 +140,7 @@ export default function BlogPage() {
               <AnimateOnScroll key={post.slug} animation="fadeUp" delay={i * 0.08}>
                 <Link href={`/blog/${post.slug}`}>
                   <Card className="group h-full cursor-pointer">
-                    <div className="flex h-40 items-center justify-center rounded-t-2xl bg-gradient-to-br from-primary-50 to-gold-50">
+                    <div className="flex h-40 items-center justify-center rounded-t-2xl bg-gradient-to-br from-primary-50 to-gold-50 dark:from-primary-900/20 dark:to-gold-900/20">
                       <span className="font-heading text-5xl text-primary-200">
                         {post.title.charAt(0)}
                       </span>
@@ -149,10 +149,10 @@ export default function BlogPage() {
                       <Badge variant="primary" className="mb-2">
                         {post.category}
                       </Badge>
-                      <h3 className="font-heading text-lg font-bold text-vedic-dark transition-colors group-hover:text-primary-600">
+                      <h3 className="font-heading text-lg font-bold text-vedic-dark dark:text-gray-100 transition-colors group-hover:text-primary-600">
                         {post.title}
                       </h3>
-                      <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                      <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
                         {post.excerpt}
                       </p>
                       <div className="mt-4 flex items-center justify-between text-xs text-gray-500">

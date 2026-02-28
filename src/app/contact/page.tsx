@@ -66,10 +66,10 @@ export default function ContactPage() {
             {/* Contact Form */}
             <div className="lg:col-span-3">
               <AnimateOnScroll animation="fadeLeft">
-                <h2 className="font-heading text-2xl font-bold text-vedic-dark sm:text-3xl">
+                <h2 className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100 sm:text-3xl">
                   Send Us a Message
                 </h2>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
                   Fill out the form below and we&apos;ll respond within 24 hours.
                 </p>
 
@@ -97,12 +97,12 @@ export default function ContactPage() {
                       placeholder="+91 98765 43210"
                     />
                     <div>
-                      <label className="mb-1.5 block text-sm font-medium text-vedic-dark">
+                      <label className="mb-1.5 block text-sm font-medium text-vedic-dark dark:text-gray-100">
                         Subject
                       </label>
                       <select
                         name="subject"
-                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-vedic-text outline-none transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
+                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm text-vedic-text dark:text-gray-100 dark:bg-dark-surface-raised outline-none transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
                       >
                         <option value="">Select a subject</option>
                         <option value="consultation">Consultation Query</option>
@@ -114,14 +114,14 @@ export default function ContactPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-vedic-dark">
+                    <label className="mb-1.5 block text-sm font-medium text-vedic-dark dark:text-gray-100">
                       Message
                     </label>
                     <textarea
                       name="message"
                       rows={5}
                       placeholder="Tell us how we can help you..."
-                      className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm text-vedic-text outline-none transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
+                      className="w-full resize-none rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-3 text-sm text-vedic-text dark:text-gray-100 dark:bg-dark-surface-raised outline-none transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
                       required
                     />
                   </div>
@@ -137,8 +137,8 @@ export default function ContactPage() {
             <div className="lg:col-span-2">
               <AnimateOnScroll animation="fadeRight">
                 <div className="space-y-6">
-                  <div className="rounded-2xl border border-gray-100 bg-cream p-6">
-                    <h3 className="font-heading text-lg font-bold text-vedic-dark">
+                  <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-cream dark:bg-dark-surface-warm p-6">
+                    <h3 className="font-heading text-lg font-bold text-vedic-dark dark:text-gray-100">
                       Contact Information
                     </h3>
                     <div className="mt-5 space-y-4">
@@ -146,28 +146,28 @@ export default function ContactPage() {
                         href={`https://wa.me/${siteConfig.contact.whatsapp}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-start gap-3 text-gray-600 hover:text-primary-600"
+                        className="flex items-start gap-3 text-gray-600 dark:text-gray-400 hover:text-primary-600"
                       >
-                        <WhatsAppIcon className="mt-0.5 h-5 w-5 shrink-0 text-primary-600" />
+                        <WhatsAppIcon className="mt-0.5 h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" />
                         <div>
-                          <p className="font-semibold text-vedic-dark">WhatsApp</p>
+                          <p className="font-semibold text-vedic-dark dark:text-gray-100">WhatsApp</p>
                           <p className="text-sm">{siteConfig.contact.phone}</p>
                         </div>
                       </a>
                       <a
                         href={`mailto:${siteConfig.contact.email}`}
-                        className="flex items-start gap-3 text-gray-600 hover:text-primary-600"
+                        className="flex items-start gap-3 text-gray-600 dark:text-gray-400 hover:text-primary-600"
                       >
-                        <Mail className="mt-0.5 h-5 w-5 shrink-0 text-primary-600" />
+                        <Mail className="mt-0.5 h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" />
                         <div>
-                          <p className="font-semibold text-vedic-dark">Email</p>
+                          <p className="font-semibold text-vedic-dark dark:text-gray-100">Email</p>
                           <p className="text-sm">{siteConfig.contact.email}</p>
                         </div>
                       </a>
-                      <div className="flex items-start gap-3 text-gray-600">
-                        <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary-600" />
+                      <div className="flex items-start gap-3 text-gray-600 dark:text-gray-400">
+                        <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" />
                         <div>
-                          <p className="font-semibold text-vedic-dark">
+                          <p className="font-semibold text-vedic-dark dark:text-gray-100">
                             Location
                           </p>
                           {siteConfig.contact.address.map((line, i) => (
@@ -175,10 +175,10 @@ export default function ContactPage() {
                           ))}
                         </div>
                       </div>
-                      <div className="flex items-start gap-3 text-gray-600">
-                        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary-600" />
+                      <div className="flex items-start gap-3 text-gray-600 dark:text-gray-400">
+                        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" />
                         <div>
-                          <p className="font-semibold text-vedic-dark">
+                          <p className="font-semibold text-vedic-dark dark:text-gray-100">
                             Working Hours
                           </p>
                           <p className="text-sm">Mon - Sat: 10:00 AM - 7:00 PM</p>
@@ -193,7 +193,7 @@ export default function ContactPage() {
                     href={`https://wa.me/${siteConfig.contact.whatsapp}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-6 transition-colors hover:bg-green-100"
+                    className="flex items-center gap-3 rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-6 transition-colors hover:bg-green-100"
                   >
                     <MessageCircle className="h-8 w-8 text-green-600" />
                     <div>
@@ -207,8 +207,8 @@ export default function ContactPage() {
                   </a>
 
                   {/* Social Links */}
-                  <div className="rounded-2xl border border-gray-100 bg-cream p-6">
-                    <h3 className="font-heading text-lg font-bold text-vedic-dark">
+                  <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-cream dark:bg-dark-surface-warm p-6">
+                    <h3 className="font-heading text-lg font-bold text-vedic-dark dark:text-gray-100">
                       Follow Us
                     </h3>
                     <div className="mt-4 flex flex-wrap gap-3">
@@ -218,7 +218,7 @@ export default function ContactPage() {
                           href={social.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:text-primary-600"
+                          className="flex items-center gap-2 rounded-lg bg-white dark:bg-dark-surface-card px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 shadow-sm dark:shadow-black/20 transition-colors hover:text-primary-600"
                         >
                           {social.icon}
                           {social.name}
@@ -234,7 +234,7 @@ export default function ContactPage() {
       </section>
 
       {/* ===== MAP PLACEHOLDER ===== */}
-      <section className="bg-gray-100">
+      <section className="bg-gray-100 dark:bg-gray-800">
         <div className="flex h-64 items-center justify-center lg:h-80">
           <div className="text-center">
             <MapPin className="mx-auto h-10 w-10 text-gray-300" />

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -44,6 +45,12 @@ const config: Config = {
         vedic: {
           dark: "#1a0a2e",
           text: "#2d1b4e",
+        },
+        dark: {
+          surface: "#110e1a",
+          "surface-warm": "#150f22",
+          "surface-raised": "#1a1525",
+          "surface-card": "#1e1730",
         },
       },
       fontFamily: {

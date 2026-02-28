@@ -28,9 +28,9 @@ export function TimeOfBirthPicker({
           type="checkbox"
           checked={isUnknown}
           onChange={(e) => onUnknownChange(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
         />
-        <span className="text-sm text-gray-600">I don&apos;t know my exact birth time</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400">I don&apos;t know my exact birth time</span>
       </label>
 
       {/* Time selectors */}
@@ -40,7 +40,7 @@ export function TimeOfBirthPicker({
           value={hour}
           onChange={(e) => onTimeChange({ hour: e.target.value, minute, period })}
           disabled={isUnknown}
-          className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
           aria-label="Hour"
         >
           {HOURS.map((h) => (
@@ -48,14 +48,14 @@ export function TimeOfBirthPicker({
           ))}
         </select>
 
-        <span className="text-lg font-bold text-gray-400">:</span>
+        <span className="text-lg font-bold text-gray-400 dark:text-gray-500">:</span>
 
         {/* Minute */}
         <select
           value={minute}
           onChange={(e) => onTimeChange({ hour, minute: e.target.value, period })}
           disabled={isUnknown}
-          className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
           aria-label="Minute"
         >
           {MINUTES.map((m) => (
@@ -64,7 +64,7 @@ export function TimeOfBirthPicker({
         </select>
 
         {/* AM/PM toggle */}
-        <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+        <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
           <button
             type="button"
             onClick={() => onTimeChange({ hour, minute, period: "AM" })}
@@ -72,7 +72,7 @@ export function TimeOfBirthPicker({
             className={`px-3 py-2.5 text-sm font-medium transition-colors ${
               period === "AM"
                 ? "bg-primary-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-50"
+                : "bg-white dark:bg-dark-surface-card text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10"
             }`}
           >
             AM
@@ -84,7 +84,7 @@ export function TimeOfBirthPicker({
             className={`px-3 py-2.5 text-sm font-medium transition-colors ${
               period === "PM"
                 ? "bg-primary-600 text-white"
-                : "bg-white text-gray-700 hover:bg-gray-50"
+                : "bg-white dark:bg-dark-surface-card text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10"
             }`}
           >
             PM

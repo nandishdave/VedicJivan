@@ -81,8 +81,8 @@ export function DateOfBirthPicker({ selectedDate, onDateSelect }: DateOfBirthPic
         className={`
           flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-colors
           ${isSelected ? "bg-primary-600 text-white" : ""}
-          ${!isSelected && !isFuture ? "bg-green-50 text-green-700 hover:bg-green-100" : ""}
-          ${isFuture ? "text-gray-300 cursor-not-allowed" : ""}
+          ${!isSelected && !isFuture ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30" : ""}
+          ${isFuture ? "text-gray-300 dark:text-gray-600 cursor-not-allowed" : ""}
         `}
       >
         {day}
@@ -91,18 +91,18 @@ export function DateOfBirthPicker({ selectedDate, onDateSelect }: DateOfBirthPic
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-4 sm:p-6">
       {/* Year and Month dropdowns */}
       <div className="mb-4 flex items-center justify-between gap-2">
-        <button type="button" onClick={prevMonth} className="rounded-lg p-2 hover:bg-gray-100">
-          <ChevronLeft className="h-5 w-5" />
+        <button type="button" onClick={prevMonth} className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-white/10">
+          <ChevronLeft className="h-5 w-5 dark:text-gray-300" />
         </button>
 
         <div className="flex items-center gap-2">
           <select
             value={month}
             onChange={(e) => handleMonthChange(Number(e.target.value))}
-            className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm font-semibold focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm font-semibold focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
           >
             {MONTHS.map((m, i) => (
               <option key={m} value={i}>{m}</option>
@@ -112,7 +112,7 @@ export function DateOfBirthPicker({ selectedDate, onDateSelect }: DateOfBirthPic
           <select
             value={year}
             onChange={(e) => handleYearChange(Number(e.target.value))}
-            className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm font-semibold focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm font-semibold focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
           >
             {years.map((y) => (
               <option key={y} value={y}>{y}</option>
@@ -120,13 +120,13 @@ export function DateOfBirthPicker({ selectedDate, onDateSelect }: DateOfBirthPic
           </select>
         </div>
 
-        <button type="button" onClick={nextMonth} className="rounded-lg p-2 hover:bg-gray-100">
-          <ChevronRight className="h-5 w-5" />
+        <button type="button" onClick={nextMonth} className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-white/10">
+          <ChevronRight className="h-5 w-5 dark:text-gray-300" />
         </button>
       </div>
 
       {/* Day-of-week header */}
-      <div className="mb-2 grid grid-cols-7 text-center text-xs font-medium text-gray-500">
+      <div className="mb-2 grid grid-cols-7 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d} className="py-1">{d}</div>
         ))}

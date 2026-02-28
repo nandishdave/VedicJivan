@@ -163,17 +163,17 @@ export default function CourseDetailPage({
         <Container>
           <div className="mx-auto max-w-4xl">
             <AnimateOnScroll animation="fadeUp">
-              <h2 className="font-heading text-2xl font-bold text-vedic-dark sm:text-3xl">
+              <h2 className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100 sm:text-3xl">
                 What You&apos;ll Learn
               </h2>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {course.whatYouLearn.map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-3 rounded-xl border border-gray-100 bg-cream p-4"
+                    className="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-white/10 bg-cream dark:bg-dark-surface-warm p-4"
                   >
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary-600" />
-                    <p className="text-sm text-gray-700">{item}</p>
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" />
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{item}</p>
                   </div>
                 ))}
               </div>
@@ -182,10 +182,10 @@ export default function CourseDetailPage({
             {/* Description */}
             <AnimateOnScroll animation="fadeUp" delay={0.2}>
               <div className="mt-12">
-                <h2 className="font-heading text-2xl font-bold text-vedic-dark sm:text-3xl">
+                <h2 className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100 sm:text-3xl">
                   Course Description
                 </h2>
-                <p className="mt-4 leading-relaxed text-gray-600">
+                <p className="mt-4 leading-relaxed text-gray-600 dark:text-gray-400">
                   {course.description}
                 </p>
               </div>
@@ -195,14 +195,14 @@ export default function CourseDetailPage({
       </section>
 
       {/* ===== CURRICULUM ===== */}
-      <section className="vedic-section bg-cream">
+      <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <div className="mx-auto max-w-4xl">
             <AnimateOnScroll animation="fadeUp">
-              <h2 className="mb-2 font-heading text-2xl font-bold text-vedic-dark sm:text-3xl">
+              <h2 className="mb-2 font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100 sm:text-3xl">
                 Course Curriculum
               </h2>
-              <p className="mb-8 text-gray-600">
+              <p className="mb-8 text-gray-600 dark:text-gray-400">
                 {course.curriculum.length} modules &middot; {totalLessons} lessons
                 &middot; {course.duration} total
               </p>
@@ -211,14 +211,14 @@ export default function CourseDetailPage({
             <div className="space-y-4">
               {course.curriculum.map((module, i) => (
                 <AnimateOnScroll key={i} animation="fadeUp" delay={i * 0.08}>
-                  <details className="group rounded-2xl border border-gray-200 bg-white" open={i === 0}>
+                  <details className="group rounded-2xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card" open={i === 0}>
                     <summary className="flex cursor-pointer items-center justify-between p-5">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-bold text-primary-600">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30 text-sm font-bold text-primary-600 dark:text-primary-400">
                           {i + 1}
                         </span>
                         <div>
-                          <h3 className="font-semibold text-vedic-dark">
+                          <h3 className="font-semibold text-vedic-dark dark:text-gray-100">
                             {module.module}
                           </h3>
                           <p className="text-xs text-gray-500">
@@ -228,12 +228,12 @@ export default function CourseDetailPage({
                       </div>
                       <ChevronDown className="h-5 w-5 shrink-0 text-gray-400 transition-transform group-open:rotate-180" />
                     </summary>
-                    <div className="border-t border-gray-100 px-5 pb-5 pt-3">
+                    <div className="border-t border-gray-100 dark:border-white/10 px-5 pb-5 pt-3">
                       <ul className="space-y-2">
                         {module.lessons.map((lesson, j) => (
                           <li
                             key={j}
-                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5"
                           >
                             <Play className="h-3.5 w-3.5 shrink-0 text-primary-400" />
                             {lesson}
@@ -254,21 +254,21 @@ export default function CourseDetailPage({
         <Container>
           <div className="mx-auto max-w-4xl">
             <AnimateOnScroll animation="fadeUp">
-              <h2 className="mb-8 font-heading text-2xl font-bold text-vedic-dark sm:text-3xl">
+              <h2 className="mb-8 font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100 sm:text-3xl">
                 Your Instructor
               </h2>
-              <div className="flex flex-col gap-6 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm sm:flex-row">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-600">
+              <div className="flex flex-col gap-6 rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card p-8 shadow-sm dark:shadow-black/20 sm:flex-row">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
                   <Award className="h-8 w-8" />
                 </div>
                 <div>
-                  <h3 className="font-heading text-xl font-bold text-vedic-dark">
+                  <h3 className="font-heading text-xl font-bold text-vedic-dark dark:text-gray-100">
                     VedicJivan Astrology Team
                   </h3>
-                  <p className="mt-1 text-sm text-gold-600">
+                  <p className="mt-1 text-sm text-gold-600 dark:text-gold-400">
                     Jyotish Acharya &middot; 15+ Years Experience
                   </p>
-                  <p className="mt-3 leading-relaxed text-gray-600">
+                  <p className="mt-3 leading-relaxed text-gray-600 dark:text-gray-400">
                     Our courses are crafted by our team of experienced Vedic
                     astrologers who have trained under traditional Guru-Shishya
                     parampara. With over 50,000 consultations and 15+ years of

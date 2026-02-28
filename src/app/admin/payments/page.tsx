@@ -47,17 +47,17 @@ export default function PaymentsPage() {
   }, [router]);
 
   const statusColors: Record<string, string> = {
-    created: "bg-yellow-100 text-yellow-700",
-    captured: "bg-green-100 text-green-700",
-    failed: "bg-red-100 text-red-700",
-    refunded: "bg-purple-100 text-purple-700",
+    created: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300",
+    captured: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    failed: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+    refunded: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300",
   };
 
   return (
-    <section className="min-h-screen bg-gray-50 py-[var(--space-lg)]">
+    <section className="min-h-screen bg-gray-50 dark:bg-dark-surface py-[var(--space-lg)]">
       <Container>
         <div className="mb-[var(--space-md)] flex items-center gap-[var(--space-sm)]">
-          <Link href="/admin" className="rounded-lg p-2 hover:bg-gray-200">
+          <Link href="/admin" className="rounded-lg p-2 hover:bg-gray-200 dark:hover:bg-white/10">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <h1 className="font-heading text-[var(--text-xl)] font-bold">Payment History</h1>
@@ -66,13 +66,13 @@ export default function PaymentsPage() {
         {loading ? (
           <div className="space-y-[var(--space-sm)]">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-14 animate-pulse rounded-xl bg-gray-200" />
+              <div key={i} className="h-14 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
             ))}
           </div>
         ) : (
-          <div className="rounded-xl border border-gray-200 bg-white">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card">
             {/* Mobile card layout */}
-            <div className="divide-y divide-gray-100 sm:hidden">
+            <div className="divide-y divide-gray-100 dark:divide-white/10 sm:hidden">
               {payments.map((payment) => (
                 <div key={payment.id} className="p-[var(--space-md)]">
                   <div className="flex items-center justify-between">
@@ -106,7 +106,7 @@ export default function PaymentsPage() {
             {/* Desktop table */}
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full text-[var(--text-sm)]">
-                <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                <thead className="bg-gray-50 dark:bg-dark-surface text-left text-xs uppercase text-gray-500">
                   <tr>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Date</th>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Order ID</th>
@@ -115,9 +115,9 @@ export default function PaymentsPage() {
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-white/10">
                   {payments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50">
+                    <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
                       <td className="px-[var(--space-md)] py-[var(--space-sm)] whitespace-nowrap">
                         {new Date(payment.created_at).toLocaleDateString()}
                       </td>

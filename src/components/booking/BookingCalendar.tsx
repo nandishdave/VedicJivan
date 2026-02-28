@@ -85,10 +85,10 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
         className={`
           flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-colors
           ${isSelected ? "bg-primary-600 text-white" : ""}
-          ${!isSelected && isAvailable ? "bg-green-50 text-green-700 hover:bg-green-100" : ""}
-          ${isHoliday && !isPast ? "bg-red-50 text-red-400 cursor-not-allowed" : ""}
+          ${!isSelected && isAvailable ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30" : ""}
+          ${isHoliday && !isPast ? "bg-red-50 dark:bg-red-900/20 text-red-400 cursor-not-allowed" : ""}
           ${isClosed && !isPast && !isHoliday ? "text-gray-400 cursor-not-allowed" : ""}
-          ${isPast ? "text-gray-300 cursor-not-allowed" : ""}
+          ${isPast ? "text-gray-300 dark:text-gray-600 cursor-not-allowed" : ""}
         `}
       >
         {day}
@@ -99,18 +99,18 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
   const monthName = currentMonth.toLocaleString("en-US", { month: "long", year: "numeric" });
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-4 sm:p-6">
       <div className="mb-4 flex items-center justify-between">
-        <button onClick={prevMonth} className="rounded-lg p-2 hover:bg-gray-100">
-          <ChevronLeft className="h-5 w-5" />
+        <button onClick={prevMonth} className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-white/10">
+          <ChevronLeft className="h-5 w-5 dark:text-gray-300" />
         </button>
-        <h3 className="font-heading text-lg font-semibold">{monthName}</h3>
-        <button onClick={nextMonth} className="rounded-lg p-2 hover:bg-gray-100">
-          <ChevronRight className="h-5 w-5" />
+        <h3 className="font-heading text-lg font-semibold dark:text-gray-100">{monthName}</h3>
+        <button onClick={nextMonth} className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-white/10">
+          <ChevronRight className="h-5 w-5 dark:text-gray-300" />
         </button>
       </div>
 
-      <div className="mb-2 grid grid-cols-7 text-center text-xs font-medium text-gray-500">
+      <div className="mb-2 grid grid-cols-7 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d} className="py-1">{d}</div>
         ))}
@@ -119,23 +119,23 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
       <div className="grid grid-cols-7 place-items-center gap-y-1">
         {loading
           ? Array.from({ length: 35 }, (_, i) => (
-              <div key={i} className="h-10 w-10 animate-pulse rounded-lg bg-gray-100" />
+              <div key={i} className="h-10 w-10 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
             ))
           : days}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-500">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
         <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded bg-green-50 border border-green-200" /> Available
+          <span className="inline-block h-3 w-3 rounded bg-green-50 dark:bg-green-900/20 border border-green-200" /> Available
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded bg-red-50 border border-red-200" /> Holiday
+          <span className="inline-block h-3 w-3 rounded bg-red-50 dark:bg-red-900/20 border border-red-200" /> Holiday
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded border border-gray-300" /> Closed
+          <span className="inline-block h-3 w-3 rounded border border-gray-300 dark:border-gray-600" /> Closed
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded bg-gray-100" /> Past
+          <span className="inline-block h-3 w-3 rounded bg-gray-100 dark:bg-gray-800" /> Past
         </span>
       </div>
     </div>

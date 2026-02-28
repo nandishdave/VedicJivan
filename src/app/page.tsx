@@ -113,7 +113,7 @@ export default function HomePage() {
       <SectionDivider variant="wave" />
 
       {/* ===== SERVICES OVERVIEW ===== */}
-      <section className="vedic-section bg-cream">
+      <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <AnimateOnScroll animation="fadeUp">
             <SectionHeading
@@ -127,7 +127,7 @@ export default function HomePage() {
             {services.map((service, i) => (
               <AnimateOnScroll key={service.slug} animation="fadeUp" delay={i * 0.1}>
                 <Link href={`/services/${service.slug}`} className="group block h-full">
-                  <TiltCard className="h-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-lg">
+                  <TiltCard className="h-full overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card shadow-sm dark:shadow-black/20 transition-shadow hover:shadow-lg">
                     <div className="relative h-40 overflow-hidden">
                       <img
                         src={service.image}
@@ -138,14 +138,14 @@ export default function HomePage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                     </div>
                     <div className="p-6">
-                      <h3 className="font-heading text-xl font-bold text-vedic-dark">
+                      <h3 className="font-heading text-xl font-bold text-vedic-dark dark:text-gray-100">
                         {service.title}
                       </h3>
-                      <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                      <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
                         {service.description}
                       </p>
                       <div className="mt-4 flex items-center gap-2">
-                        <span className="text-lg font-bold text-primary-600">
+                        <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
                           {service.price}
                         </span>
                         {service.duration && (
@@ -189,7 +189,7 @@ export default function HomePage() {
             {wellnessServices.map((service, i) => (
               <AnimateOnScroll key={service.slug} animation="fadeUp" delay={i * 0.15}>
                 <Link href={`/services/${service.slug}`} className="group block h-full">
-                  <TiltCard className="h-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-lg" tiltDegree={5}>
+                  <TiltCard className="h-full overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card shadow-sm dark:shadow-black/20 transition-shadow hover:shadow-lg" tiltDegree={5}>
                     <div className="relative h-48 overflow-hidden">
                       <img
                         src={service.image}
@@ -198,18 +198,18 @@ export default function HomePage() {
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                      <div className="absolute bottom-4 left-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white/90 text-gold-600">
+                      <div className="absolute bottom-4 left-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white/90 text-gold-600 dark:text-gold-400">
                         {service.icon}
                       </div>
                     </div>
                     <div className="p-6">
-                      <h3 className="font-heading text-xl font-bold text-vedic-dark">
+                      <h3 className="font-heading text-xl font-bold text-vedic-dark dark:text-gray-100">
                         {service.title}
                       </h3>
-                      <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                      <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                         {service.description}
                       </p>
-                      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600">
+                      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 dark:text-primary-400">
                         Learn More
                         <ArrowRight className="h-4 w-4" />
                       </div>
@@ -238,14 +238,14 @@ export default function HomePage() {
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((feature, i) => (
               <AnimateOnScroll key={i} animation="fadeUp" delay={i * 0.15}>
-                <TiltCard className="h-full rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm" tiltDegree={6}>
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gold-100 text-gold-600">
+                <TiltCard className="h-full rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card p-6 text-center shadow-sm dark:shadow-black/20" tiltDegree={6}>
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gold-100 dark:bg-gold-900/20 text-gold-600 dark:text-gold-400">
                     {feature.icon}
                   </div>
-                  <h3 className="font-heading text-lg font-bold text-vedic-dark">
+                  <h3 className="font-heading text-lg font-bold text-vedic-dark dark:text-gray-100">
                     {feature.title}
                   </h3>
-                  <p className="mt-2 text-sm text-gray-600">{feature.description}</p>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{feature.description}</p>
                 </TiltCard>
               </AnimateOnScroll>
             ))}
@@ -272,7 +272,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== COURSES PREVIEW ===== */}
-      <section className="vedic-section bg-cream">
+      <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <AnimateOnScroll animation="fadeUp">
             <SectionHeading
@@ -285,26 +285,26 @@ export default function HomePage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course, i) => (
               <AnimateOnScroll key={i} animation="fadeUp" delay={i * 0.15}>
-                <TiltCard className="h-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm" tiltDegree={5}>
+                <TiltCard className="h-full rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card p-6 shadow-sm dark:shadow-black/20" tiltDegree={5}>
                   <Badge variant="primary" className="mb-3">
                     {course.level}
                   </Badge>
-                  <h3 className="font-heading text-xl font-bold text-vedic-dark">
+                  <h3 className="font-heading text-xl font-bold text-vedic-dark dark:text-gray-100">
                     {course.title}
                   </h3>
-                  <p className="mt-2 text-sm text-gray-600">
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                     {course.description}
                   </p>
                   <ul className="mt-4 space-y-2">
                     {course.features.map((feature, j) => (
-                      <li key={j} className="flex items-center gap-2 text-sm text-gray-600">
+                      <li key={j} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
                         {feature}
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
-                    <span className="text-xl font-bold text-primary-600">
+                  <div className="mt-5 flex items-center justify-between border-t border-gray-100 dark:border-white/10 pt-4">
+                    <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
                       {course.price}
                     </span>
                     <Link href="/courses">

@@ -340,7 +340,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
   if (checkingResume) {
     return (
-      <div className="mx-auto max-w-2xl text-center py-8 text-gray-500">
+      <div className="mx-auto max-w-2xl text-center py-8 text-gray-500 dark:text-gray-400">
         Loading...
       </div>
     );
@@ -349,14 +349,14 @@ export function BookingWizard({ service }: BookingWizardProps) {
   if (step === "confirmed") {
     return (
       <div className="mx-auto max-w-lg text-center py-12">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-          <CheckCircle2 className="h-8 w-8 text-green-600" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+          <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
         </div>
-        <h2 className="font-heading text-2xl font-bold text-vedic-dark">Booking Confirmed!</h2>
-        <p className="mt-2 text-gray-600">
+        <h2 className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100">Booking Confirmed!</h2>
+        <p className="mt-2 text-gray-600 dark:text-gray-400">
           Thank you, {formData.name}. Your {service.title} has been booked successfully.
         </p>
-        <div className="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-700 space-y-1">
+        <div className="mt-4 rounded-lg bg-gray-50 dark:bg-dark-surface-raised p-4 text-sm text-gray-700 dark:text-gray-300 space-y-1">
           <p><strong>Booking ID:</strong> <span className="font-mono text-xs">{bookingId}</span></p>
           {!isReport && (
             <>
@@ -367,10 +367,10 @@ export function BookingWizard({ service }: BookingWizardProps) {
           )}
           <p><strong>Amount Paid:</strong> {"\u20B9"}{price}</p>
         </div>
-        <p className="mt-4 text-sm text-gray-500">
+        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
           A confirmation email with meeting details has been sent to {formData.email}.
         </p>
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
           Please save your Booking ID for reference.
         </p>
       </div>
@@ -386,8 +386,8 @@ export function BookingWizard({ service }: BookingWizardProps) {
             <div
               className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium ${
                 i <= currentStepIndex
-                  ? "bg-primary-100 text-primary-700"
-                  : "bg-gray-100 text-gray-400"
+                  ? "bg-primary-100 dark:bg-primary-900/30 text-primary-700"
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-400"
               }`}
             >
               {s.icon}
@@ -396,7 +396,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
             {i < steps.length - 1 && (
               <div
                 className={`mx-1 h-0.5 w-4 sm:w-8 ${
-                  i < currentStepIndex ? "bg-primary-400" : "bg-gray-200"
+                  i < currentStepIndex ? "bg-primary-400" : "bg-gray-200 dark:bg-gray-700"
                 }`}
               />
             )}
@@ -405,11 +405,11 @@ export function BookingWizard({ service }: BookingWizardProps) {
       </div>
 
       {showResumePrompt && resumeBooking && (
-        <div className="mb-6 rounded-xl border-2 border-amber-300 bg-amber-50 p-5">
-          <h3 className="font-heading text-lg font-bold text-amber-800">
+        <div className="mb-6 rounded-xl border-2 border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 p-5">
+          <h3 className="font-heading text-lg font-bold text-amber-800 dark:text-amber-300">
             Resume Your Booking?
           </h3>
-          <p className="mt-1 text-sm text-amber-700">
+          <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
             You have a pending {resumeBooking.service_title} booking
             {resumeBooking.duration_minutes > 0 && ` for ${resumeBooking.date} at ${resumeBooking.time_slot}`}.
             Would you like to continue to payment?
@@ -426,7 +426,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
       )}
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -435,7 +435,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
       <div className="min-h-[300px]">
         {step === "date" && (
           <div>
-            <h3 className="mb-4 font-heading text-xl font-bold">Select a Date</h3>
+            <h3 className="mb-4 font-heading text-xl font-bold dark:text-gray-100">Select a Date</h3>
             <BookingCalendar
               selectedDate={selectedDate}
               onDateSelect={(date) => {
@@ -457,10 +457,10 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
         {step === "time" && (
           <div>
-            <h3 className="mb-4 font-heading text-xl font-bold">
+            <h3 className="mb-4 font-heading text-xl font-bold dark:text-gray-100">
               Select a Time Slot
             </h3>
-            <p className="mb-4 text-sm text-gray-500">Date: {selectedDate}</p>
+            <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Date: {selectedDate}</p>
             <TimeSlotPicker
               date={selectedDate}
               selectedSlot={selectedSlot}
@@ -486,7 +486,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
         {step === "duration" && (
           <div>
-            <h3 className="mb-4 font-heading text-xl font-bold">Select Duration</h3>
+            <h3 className="mb-4 font-heading text-xl font-bold dark:text-gray-100">Select Duration</h3>
             <div className="grid gap-3 sm:grid-cols-3">
               {durations.map((d) => {
                 const startMin = selectedSlot ? timeToMinutes(selectedSlot) : 0;
@@ -538,16 +538,16 @@ export function BookingWizard({ service }: BookingWizardProps) {
                     disabled={disabled}
                     className={`rounded-xl border-2 p-4 text-center transition-colors ${
                       disabled
-                        ? "cursor-not-allowed border-gray-200 bg-gray-50 opacity-50"
+                        ? "cursor-not-allowed border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-surface-raised opacity-50"
                         : selectedDuration === d.minutes
-                          ? "border-primary-600 bg-primary-50"
-                          : "border-gray-200 hover:border-primary-300"
+                          ? "border-primary-600 bg-primary-50 dark:bg-primary-900/20"
+                          : "border-gray-200 dark:border-gray-600 hover:border-primary-300 dark:hover:border-primary-600"
                     }`}
                   >
-                    <Clock className={`mx-auto mb-2 h-6 w-6 ${disabled ? "text-gray-400" : "text-primary-600"}`} />
-                    <p className="font-semibold">{d.label}</p>
+                    <Clock className={`mx-auto mb-2 h-6 w-6 ${disabled ? "text-gray-400" : "text-primary-600 dark:text-primary-400"}`} />
+                    <p className="font-semibold dark:text-gray-100">{d.label}</p>
                     {reason && (
-                      <p className="mt-1 text-xs text-red-500">{reason}</p>
+                      <p className="mt-1 text-xs text-red-500 dark:text-red-400">{reason}</p>
                     )}
                   </button>
                 );
@@ -558,51 +558,51 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
         {step === "details" && (
           <div>
-            <h3 className="mb-4 font-heading text-xl font-bold">Your Details</h3>
+            <h3 className="mb-4 font-heading text-xl font-bold dark:text-gray-100">Your Details</h3>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Full Name *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name *</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
                   placeholder="Enter your full name"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Email *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Email *</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
                   placeholder="you@example.com"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Phone *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone *</label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
                   placeholder="+91 98765 43210"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Notes *</label>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes *</label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
                   placeholder="Please describe what you'd like to discuss or need help with"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">Date of Birth *</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Date of Birth *</label>
                 <DateOfBirthPicker
                   selectedDate={formData.dateOfBirth}
                   onDateSelect={(date) => setFormData({ ...formData, dateOfBirth: date })}
@@ -610,7 +610,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">Time of Birth</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Time of Birth</label>
                 <TimeOfBirthPicker
                   value={
                     formData.birthTimeUnknown
@@ -637,7 +637,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">Place of Birth *</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Place of Birth *</label>
                 <PlaceOfBirthAutocomplete
                   value={formData.placeOfBirth}
                   onPlaceSelect={(place) =>
@@ -656,66 +656,66 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
         {step === "review" && (
           <div>
-            <h3 className="mb-4 font-heading text-xl font-bold">Review Your Booking</h3>
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Service</span>
+            <h3 className="mb-4 font-heading text-xl font-bold dark:text-gray-100">Review Your Booking</h3>
+            <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-surface-raised p-6 space-y-3">
+              <div className="flex justify-between text-sm dark:text-gray-300">
+                <span className="text-gray-500 dark:text-gray-400">Service</span>
                 <span className="font-medium">{service.title}</span>
               </div>
               {!isReport && (
                 <>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Date</span>
+                  <div className="flex justify-between text-sm dark:text-gray-300">
+                    <span className="text-gray-500 dark:text-gray-400">Date</span>
                     <span className="font-medium">{selectedDate}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Time</span>
+                  <div className="flex justify-between text-sm dark:text-gray-300">
+                    <span className="text-gray-500 dark:text-gray-400">Time</span>
                     <span className="font-medium">{selectedSlot}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Duration</span>
+                  <div className="flex justify-between text-sm dark:text-gray-300">
+                    <span className="text-gray-500 dark:text-gray-400">Duration</span>
                     <span className="font-medium">{selectedDuration} minutes</span>
                   </div>
                 </>
               )}
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Name</span>
+              <div className="flex justify-between text-sm dark:text-gray-300">
+                <span className="text-gray-500 dark:text-gray-400">Name</span>
                 <span className="font-medium">{formData.name}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Email</span>
+              <div className="flex justify-between text-sm dark:text-gray-300">
+                <span className="text-gray-500 dark:text-gray-400">Email</span>
                 <span className="font-medium">{formData.email}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Phone</span>
+              <div className="flex justify-between text-sm dark:text-gray-300">
+                <span className="text-gray-500 dark:text-gray-400">Phone</span>
                 <span className="font-medium">{formData.phone}</span>
               </div>
               {formData.notes && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Notes</span>
+                <div className="flex justify-between text-sm dark:text-gray-300">
+                  <span className="text-gray-500 dark:text-gray-400">Notes</span>
                   <span className="font-medium max-w-[60%] text-right">{formData.notes}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Date of Birth</span>
+              <div className="flex justify-between text-sm dark:text-gray-300">
+                <span className="text-gray-500 dark:text-gray-400">Date of Birth</span>
                 <span className="font-medium">{formData.dateOfBirth}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Time of Birth</span>
+              <div className="flex justify-between text-sm dark:text-gray-300">
+                <span className="text-gray-500 dark:text-gray-400">Time of Birth</span>
                 <span className="font-medium">
                   {formData.birthTimeUnknown
                     ? "Unknown"
                     : `${formData.birthTimeHour}:${formData.birthTimeMinute} ${formData.birthTimePeriod}`}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Place of Birth</span>
+              <div className="flex justify-between text-sm dark:text-gray-300">
+                <span className="text-gray-500 dark:text-gray-400">Place of Birth</span>
                 <span className="font-medium max-w-[60%] text-right">{formData.placeOfBirth}</span>
               </div>
-              <hr className="border-gray-200" />
-              <div className="flex justify-between text-base font-bold">
+              <hr className="border-gray-200 dark:border-gray-600" />
+              <div className="flex justify-between text-base font-bold dark:text-gray-100">
                 <span>Price</span>
-                <span className="text-primary-600">{service.priceINR}</span>
+                <span className="text-primary-600 dark:text-primary-400">{service.priceINR}</span>
               </div>
             </div>
           </div>
@@ -723,10 +723,10 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
         {step === "payment" && (
           <div className="text-center py-8">
-            <CreditCard className="mx-auto mb-4 h-12 w-12 text-primary-600" />
-            <h3 className="mb-2 font-heading text-xl font-bold">Complete Payment</h3>
-            <p className="mb-6 text-gray-600">
-              Amount: <strong className="text-primary-600">{"\u20B9"}{price}</strong>
+            <CreditCard className="mx-auto mb-4 h-12 w-12 text-primary-600 dark:text-primary-400" />
+            <h3 className="mb-2 font-heading text-xl font-bold dark:text-gray-100">Complete Payment</h3>
+            <p className="mb-6 text-gray-600 dark:text-gray-400">
+              Amount: <strong className="text-primary-600 dark:text-primary-400">{"\u20B9"}{price}</strong>
             </p>
             <Button
               variant="gold"
@@ -736,13 +736,13 @@ export function BookingWizard({ service }: BookingWizardProps) {
             >
               {loading ? "Processing..." : `Pay \u20B9${price}`}
             </Button>
-            <p className="mt-4 text-xs text-gray-400">
+            <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
               Secured by Razorpay. Supports UPI, Cards, Wallets & Netbanking.
             </p>
             <button
               type="button"
               onClick={() => setStep("review")}
-              className="mt-4 inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-800 underline"
+              className="mt-4 inline-flex items-center gap-1 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 underline"
             >
               <ArrowLeft className="h-3 w-3" />
               Go back & edit details

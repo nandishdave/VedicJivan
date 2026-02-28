@@ -40,7 +40,7 @@ export function TimeSlotPicker({ date, onSlotSelect, onSlotsLoaded, selectedSlot
     return (
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {Array.from({ length: 8 }, (_, i) => (
-          <div key={i} className="h-12 animate-pulse rounded-lg bg-gray-100" />
+          <div key={i} className="h-12 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
         ))}
       </div>
     );
@@ -48,7 +48,7 @@ export function TimeSlotPicker({ date, onSlotSelect, onSlotsLoaded, selectedSlot
 
   if (slots.length === 0) {
     return (
-      <p className="text-center text-sm text-gray-500 py-8">
+      <p className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
         No available slots for this date. Please select another date.
       </p>
     );
@@ -64,8 +64,8 @@ export function TimeSlotPicker({ date, onSlotSelect, onSlotsLoaded, selectedSlot
             flex items-center justify-center gap-2 rounded-lg border-2 px-3 py-3 text-sm font-medium transition-colors
             ${
               selectedSlot === slot.start
-                ? "border-primary-600 bg-primary-50 text-primary-700"
-                : "border-gray-200 hover:border-primary-300 hover:bg-primary-50"
+                ? "border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-primary-700"
+                : "border-gray-200 dark:border-gray-600 hover:border-primary-300 dark:hover:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 dark:text-gray-300"
             }
           `}
         >

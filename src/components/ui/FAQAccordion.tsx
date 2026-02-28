@@ -27,15 +27,15 @@ function FAQAccordion({ items, className }: FAQAccordionProps) {
             key={i}
             initial={false}
             className={cn(
-              "rounded-2xl border bg-white transition-colors",
-              isOpen ? "border-primary-200 shadow-md shadow-primary-100/50" : "border-gray-200"
+              "rounded-2xl border bg-white transition-colors dark:bg-dark-surface-card",
+              isOpen ? "border-primary-200 shadow-md shadow-primary-100/50 dark:border-primary-700 dark:shadow-primary-900/30" : "border-gray-200 dark:border-white/10"
             )}
           >
             <button
               onClick={() => setOpenIndex(isOpen ? null : i)}
               className="flex w-full items-center justify-between p-5 text-left sm:p-6"
             >
-              <span className="pr-4 font-semibold text-vedic-dark">
+              <span className="pr-4 font-semibold text-vedic-dark dark:text-gray-100">
                 {item.question}
               </span>
               <motion.div
@@ -55,7 +55,7 @@ function FAQAccordion({ items, className }: FAQAccordionProps) {
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                   className="overflow-hidden"
                 >
-                  <div className="border-t border-gray-100 px-5 pb-5 pt-4 text-sm leading-relaxed text-gray-600 sm:px-6 sm:pb-6">
+                  <div className="border-t border-gray-100 px-5 pb-5 pt-4 text-sm leading-relaxed text-gray-600 sm:px-6 sm:pb-6 dark:border-white/10 dark:text-gray-400">
                     {item.answer}
                   </div>
                 </motion.div>

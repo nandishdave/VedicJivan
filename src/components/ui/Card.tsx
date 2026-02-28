@@ -13,7 +13,7 @@ function Card({ className, hover = true, children }: CardProps) {
     return (
       <div
         className={cn(
-          "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm",
+          "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-dark-surface-card",
           className
         )}
       >
@@ -29,7 +29,7 @@ function Card({ className, hover = true, children }: CardProps) {
         transition: { type: "spring", stiffness: 300, damping: 20 },
       }}
       className={cn(
-        "group/card relative rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow duration-300 hover:border-primary-200 hover:shadow-xl hover:shadow-primary-200/40",
+        "group/card relative rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow duration-300 hover:border-primary-200 hover:shadow-xl hover:shadow-primary-200/40 dark:border-white/10 dark:bg-dark-surface-card dark:hover:border-primary-700 dark:hover:shadow-primary-900/30",
         className
       )}
     >
@@ -60,7 +60,7 @@ function CardTitle({
   return (
     <h3
       className={cn(
-        "font-heading text-xl font-bold text-vedic-dark",
+        "font-heading text-xl font-bold text-vedic-dark dark:text-gray-100",
         className
       )}
       {...props}
@@ -76,7 +76,7 @@ function CardDescription({
   ...props
 }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("text-sm text-gray-600", className)} {...props}>
+    <p className={cn("text-sm text-gray-600 dark:text-gray-400", className)} {...props}>
       {children}
     </p>
   );
@@ -100,7 +100,7 @@ function CardFooter({
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("mt-4 pt-4 border-t border-gray-100", className)} {...props}>
+    <div className={cn("mt-4 pt-4 border-t border-gray-100 dark:border-white/10", className)} {...props}>
       {children}
     </div>
   );

@@ -122,10 +122,10 @@ export default function AvailabilityPage() {
   };
 
   return (
-    <section className="min-h-screen bg-gray-50 py-[var(--space-lg)]">
+    <section className="min-h-screen bg-gray-50 dark:bg-dark-surface py-[var(--space-lg)]">
       <Container>
         <div className="mb-[var(--space-md)] flex items-center gap-[var(--space-sm)]">
-          <Link href="/admin" className="rounded-lg p-2 hover:bg-gray-200">
+          <Link href="/admin" className="rounded-lg p-2 hover:bg-gray-200 dark:hover:bg-white/10">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <h1 className="font-heading text-[var(--text-xl)] font-bold">Manage Availability</h1>
@@ -139,10 +139,10 @@ export default function AvailabilityPage() {
           <div
             className={`mb-[var(--space-sm)] rounded-lg border p-[var(--space-sm)] text-[var(--text-sm)] ${
               messageType === "success"
-                ? "border-green-200 bg-green-50 text-green-700"
+                ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
                 : messageType === "warning"
-                  ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-                  : "border-red-200 bg-red-50 text-red-700"
+                  ? "border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300"
+                  : "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
             }`}
           >
             {message}
@@ -150,7 +150,7 @@ export default function AvailabilityPage() {
         )}
 
         {/* Add unavailability form */}
-        <div className="mb-[var(--space-lg)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+        <div className="mb-[var(--space-lg)] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
           <h2 className="mb-[var(--space-sm)] font-heading text-[var(--text-lg)] font-semibold flex items-center gap-2">
             <Plus className="h-5 w-5" />
             Block Time
@@ -161,7 +161,7 @@ export default function AvailabilityPage() {
             <button
               onClick={() => setMode("time-block")}
               className={`rounded-full px-4 py-1.5 text-[var(--text-sm)] font-medium ${
-                mode === "time-block" ? "bg-primary-600 text-white" : "bg-white text-gray-600 border"
+                mode === "time-block" ? "bg-primary-600 text-white" : "bg-white dark:bg-dark-surface-raised text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600"
               }`}
             >
               <Clock className="mr-1 inline h-3.5 w-3.5" />
@@ -170,7 +170,7 @@ export default function AvailabilityPage() {
             <button
               onClick={() => setMode("holiday")}
               className={`rounded-full px-4 py-1.5 text-[var(--text-sm)] font-medium ${
-                mode === "holiday" ? "bg-red-600 text-white" : "bg-white text-gray-600 border"
+                mode === "holiday" ? "bg-red-600 text-white" : "bg-white dark:bg-dark-surface-raised text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600"
               }`}
             >
               <CalendarOff className="mr-1 inline h-3.5 w-3.5" />
@@ -185,7 +185,7 @@ export default function AvailabilityPage() {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-[var(--space-sm)] py-2.5 text-gray-900 dark:text-gray-100"
               />
             </div>
 
@@ -198,7 +198,7 @@ export default function AvailabilityPage() {
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="e.g. Personal, Meeting"
-                    className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-[var(--space-sm)] py-2.5 text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
                   />
                 </div>
                 <div>
@@ -207,7 +207,7 @@ export default function AvailabilityPage() {
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-[var(--space-sm)] py-2.5 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
@@ -216,7 +216,7 @@ export default function AvailabilityPage() {
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-[var(--space-sm)] py-2.5 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </>
@@ -230,7 +230,7 @@ export default function AvailabilityPage() {
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="e.g. Diwali, Personal day"
-                  className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2.5"
+                  className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-[var(--space-sm)] py-2.5 text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
                 />
               </div>
             )}
@@ -252,7 +252,7 @@ export default function AvailabilityPage() {
         </div>
 
         {/* View existing blocks */}
-        <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
           <h2 className="mb-[var(--space-sm)] font-heading text-[var(--text-lg)] font-semibold">Blocked Periods</h2>
 
           <div className="mb-[var(--space-sm)] flex flex-wrap items-center gap-[var(--space-sm)]">
@@ -262,7 +262,7 @@ export default function AvailabilityPage() {
                 type="date"
                 value={viewStart}
                 onChange={(e) => setViewStart(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2 text-[var(--text-sm)]"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-[var(--space-sm)] py-2 text-[var(--text-sm)] text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
@@ -271,7 +271,7 @@ export default function AvailabilityPage() {
                 type="date"
                 value={viewEnd}
                 onChange={(e) => setViewEnd(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-[var(--space-sm)] py-2 text-[var(--text-sm)]"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-[var(--space-sm)] py-2 text-[var(--text-sm)] text-gray-900 dark:text-gray-100"
               />
             </div>
           </div>
@@ -279,7 +279,7 @@ export default function AvailabilityPage() {
           {viewLoading ? (
             <div className="space-y-[var(--space-sm)]">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-14 animate-pulse rounded-lg bg-gray-100" />
+                <div key={i} className="h-14 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-700" />
               ))}
             </div>
           ) : blocks.length === 0 ? (
@@ -293,18 +293,18 @@ export default function AvailabilityPage() {
                   key={block.id}
                   className={`flex items-center justify-between rounded-lg border p-[var(--space-sm)] ${
                     block.is_holiday
-                      ? "border-red-200 bg-red-50"
-                      : "border-orange-200 bg-orange-50"
+                      ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20"
+                      : "border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20"
                   }`}
                 >
                   <div>
                     <span className="font-medium text-[var(--text-sm)]">{block.date}</span>
                     {block.is_holiday ? (
-                      <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                      <span className="ml-2 rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-400">
                         Holiday
                       </span>
                     ) : (
-                      <span className="ml-2 text-[var(--text-sm)] text-gray-600">
+                      <span className="ml-2 text-[var(--text-sm)] text-gray-600 dark:text-gray-400">
                         {block.start_time} - {block.end_time}
                       </span>
                     )}
@@ -314,7 +314,7 @@ export default function AvailabilityPage() {
                   </div>
                   <button
                     onClick={() => setDeleteTarget(block)}
-                    className="rounded-lg p-2 text-gray-400 hover:bg-white hover:text-red-600"
+                    className="rounded-lg p-2 text-gray-400 hover:bg-white dark:hover:bg-white/10 hover:text-red-600 dark:hover:text-red-400"
                     title="Remove block (make available again)"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -329,19 +329,19 @@ export default function AvailabilityPage() {
       {/* Delete confirmation modal */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-white p-[var(--space-md)] shadow-xl">
-            <h3 className="mb-2 font-heading text-[var(--text-lg)] font-semibold text-gray-900">
+          <div className="w-full max-w-sm rounded-xl bg-white dark:bg-dark-surface-card p-[var(--space-md)] shadow-xl">
+            <h3 className="mb-2 font-heading text-[var(--text-lg)] font-semibold text-gray-900 dark:text-gray-100">
               Confirm Deletion
             </h3>
-            <p className="mb-1 text-[var(--text-sm)] text-gray-600">
+            <p className="mb-1 text-[var(--text-sm)] text-gray-600 dark:text-gray-400">
               Are you sure you want to remove this blocked period?
             </p>
-            <p className="mb-[var(--space-md)] text-[var(--text-sm)] font-medium text-gray-800">
+            <p className="mb-[var(--space-md)] text-[var(--text-sm)] font-medium text-gray-800 dark:text-gray-200">
               {deleteTarget.date}
               {deleteTarget.is_holiday
                 ? " (Holiday)"
                 : ` ${deleteTarget.start_time} - ${deleteTarget.end_time}`}
-              {deleteTarget.reason ? ` — ${deleteTarget.reason}` : ""}
+              {deleteTarget.reason ? ` \u2014 ${deleteTarget.reason}` : ""}
             </p>
             <div className="flex justify-end gap-[var(--space-sm)]">
               <Button variant="outline" onClick={() => setDeleteTarget(null)}>

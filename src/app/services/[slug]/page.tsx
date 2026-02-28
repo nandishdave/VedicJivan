@@ -179,30 +179,30 @@ export default function ServiceDetailPage({
             <div className="grid gap-12 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <AnimateOnScroll animation="fadeUp">
-                  <h2 className="font-heading text-2xl font-bold text-vedic-dark sm:text-3xl">
+                  <h2 className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100 sm:text-3xl">
                     About This Service
                   </h2>
-                  <p className="mt-4 leading-relaxed text-gray-600">
+                  <p className="mt-4 leading-relaxed text-gray-600 dark:text-gray-400">
                     {service.description}
                   </p>
                 </AnimateOnScroll>
 
                 {/* Process Steps */}
                 <AnimateOnScroll animation="fadeUp" delay={0.2}>
-                  <h3 className="mt-12 font-heading text-xl font-bold text-vedic-dark">
+                  <h3 className="mt-12 font-heading text-xl font-bold text-vedic-dark dark:text-gray-100">
                     How It Works
                   </h3>
                   <div className="mt-6 space-y-6">
                     {service.process.map((step) => (
                       <div key={step.step} className="flex gap-4">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 font-bold text-primary-600">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30 font-bold text-primary-600 dark:text-primary-400">
                           {step.step}
                         </div>
                         <div>
-                          <h4 className="font-semibold text-vedic-dark">
+                          <h4 className="font-semibold text-vedic-dark dark:text-gray-100">
                             {step.title}
                           </h4>
-                          <p className="mt-1 text-sm text-gray-600">
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                             {step.description}
                           </p>
                         </div>
@@ -215,15 +215,15 @@ export default function ServiceDetailPage({
               {/* Features Sidebar */}
               <div>
                 <AnimateOnScroll animation="fadeRight">
-                  <div className="rounded-2xl border border-gray-100 bg-cream p-6">
-                    <h3 className="font-heading text-lg font-bold text-vedic-dark">
+                  <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-cream dark:bg-dark-surface-warm p-6">
+                    <h3 className="font-heading text-lg font-bold text-vedic-dark dark:text-gray-100">
                       What&apos;s Included
                     </h3>
                     <ul className="mt-4 space-y-3">
                       {service.features.map((feature, i) => (
                         <li
                           key={i}
-                          className="flex items-start gap-2 text-sm text-gray-600"
+                          className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400"
                         >
                           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
                           {feature}
@@ -239,11 +239,11 @@ export default function ServiceDetailPage({
       </section>
 
       {/* ===== FAQ ===== */}
-      <section className="vedic-section bg-cream">
+      <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <div className="mx-auto max-w-3xl">
             <AnimateOnScroll animation="fadeUp">
-              <h2 className="mb-8 text-center font-heading text-2xl font-bold text-vedic-dark sm:text-3xl">
+              <h2 className="mb-8 text-center font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100 sm:text-3xl">
                 Frequently Asked Questions
               </h2>
             </AnimateOnScroll>
@@ -259,7 +259,7 @@ export default function ServiceDetailPage({
       <section className="vedic-section">
         <Container>
           <AnimateOnScroll animation="fadeUp">
-            <h2 className="mb-8 text-center font-heading text-2xl font-bold text-vedic-dark sm:text-3xl">
+            <h2 className="mb-8 text-center font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100 sm:text-3xl">
               You May Also Like
             </h2>
           </AnimateOnScroll>
@@ -268,20 +268,20 @@ export default function ServiceDetailPage({
             {related.map((s, i) => (
               <AnimateOnScroll key={s.slug} animation="fadeUp" delay={i * 0.1}>
                 <Link href={`/services/${s.slug}`} className="block h-full">
-                  <TiltCard className="h-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-lg" tiltDegree={6}>
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary-100 text-primary-600">
+                  <TiltCard className="h-full rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card p-6 shadow-sm dark:shadow-black/20 transition-shadow hover:shadow-lg" tiltDegree={6}>
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
                       {iconMapSmall[s.icon] || (
                         <FileText className="h-6 w-6" />
                       )}
                     </div>
-                    <h3 className="font-heading text-xl font-bold text-vedic-dark">
+                    <h3 className="font-heading text-xl font-bold text-vedic-dark dark:text-gray-100">
                       {s.title}
                     </h3>
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                       {s.shortDescription}
                     </p>
                     <div className="mt-4 flex items-center gap-2">
-                      <span className="text-lg font-bold text-primary-600">
+                      <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
                         {s.priceINR}
                       </span>
                       {s.duration && (

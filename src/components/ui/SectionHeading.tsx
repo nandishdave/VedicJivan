@@ -48,13 +48,13 @@ function SectionHeading({
           <div
             className={cn(
               "h-px w-8",
-              light ? "bg-gold-400/50" : "bg-gold-500/50"
+              light ? "bg-gold-400/50" : "bg-gold-500/50 dark:bg-gold-400/30"
             )}
           />
           <span
             className={cn(
               "inline-block text-sm font-semibold uppercase tracking-widest",
-              light ? "text-gold-400" : "text-gold-600"
+              light ? "text-gold-400" : "text-gold-600 dark:text-gold-400"
             )}
           >
             {subtitle}
@@ -62,7 +62,7 @@ function SectionHeading({
           <div
             className={cn(
               "h-px w-8",
-              light ? "bg-gold-400/50" : "bg-gold-500/50"
+              light ? "bg-gold-400/50" : "bg-gold-500/50 dark:bg-gold-400/30"
             )}
           />
         </motion.div>
@@ -70,7 +70,7 @@ function SectionHeading({
       <motion.h2
         className={cn(
           "font-heading text-3xl font-bold sm:text-4xl lg:text-5xl",
-          light ? "text-white" : "text-vedic-dark"
+          light ? "text-white" : "text-vedic-dark dark:text-gray-100"
         )}
         initial={{ opacity: 0, y: 20 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -82,7 +82,7 @@ function SectionHeading({
         <motion.p
           className={cn(
             "mx-auto mt-4 max-w-2xl text-lg",
-            light ? "text-gray-300" : "text-gray-600"
+            light ? "text-gray-300" : "text-gray-600 dark:text-gray-400"
           )}
           initial={{ opacity: 0, y: 15 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}

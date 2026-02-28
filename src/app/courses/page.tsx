@@ -95,10 +95,10 @@ export default function CoursesPage() {
                       <Badge variant="gold">{course.category}</Badge>
                     </div>
 
-                    <h3 className="mt-4 font-heading text-2xl font-bold text-vedic-dark">
+                    <h3 className="mt-4 font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100">
                       {course.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                       {course.shortDescription}
                     </p>
 
@@ -125,7 +125,7 @@ export default function CoursesPage() {
                       {course.features.slice(0, 3).map((feature, j) => (
                         <li
                           key={j}
-                          className="flex items-center gap-2 text-sm text-gray-600"
+                          className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
                         >
                           <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
                           {feature}
@@ -133,9 +133,9 @@ export default function CoursesPage() {
                       ))}
                     </ul>
 
-                    <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
+                    <div className="mt-6 flex items-center justify-between border-t border-gray-100 dark:border-white/10 pt-4">
                       <div>
-                        <span className="text-2xl font-bold text-primary-600">
+                        <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                           {course.priceINR}
                         </span>
                         <span className="ml-2 text-sm text-gray-400">
@@ -158,7 +158,7 @@ export default function CoursesPage() {
       </section>
 
       {/* ===== WHY LEARN WITH US ===== */}
-      <section className="vedic-section bg-cream">
+      <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <AnimateOnScroll animation="fadeUp">
             <SectionHeading
@@ -171,13 +171,13 @@ export default function CoursesPage() {
             {benefits.map((b, i) => (
               <AnimateOnScroll key={i} animation="fadeUp" delay={i * 0.1}>
                 <div className="text-center">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
                     {b.icon}
                   </div>
-                  <h3 className="font-heading text-lg font-bold text-vedic-dark">
+                  <h3 className="font-heading text-lg font-bold text-vedic-dark dark:text-gray-100">
                     {b.title}
                   </h3>
-                  <p className="mt-2 text-sm text-gray-600">{b.description}</p>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{b.description}</p>
                 </div>
               </AnimateOnScroll>
             ))}

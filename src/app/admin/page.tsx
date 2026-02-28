@@ -29,6 +29,7 @@ import {
 } from "recharts";
 import { adminApi, authApi } from "@/lib/api";
 import { getToken, clearTokens } from "@/lib/auth";
+import { useTheme } from "@/components/ui/ThemeProvider";
 
 interface DashboardData {
   today_bookings: number;
@@ -63,10 +64,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_BADGE_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  confirmed: "bg-green-100 text-green-700",
-  completed: "bg-blue-100 text-blue-700",
-  cancelled: "bg-red-100 text-red-700",
+  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300",
+  confirmed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+  completed: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
 };
 
 const SERVICE_COLORS = ["#8b5cf6", "#06b6d4", "#f59e0b", "#ef4444", "#22c55e", "#ec4899"];
@@ -78,10 +79,18 @@ function formatShortDate(dateStr: string) {
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
   const [data, setData] = useState<DashboardData | null>(null);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const isDark = resolvedTheme === "dark";
+  const gridStroke = isDark ? "#2a2535" : "#f0f0f0";
+  const tickFill = isDark ? "#9ca3af" : "#6b7280";
+  const tooltipStyle = isDark
+    ? { backgroundColor: "#1e1730", border: "1px solid rgba(255,255,255,0.1)", color: "#e5e7eb" }
+    : {};
 
   useEffect(() => {
     const token = getToken();
@@ -119,18 +128,18 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <section className="min-h-screen bg-gray-50 py-[var(--space-lg)]">
+      <section className="min-h-screen bg-gray-50 dark:bg-dark-surface py-[var(--space-lg)]">
         <div className="mx-auto max-w-6xl px-[var(--space-md)]">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 w-48 rounded bg-gray-200" />
+            <div className="h-8 w-48 rounded bg-gray-200 dark:bg-gray-700" />
             <div className="grid gap-[var(--space-sm)] sm:grid-cols-2 lg:grid-cols-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-24 rounded-xl bg-gray-200" />
+                <div key={i} className="h-24 rounded-xl bg-gray-200 dark:bg-gray-700" />
               ))}
             </div>
             <div className="grid gap-[var(--space-sm)] lg:grid-cols-2">
-              <div className="h-72 rounded-xl bg-gray-200" />
-              <div className="h-72 rounded-xl bg-gray-200" />
+              <div className="h-72 rounded-xl bg-gray-200 dark:bg-gray-700" />
+              <div className="h-72 rounded-xl bg-gray-200 dark:bg-gray-700" />
             </div>
           </div>
         </div>
@@ -150,11 +159,11 @@ export default function AdminDashboard() {
   const totalBookingsCount = Object.values(data.bookings_by_status).reduce((a, b) => a + b, 0);
 
   return (
-    <section className="min-h-screen bg-gray-50 py-[var(--space-lg)]">
+    <section className="min-h-screen bg-gray-50 dark:bg-dark-surface py-[var(--space-lg)]">
       <div className="mx-auto max-w-6xl px-[var(--space-md)]">
         {/* Header */}
         <div className="mb-[var(--space-lg)]">
-          <h1 className="font-heading text-[var(--text-xl)] font-bold text-vedic-dark">
+          <h1 className="font-heading text-[var(--text-xl)] font-bold text-vedic-dark dark:text-gray-100">
             Dashboard
           </h1>
           <p className="text-[var(--text-sm)] text-gray-500">Welcome back, {userName}</p>
@@ -162,9 +171,9 @@ export default function AdminDashboard() {
 
         {/* Stats cards */}
         <div className="mb-[var(--space-lg)] grid gap-[var(--space-sm)] sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
             <div className="flex items-center gap-[var(--space-sm)]">
-              <div className="rounded-lg bg-blue-100 p-2">
+              <div className="rounded-lg bg-blue-100 dark:bg-blue-900/20 p-2">
                 <Calendar className="h-5 w-5 text-blue-600" />
               </div>
               <div>
@@ -173,9 +182,9 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
             <div className="flex items-center gap-[var(--space-sm)]">
-              <div className="rounded-lg bg-green-100 p-2">
+              <div className="rounded-lg bg-green-100 dark:bg-green-900/30 p-2">
                 <Clock className="h-5 w-5 text-green-600" />
               </div>
               <div>
@@ -184,9 +193,9 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
             <div className="flex items-center gap-[var(--space-sm)]">
-              <div className="rounded-lg bg-purple-100 p-2">
+              <div className="rounded-lg bg-purple-100 dark:bg-purple-900/20 p-2">
                 <TrendingUp className="h-5 w-5 text-purple-600" />
               </div>
               <div>
@@ -195,9 +204,9 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+          <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
             <div className="flex items-center gap-[var(--space-sm)]">
-              <div className="rounded-lg bg-yellow-100 p-2">
+              <div className="rounded-lg bg-yellow-100 dark:bg-yellow-900/20 p-2">
                 <Users className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
@@ -212,7 +221,7 @@ export default function AdminDashboard() {
         {stats && (
           <div className="mb-[var(--space-lg)] grid gap-[var(--space-sm)] lg:grid-cols-2">
             {/* Bookings trend - last 30 days */}
-            <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
               <h2 className="mb-[var(--space-sm)] flex items-center gap-2 font-heading text-[var(--text-base)] font-semibold">
                 <BarChart3 className="h-4 w-4 text-blue-600" />
                 Bookings (Last 30 Days)
@@ -220,17 +229,18 @@ export default function AdminDashboard() {
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stats.daily_bookings}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
                     <XAxis
                       dataKey="date"
                       tickFormatter={formatShortDate}
-                      tick={{ fontSize: 11 }}
+                      tick={{ fontSize: 11, fill: tickFill }}
                       interval="preserveStartEnd"
                     />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11 }} width={30} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: tickFill }} width={30} />
                     <Tooltip
                       labelFormatter={(label) => formatShortDate(label as string)}
                       formatter={(value) => [Number(value), "Bookings"]}
+                      contentStyle={tooltipStyle}
                     />
                     <Bar dataKey="bookings" fill="#3b82f6" radius={[2, 2, 0, 0]} />
                   </BarChart>
@@ -239,7 +249,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Revenue trend - last 30 days */}
-            <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
               <h2 className="mb-[var(--space-sm)] flex items-center gap-2 font-heading text-[var(--text-base)] font-semibold">
                 <TrendingUp className="h-4 w-4 text-green-600" />
                 Revenue (Last 30 Days)
@@ -253,21 +263,22 @@ export default function AdminDashboard() {
                         <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
                     <XAxis
                       dataKey="date"
                       tickFormatter={formatShortDate}
-                      tick={{ fontSize: 11 }}
+                      tick={{ fontSize: 11, fill: tickFill }}
                       interval="preserveStartEnd"
                     />
                     <YAxis
-                      tick={{ fontSize: 11 }}
+                      tick={{ fontSize: 11, fill: tickFill }}
                       width={50}
                       tickFormatter={(v) => `\u20B9${v}`}
                     />
                     <Tooltip
                       labelFormatter={(label) => formatShortDate(label as string)}
                       formatter={(value) => [`\u20B9${Number(value).toLocaleString()}`, "Revenue"]}
+                      contentStyle={tooltipStyle}
                     />
                     <Area
                       type="monotone"
@@ -287,7 +298,7 @@ export default function AdminDashboard() {
         {stats && (
           <div className="mb-[var(--space-lg)] grid gap-[var(--space-sm)] lg:grid-cols-2">
             {/* Booking status distribution */}
-            <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
               <h2 className="mb-[var(--space-sm)] font-heading text-[var(--text-base)] font-semibold">
                 Booking Status Distribution
               </h2>
@@ -309,7 +320,10 @@ export default function AdminDashboard() {
                           <Cell key={index} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => [Number(value), "Bookings"]} />
+                      <Tooltip
+                        formatter={(value) => [Number(value), "Bookings"]}
+                        contentStyle={tooltipStyle}
+                      />
                       <Legend
                         verticalAlign="bottom"
                         height={36}
@@ -326,7 +340,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Revenue by service */}
-            <div className="rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
               <h2 className="mb-[var(--space-sm)] font-heading text-[var(--text-base)] font-semibold">
                 Revenue by Service
               </h2>
@@ -334,20 +348,21 @@ export default function AdminDashboard() {
                 <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={stats.revenue_by_service} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 11 }}
+                        tick={{ fontSize: 11, fill: tickFill }}
                         tickFormatter={(v) => `\u20B9${v}`}
                       />
                       <YAxis
                         type="category"
                         dataKey="service"
                         width={120}
-                        tick={{ fontSize: 11 }}
+                        tick={{ fontSize: 11, fill: tickFill }}
                       />
                       <Tooltip
                         formatter={(value) => [`\u20B9${Number(value).toLocaleString()}`, "Revenue"]}
+                        contentStyle={tooltipStyle}
                       />
                       <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
                         {stats.revenue_by_service.map((_, index) => (
@@ -370,47 +385,47 @@ export default function AdminDashboard() {
         <div className="mb-[var(--space-lg)] grid gap-[var(--space-sm)] sm:grid-cols-3">
           <Link
             href="/admin/bookings"
-            className="flex items-center gap-[var(--space-sm)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)] transition-colors hover:border-primary-300"
+            className="flex items-center gap-[var(--space-sm)] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)] transition-colors hover:border-primary-300"
           >
-            <Calendar className="h-5 w-5 text-primary-600" />
+            <Calendar className="h-5 w-5 text-primary-600 dark:text-primary-400" />
             <span className="font-medium">Manage Bookings</span>
           </Link>
           <Link
             href="/admin/availability"
-            className="flex items-center gap-[var(--space-sm)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)] transition-colors hover:border-primary-300"
+            className="flex items-center gap-[var(--space-sm)] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)] transition-colors hover:border-primary-300"
           >
-            <Settings className="h-5 w-5 text-primary-600" />
+            <Settings className="h-5 w-5 text-primary-600 dark:text-primary-400" />
             <span className="font-medium">Set Availability</span>
           </Link>
           <Link
             href="/admin/payments"
-            className="flex items-center gap-[var(--space-sm)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)] transition-colors hover:border-primary-300"
+            className="flex items-center gap-[var(--space-sm)] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)] transition-colors hover:border-primary-300"
           >
-            <CreditCard className="h-5 w-5 text-primary-600" />
+            <CreditCard className="h-5 w-5 text-primary-600 dark:text-primary-400" />
             <span className="font-medium">Payment History</span>
           </Link>
         </div>
 
         {/* Recent bookings */}
-        <div className="rounded-xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-200 px-[var(--space-md)] py-[var(--space-sm)]">
+        <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card">
+          <div className="border-b border-gray-200 dark:border-gray-600 px-[var(--space-md)] py-[var(--space-sm)]">
             <h2 className="font-heading text-[var(--text-lg)] font-semibold">Recent Bookings</h2>
           </div>
 
           {/* Mobile cards */}
-          <div className="divide-y divide-gray-100 sm:hidden">
+          <div className="divide-y divide-gray-100 dark:divide-white/10 sm:hidden">
             {data.recent_bookings.map((booking) => (
               <div key={booking.id} className="p-[var(--space-md)]">
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-[var(--text-base)]">{booking.user_name}</p>
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_COLORS[booking.status] || "bg-gray-100"}`}>
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_COLORS[booking.status] || "bg-gray-100 dark:bg-gray-700"}`}>
                     {booking.status}
                   </span>
                 </div>
                 <p className="mt-1 text-[var(--text-sm)] text-gray-500">{booking.service_title}</p>
                 <div className="mt-1 flex items-center justify-between text-[var(--text-sm)] text-gray-500">
                   <span>{booking.date} at {booking.time_slot}</span>
-                  <span className="font-medium text-gray-700">{"\u20B9"}{booking.price_inr}</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">{"\u20B9"}{booking.price_inr}</span>
                 </div>
               </div>
             ))}
@@ -424,7 +439,7 @@ export default function AdminDashboard() {
           {/* Desktop table */}
           <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-[var(--text-sm)]">
-              <thead className="bg-gray-50 text-left text-xs uppercase text-gray-500">
+              <thead className="bg-gray-50 dark:bg-dark-surface text-left text-xs uppercase text-gray-500">
                 <tr>
                   <th className="px-[var(--space-md)] py-[var(--space-sm)]">Customer</th>
                   <th className="px-[var(--space-md)] py-[var(--space-sm)]">Service</th>
@@ -433,9 +448,9 @@ export default function AdminDashboard() {
                   <th className="px-[var(--space-md)] py-[var(--space-sm)]">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-white/10">
                 {data.recent_bookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-gray-50">
+                  <tr key={booking.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
                     <td className="px-[var(--space-md)] py-[var(--space-sm)] font-medium">{booking.user_name}</td>
                     <td className="px-[var(--space-md)] py-[var(--space-sm)]">{booking.service_title}</td>
                     <td className="px-[var(--space-md)] py-[var(--space-sm)]">
@@ -443,7 +458,7 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-[var(--space-md)] py-[var(--space-sm)]">{"\u20B9"}{booking.price_inr}</td>
                     <td className="px-[var(--space-md)] py-[var(--space-sm)]">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_COLORS[booking.status] || "bg-gray-100"}`}>
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_COLORS[booking.status] || "bg-gray-100 dark:bg-gray-700"}`}>
                         {booking.status}
                       </span>
                     </td>

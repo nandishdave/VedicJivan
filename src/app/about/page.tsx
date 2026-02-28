@@ -63,13 +63,13 @@ export default function AboutPage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <AnimateOnScroll animation="fadeLeft">
               <div>
-                <span className="mb-3 inline-block text-sm font-semibold uppercase tracking-widest text-gold-600">
+                <span className="mb-3 inline-block text-sm font-semibold uppercase tracking-widest text-gold-600 dark:text-gold-400">
                   Our Story
                 </span>
-                <h2 className="font-heading text-3xl font-bold text-vedic-dark sm:text-4xl">
+                <h2 className="font-heading text-3xl font-bold text-vedic-dark dark:text-gray-100 sm:text-4xl">
                   A Legacy of Vedic Knowledge
                 </h2>
-                <div className="mt-6 space-y-4 text-gray-600">
+                <div className="mt-6 space-y-4 text-gray-600 dark:text-gray-400">
                   <p>
                     VedicJivan was founded with a simple yet profound mission — to
                     make the timeless wisdom of Vedic astrology accessible to every
@@ -97,13 +97,13 @@ export default function AboutPage() {
                 {stats.map((stat, i) => (
                   <TiltCard
                     key={i}
-                    className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm"
+                    className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card p-6 text-center shadow-sm dark:shadow-black/20"
                     tiltDegree={6}
                   >
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-primary-600">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400">
                       {stat.icon}
                     </div>
-                    <p className="font-heading text-2xl font-bold text-vedic-dark">
+                    <p className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100">
                       {stat.value}
                     </p>
                     <p className="mt-1 text-sm text-gray-500">{stat.label}</p>
@@ -116,7 +116,7 @@ export default function AboutPage() {
       </section>
 
       {/* ===== JOURNEY / TIMELINE ===== */}
-      <section className="vedic-section bg-cream">
+      <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <AnimateOnScroll animation="fadeUp">
             <SectionHeading
@@ -139,13 +139,13 @@ export default function AboutPage() {
                     )}
                   </div>
                   <div className="pb-2">
-                    <span className="text-sm font-semibold text-gold-600">
+                    <span className="text-sm font-semibold text-gold-600 dark:text-gold-400">
                       {item.year}
                     </span>
-                    <h3 className="mt-1 font-heading text-lg font-bold text-vedic-dark">
+                    <h3 className="mt-1 font-heading text-lg font-bold text-vedic-dark dark:text-gray-100">
                       {item.title}
                     </h3>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                       {item.description}
                     </p>
                   </div>
@@ -170,14 +170,14 @@ export default function AboutPage() {
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {philosophies.map((item, i) => (
               <AnimateOnScroll key={i} animation="fadeUp" delay={i * 0.1}>
-                <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gold-100 text-gold-600">
+                <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card p-8 shadow-sm dark:shadow-black/20">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gold-100 dark:bg-gold-900/20 text-gold-600 dark:text-gold-400">
                     {item.icon}
                   </div>
-                  <h3 className="font-heading text-xl font-bold text-vedic-dark">
+                  <h3 className="font-heading text-xl font-bold text-vedic-dark dark:text-gray-100">
                     {item.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                     {item.description}
                   </p>
                 </div>

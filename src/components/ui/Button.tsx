@@ -15,16 +15,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-lg shadow-primary-600/25 hover:shadow-xl hover:shadow-primary-600/40",
+    "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-lg shadow-primary-600/25 hover:shadow-xl hover:shadow-primary-600/40 dark:bg-primary-500 dark:hover:bg-primary-400 dark:shadow-primary-500/20",
   secondary:
-    "bg-vedic-dark text-white hover:bg-vedic-text active:bg-primary-950 hover:shadow-xl hover:shadow-vedic-dark/30",
+    "bg-vedic-dark text-white hover:bg-vedic-text active:bg-primary-950 hover:shadow-xl hover:shadow-vedic-dark/30 dark:bg-gray-700 dark:hover:bg-gray-600",
   outline:
-    "border-2 border-primary-600 text-primary-600 hover:bg-primary-50 active:bg-primary-100 hover:shadow-lg hover:shadow-primary-600/20",
+    "border-2 border-primary-600 text-primary-600 hover:bg-primary-50 active:bg-primary-100 hover:shadow-lg hover:shadow-primary-600/20 dark:border-primary-400 dark:text-primary-400 dark:hover:bg-primary-900/20",
   ghost:
-    "text-primary-600 hover:bg-primary-50 active:bg-primary-100",
+    "text-primary-600 hover:bg-primary-50 active:bg-primary-100 dark:text-primary-400 dark:hover:bg-primary-900/20",
   gold: "bg-gold-gradient text-white hover:opacity-90 active:opacity-80 shadow-lg shadow-gold-500/25 hover:shadow-xl hover:shadow-gold-500/40",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-lg shadow-red-600/25 hover:shadow-xl hover:shadow-red-600/40",
+    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-lg shadow-red-600/25 hover:shadow-xl hover:shadow-red-600/40 dark:bg-red-500 dark:hover:bg-red-400",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -54,7 +54,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         whileTap={disabled || isLoading ? {} : { scale: 0.97 }}
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
         className={cn(
-          "btn-shine relative inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "btn-shine relative inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-dark-surface disabled:cursor-not-allowed disabled:opacity-50",
           variantStyles[variant],
           sizeStyles[size],
           className

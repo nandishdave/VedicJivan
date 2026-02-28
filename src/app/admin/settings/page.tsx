@@ -95,11 +95,11 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <section className="min-h-screen bg-gray-50 py-8">
+      <section className="min-h-screen bg-gray-50 dark:bg-dark-surface py-8">
         <Container>
           <div className="animate-pulse space-y-6">
-            <div className="h-8 w-48 rounded bg-gray-200" />
-            <div className="h-64 rounded-xl bg-gray-200" />
+            <div className="h-8 w-48 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-64 rounded-xl bg-gray-200 dark:bg-gray-700" />
           </div>
         </Container>
       </section>
@@ -107,19 +107,19 @@ export default function SettingsPage() {
   }
 
   return (
-    <section className="min-h-screen bg-gray-50 py-[var(--space-lg)]">
+    <section className="min-h-screen bg-gray-50 dark:bg-dark-surface py-[var(--space-lg)]">
       <Container>
         {/* Header */}
         <div className="mb-[var(--space-md)]">
           <Link
             href="/admin"
-            className="mb-2 inline-flex items-center gap-1 text-[var(--text-sm)] text-gray-500 hover:text-gray-700"
+            className="mb-2 inline-flex items-center gap-1 text-[var(--text-sm)] text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Link>
           <div className="flex items-center gap-[var(--space-sm)]">
-            <Settings className="h-6 w-6 text-primary-600" />
+            <Settings className="h-6 w-6 text-primary-600 dark:text-primary-400" />
             <h1 className="font-heading text-[var(--text-xl)] font-bold">
               Business Hours Settings
             </h1>
@@ -128,18 +128,18 @@ export default function SettingsPage() {
 
         {/* Messages */}
         {message && (
-          <div className="mb-[var(--space-sm)] rounded-lg border border-green-200 bg-green-50 p-[var(--space-sm)] text-[var(--text-sm)] text-green-700">
+          <div className="mb-[var(--space-sm)] rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-[var(--space-sm)] text-[var(--text-sm)] text-green-700 dark:text-green-400">
             {message}
           </div>
         )}
         {error && (
-          <div className="mb-[var(--space-sm)] rounded-lg border border-red-200 bg-red-50 p-[var(--space-sm)] text-[var(--text-sm)] text-red-700">
+          <div className="mb-[var(--space-sm)] rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-[var(--space-sm)] text-[var(--text-sm)] text-red-700 dark:text-red-400">
             {error}
           </div>
         )}
 
         {/* Timezone */}
-        <div className="mb-[var(--space-md)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+        <div className="mb-[var(--space-md)] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
           <h2 className="mb-[var(--space-sm)] flex items-center gap-2 font-heading text-[var(--text-lg)] font-semibold">
             <Globe className="h-5 w-5 text-gray-500" />
             Timezone
@@ -147,7 +147,7 @@ export default function SettingsPage() {
           <select
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
-            className="w-full max-w-xs rounded-lg border border-gray-300 px-[var(--space-sm)] py-2 text-[var(--text-sm)] focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="w-full max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-[var(--space-sm)] py-2 text-[var(--text-sm)] text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
           >
             {TIMEZONE_OPTIONS.map((tz) => (
               <option key={tz} value={tz}>
@@ -158,7 +158,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Weekly Hours */}
-        <div className="mb-[var(--space-md)] rounded-xl border border-gray-200 bg-white p-[var(--space-md)]">
+        <div className="mb-[var(--space-md)] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card p-[var(--space-md)]">
           <h2 className="mb-[var(--space-sm)] font-heading text-[var(--text-lg)] font-semibold">
             Weekly Schedule
           </h2>
@@ -168,13 +168,13 @@ export default function SettingsPage() {
                 key={day.day}
                 className={`rounded-lg border p-[var(--space-sm)] ${
                   day.is_open
-                    ? "border-green-200 bg-green-50"
-                    : "border-gray-200 bg-gray-50"
+                    ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20"
+                    : "border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-surface"
                 }`}
               >
                 <div className="flex items-center gap-[var(--space-sm)]">
                   {/* Day name */}
-                  <span className="min-w-[5rem] text-[var(--text-sm)] font-medium text-gray-700">
+                  <span className="min-w-[5rem] text-[var(--text-sm)] font-medium text-gray-700 dark:text-gray-300">
                     {DAY_LABELS[day.day]}
                   </span>
 
@@ -187,7 +187,7 @@ export default function SettingsPage() {
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       day.is_open
                         ? "bg-green-600 text-white"
-                        : "bg-gray-300 text-gray-600"
+                        : "bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
                     }`}
                   >
                     {day.is_open ? "Open" : "Closed"}
@@ -202,7 +202,7 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           updateDay(day.day, { open_time: e.target.value })
                         }
-                        className="rounded-lg border border-gray-300 px-2 py-1 text-[var(--text-sm)] focus:border-primary-500 focus:outline-none"
+                        className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-2 py-1 text-[var(--text-sm)] text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:outline-none"
                       />
                       <span className="text-[var(--text-sm)] text-gray-500">to</span>
                       <input
@@ -211,7 +211,7 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           updateDay(day.day, { close_time: e.target.value })
                         }
-                        className="rounded-lg border border-gray-300 px-2 py-1 text-[var(--text-sm)] focus:border-primary-500 focus:outline-none"
+                        className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-2 py-1 text-[var(--text-sm)] text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:outline-none"
                       />
                     </div>
                   )}
@@ -226,7 +226,7 @@ export default function SettingsPage() {
                       onChange={(e) =>
                         updateDay(day.day, { open_time: e.target.value })
                       }
-                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-[var(--text-sm)] focus:border-primary-500 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-2 py-1.5 text-[var(--text-sm)] text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:outline-none"
                     />
                     <span className="text-[var(--text-sm)] text-gray-500">to</span>
                     <input
@@ -235,7 +235,7 @@ export default function SettingsPage() {
                       onChange={(e) =>
                         updateDay(day.day, { close_time: e.target.value })
                       }
-                      className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-[var(--text-sm)] focus:border-primary-500 focus:outline-none"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-surface-raised px-2 py-1.5 text-[var(--text-sm)] text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:outline-none"
                     />
                   </div>
                 )}

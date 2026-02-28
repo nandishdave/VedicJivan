@@ -35,7 +35,7 @@ export function VideoCard({
     <motion.div
       whileHover={{ y: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-lg"
+      className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-white/10 dark:bg-dark-surface-card"
     >
       <div className={cn("relative w-full overflow-hidden bg-gray-900", aspectClass)}>
         {playing ? (
@@ -67,7 +67,7 @@ export function VideoCard({
         )}
       </div>
       <div className="p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold text-vedic-dark">
+        <h3 className="line-clamp-2 text-sm font-semibold text-vedic-dark dark:text-gray-100">
           {title}
         </h3>
         <p className="mt-1 text-xs text-gray-500">{formattedDate}</p>
@@ -79,11 +79,11 @@ export function VideoCard({
 export function VideoCardSkeleton({ variant = "video" }: { variant?: "video" | "short" }) {
   const aspectClass = variant === "short" ? "aspect-[9/16]" : "aspect-video";
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-      <div className={cn("w-full animate-pulse bg-gray-200", aspectClass)} />
+    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-dark-surface-card">
+      <div className={cn("w-full animate-pulse bg-gray-200 dark:bg-gray-700", aspectClass)} />
       <div className="p-4 space-y-2">
-        <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
-        <div className="h-3 w-1/3 animate-pulse rounded bg-gray-200" />
+        <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        <div className="h-3 w-1/3 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
       </div>
     </div>
   );

@@ -108,11 +108,11 @@ export default function ServicesPage() {
                   </div>
                   <CardContent>
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <h3 className="font-heading text-2xl font-bold text-vedic-dark">
+                      <h3 className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100">
                         {service.title}
                       </h3>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-primary-600">
+                        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                           {service.priceINR}
                         </p>
                         <p className="text-sm text-gray-400">
@@ -121,7 +121,7 @@ export default function ServicesPage() {
                       </div>
                     </div>
 
-                    <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                    <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                       {service.shortDescription}
                     </p>
 
@@ -136,7 +136,7 @@ export default function ServicesPage() {
                       {service.features.slice(0, 4).map((feature, j) => (
                         <li
                           key={j}
-                          className="flex items-center gap-2 text-sm text-gray-600"
+                          className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
                         >
                           <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
                           {feature}
@@ -166,7 +166,7 @@ export default function ServicesPage() {
       </section>
 
       {/* ===== WELLNESS SERVICES ===== */}
-      <section className="vedic-section bg-cream">
+      <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <AnimateOnScroll animation="fadeUp">
             <SectionHeading
@@ -188,22 +188,22 @@ export default function ServicesPage() {
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                    <div className="absolute bottom-4 left-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-gold-600">
+                    <div className="absolute bottom-4 left-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-gold-600 dark:text-gold-400">
                       {iconMap[service.icon] || <FileText className="h-5 w-5" />}
                     </div>
                   </div>
                   <CardContent>
-                    <h3 className="font-heading text-2xl font-bold text-vedic-dark">
+                    <h3 className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100">
                       {service.title}
                     </h3>
 
-                    <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                    <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                       {service.shortDescription}
                     </p>
 
                     <div className="mt-4 flex items-center justify-between">
                       <div>
-                        <p className="text-xl font-bold text-primary-600">
+                        <p className="text-xl font-bold text-primary-600 dark:text-primary-400">
                           {service.priceINR}
                         </p>
                         <p className="text-xs text-gray-400">{service.priceEUR}</p>
@@ -220,7 +220,7 @@ export default function ServicesPage() {
                       {service.features.slice(0, 4).map((feature, j) => (
                         <li
                           key={j}
-                          className="flex items-center gap-2 text-sm text-gray-600"
+                          className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
                         >
                           <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
                           {feature}
@@ -245,7 +245,7 @@ export default function ServicesPage() {
       </section>
 
       {/* ===== FAQ ===== */}
-      <section className="vedic-section bg-cream">
+      <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <AnimateOnScroll animation="fadeUp">
             <SectionHeading
