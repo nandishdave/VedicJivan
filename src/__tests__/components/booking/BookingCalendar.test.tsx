@@ -6,6 +6,10 @@ import { BookingCalendar } from "@/components/booking/BookingCalendar";
 vi.mock("@/lib/api", () => ({
   availabilityApi: {
     getHolidays: vi.fn().mockResolvedValue([]),
+    getSlots: vi.fn().mockResolvedValue([
+      { start: "23:00", end: "23:30" },
+      { start: "23:30", end: "00:00" },
+    ]),
     getSettings: vi.fn().mockResolvedValue({
       timezone: "Asia/Kolkata",
       weekly_hours: [
@@ -99,6 +103,24 @@ describe("BookingCalendar", () => {
       expect(screen.getAllByText("Holiday").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("Closed").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("Past").length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("disables today when all slots are in the past", async () => {
+    // Return slots that are all in the past (00:00 is always past)
+    (availabilityApi.getSlots as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
+      { start: "00:00", end: "00:30" },
+    ]);
+
+    render(<BookingCalendar selectedDate="" onDateSelect={mockOnDateSelect} />);
+
+    const todayDate = new Date().getDate();
+    await waitFor(() => {
+      const todayButtons = screen.getAllByText(String(todayDate));
+      const todayBtn = todayButtons.find(btn => btn.tagName === "BUTTON");
+      if (todayBtn) {
+        expect(todayBtn).toHaveAttribute("disabled");
+      }
     });
   });
 

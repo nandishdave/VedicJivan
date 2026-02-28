@@ -14,6 +14,7 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
   const [holidays, setHolidays] = useState<Set<string>>(new Set());
   const [closedDays, setClosedDays] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [todayFullyBooked, setTodayFullyBooked] = useState(false);
 
   // Fetch closed days from business hours settings (once)
   useEffect(() => {
@@ -26,6 +27,23 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
             .map((d) => (d.day + 1) % 7) // Convert Mon=0 to JS Sun=0 convention
         );
         setClosedDays(closed);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Check whether today still has any future slots (once on mount)
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    availabilityApi
+      .getSlots(todayStr)
+      .then((slots) => {
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        const hasFutureSlot = slots.some((slot) => {
+          const [h, m] = slot.start.split(":").map(Number);
+          return h * 60 + m > nowMinutes;
+        });
+        setTodayFullyBooked(!hasFutureSlot);
       })
       .catch(() => {});
   }, []);
@@ -72,9 +90,10 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     const date = new Date(year, month, day);
     const isPast = date < today;
+    const isToday = date.getTime() === today.getTime();
     const isHoliday = holidays.has(dateStr);
     const isClosed = closedDays.has(date.getDay());
-    const isAvailable = !isPast && !isHoliday && !isClosed;
+    const isAvailable = !isPast && !isHoliday && !isClosed && !(isToday && todayFullyBooked);
     const isSelected = dateStr === selectedDate;
 
     days.push(
