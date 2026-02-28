@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Calendar,
   Clock,
@@ -16,55 +16,24 @@ import { TimeSlotPicker } from "./TimeSlotPicker";
 import { DateOfBirthPicker } from "./DateOfBirthPicker";
 import { TimeOfBirthPicker } from "./TimeOfBirthPicker";
 import { PlaceOfBirthAutocomplete } from "./PlaceOfBirthAutocomplete";
-import { bookingsApi, paymentsApi, availabilityApi, type AvailableSlot, type Booking } from "@/lib/api";
+import { bookingsApi, paymentsApi, type Booking } from "@/lib/api";
 import type { Service } from "@/data/services";
 
 interface BookingWizardProps {
   service: Service;
 }
 
-type Step = "date" | "time" | "duration" | "details" | "review" | "payment" | "confirmed";
+type Step = "date" | "time" | "details" | "review" | "payment" | "confirmed";
 
-const DURATION_OPTIONS: Record<string, { label: string; minutes: number }[]> = {
-  "call-consultation": [
-    { label: "30 minutes", minutes: 30 },
-    { label: "45 minutes", minutes: 45 },
-    { label: "60 minutes", minutes: 60 },
-  ],
-  "video-consultation": [
-    { label: "30 minutes", minutes: 30 },
-    { label: "45 minutes", minutes: 45 },
-    { label: "60 minutes", minutes: 60 },
-  ],
-  "vastu-consultation": [
-    { label: "30 minutes", minutes: 30 },
-    { label: "45 minutes", minutes: 45 },
-    { label: "60 minutes", minutes: 60 },
-  ],
-  "astrological-consulting": [
-    { label: "30 minutes", minutes: 30 },
-    { label: "45 minutes", minutes: 45 },
-    { label: "60 minutes", minutes: 60 },
-  ],
-  "personal-growth-coaching": [
-    { label: "30 minutes", minutes: 30 },
-    { label: "45 minutes", minutes: 45 },
-    { label: "60 minutes", minutes: 60 },
-  ],
-  "therapeutic-healing": [
-    { label: "45 minutes", minutes: 45 },
-    { label: "60 minutes", minutes: 60 },
-    { label: "75 minutes", minutes: 75 },
-  ],
-};
+/** Parse the service.duration string (e.g. "30 min") into minutes, or 0 if null */
+function parseDurationMinutes(duration: string | null): number {
+  if (!duration) return 0;
+  const match = duration.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
 
 // Reports don't need scheduling
 const REPORT_SERVICES = ["premium-kundli", "numerology-report", "matchmaking"];
-
-function timeToMinutes(t: string): number {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-}
 
 declare global {
   interface Window {
@@ -93,8 +62,6 @@ export function BookingWizard({ service }: BookingWizardProps) {
     birthLatitude: 0,
     birthLongitude: 0,
   });
-  const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
-  const [closeTime, setCloseTime] = useState(""); // "HH:MM" for selected day
   const [bookingId, setBookingId] = useState("");
   const [price, setPrice] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -102,6 +69,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
   const [resumeBooking, setResumeBooking] = useState<Booking | null>(null);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [checkingResume, setCheckingResume] = useState(true);
+  const wizardRef = useRef<HTMLDivElement>(null);
 
   const storageKey = `vedicjivan_pending_booking_${service.slug}`;
 
@@ -138,32 +106,14 @@ export function BookingWizard({ service }: BookingWizardProps) {
             setCheckingResume(false);
             return;
           }
-          // Restore selections and fetch needed data
-          if (record.date) {
-            setSelectedDate(record.date);
-            // Fetch close time for the restored date
-            try {
-              const settings = await availabilityApi.getSettings();
-              const dayOfWeek = new Date(record.date + "T00:00:00").getDay();
-              const pyDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-              const dayConfig = settings.weekly_hours.find((d: { day: number }) => d.day === pyDay);
-              setCloseTime(dayConfig?.is_open ? dayConfig.close_time : "");
-            } catch { /* proceed without close time */ }
-
-            // Fetch available slots for the restored date
-            try {
-              const slots = await availabilityApi.getSlots(record.date);
-              setAvailableSlots(slots);
-            } catch { /* proceed without slots */ }
-          }
+          // Restore selections
+          if (record.date) setSelectedDate(record.date);
           if (record.timeSlot) setSelectedSlot(record.timeSlot);
           if (record.duration) setSelectedDuration(record.duration);
 
           // Jump to the furthest step
-          if (record.duration) {
+          if (record.timeSlot) {
             setStep("details");
-          } else if (record.timeSlot) {
-            setStep("duration");
           } else if (record.date) {
             setStep("time");
           }
@@ -179,7 +129,8 @@ export function BookingWizard({ service }: BookingWizardProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const durations = DURATION_OPTIONS[service.slug] || [];
+  // Fixed duration from the service definition (e.g. "30 min" → 30)
+  const fixedDuration = parseDurationMinutes(service.duration);
 
   const steps: { key: Step; label: string; icon: React.ReactNode }[] = isReport
     ? [
@@ -190,13 +141,20 @@ export function BookingWizard({ service }: BookingWizardProps) {
     : [
         { key: "date", label: "Date", icon: <Calendar className="h-4 w-4" /> },
         { key: "time", label: "Time", icon: <Clock className="h-4 w-4" /> },
-        { key: "duration", label: "Duration", icon: <Clock className="h-4 w-4" /> },
+        // Skip the duration step — service already defines a fixed duration
         { key: "details", label: "Details", icon: <User className="h-4 w-4" /> },
         { key: "review", label: "Review", icon: <CheckCircle2 className="h-4 w-4" /> },
         { key: "payment", label: "Payment", icon: <CreditCard className="h-4 w-4" /> },
       ];
 
   const currentStepIndex = steps.findIndex((s) => s.key === step);
+
+  // Scroll to the top of the wizard when the step changes
+  useEffect(() => {
+    if (wizardRef.current && typeof wizardRef.current.scrollIntoView === "function") {
+      wizardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [step]);
 
   const handleNext = () => {
     if (currentStepIndex < steps.length - 1) {
@@ -378,7 +336,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div ref={wizardRef} className="mx-auto max-w-2xl scroll-mt-24">
       {/* Progress bar */}
       <div className="mb-8 flex items-center justify-center gap-2">
         {steps.map((s, i) => (
@@ -442,14 +400,6 @@ export function BookingWizard({ service }: BookingWizardProps) {
                 setSelectedDate(date);
                 setSelectedSlot("");
                 setSelectedDuration(0);
-                // Fetch close time for this day
-                availabilityApi.getSettings().then((settings) => {
-                  const dayOfWeek = new Date(date + "T00:00:00").getDay();
-                  // JS getDay(): 0=Sun, 1=Mon ... 6=Sat → convert to Python: 0=Mon ... 6=Sun
-                  const pyDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                  const dayConfig = settings.weekly_hours.find((d) => d.day === pyDay);
-                  setCloseTime(dayConfig?.is_open ? dayConfig.close_time : "");
-                }).catch(() => setCloseTime(""));
               }}
             />
           </div>
@@ -464,10 +414,9 @@ export function BookingWizard({ service }: BookingWizardProps) {
             <TimeSlotPicker
               date={selectedDate}
               selectedSlot={selectedSlot}
-              onSlotsLoaded={setAvailableSlots}
               onSlotSelect={(slot) => {
                 setSelectedSlot(slot);
-                setSelectedDuration(0);
+                setSelectedDuration(fixedDuration);
                 // Save partial progress
                 localStorage.setItem(
                   storageKey,
@@ -476,83 +425,12 @@ export function BookingWizard({ service }: BookingWizardProps) {
                     serviceTitle: service.title,
                     date: selectedDate,
                     timeSlot: slot,
+                    duration: fixedDuration,
                     savedAt: new Date().toISOString(),
                   })
                 );
               }}
             />
-          </div>
-        )}
-
-        {step === "duration" && (
-          <div>
-            <h3 className="mb-4 font-heading text-xl font-bold dark:text-gray-100">Select Duration</h3>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {durations.map((d) => {
-                const startMin = selectedSlot ? timeToMinutes(selectedSlot) : 0;
-                const slotEnd = startMin + d.minutes;
-                const exceeds = closeTime ? slotEnd > timeToMinutes(closeTime) : false;
-
-                // Check that all consecutive 30-min slots needed are available
-                const slotStarts = new Set(availableSlots.map((s) => s.start));
-                let hasConflict = false;
-                if (!exceeds && selectedSlot) {
-                  const slotsNeeded = Math.ceil(d.minutes / 30);
-                  for (let i = 0; i < slotsNeeded; i++) {
-                    const mins = startMin + i * 30;
-                    const hh = String(Math.floor(mins / 60)).padStart(2, "0");
-                    const mm = String(mins % 60).padStart(2, "0");
-                    if (!slotStarts.has(`${hh}:${mm}`)) {
-                      hasConflict = true;
-                      break;
-                    }
-                  }
-                }
-
-                const disabled = exceeds || hasConflict;
-                const reason = exceeds
-                  ? "Exceeds business hours"
-                  : hasConflict
-                    ? "Overlaps with an existing booking"
-                    : "";
-
-                return (
-                  <button
-                    key={d.minutes}
-                    onClick={() => {
-                      if (disabled) return;
-                      setSelectedDuration(d.minutes);
-                      // Update partial progress with duration
-                      localStorage.setItem(
-                        storageKey,
-                        JSON.stringify({
-                          serviceSlug: service.slug,
-                          serviceTitle: service.title,
-                          date: selectedDate,
-                          timeSlot: selectedSlot,
-                          duration: d.minutes,
-                          savedAt: new Date().toISOString(),
-                        })
-                      );
-                    }}
-                    disabled={disabled}
-                    className={`rounded-xl border-2 p-4 text-center transition-colors ${
-                      disabled
-                        ? "cursor-not-allowed border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-surface-raised opacity-50"
-                        : selectedDuration === d.minutes
-                          ? "border-primary-600 bg-primary-50 dark:bg-primary-900/20"
-                          : "border-gray-200 dark:border-gray-600 hover:border-primary-300 dark:hover:border-primary-600"
-                    }`}
-                  >
-                    <Clock className={`mx-auto mb-2 h-6 w-6 ${disabled ? "text-gray-400" : "text-primary-600 dark:text-primary-400"}`} />
-                    <p className="font-semibold dark:text-gray-100">{d.label}</p>
-                    {reason && (
-                      <p className="mt-1 text-xs text-red-500 dark:text-red-400">{reason}</p>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         )}
 
@@ -779,7 +657,6 @@ export function BookingWizard({ service }: BookingWizardProps) {
               disabled={
                 (step === "date" && !selectedDate) ||
                 (step === "time" && !selectedSlot) ||
-                (step === "duration" && !selectedDuration) ||
                 (step === "details" &&
                   (!formData.name ||
                     !formData.email ||

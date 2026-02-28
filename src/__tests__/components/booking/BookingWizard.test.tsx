@@ -99,6 +99,15 @@ const reportService: Service = {
   faqs: [],
 };
 
+/** Click the last day of the current month in the calendar */
+function selectLastDayOfMonth() {
+  const now = new Date();
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const dayButtons = screen.getAllByText(String(lastDay));
+  const clickable = dayButtons.find(btn => !btn.hasAttribute("disabled"));
+  if (clickable) fireEvent.click(clickable);
+}
+
 /** Fill in all required details fields including birth info */
 async function fillDetailsForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByPlaceholderText("Enter your full name"), "John Doe");
@@ -137,8 +146,8 @@ describe("BookingWizard", () => {
       ],
     });
     mockGetSlots.mockResolvedValue([
-      { start: "09:00", end: "09:30" },
-      { start: "10:00", end: "10:30" },
+      { start: "23:00", end: "23:30" },
+      { start: "23:30", end: "00:00" },
     ]);
     mockCreate.mockResolvedValue({ id: "booking-123", price_inr: 1999 });
   });
@@ -339,11 +348,7 @@ describe("BookingWizard", () => {
     expect(screen.getByRole("heading", { name: "Select a Date" })).toBeInTheDocument();
 
     await waitFor(() => {
-      const now = new Date();
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const dayButtons = screen.getAllByText(String(lastDay));
-      const clickable = dayButtons.find(btn => !btn.hasAttribute("disabled"));
-      if (clickable) fireEvent.click(clickable);
+      selectLastDayOfMonth();
     });
 
     const allButtons = screen.getAllByRole("button");
@@ -356,15 +361,11 @@ describe("BookingWizard", () => {
     }
   });
 
-  it("consultation: navigates from time to duration step", async () => {
+  it("consultation: navigates from time to details step (duration auto-set)", async () => {
     render(<BookingWizard service={consultationService} />);
 
     await waitFor(() => {
-      const now = new Date();
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const dayButtons = screen.getAllByText(String(lastDay));
-      const clickable = dayButtons.find(btn => !btn.hasAttribute("disabled"));
-      if (clickable) fireEvent.click(clickable);
+      selectLastDayOfMonth();
     });
 
     let allButtons = screen.getAllByRole("button");
@@ -373,19 +374,17 @@ describe("BookingWizard", () => {
       fireEvent.click(nextBtn);
 
       await waitFor(() => {
-        expect(screen.getByText("09:00")).toBeInTheDocument();
+        expect(screen.getByText("23:00")).toBeInTheDocument();
       });
-      fireEvent.click(screen.getByText("09:00"));
+      fireEvent.click(screen.getByText("23:00"));
 
       allButtons = screen.getAllByRole("button");
       nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
       if (nextBtn) {
         fireEvent.click(nextBtn);
         await waitFor(() => {
-          expect(screen.getByRole("heading", { name: "Select Duration" })).toBeInTheDocument();
-          expect(screen.getAllByText("30 minutes").length).toBeGreaterThanOrEqual(1);
-          expect(screen.getAllByText("45 minutes").length).toBeGreaterThanOrEqual(1);
-          expect(screen.getAllByText("60 minutes").length).toBeGreaterThanOrEqual(1);
+          // Duration step is skipped — goes straight to details
+          expect(screen.getByRole("heading", { name: "Your Details" })).toBeInTheDocument();
         });
       }
     }
@@ -395,13 +394,9 @@ describe("BookingWizard", () => {
     const user = userEvent.setup();
     render(<BookingWizard service={consultationService} />);
 
-    // Step 1: Select date
+    // Step 1: Select date (next month, day 15)
     await waitFor(() => {
-      const now = new Date();
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const dayButtons = screen.getAllByText(String(lastDay));
-      const clickable = dayButtons.find(btn => !btn.hasAttribute("disabled"));
-      if (clickable) fireEvent.click(clickable);
+      selectLastDayOfMonth();
     });
 
     let allButtons = screen.getAllByRole("button");
@@ -409,27 +404,17 @@ describe("BookingWizard", () => {
     if (!nextBtn) return;
     fireEvent.click(nextBtn);
 
-    // Step 2: Select time
+    // Step 2: Select time (duration is auto-set from service definition)
     await waitFor(() => {
-      expect(screen.getByText("09:00")).toBeInTheDocument();
+      expect(screen.getByText("23:00")).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText("09:00"));
+    fireEvent.click(screen.getByText("23:00"));
 
     allButtons = screen.getAllByRole("button");
     nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
     if (nextBtn) fireEvent.click(nextBtn);
 
-    // Step 3: Select duration
-    await waitFor(() => {
-      expect(screen.getAllByText("30 minutes").length).toBeGreaterThanOrEqual(1);
-    });
-    fireEvent.click(screen.getAllByText("30 minutes")[0]);
-
-    allButtons = screen.getAllByRole("button");
-    nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
-    if (nextBtn) fireEvent.click(nextBtn);
-
-    // Step 4: Fill details
+    // Step 3: Fill details (duration step is skipped)
     await waitFor(() => {
       expect(screen.getByPlaceholderText("Enter your full name")).toBeInTheDocument();
     });
@@ -445,7 +430,7 @@ describe("BookingWizard", () => {
       expect(screen.getByText("Call Consultation")).toBeInTheDocument();
       expect(screen.getByText("John Doe")).toBeInTheDocument();
       expect(screen.getByText("john@test.com")).toBeInTheDocument();
-      expect(screen.getByText("09:00")).toBeInTheDocument();
+      expect(screen.getByText("23:00")).toBeInTheDocument();
       expect(screen.getByText("30 minutes")).toBeInTheDocument();
       expect(screen.getByText("1990-05-15")).toBeInTheDocument();
       expect(screen.getByText("Mumbai, India")).toBeInTheDocument();
@@ -456,11 +441,7 @@ describe("BookingWizard", () => {
     render(<BookingWizard service={consultationService} />);
 
     await waitFor(() => {
-      const now = new Date();
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const dayButtons = screen.getAllByText(String(lastDay));
-      const clickable = dayButtons.find(btn => !btn.hasAttribute("disabled"));
-      if (clickable) fireEvent.click(clickable);
+      selectLastDayOfMonth();
     });
 
     const allButtons = screen.getAllByRole("button");
@@ -627,7 +608,7 @@ describe("BookingWizard", () => {
   // Partial progress restore tests
   // ═══════════════════════════════════════
 
-  it("restores partial progress (date + time) and jumps to duration step", async () => {
+  it("restores partial progress (date + time) and jumps to details step", async () => {
     const record = {
       serviceSlug: "call-consultation",
       serviceTitle: "Call Consultation",
@@ -640,7 +621,7 @@ describe("BookingWizard", () => {
     render(<BookingWizard service={consultationService} />);
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Select Duration" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Your Details" })).toBeInTheDocument();
     });
   });
 
@@ -665,13 +646,9 @@ describe("BookingWizard", () => {
   it("saves partial progress to localStorage when a time slot is selected", async () => {
     render(<BookingWizard service={consultationService} />);
 
-    // Step 1: Select date
+    // Step 1: Select date (next month, day 15)
     await waitFor(() => {
-      const now = new Date();
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const dayButtons = screen.getAllByText(String(lastDay));
-      const clickable = dayButtons.find(btn => !btn.hasAttribute("disabled"));
-      if (clickable) fireEvent.click(clickable);
+      selectLastDayOfMonth();
     });
 
     const allButtons = screen.getAllByRole("button");
@@ -681,9 +658,9 @@ describe("BookingWizard", () => {
 
     // Step 2: Select time slot
     await waitFor(() => {
-      expect(screen.getByText("09:00")).toBeInTheDocument();
+      expect(screen.getByText("23:00")).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText("09:00"));
+    fireEvent.click(screen.getByText("23:00"));
 
     // Verify localStorage was set with partial progress
     const stored = localStorage.getItem("vedicjivan_pending_booking_call-consultation");
@@ -691,7 +668,7 @@ describe("BookingWizard", () => {
     const parsed = JSON.parse(stored!);
     expect(parsed.serviceSlug).toBe("call-consultation");
     expect(parsed.serviceTitle).toBe("Call Consultation");
-    expect(parsed.timeSlot).toBe("09:00");
+    expect(parsed.timeSlot).toBe("23:00");
     expect(parsed.savedAt).toBeDefined();
     expect(parsed.bookingId).toBeUndefined();
   });

@@ -22,8 +22,21 @@ export function TimeSlotPicker({ date, onSlotSelect, onSlotsLoaded, selectedSlot
       setLoading(true);
       try {
         const data = await availabilityApi.getSlots(date);
-        setSlots(data);
-        onSlotsLoaded?.(data);
+
+        // Filter out past slots if the selected date is today
+        const today = new Date().toISOString().split("T")[0];
+        let filtered = data;
+        if (date === today) {
+          const now = new Date();
+          const nowMinutes = now.getHours() * 60 + now.getMinutes();
+          filtered = data.filter((slot) => {
+            const [h, m] = slot.start.split(":").map(Number);
+            return h * 60 + m > nowMinutes;
+          });
+        }
+
+        setSlots(filtered);
+        onSlotsLoaded?.(filtered);
       } catch {
         setSlots([]);
         onSlotsLoaded?.([]);
