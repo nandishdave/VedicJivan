@@ -643,6 +643,61 @@ describe("BookingWizard", () => {
     });
   });
 
+  // ═══════════════════════════════════════
+  // User details persistence tests
+  // ═══════════════════════════════════════
+
+  it("pre-fills form fields from saved user details", async () => {
+    const details = {
+      name: "Saved User",
+      email: "saved@example.com",
+      phone: "9999999999",
+      dateOfBirth: "1985-03-10",
+      birthTimeHour: "03",
+      birthTimeMinute: "45",
+      birthTimePeriod: "PM",
+      birthTimeUnknown: false,
+      placeOfBirth: "Delhi, India",
+      birthLatitude: 28.6139,
+      birthLongitude: 77.209,
+    };
+    localStorage.setItem("vedicjivan_user_details", JSON.stringify(details));
+
+    render(<BookingWizard service={reportService} />);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("Enter your full name")).toHaveValue("Saved User");
+    });
+    expect(screen.getByPlaceholderText("you@example.com")).toHaveValue("saved@example.com");
+    expect(screen.getByPlaceholderText(/\+91/)).toHaveValue("9999999999");
+    // Notes should always be blank (booking-specific)
+    expect(screen.getByPlaceholderText(/describe what you/i)).toHaveValue("");
+  });
+
+  it("saves user details to localStorage when moving past details step", async () => {
+    const user = userEvent.setup();
+    render(<BookingWizard service={reportService} />);
+
+    await fillDetailsForm(user);
+
+    const allButtons = screen.getAllByRole("button");
+    const nextBtn = allButtons.find(b => b.textContent?.includes("Next") && !b.hasAttribute("disabled"));
+    fireEvent.click(nextBtn!);
+
+    await waitFor(() => {
+      expect(screen.getByText("Review Your Booking")).toBeInTheDocument();
+    });
+
+    const stored = localStorage.getItem("vedicjivan_user_details");
+    expect(stored).not.toBeNull();
+    const parsed = JSON.parse(stored!);
+    expect(parsed.name).toBe("John Doe");
+    expect(parsed.email).toBe("john@test.com");
+    expect(parsed.placeOfBirth).toBe("Mumbai, India");
+    // Notes should NOT be saved
+    expect(parsed.notes).toBeUndefined();
+  });
+
   it("saves partial progress to localStorage when a time slot is selected", async () => {
     render(<BookingWizard service={consultationService} />);
 

@@ -41,6 +41,26 @@ declare global {
   }
 }
 
+const USER_DETAILS_KEY = "vedicjivan_user_details";
+
+/** Load previously saved user details from localStorage (excludes booking-specific notes). */
+function loadSavedUserDetails() {
+  try {
+    const stored = localStorage.getItem(USER_DETAILS_KEY);
+    if (!stored) return null;
+    return JSON.parse(stored);
+  } catch {
+    return null;
+  }
+}
+
+/** Save personal details so they pre-fill on future bookings. */
+function saveUserDetails(formData: Record<string, unknown>) {
+  const { notes, ...details } = formData;
+  void notes; // notes are booking-specific, not saved
+  localStorage.setItem(USER_DETAILS_KEY, JSON.stringify(details));
+}
+
 export function BookingWizard({ service }: BookingWizardProps) {
   const isReport = REPORT_SERVICES.includes(service.slug);
 
@@ -48,19 +68,22 @@ export function BookingWizard({ service }: BookingWizardProps) {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
   const [selectedDuration, setSelectedDuration] = useState(0);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    notes: "",
-    dateOfBirth: "",
-    birthTimeHour: "12",
-    birthTimeMinute: "00",
-    birthTimePeriod: "AM" as "AM" | "PM",
-    birthTimeUnknown: false,
-    placeOfBirth: "",
-    birthLatitude: 0,
-    birthLongitude: 0,
+  const [formData, setFormData] = useState(() => {
+    const saved = loadSavedUserDetails();
+    return {
+      name: saved?.name ?? "",
+      email: saved?.email ?? "",
+      phone: saved?.phone ?? "",
+      notes: "", // always blank — booking-specific
+      dateOfBirth: saved?.dateOfBirth ?? "",
+      birthTimeHour: saved?.birthTimeHour ?? "12",
+      birthTimeMinute: saved?.birthTimeMinute ?? "00",
+      birthTimePeriod: (saved?.birthTimePeriod ?? "AM") as "AM" | "PM",
+      birthTimeUnknown: saved?.birthTimeUnknown ?? false,
+      placeOfBirth: saved?.placeOfBirth ?? "",
+      birthLatitude: saved?.birthLatitude ?? 0,
+      birthLongitude: saved?.birthLongitude ?? 0,
+    };
   });
   const [bookingId, setBookingId] = useState("");
   const [price, setPrice] = useState(0);
@@ -157,6 +180,10 @@ export function BookingWizard({ service }: BookingWizardProps) {
   }, [step]);
 
   const handleNext = () => {
+    // Persist personal details when leaving the details step
+    if (step === "details") {
+      saveUserDetails(formData);
+    }
     if (currentStepIndex < steps.length - 1) {
       setStep(steps[currentStepIndex + 1].key);
     }
