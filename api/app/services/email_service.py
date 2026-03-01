@@ -1,7 +1,7 @@
 from app.config import settings
 
-# GitHub-hosted logo — always available, works in all email clients
-LOGO_URL = "https://raw.githubusercontent.com/nandishdave/VedicJivan/main/public/images/logo/logo-email.jpg"
+# Direct S3 URL — no CloudFront/GitHub restrictive headers, works in all email clients
+LOGO_URL = "https://vedicjivan-website.s3.ap-south-1.amazonaws.com/images/logo/logo-email.jpg"
 
 
 def _email_header() -> str:
