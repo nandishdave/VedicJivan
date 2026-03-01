@@ -2,7 +2,7 @@
 # Stores Docker images for the FastAPI backend.
 
 resource "aws_ecr_repository" "api" {
-  name                 = "${lower(var.project_name)}-api"
+  name                 = "${local.name_prefix}-api"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 
@@ -10,9 +10,7 @@ resource "aws_ecr_repository" "api" {
     scan_on_push = true
   }
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # Lifecycle policy — keep only last 10 images to save storage costs

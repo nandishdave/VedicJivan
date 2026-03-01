@@ -2,22 +2,18 @@
 
 # ECS container logs
 resource "aws_cloudwatch_log_group" "api" {
-  name              = "/ecs/${lower(var.project_name)}-api"
+  name              = "/ecs/${local.name_prefix}-api"
   retention_in_days = 7
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # API Gateway access logs
 resource "aws_cloudwatch_log_group" "api_gateway" {
-  name              = "/apigateway/${lower(var.project_name)}-api"
+  name              = "/apigateway/${local.name_prefix}-api"
   retention_in_days = 7
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 
@@ -26,11 +22,9 @@ resource "aws_cloudwatch_log_group" "api_gateway" {
 # ══════════════════════════════════════════════
 
 resource "aws_sns_topic" "alarms" {
-  name = "${lower(var.project_name)}-alarms"
+  name = "${local.name_prefix}-alarms"
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 resource "aws_sns_topic_subscription" "alarm_email" {
@@ -46,8 +40,8 @@ resource "aws_sns_topic_subscription" "alarm_email" {
 
 # 1. ECS — Service has 0 running tasks (service is DOWN)
 resource "aws_cloudwatch_metric_alarm" "ecs_no_running_tasks" {
-  alarm_name          = "${lower(var.project_name)}-ecs-no-running-tasks"
-  alarm_description   = "CRITICAL: API has 0 running tasks — service is down"
+  alarm_name          = "${local.name_prefix}-ecs-no-running-tasks"
+  alarm_description   = "CRITICAL: ${local.env} API has 0 running tasks — service is down"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 1
   metric_name         = "RunningTaskCount"
@@ -65,15 +59,13 @@ resource "aws_cloudwatch_metric_alarm" "ecs_no_running_tasks" {
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # 2. ECS — High CPU (>90% for 5 min)
 resource "aws_cloudwatch_metric_alarm" "ecs_high_cpu" {
-  alarm_name          = "${lower(var.project_name)}-ecs-high-cpu"
-  alarm_description   = "WARNING: ECS CPU utilization above 90%"
+  alarm_name          = "${local.name_prefix}-ecs-high-cpu"
+  alarm_description   = "WARNING: ${local.env} ECS CPU utilization above 90%"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
   metric_name         = "CPUUtilization"
@@ -90,15 +82,13 @@ resource "aws_cloudwatch_metric_alarm" "ecs_high_cpu" {
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # 3. ECS — High memory (>90% for 5 min)
 resource "aws_cloudwatch_metric_alarm" "ecs_high_memory" {
-  alarm_name          = "${lower(var.project_name)}-ecs-high-memory"
-  alarm_description   = "WARNING: ECS memory utilization above 90%"
+  alarm_name          = "${local.name_prefix}-ecs-high-memory"
+  alarm_description   = "WARNING: ${local.env} ECS memory utilization above 90%"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
   metric_name         = "MemoryUtilization"
@@ -115,15 +105,13 @@ resource "aws_cloudwatch_metric_alarm" "ecs_high_memory" {
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # 4. API Gateway — 5xx server errors (backend failures)
 resource "aws_cloudwatch_metric_alarm" "apigw_5xx_errors" {
-  alarm_name          = "${lower(var.project_name)}-apigw-5xx-errors"
-  alarm_description   = "CRITICAL: API returning 5xx errors"
+  alarm_name          = "${local.name_prefix}-apigw-5xx-errors"
+  alarm_description   = "CRITICAL: ${local.env} API returning 5xx errors"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
   metric_name         = "5xx"
@@ -139,15 +127,13 @@ resource "aws_cloudwatch_metric_alarm" "apigw_5xx_errors" {
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # 5. API Gateway — High latency (p95 > 5 seconds)
 resource "aws_cloudwatch_metric_alarm" "apigw_high_latency" {
-  alarm_name          = "${lower(var.project_name)}-apigw-high-latency"
-  alarm_description   = "WARNING: API p95 latency exceeds 5 seconds"
+  alarm_name          = "${local.name_prefix}-apigw-high-latency"
+  alarm_description   = "WARNING: ${local.env} API p95 latency exceeds 5 seconds"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
   metric_name         = "Latency"
@@ -163,7 +149,5 @@ resource "aws_cloudwatch_metric_alarm" "apigw_high_latency" {
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }

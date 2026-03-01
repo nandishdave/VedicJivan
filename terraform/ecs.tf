@@ -1,22 +1,20 @@
 # ── ECS Cluster ──
 
 resource "aws_ecs_cluster" "main" {
-  name = "${lower(var.project_name)}-cluster"
+  name = "${local.name_prefix}-cluster"
 
   setting {
     name  = "containerInsights"
     value = "disabled" # Enable later if needed (adds cost)
   }
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # ── Task Definition ──
 
 resource "aws_ecs_task_definition" "api" {
-  family                   = "${lower(var.project_name)}-api"
+  family                   = "${local.name_prefix}-api"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = var.api_cpu
@@ -26,7 +24,7 @@ resource "aws_ecs_task_definition" "api" {
 
   container_definitions = jsonencode([
     {
-      name      = "${lower(var.project_name)}-api"
+      name      = "${local.name_prefix}-api"
       image     = "${aws_ecr_repository.api.repository_url}:latest"
       essential = true
 
@@ -40,9 +38,9 @@ resource "aws_ecs_task_definition" "api" {
 
       # Non-sensitive environment variables
       environment = [
-        { name = "APP_ENV", value = "production" },
-        { name = "APP_URL", value = "https://${var.api_domain_name}" },
-        { name = "FRONTEND_URL", value = "https://${var.domain_name}" },
+        { name = "APP_ENV", value = local.env == "prod" ? "production" : local.env },
+        { name = "APP_URL", value = "https://${local.api_domain}" },
+        { name = "FRONTEND_URL", value = "https://${local.frontend_domain}" },
         { name = "EMAIL_FROM", value = "noreply@vedicjivan.com" },
         { name = "JWT_ALGORITHM", value = "HS256" },
         { name = "ACCESS_TOKEN_EXPIRE_MINUTES", value = "15" },
@@ -77,15 +75,13 @@ resource "aws_ecs_task_definition" "api" {
     }
   ])
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # ── ECS Service ──
 
 resource "aws_ecs_service" "api" {
-  name            = "${lower(var.project_name)}-api"
+  name            = "${local.name_prefix}-api"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.api.arn
   desired_count   = var.api_desired_count
@@ -100,7 +96,7 @@ resource "aws_ecs_service" "api" {
   # Service discovery registration (for API Gateway VPC Link)
   service_registries {
     registry_arn   = aws_service_discovery_service.api.arn
-    container_name = "${lower(var.project_name)}-api"
+    container_name = "${local.name_prefix}-api"
     container_port = var.api_container_port
   }
 
@@ -113,7 +109,5 @@ resource "aws_ecs_service" "api" {
     ignore_changes = [desired_count]
   }
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }

@@ -11,7 +11,7 @@ resource "aws_appautoscaling_target" "api" {
 
 # Scale on CPU — add task if CPU > 75% for 3 minutes
 resource "aws_appautoscaling_policy" "api_cpu" {
-  name               = "${lower(var.project_name)}-api-cpu-scaling"
+  name               = "${local.name_prefix}-api-cpu-scaling"
   policy_type        = "TargetTrackingScaling"
   resource_id        = aws_appautoscaling_target.api.resource_id
   scalable_dimension = aws_appautoscaling_target.api.scalable_dimension

@@ -2,13 +2,13 @@
 resource "aws_cloudfront_distribution" "website" {
   enabled             = true
   default_root_object = "index.html"
-  comment             = "${var.project_name} Static Website"
-  aliases             = [var.domain_name]
+  comment             = "${var.project_name} ${local.env} Static Website"
+  aliases             = [local.frontend_domain]
   http_version        = "http2and3"
 
   origin {
     domain_name = aws_s3_bucket_website_configuration.website.website_endpoint
-    origin_id   = "S3-${var.bucket_name}"
+    origin_id   = "S3-${aws_s3_bucket.website.id}"
 
     custom_origin_config {
       http_port              = 80
@@ -21,7 +21,7 @@ resource "aws_cloudfront_distribution" "website" {
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "S3-${var.bucket_name}"
+    target_origin_id       = "S3-${aws_s3_bucket.website.id}"
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
@@ -60,12 +60,10 @@ resource "aws_cloudfront_distribution" "website" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = var.acm_certificate_arn
+    acm_certificate_arn      = var.acm_certificate_arn != "" ? var.acm_certificate_arn : aws_acm_certificate_validation.frontend[0].certificate_arn
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }

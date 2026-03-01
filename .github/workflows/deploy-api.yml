@@ -2,7 +2,7 @@ name: Deploy API to ECS Fargate
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
     paths:
       - 'api/**'
       - '.github/workflows/deploy-api.yml'
@@ -15,11 +15,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "env=prod" >> "$GITHUB_OUTPUT"
+          else
+            echo "env=test" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ steps.env.outputs.env == 'prod' && secrets.AWS_ACCESS_KEY_ID || secrets.TEST_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ steps.env.outputs.env == 'prod' && secrets.AWS_SECRET_ACCESS_KEY || secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Set up Docker Buildx
@@ -36,6 +45,8 @@ jobs:
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
+        env:
+          ECR_REPO: ${{ steps.env.outputs.env == 'prod' && secrets.ECR_REPOSITORY || secrets.TEST_ECR_REPOSITORY }}
         with:
           context: ./api
           file: ./api/Dockerfile.prod
@@ -43,14 +54,18 @@ jobs:
           provenance: false
           sbom: false
           tags: |
-            ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
-            ${{ steps.ecr-login.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:latest
 
       - name: Force new ECS deployment
-        env:
-          ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
-          ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
         run: |
+          if [[ "${{ steps.env.outputs.env }}" == "prod" ]]; then
+            ECS_CLUSTER="${{ secrets.ECS_CLUSTER }}"
+            ECS_SERVICE="${{ secrets.ECS_SERVICE }}"
+          else
+            ECS_CLUSTER="${{ secrets.TEST_ECS_CLUSTER }}"
+            ECS_SERVICE="${{ secrets.TEST_ECS_SERVICE }}"
+          fi
           aws ecs update-service \
             --cluster $ECS_CLUSTER \
             --service $ECS_SERVICE \

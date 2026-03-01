@@ -2,7 +2,7 @@
 
 # ECS Tasks — allows traffic from API Gateway VPC Link + outbound for external services
 resource "aws_security_group" "ecs" {
-  name        = "${lower(var.project_name)}-ecs-sg"
+  name        = "${local.name_prefix}-ecs-sg"
   description = "Allow inbound from API Gateway VPC Link"
   vpc_id      = data.aws_vpc.default.id
 
@@ -23,7 +23,8 @@ resource "aws_security_group" "ecs" {
   }
 
   tags = {
-    Name    = "${lower(var.project_name)}-ecs-sg"
-    Project = var.project_name
+    Name        = "${local.name_prefix}-ecs-sg"
+    Project     = var.project_name
+    Environment = local.env
   }
 }

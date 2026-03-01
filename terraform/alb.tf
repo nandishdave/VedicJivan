@@ -1,23 +1,19 @@
 # ── API Gateway HTTP API (replaces ALB — $0 base cost vs $16/month) ──
 
 resource "aws_apigatewayv2_api" "api" {
-  name          = "${lower(var.project_name)}-api"
+  name          = "${local.name_prefix}-api"
   protocol_type = "HTTP"
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # VPC Link — connects API Gateway to ECS tasks in the VPC (free for HTTP APIs)
 resource "aws_apigatewayv2_vpc_link" "api" {
-  name               = "${lower(var.project_name)}-vpc-link"
+  name               = "${local.name_prefix}-vpc-link"
   security_group_ids = [aws_security_group.ecs.id]
   subnet_ids         = data.aws_subnets.default.ids
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # Integration — routes traffic to ECS via Cloud Map service discovery
@@ -60,14 +56,12 @@ resource "aws_apigatewayv2_stage" "default" {
     })
   }
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # Custom domain for API Gateway
 resource "aws_apigatewayv2_domain_name" "api" {
-  domain_name = var.api_domain_name
+  domain_name = local.api_domain
 
   domain_name_configuration {
     certificate_arn = aws_acm_certificate_validation.api.certificate_arn
@@ -75,9 +69,7 @@ resource "aws_apigatewayv2_domain_name" "api" {
     security_policy = "TLS_1_2"
   }
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # Map custom domain to the API
@@ -91,12 +83,10 @@ resource "aws_apigatewayv2_api_mapping" "api" {
 # API Gateway VPC Link uses Cloud Map to find ECS tasks
 
 resource "aws_service_discovery_private_dns_namespace" "main" {
-  name = "${lower(var.project_name)}.local"
+  name = "${local.name_prefix}.local"
   vpc  = data.aws_vpc.default.id
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 resource "aws_service_discovery_service" "api" {
@@ -115,7 +105,5 @@ resource "aws_service_discovery_service" "api" {
     failure_threshold = 1
   }
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }

@@ -30,6 +30,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         "https://vedicjivan.nandishdave.world",
+        "https://vedicjivan-test.nandishdave.world",
     ],
     allow_credentials=True,
     allow_methods=["*"],

@@ -1,3 +1,15 @@
+# ── Environment Info ──
+
+output "environment" {
+  description = "Current environment"
+  value       = local.env
+}
+
+output "frontend_url" {
+  description = "Frontend URL"
+  value       = "https://${local.frontend_domain}"
+}
+
 # ── Frontend Outputs ──
 
 output "s3_bucket_name" {
@@ -60,7 +72,7 @@ output "api_gateway_endpoint" {
 
 output "api_url" {
   description = "API URL"
-  value       = "https://${var.api_domain_name}"
+  value       = "https://${local.api_domain}"
 }
 
 output "ssm_parameter_prefix" {

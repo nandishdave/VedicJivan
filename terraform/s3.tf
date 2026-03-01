@@ -1,10 +1,8 @@
 # S3 Bucket
 resource "aws_s3_bucket" "website" {
-  bucket = var.bucket_name
+  bucket = "${local.name_prefix}-website"
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # Disable block public access

@@ -2,7 +2,7 @@ name: Deploy to AWS S3 + CloudFront
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
 
 jobs:
   deploy:
@@ -11,6 +11,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "env=prod" >> "$GITHUB_OUTPUT"
+            echo "api_url=https://api.vedicjivan.nandishdave.world" >> "$GITHUB_OUTPUT"
+          else
+            echo "env=test" >> "$GITHUB_OUTPUT"
+            echo "api_url=https://api.vedicjivan-test.nandishdave.world" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -28,17 +39,21 @@ jobs:
           NEXT_PUBLIC_YOUTUBE_API_KEY: ${{ secrets.NEXT_PUBLIC_YOUTUBE_API_KEY }}
           NEXT_PUBLIC_YOUTUBE_CHANNEL_ID: ${{ secrets.NEXT_PUBLIC_YOUTUBE_CHANNEL_ID }}
           NEXT_PUBLIC_GOOGLE_PLACES_API_KEY: ${{ secrets.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY }}
-          NEXT_PUBLIC_API_URL: https://api.vedicjivan.nandishdave.world
+          NEXT_PUBLIC_API_URL: ${{ steps.env.outputs.api_url }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ steps.env.outputs.env == 'prod' && secrets.AWS_ACCESS_KEY_ID || secrets.TEST_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ steps.env.outputs.env == 'prod' && secrets.AWS_SECRET_ACCESS_KEY || secrets.TEST_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy to S3
-        run: aws s3 sync ./out s3://${{ secrets.S3_BUCKET_NAME }} --delete
+        run: |
+          BUCKET=${{ steps.env.outputs.env == 'prod' && secrets.S3_BUCKET_NAME || secrets.TEST_S3_BUCKET_NAME }}
+          aws s3 sync ./out s3://$BUCKET --delete
 
       - name: Invalidate CloudFront cache
-        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        run: |
+          DIST_ID=${{ steps.env.outputs.env == 'prod' && secrets.CLOUDFRONT_DISTRIBUTION_ID || secrets.TEST_CLOUDFRONT_DISTRIBUTION_ID }}
+          aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"

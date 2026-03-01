@@ -5,11 +5,9 @@ data "aws_caller_identity" "current" {}
 # ══════════════════════════════════════════════
 
 resource "aws_iam_user" "deployer" {
-  name = "${lower(var.project_name)}-deployer"
+  name = "${local.name_prefix}-deployer"
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 resource "aws_iam_access_key" "deployer" {
@@ -18,7 +16,7 @@ resource "aws_iam_access_key" "deployer" {
 
 # S3 deployment policy — scoped to this bucket only
 resource "aws_iam_user_policy" "deployer_s3" {
-  name = "${lower(var.project_name)}-s3-deploy"
+  name = "${local.name_prefix}-s3-deploy"
   user = aws_iam_user.deployer.name
 
   policy = jsonencode({
@@ -42,7 +40,7 @@ resource "aws_iam_user_policy" "deployer_s3" {
 
 # CloudFront invalidation policy
 resource "aws_iam_user_policy" "deployer_cloudfront" {
-  name = "${lower(var.project_name)}-cloudfront-invalidate"
+  name = "${local.name_prefix}-cloudfront-invalidate"
   user = aws_iam_user.deployer.name
 
   policy = jsonencode({
@@ -60,7 +58,7 @@ resource "aws_iam_user_policy" "deployer_cloudfront" {
 
 # ECR + ECS deploy policy — allows GitHub Actions to push images and update service
 resource "aws_iam_user_policy" "deployer_backend" {
-  name = "${lower(var.project_name)}-backend-deploy"
+  name = "${local.name_prefix}-backend-deploy"
   user = aws_iam_user.deployer.name
 
   policy = jsonencode({
@@ -117,7 +115,7 @@ resource "aws_iam_user_policy" "deployer_backend" {
 # ══════════════════════════════════════════════
 
 resource "aws_iam_role" "ecs_execution" {
-  name = "${lower(var.project_name)}-ecs-execution-role"
+  name = "${local.name_prefix}-ecs-execution-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -130,9 +128,7 @@ resource "aws_iam_role" "ecs_execution" {
     ]
   })
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
 
 # Attach the AWS-managed ECS task execution policy (ECR pull + CloudWatch logs)
@@ -143,7 +139,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
 
 # Allow the execution role to read secrets from SSM Parameter Store
 resource "aws_iam_role_policy" "ecs_execution_ssm" {
-  name = "${lower(var.project_name)}-ecs-ssm"
+  name = "${local.name_prefix}-ecs-ssm"
   role = aws_iam_role.ecs_execution.id
 
   policy = jsonencode({
@@ -165,7 +161,7 @@ resource "aws_iam_role_policy" "ecs_execution_ssm" {
 # ══════════════════════════════════════════════
 
 resource "aws_iam_role" "ecs_task" {
-  name = "${lower(var.project_name)}-ecs-task-role"
+  name = "${local.name_prefix}-ecs-task-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -178,7 +174,5 @@ resource "aws_iam_role" "ecs_task" {
     ]
   })
 
-  tags = {
-    Project = var.project_name
-  }
+  tags = local.common_tags
 }
