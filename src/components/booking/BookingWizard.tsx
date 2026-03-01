@@ -33,7 +33,7 @@ function parseDurationMinutes(duration: string | null): number {
 }
 
 // Reports don't need scheduling
-const REPORT_SERVICES = ["premium-kundli", "numerology-report", "matchmaking", "test-payment"];
+const REPORT_SERVICES = ["premium-kundli", "numerology-report", "matchmaking"];
 
 declare global {
   interface Window {

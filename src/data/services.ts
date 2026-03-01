@@ -627,9 +627,9 @@ export const services: Service[] = [
       "This is a temporary test service created to verify the end-to-end payment flow with Razorpay in production. It will be removed once payment integration is confirmed working.",
     priceINR: "\u20B910",
     priceEUR: "\u20AC0.11",
-    duration: null,
-    icon: "FileText",
-    category: "report",
+    duration: "30 min",
+    icon: "Phone",
+    category: "consultation",
     features: [
       "Verify Razorpay payment flow",
       "Test booking creation",
