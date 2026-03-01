@@ -238,7 +238,17 @@ async def test_get_session_status(client, mock_db):
         return_value={"stripe_session_id": "cs_test_abc", "status": "captured"}
     )
     mock_db.bookings.find_one = AsyncMock(
-        return_value={"_id": BOOKING_ID, "status": "confirmed"}
+        return_value={
+            "_id": BOOKING_ID,
+            "status": "confirmed",
+            "service_title": "Call Consultation",
+            "date": "2026-03-15",
+            "time_slot": "10:00",
+            "duration_minutes": 30,
+            "price_inr": 1999,
+            "user_name": "John Doe",
+            "user_email": "john@test.com",
+        }
     )
 
     resp = await client.get(
@@ -248,6 +258,10 @@ async def test_get_session_status(client, mock_db):
     data = resp.json()
     assert data["payment_status"] == "captured"
     assert data["booking_status"] == "confirmed"
+    assert data["booking"]["service_title"] == "Call Consultation"
+    assert data["booking"]["date"] == "2026-03-15"
+    assert data["booking"]["price_inr"] == 1999
+    assert data["booking"]["user_name"] == "John Doe"
 
 
 async def test_get_session_status_not_found(client, mock_db):

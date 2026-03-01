@@ -178,10 +178,23 @@ async def get_session_status(session_id: str, booking_id: str):
 
     booking = await db.bookings.find_one({"_id": ObjectId(booking_id)})
 
-    return {
+    result = {
         "payment_status": payment["status"],
         "booking_status": booking["status"] if booking else "unknown",
     }
+
+    if booking:
+        result["booking"] = {
+            "service_title": booking.get("service_title", ""),
+            "date": booking.get("date", ""),
+            "time_slot": booking.get("time_slot", ""),
+            "duration_minutes": booking.get("duration_minutes", 0),
+            "price_inr": booking.get("price_inr", 0),
+            "user_name": booking.get("user_name", ""),
+            "user_email": booking.get("user_email", ""),
+        }
+
+    return result
 
 
 @router.get("", response_model=list[PaymentResponse])

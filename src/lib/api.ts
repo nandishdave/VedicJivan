@@ -220,9 +220,19 @@ export const paymentsApi = {
     }),
 
   getSessionStatus: (sessionId: string, bookingId: string) =>
-    apiRequest<{ payment_status: string; booking_status: string }>(
-      `/api/payments/session-status?session_id=${sessionId}&booking_id=${bookingId}`
-    ),
+    apiRequest<{
+      payment_status: string;
+      booking_status: string;
+      booking?: {
+        service_title: string;
+        date: string;
+        time_slot: string;
+        duration_minutes: number;
+        price_inr: number;
+        user_name: string;
+        user_email: string;
+      };
+    }>(`/api/payments/session-status?session_id=${sessionId}&booking_id=${bookingId}`),
 
   list: (token: string) =>
     apiRequest<
