@@ -41,7 +41,7 @@ resource "aws_ecs_task_definition" "api" {
         { name = "APP_ENV", value = local.env == "prod" ? "production" : local.env },
         { name = "APP_URL", value = "https://${local.api_domain}" },
         { name = "FRONTEND_URL", value = "https://${local.frontend_domain}" },
-        { name = "EMAIL_FROM", value = "VedicJivan <noreply@vedicjivan.nandishdave.world>" },
+        { name = "EMAIL_FROM", value = "VedicJivan <noreply@nandishdave.world>" },
         { name = "JWT_ALGORITHM", value = "HS256" },
         { name = "ACCESS_TOKEN_EXPIRE_MINUTES", value = "15" },
         { name = "REFRESH_TOKEN_EXPIRE_DAYS", value = "7" },
