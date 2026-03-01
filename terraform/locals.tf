@@ -25,9 +25,8 @@ locals {
   secret_params = [
     "MONGODB_URI",
     "JWT_SECRET",
-    "RAZORPAY_KEY_ID",
-    "RAZORPAY_KEY_SECRET",
-    "RAZORPAY_WEBHOOK_SECRET",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
     "RESEND_API_KEY",
     "ADMIN_EMAIL",
   ]

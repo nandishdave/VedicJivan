@@ -308,7 +308,7 @@ const faqs = [
   {
     question: "What payment methods do you accept?",
     answer:
-      "We accept all major credit/debit cards, UPI, net banking, and wallets for Indian clients (via Razorpay), and credit cards and bank transfers for international clients (via Stripe).",
+      "We accept all major credit/debit cards, UPI, net banking, and wallets via Stripe.",
   },
   {
     question: "Can I reschedule or cancel my appointment?",

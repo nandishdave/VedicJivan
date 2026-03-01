@@ -45,7 +45,7 @@ Route 53 (DNS: *.nandishdave.world)
                     |
                     |--- MongoDB Atlas (Database)
                     |--- Resend (Email delivery)
-                    |--- Razorpay (INR payments)
+                    |--- Stripe (payments)
                     |--- Google Places API (Birth place autocomplete)
 ```
 
@@ -76,7 +76,7 @@ Route 53 (DNS: *.nandishdave.world)
 | Motor | Async MongoDB driver |
 | Pydantic | Request/response validation |
 | python-jose + bcrypt | JWT authentication + password hashing |
-| Razorpay SDK | INR payment processing |
+| Stripe SDK | Payment processing |
 | Resend | Transactional email delivery |
 | Docker | Containerization for ECS Fargate |
 
@@ -129,7 +129,7 @@ VedicJivan/
 |   |   |-- routers/            # API route handlers
 |   |   |   |-- auth.py         # Register, login, me, refresh
 |   |   |   |-- bookings.py     # Booking CRUD, pricing, slot validation
-|   |   |   |-- payments.py     # Razorpay order creation, verification, webhook
+|   |   |   |-- payments.py     # Stripe Checkout session, webhook
 |   |   |   |-- availability.py # Slot management, business hours, holidays
 |   |   |   +-- admin.py        # Dashboard stats endpoint
 |   |   |-- models/             # Pydantic models
@@ -215,8 +215,8 @@ APP_URL=http://localhost:8000
 FRONTEND_URL=http://localhost:3000
 MONGODB_URI=mongodb://vedicjivan-mongo:27017/vedicjivan
 JWT_SECRET=<openssl rand -hex 32>
-RAZORPAY_KEY_ID=<test key>
-RAZORPAY_KEY_SECRET=<test secret>
+STRIPE_SECRET_KEY=<test key>
+STRIPE_WEBHOOK_SECRET=<test secret>
 RESEND_API_KEY=<api key>
 ADMIN_EMAIL=vedic.jivan33@gmail.com
 ```
@@ -245,7 +245,7 @@ pytest                 # Run all tests
 pytest --cov=app       # With coverage
 ```
 
-Key test areas: Booking CRUD, availability, payments (Razorpay), auth, admin dashboard.
+Key test areas: Booking CRUD, availability, payments (Stripe), auth, admin dashboard.
 
 ---
 
@@ -300,9 +300,8 @@ Each environment needs these parameters in AWS SSM Parameter Store:
 |---|---|
 | `/<prefix>/MONGODB_URI` | MongoDB Atlas connection string |
 | `/<prefix>/JWT_SECRET` | JWT signing secret |
-| `/<prefix>/RAZORPAY_KEY_ID` | Razorpay API key |
-| `/<prefix>/RAZORPAY_KEY_SECRET` | Razorpay API secret |
-| `/<prefix>/RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook secret |
+| `/<prefix>/STRIPE_SECRET_KEY` | Stripe API secret key |
+| `/<prefix>/STRIPE_WEBHOOK_SECRET` | Stripe webhook secret |
 | `/<prefix>/RESEND_API_KEY` | Resend email API key |
 | `/<prefix>/ADMIN_EMAIL` | Admin notification email |
 
@@ -492,9 +491,9 @@ terraform import -var-file=prod.tfvars \
 - Birth details collection: DOB picker, time of birth (with "unknown" option), place of birth (Google Places autocomplete with lat/lng)
 - Report-type services (Kundli, Numerology, Matchmaking) skip scheduling steps
 
-### Payments (Razorpay - INR)
+### Payments (Stripe)
 - Order creation, HMAC SHA256 signature verification, webhook handling
-- Frontend Razorpay checkout widget with customer prefill
+- Stripe Checkout (hosted payment page) with redirect flow
 - Test mode with test API keys (test environment shows "Test Mode" badge)
 
 ### Emails

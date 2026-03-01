@@ -23,13 +23,9 @@ vi.mock("@/lib/api", () => ({
     resume: mockResume,
   },
   paymentsApi: {
-    createOrder: vi.fn().mockResolvedValue({
-      order_id: "order-1",
-      amount: 199900,
-      currency: "INR",
-      key_id: "rzp_test",
+    createCheckoutSession: vi.fn().mockResolvedValue({
+      checkout_url: "https://checkout.stripe.com/pay/cs_test_123",
     }),
-    verify: vi.fn().mockResolvedValue({ status: "ok" }),
   },
 }));
 
@@ -462,9 +458,9 @@ describe("BookingWizard", () => {
     }
   });
 
-  it("shows payment error when createOrder fails", async () => {
+  it("shows payment error when createCheckoutSession fails", async () => {
     const { paymentsApi } = await import("@/lib/api");
-    (paymentsApi.createOrder as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Payment gateway down"));
+    (paymentsApi.createCheckoutSession as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Payment gateway down"));
 
     const user = userEvent.setup();
     render(<BookingWizard service={reportService} />);

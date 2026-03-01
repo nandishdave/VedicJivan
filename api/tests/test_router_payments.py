@@ -1,273 +1,262 @@
-"""Tests for app.routers.payments — Razorpay order, verify, webhook."""
+"""Tests for app.routers.payments — Stripe Checkout session, webhook, list."""
 
-import hashlib
-import hmac
 import json
 
 import pytest
+import stripe
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bson import ObjectId
 
-from app.config import settings
 from tests.conftest import BOOKING_ID, MockCursor
 
 
-def _make_valid_signature(order_id: str, payment_id: str) -> str:
-    """Generate a valid HMAC SHA256 signature for Razorpay verification."""
-    message = f"{order_id}|{payment_id}"
-    return hmac.new(
-        settings.RAZORPAY_KEY_SECRET.encode(),
-        message.encode(),
-        hashlib.sha256,
-    ).hexdigest()
+SAMPLE_BOOKING = {
+    "_id": BOOKING_ID,
+    "status": "pending",
+    "service_title": "Call Consultation",
+    "user_email": "test@example.com",
+    "user_name": "Test User",
+    "user_phone": "1234567890",
+    "date": "2026-03-15",
+    "time_slot": "10:00",
+    "duration_minutes": 30,
+    "price_inr": 1999,
+}
 
 
-# ── Create order ──
-
-
-async def test_create_order_success(client, mock_db):
-    mock_db.bookings.find_one = AsyncMock(
-        return_value={"_id": BOOKING_ID, "status": "pending", "service_title": "Call"}
-    )
-    mock_db.payments.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
-
-    mock_razorpay = MagicMock()
-    mock_razorpay.order.create.return_value = {
-        "id": "order_test123",
-        "amount": 199900,
-        "currency": "INR",
+def _make_stripe_event(event_type: str, data_object: dict) -> dict:
+    return {
+        "type": event_type,
+        "data": {"object": data_object},
     }
 
-    with patch("app.routers.payments.get_razorpay_client", return_value=mock_razorpay):
+
+# ── Create checkout session ──
+
+
+async def test_create_checkout_session_success(client, mock_db):
+    mock_db.bookings.find_one = AsyncMock(return_value=SAMPLE_BOOKING)
+    mock_db.payments.insert_one = AsyncMock(return_value=MagicMock(inserted_id=ObjectId()))
+
+    mock_session = MagicMock()
+    mock_session.id = "cs_test_abc123"
+    mock_session.url = "https://checkout.stripe.com/pay/cs_test_abc123"
+
+    with patch("stripe.checkout.Session.create", return_value=mock_session):
         resp = await client.post(
-            "/api/payments/create-order",
-            json={"booking_id": str(BOOKING_ID), "amount_inr": 1999},
+            "/api/payments/create-checkout-session",
+            json={"booking_id": str(BOOKING_ID)},
         )
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["order_id"] == "order_test123"
-    assert data["key_id"] == settings.RAZORPAY_KEY_ID
+    assert data["checkout_url"] == "https://checkout.stripe.com/pay/cs_test_abc123"
+    mock_db.payments.insert_one.assert_called_once()
 
 
-async def test_create_order_booking_not_found(client, mock_db):
+async def test_create_checkout_session_booking_not_found(client, mock_db):
     mock_db.bookings.find_one = AsyncMock(return_value=None)
 
     resp = await client.post(
-        "/api/payments/create-order",
-        json={"booking_id": str(ObjectId()), "amount_inr": 1999},
+        "/api/payments/create-checkout-session",
+        json={"booking_id": str(ObjectId())},
     )
     assert resp.status_code == 404
 
 
-async def test_create_order_already_confirmed(client, mock_db):
+async def test_create_checkout_session_already_confirmed(client, mock_db):
     mock_db.bookings.find_one = AsyncMock(
-        return_value={"_id": BOOKING_ID, "status": "confirmed", "service_title": "Call"}
+        return_value={**SAMPLE_BOOKING, "status": "confirmed"}
     )
 
     resp = await client.post(
-        "/api/payments/create-order",
-        json={"booking_id": str(BOOKING_ID), "amount_inr": 1999},
+        "/api/payments/create-checkout-session",
+        json={"booking_id": str(BOOKING_ID)},
     )
     assert resp.status_code == 400
 
 
-# ── Verify payment ──
+# ── Webhook: checkout.session.completed ──
 
 
-async def test_verify_payment_valid_signature(client, mock_db):
-    order_id = "order_test123"
-    payment_id = "pay_test456"
-    signature = _make_valid_signature(order_id, payment_id)
-
-    mock_db.bookings.find_one = AsyncMock(
-        return_value={
-            "_id": BOOKING_ID,
-            "user_email": "test@example.com",
-            "user_name": "Test",
-            "user_phone": "1234567890",
-            "service_title": "Call",
-            "date": "2026-03-15",
-            "time_slot": "10:00",
-            "duration_minutes": 30,
-            "price_inr": 1999,
-        }
+async def test_webhook_checkout_completed(client, mock_db):
+    event = _make_stripe_event(
+        "checkout.session.completed",
+        {
+            "id": "cs_test_abc123",
+            "payment_intent": "pi_test_xyz",
+            "metadata": {"booking_id": str(BOOKING_ID)},
+        },
     )
 
-    with patch("app.routers.payments.send_booking_confirmation", new_callable=AsyncMock), \
+    mock_db.bookings.find_one = AsyncMock(return_value=SAMPLE_BOOKING)
+
+    with patch("stripe.Webhook.construct_event", return_value=event), \
+         patch("app.routers.payments.send_booking_confirmation", new_callable=AsyncMock), \
          patch("app.routers.payments.send_admin_booking_notification", new_callable=AsyncMock):
         resp = await client.post(
-            "/api/payments/verify",
-            json={
-                "razorpay_order_id": order_id,
-                "razorpay_payment_id": payment_id,
-                "razorpay_signature": signature,
-                "booking_id": str(BOOKING_ID),
-            },
+            "/api/payments/webhook",
+            content=json.dumps(event),
+            headers={"Content-Type": "application/json", "stripe-signature": "sig"},
         )
 
     assert resp.status_code == 200
-    assert resp.json()["status"] == "success"
+    assert mock_db.payments.update_one.call_count >= 1
+    assert mock_db.bookings.update_one.call_count >= 1
 
 
-async def test_verify_payment_invalid_signature(client, mock_db):
-    resp = await client.post(
-        "/api/payments/verify",
-        json={
-            "razorpay_order_id": "order_123",
-            "razorpay_payment_id": "pay_456",
-            "razorpay_signature": "invalid_signature",
-            "booking_id": str(BOOKING_ID),
+async def test_webhook_checkout_completed_sends_emails(client, mock_db):
+    event = _make_stripe_event(
+        "checkout.session.completed",
+        {
+            "id": "cs_test_email",
+            "payment_intent": "pi_test_email",
+            "metadata": {"booking_id": str(BOOKING_ID)},
         },
     )
-    assert resp.status_code == 400
 
-
-async def test_verify_payment_sends_emails(client, mock_db):
-    order_id = "order_email_test"
-    payment_id = "pay_email_test"
-    signature = _make_valid_signature(order_id, payment_id)
-
-    mock_db.bookings.find_one = AsyncMock(
-        return_value={
-            "_id": BOOKING_ID,
-            "user_email": "test@example.com",
-            "user_name": "Test",
-            "user_phone": "1234567890",
-            "service_title": "Call",
-            "date": "2026-03-15",
-            "time_slot": "10:00",
-            "duration_minutes": 30,
-            "price_inr": 1999,
-        }
-    )
-
+    mock_db.bookings.find_one = AsyncMock(return_value=SAMPLE_BOOKING)
     mock_confirm = AsyncMock()
     mock_admin_notify = AsyncMock()
 
-    with patch("app.routers.payments.send_booking_confirmation", mock_confirm), \
+    with patch("stripe.Webhook.construct_event", return_value=event), \
+         patch("app.routers.payments.send_booking_confirmation", mock_confirm), \
          patch("app.routers.payments.send_admin_booking_notification", mock_admin_notify):
         await client.post(
-            "/api/payments/verify",
-            json={
-                "razorpay_order_id": order_id,
-                "razorpay_payment_id": payment_id,
-                "razorpay_signature": signature,
-                "booking_id": str(BOOKING_ID),
-            },
+            "/api/payments/webhook",
+            content=json.dumps(event),
+            headers={"Content-Type": "application/json", "stripe-signature": "sig"},
         )
 
     mock_confirm.assert_called_once()
     mock_admin_notify.assert_called_once()
 
 
-async def test_verify_payment_email_failure_does_not_break(client, mock_db):
-    order_id = "order_email_fail"
-    payment_id = "pay_email_fail"
-    signature = _make_valid_signature(order_id, payment_id)
-
-    mock_db.bookings.find_one = AsyncMock(
-        return_value={
-            "_id": BOOKING_ID,
-            "user_email": "test@example.com",
-            "user_name": "Test",
-            "user_phone": "1234567890",
-            "service_title": "Call",
-            "date": "2026-03-15",
-            "time_slot": "10:00",
-            "duration_minutes": 30,
-            "price_inr": 1999,
-        }
+async def test_webhook_email_failure_does_not_break(client, mock_db):
+    event = _make_stripe_event(
+        "checkout.session.completed",
+        {
+            "id": "cs_test_efail",
+            "payment_intent": "pi_test_efail",
+            "metadata": {"booking_id": str(BOOKING_ID)},
+        },
     )
 
-    with patch("app.routers.payments.send_booking_confirmation", AsyncMock(side_effect=Exception("SMTP error"))), \
+    mock_db.bookings.find_one = AsyncMock(return_value=SAMPLE_BOOKING)
+
+    with patch("stripe.Webhook.construct_event", return_value=event), \
+         patch("app.routers.payments.send_booking_confirmation", AsyncMock(side_effect=Exception("SMTP error"))), \
          patch("app.routers.payments.send_admin_booking_notification", AsyncMock(side_effect=Exception("SMTP error"))):
         resp = await client.post(
-            "/api/payments/verify",
-            json={
-                "razorpay_order_id": order_id,
-                "razorpay_payment_id": payment_id,
-                "razorpay_signature": signature,
-                "booking_id": str(BOOKING_ID),
-            },
+            "/api/payments/webhook",
+            content=json.dumps(event),
+            headers={"Content-Type": "application/json", "stripe-signature": "sig"},
         )
 
     assert resp.status_code == 200
 
 
-# ── Webhook ──
+# ── Webhook: checkout.session.expired ──
 
 
-async def test_webhook_payment_captured(client, mock_db):
-    payload = {
-        "event": "payment.captured",
-        "payload": {
-            "payment": {
-                "entity": {"id": "pay_123", "order_id": "order_123"}
-            }
-        },
-    }
+async def test_webhook_session_expired(client, mock_db):
+    event = _make_stripe_event(
+        "checkout.session.expired",
+        {"id": "cs_test_expired"},
+    )
 
-    with patch.object(settings, "RAZORPAY_WEBHOOK_SECRET", ""):
+    with patch("stripe.Webhook.construct_event", return_value=event):
         resp = await client.post(
             "/api/payments/webhook",
-            content=json.dumps(payload),
-            headers={"Content-Type": "application/json"},
+            content=json.dumps(event),
+            headers={"Content-Type": "application/json", "stripe-signature": "sig"},
         )
 
     assert resp.status_code == 200
     mock_db.payments.update_one.assert_called_once()
 
 
-async def test_webhook_refund_created(client, mock_db):
-    payload = {
-        "event": "refund.created",
-        "payload": {
-            "refund": {
-                "entity": {"payment_id": "pay_456"}
-            }
-        },
-    }
+# ── Webhook: charge.refunded ──
 
-    with patch.object(settings, "RAZORPAY_WEBHOOK_SECRET", ""):
+
+async def test_webhook_charge_refunded(client, mock_db):
+    event = _make_stripe_event(
+        "charge.refunded",
+        {"payment_intent": "pi_test_refund"},
+    )
+
+    with patch("stripe.Webhook.construct_event", return_value=event):
         resp = await client.post(
             "/api/payments/webhook",
-            content=json.dumps(payload),
-            headers={"Content-Type": "application/json"},
+            content=json.dumps(event),
+            headers={"Content-Type": "application/json", "stripe-signature": "sig"},
         )
 
     assert resp.status_code == 200
     mock_db.payments.update_one.assert_called_once()
+
+
+# ── Webhook: invalid signature ──
 
 
 async def test_webhook_invalid_signature(client, mock_db):
-    payload = {"event": "payment.captured", "payload": {}}
-
-    with patch.object(settings, "RAZORPAY_WEBHOOK_SECRET", "webhook-secret"):
+    with patch(
+        "stripe.Webhook.construct_event",
+        side_effect=stripe.SignatureVerificationError("bad sig", "sig_header"),
+    ):
         resp = await client.post(
             "/api/payments/webhook",
-            content=json.dumps(payload),
-            headers={
-                "Content-Type": "application/json",
-                "x-razorpay-signature": "wrong-sig",
-            },
+            content=json.dumps({"type": "test"}),
+            headers={"Content-Type": "application/json", "stripe-signature": "bad"},
         )
 
     assert resp.status_code == 400
 
 
-async def test_webhook_unknown_event(client, mock_db):
-    payload = {"event": "unknown.event", "payload": {}}
+# ── Webhook: unknown event ──
 
-    with patch.object(settings, "RAZORPAY_WEBHOOK_SECRET", ""):
+
+async def test_webhook_unknown_event(client, mock_db):
+    event = _make_stripe_event("unknown.event", {})
+
+    with patch("stripe.Webhook.construct_event", return_value=event):
         resp = await client.post(
             "/api/payments/webhook",
-            content=json.dumps(payload),
-            headers={"Content-Type": "application/json"},
+            content=json.dumps(event),
+            headers={"Content-Type": "application/json", "stripe-signature": "sig"},
         )
 
     assert resp.status_code == 200
+
+
+# ── Session status ──
+
+
+async def test_get_session_status(client, mock_db):
+    mock_db.payments.find_one = AsyncMock(
+        return_value={"stripe_session_id": "cs_test_abc", "status": "captured"}
+    )
+    mock_db.bookings.find_one = AsyncMock(
+        return_value={"_id": BOOKING_ID, "status": "confirmed"}
+    )
+
+    resp = await client.get(
+        f"/api/payments/session-status?session_id=cs_test_abc&booking_id={BOOKING_ID}"
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["payment_status"] == "captured"
+    assert data["booking_status"] == "confirmed"
+
+
+async def test_get_session_status_not_found(client, mock_db):
+    mock_db.payments.find_one = AsyncMock(return_value=None)
+
+    resp = await client.get(
+        f"/api/payments/session-status?session_id=cs_nonexistent&booking_id={BOOKING_ID}"
+    )
+    assert resp.status_code == 404
 
 
 # ── List payments ──

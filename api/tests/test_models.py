@@ -11,10 +11,9 @@ from app.models.booking import (
     BookingStatusUpdate,
 )
 from app.models.payment import (
-    PaymentCreateOrder,
+    PaymentCreateCheckout,
     PaymentInDB,
     PaymentStatus,
-    PaymentVerify,
 )
 from app.models.user import (
     TokenRefresh,
@@ -293,29 +292,9 @@ def test_booking_status_update_valid():
 # ═══════════════════════════════════════
 
 
-def test_payment_create_order_valid():
-    p = PaymentCreateOrder(booking_id="abc", amount_inr=100)
-    assert p.amount_inr == 100
-
-
-def test_payment_create_order_zero_amount():
-    with pytest.raises(ValidationError):
-        PaymentCreateOrder(booking_id="abc", amount_inr=0)
-
-
-def test_payment_create_order_negative_amount():
-    with pytest.raises(ValidationError):
-        PaymentCreateOrder(booking_id="abc", amount_inr=-1)
-
-
-def test_payment_verify_valid():
-    p = PaymentVerify(
-        razorpay_order_id="o1",
-        razorpay_payment_id="p1",
-        razorpay_signature="s1",
-        booking_id="b1",
-    )
-    assert p.razorpay_order_id == "o1"
+def test_payment_create_checkout_valid():
+    p = PaymentCreateCheckout(booking_id="abc")
+    assert p.booking_id == "abc"
 
 
 def test_payment_status_enum_values():
@@ -323,16 +302,17 @@ def test_payment_status_enum_values():
     assert PaymentStatus.CAPTURED == "captured"
     assert PaymentStatus.FAILED == "failed"
     assert PaymentStatus.REFUNDED == "refunded"
+    assert PaymentStatus.EXPIRED == "expired"
 
 
 def test_payment_in_db_defaults():
     p = PaymentInDB(
         booking_id="b1",
-        razorpay_order_id="o1",
-        amount_inr=1000,
+        stripe_session_id="cs_test_123",
+        amount=199900,
     )
     assert p.status == PaymentStatus.CREATED
-    assert p.razorpay_payment_id is None
+    assert p.stripe_payment_intent_id is None
     assert p.currency == "INR"
 
 

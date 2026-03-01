@@ -13,12 +13,12 @@ def test_settings_default_values():
     assert s.REFRESH_TOKEN_EXPIRE_DAYS == 7
 
 
-def test_settings_razorpay_defaults_empty(monkeypatch):
-    monkeypatch.delenv("RAZORPAY_KEY_ID", raising=False)
-    monkeypatch.delenv("RAZORPAY_KEY_SECRET", raising=False)
+def test_settings_stripe_defaults_empty(monkeypatch):
+    monkeypatch.delenv("STRIPE_SECRET_KEY", raising=False)
+    monkeypatch.delenv("STRIPE_WEBHOOK_SECRET", raising=False)
     s = Settings(JWT_SECRET="test", _env_file=None)
-    assert s.RAZORPAY_KEY_ID == ""
-    assert s.RAZORPAY_KEY_SECRET == ""
+    assert s.STRIPE_SECRET_KEY == ""
+    assert s.STRIPE_WEBHOOK_SECRET == ""
 
 
 def test_settings_email_defaults(monkeypatch):

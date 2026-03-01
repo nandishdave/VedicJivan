@@ -15,7 +15,7 @@ resource "aws_security_group" "ecs" {
   }
 
   egress {
-    description = "All outbound (MongoDB Atlas, Razorpay, Resend, etc.)"
+    description = "All outbound (MongoDB Atlas, Stripe, Resend, etc.)"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

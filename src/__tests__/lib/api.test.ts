@@ -342,24 +342,19 @@ describe("paymentsApi", () => {
     );
   });
 
-  it("createOrder calls POST /api/payments/create-order", async () => {
-    await paymentsApi.createOrder({ booking_id: "b1", amount_inr: 1999 });
+  it("createCheckoutSession calls POST /api/payments/create-checkout-session", async () => {
+    await paymentsApi.createCheckoutSession({ booking_id: "b1" });
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/payments/create-order"),
+      expect.stringContaining("/api/payments/create-checkout-session"),
       expect.objectContaining({ method: "POST" })
     );
   });
 
-  it("verify calls POST /api/payments/verify", async () => {
-    await paymentsApi.verify({
-      razorpay_order_id: "o1",
-      razorpay_payment_id: "p1",
-      razorpay_signature: "sig",
-      booking_id: "b1",
-    });
+  it("getSessionStatus calls GET with query params", async () => {
+    await paymentsApi.getSessionStatus("cs_test_123", "b1");
     expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/payments/verify"),
-      expect.objectContaining({ method: "POST" })
+      expect.stringContaining("/api/payments/session-status?session_id=cs_test_123&booking_id=b1"),
+      expect.anything()
     );
   });
 

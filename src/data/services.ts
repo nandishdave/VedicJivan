@@ -624,14 +624,14 @@ export const services: Service[] = [
     shortDescription:
       "A test service to verify the payment flow. This will be removed after testing.",
     description:
-      "This is a temporary test service created to verify the end-to-end payment flow with Razorpay in production. It will be removed once payment integration is confirmed working.",
+      "This is a temporary test service created to verify the end-to-end payment flow with Stripe in production. It will be removed once payment integration is confirmed working.",
     priceINR: "\u20B910",
     priceEUR: "\u20AC0.11",
     duration: "30 min",
     icon: "Phone",
     category: "consultation",
     features: [
-      "Verify Razorpay payment flow",
+      "Verify Stripe payment flow",
       "Test booking creation",
       "Test payment confirmation emails",
       "Test admin notification emails",
@@ -645,7 +645,7 @@ export const services: Service[] = [
       {
         step: 2,
         title: "Make Payment",
-        description: "Pay \u20B910 via Razorpay to test the payment flow.",
+        description: "Pay \u20B910 via Stripe to test the payment flow.",
       },
       {
         step: 3,

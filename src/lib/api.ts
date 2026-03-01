@@ -213,33 +213,25 @@ export const bookingsApi = {
 
 // ── Payments ──
 export const paymentsApi = {
-  createOrder: (data: { booking_id: string; amount_inr: number }) =>
-    apiRequest<{
-      order_id: string;
-      amount: number;
-      currency: string;
-      key_id: string;
-    }>("/api/payments/create-order", { method: "POST", body: data }),
-
-  verify: (data: {
-    razorpay_order_id: string;
-    razorpay_payment_id: string;
-    razorpay_signature: string;
-    booking_id: string;
-  }) =>
-    apiRequest<{ status: string; message: string }>("/api/payments/verify", {
+  createCheckoutSession: (data: { booking_id: string }) =>
+    apiRequest<{ checkout_url: string }>("/api/payments/create-checkout-session", {
       method: "POST",
       body: data,
     }),
+
+  getSessionStatus: (sessionId: string, bookingId: string) =>
+    apiRequest<{ payment_status: string; booking_status: string }>(
+      `/api/payments/session-status?session_id=${sessionId}&booking_id=${bookingId}`
+    ),
 
   list: (token: string) =>
     apiRequest<
       {
         id: string;
         booking_id: string;
-        razorpay_order_id: string;
-        razorpay_payment_id: string | null;
-        amount_inr: number;
+        stripe_session_id: string;
+        stripe_payment_intent_id: string | null;
+        amount: number;
         currency: string;
         status: string;
         created_at: string;

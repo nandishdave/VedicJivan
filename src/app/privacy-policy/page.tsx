@@ -38,7 +38,7 @@ export default function PrivacyPolicyPage() {
             <ul>
               <li>Name, email address, and phone number</li>
               <li>Date of birth, time of birth, and place of birth</li>
-              <li>Payment information (processed securely by Razorpay/Stripe)</li>
+              <li>Payment information (processed securely by Stripe)</li>
               <li>Communication preferences</li>
               <li>Any information you provide during consultations</li>
             </ul>
@@ -68,7 +68,7 @@ export default function PrivacyPolicyPage() {
               We implement appropriate technical and organizational measures to
               protect your personal data against unauthorized access, alteration,
               disclosure, or destruction. Payment data is handled exclusively by
-              PCI-DSS compliant payment processors (Razorpay and Stripe).
+              PCI-DSS compliant payment processors (Stripe).
             </p>
 
             <h2>5. Third-Party Services</h2>
@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
               following purposes:
             </p>
             <ul>
-              <li><strong>Payment Processing:</strong> Razorpay (India) and Stripe (International)</li>
+              <li><strong>Payment Processing:</strong> Stripe</li>
               <li><strong>Email Communication:</strong> For sending transactional emails</li>
               <li><strong>Analytics:</strong> To understand website usage patterns</li>
               <li><strong>Cloud Storage:</strong> For secure data storage</li>

@@ -9,26 +9,19 @@ class PaymentStatus(str, Enum):
     CAPTURED = "captured"
     FAILED = "failed"
     REFUNDED = "refunded"
+    EXPIRED = "expired"
 
 
-class PaymentCreateOrder(BaseModel):
-    booking_id: str
-    amount_inr: int = Field(..., gt=0)
-
-
-class PaymentVerify(BaseModel):
-    razorpay_order_id: str
-    razorpay_payment_id: str
-    razorpay_signature: str
+class PaymentCreateCheckout(BaseModel):
     booking_id: str
 
 
 class PaymentResponse(BaseModel):
     id: str
     booking_id: str
-    razorpay_order_id: str
-    razorpay_payment_id: str | None = None
-    amount_inr: int
+    stripe_session_id: str
+    stripe_payment_intent_id: str | None = None
+    amount: int
     currency: str = "INR"
     status: PaymentStatus
     created_at: datetime
@@ -36,10 +29,9 @@ class PaymentResponse(BaseModel):
 
 class PaymentInDB(BaseModel):
     booking_id: str
-    razorpay_order_id: str
-    razorpay_payment_id: str | None = None
-    razorpay_signature: str | None = None
-    amount_inr: int
+    stripe_session_id: str
+    stripe_payment_intent_id: str | None = None
+    amount: int
     currency: str = "INR"
     status: PaymentStatus = PaymentStatus.CREATED
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

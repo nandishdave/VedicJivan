@@ -65,7 +65,7 @@ export default function TermsPage() {
             <h2>5. Payments</h2>
             <ul>
               <li>All prices are displayed in INR and EUR</li>
-              <li>Payments are processed securely through Razorpay (for INR) and Stripe (for EUR)</li>
+              <li>Payments are processed securely through Stripe</li>
               <li>Full payment is required at the time of booking</li>
               <li>We do not store your payment card details</li>
               <li>Prices may be updated from time to time without prior notice</li>

@@ -11,9 +11,9 @@ import { getToken, clearTokens } from "@/lib/auth";
 interface Payment {
   id: string;
   booking_id: string;
-  razorpay_order_id: string;
-  razorpay_payment_id: string | null;
-  amount_inr: number;
+  stripe_session_id: string;
+  stripe_payment_intent_id: string | null;
+  amount: number;
   currency: string;
   status: string;
   created_at: string;
@@ -51,6 +51,7 @@ export default function PaymentsPage() {
     captured: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
     failed: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
     refunded: "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300",
+    expired: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
   };
 
   return (
@@ -77,7 +78,7 @@ export default function PaymentsPage() {
                 <div key={payment.id} className="p-[var(--space-md)]">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-[var(--text-base)]">
-                      {"\u20B9"}{payment.amount_inr}
+                      {"\u20B9"}{Math.round(payment.amount / 100)}
                     </span>
                     <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[payment.status] || ""}`}>
                       {payment.status}
@@ -87,11 +88,11 @@ export default function PaymentsPage() {
                     {new Date(payment.created_at).toLocaleDateString()}
                   </p>
                   <p className="mt-0.5 break-all font-mono text-xs text-gray-400">
-                    {payment.razorpay_order_id}
+                    {payment.stripe_session_id}
                   </p>
-                  {payment.razorpay_payment_id && (
+                  {payment.stripe_payment_intent_id && (
                     <p className="break-all font-mono text-xs text-gray-400">
-                      {payment.razorpay_payment_id}
+                      {payment.stripe_payment_intent_id}
                     </p>
                   )}
                 </div>
@@ -109,8 +110,8 @@ export default function PaymentsPage() {
                 <thead className="bg-gray-50 dark:bg-dark-surface text-left text-xs uppercase text-gray-500">
                   <tr>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Date</th>
-                    <th className="px-[var(--space-md)] py-[var(--space-sm)]">Order ID</th>
-                    <th className="hidden px-[var(--space-md)] py-[var(--space-sm)] md:table-cell">Payment ID</th>
+                    <th className="px-[var(--space-md)] py-[var(--space-sm)]">Session ID</th>
+                    <th className="hidden px-[var(--space-md)] py-[var(--space-sm)] md:table-cell">Payment Intent</th>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Amount</th>
                     <th className="px-[var(--space-md)] py-[var(--space-sm)]">Status</th>
                   </tr>
@@ -121,12 +122,12 @@ export default function PaymentsPage() {
                       <td className="px-[var(--space-md)] py-[var(--space-sm)] whitespace-nowrap">
                         {new Date(payment.created_at).toLocaleDateString()}
                       </td>
-                      <td className="px-[var(--space-md)] py-[var(--space-sm)] font-mono text-xs">{payment.razorpay_order_id}</td>
+                      <td className="px-[var(--space-md)] py-[var(--space-sm)] font-mono text-xs">{payment.stripe_session_id}</td>
                       <td className="hidden px-[var(--space-md)] py-[var(--space-sm)] font-mono text-xs md:table-cell">
-                        {payment.razorpay_payment_id || "-"}
+                        {payment.stripe_payment_intent_id || "-"}
                       </td>
                       <td className="px-[var(--space-md)] py-[var(--space-sm)] font-medium whitespace-nowrap">
-                        {"\u20B9"}{payment.amount_inr}
+                        {"\u20B9"}{Math.round(payment.amount / 100)}
                       </td>
                       <td className="px-[var(--space-md)] py-[var(--space-sm)]">
                         <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[payment.status] || ""}`}>

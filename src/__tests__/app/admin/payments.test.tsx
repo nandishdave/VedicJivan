@@ -41,9 +41,9 @@ const mockPayments = [
   {
     id: "p1",
     booking_id: "b1",
-    razorpay_order_id: "order_abc123",
-    razorpay_payment_id: "pay_xyz789",
-    amount_inr: 1999,
+    stripe_session_id: "cs_test_abc123",
+    stripe_payment_intent_id: "pi_test_xyz789",
+    amount: 199900,
     currency: "INR",
     status: "captured",
     created_at: "2026-03-15T10:30:00Z",
@@ -51,9 +51,9 @@ const mockPayments = [
   {
     id: "p2",
     booking_id: "b2",
-    razorpay_order_id: "order_def456",
-    razorpay_payment_id: null,
-    amount_inr: 2999,
+    stripe_session_id: "cs_test_def456",
+    stripe_payment_intent_id: null,
+    amount: 299900,
     currency: "INR",
     status: "created",
     created_at: "2026-03-16T14:00:00Z",
@@ -96,8 +96,8 @@ describe("PaymentsPage", () => {
     mockPaymentsList.mockResolvedValue(mockPayments);
     render(<PaymentsPage />);
     await waitFor(() => {
-      expect(screen.getAllByText("order_abc123").length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText("pay_xyz789").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("cs_test_abc123").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("pi_test_xyz789").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("captured").length).toBeGreaterThanOrEqual(1);
     });
   });
@@ -135,8 +135,8 @@ describe("PaymentsPage", () => {
     mockPaymentsList.mockResolvedValue(mockPayments);
     render(<PaymentsPage />);
     await waitFor(() => {
-      expect(screen.getAllByText("Order ID").length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText("Payment ID").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Session ID").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText("Payment Intent").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("Amount").length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText("Status").length).toBeGreaterThanOrEqual(1);
     });

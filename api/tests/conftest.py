@@ -10,8 +10,8 @@ from httpx import ASGITransport, AsyncClient
 
 # Set test environment variables BEFORE importing app modules
 os.environ["JWT_SECRET"] = "test-secret-key-for-unit-tests"
-os.environ["RAZORPAY_KEY_ID"] = "rzp_test_key"
-os.environ["RAZORPAY_KEY_SECRET"] = "rzp_test_secret"
+os.environ["STRIPE_SECRET_KEY"] = "sk_test_fake_key"
+os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_test_fake_secret"
 os.environ["RESEND_API_KEY"] = ""
 os.environ["ADMIN_EMAIL"] = "admin@test.com"
 os.environ["MONGODB_URI"] = "mongodb://localhost:27017/test"

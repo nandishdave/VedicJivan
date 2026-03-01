@@ -35,12 +35,6 @@ function parseDurationMinutes(duration: string | null): number {
 // Reports don't need scheduling
 const REPORT_SERVICES = ["premium-kundli", "numerology-report", "matchmaking"];
 
-declare global {
-  interface Window {
-    Razorpay: new (options: Record<string, unknown>) => { open: () => void };
-  }
-}
-
 const USER_DETAILS_KEY = "vedicjivan_user_details";
 
 /** Load previously saved user details from localStorage (excludes booking-specific notes). */
@@ -276,49 +270,14 @@ export function BookingWizard({ service }: BookingWizardProps) {
     setError("");
 
     try {
-      const order = await paymentsApi.createOrder({
+      const { checkout_url } = await paymentsApi.createCheckoutSession({
         booking_id: bookingId,
-        amount_inr: price,
       });
 
-      // Load Razorpay script
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => {
-        const rzp = new window.Razorpay({
-          key: order.key_id,
-          amount: order.amount,
-          currency: order.currency,
-          order_id: order.order_id,
-          name: "VedicJivan",
-          description: service.title,
-          handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
-            try {
-              await paymentsApi.verify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                booking_id: bookingId,
-              });
-              localStorage.removeItem(storageKey);
-              setStep("confirmed");
-            } catch {
-              setError("Payment verification failed. Please contact support.");
-            }
-          },
-          prefill: {
-            name: formData.name,
-            email: formData.email,
-            contact: formData.phone,
-          },
-          theme: { color: "#7c3aed" },
-        });
-        rzp.open();
-        setLoading(false);
-      };
-      document.body.appendChild(script);
+      // Redirect to Stripe Checkout
+      window.location.href = checkout_url;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create payment");
+      setError(err instanceof Error ? err.message : "Failed to create payment session");
       setLoading(false);
     }
   };
@@ -642,7 +601,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
               {loading ? "Processing..." : `Pay \u20B9${price}`}
             </Button>
             <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-              Secured by Razorpay. Supports UPI, Cards, Wallets & Netbanking.
+              Secured by Stripe. Supports Cards, UPI, Netbanking & more.
             </p>
             <button
               type="button"

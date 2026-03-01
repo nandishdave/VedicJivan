@@ -6,7 +6,7 @@ pydantic[email]==2.10.4
 pydantic-settings==2.7.1
 python-jose[cryptography]==3.3.0
 bcrypt==4.2.1
-razorpay==1.4.2
+stripe>=7.0.0
 setuptools<71
 resend==2.21.0
 python-dotenv==1.0.1

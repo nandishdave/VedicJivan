@@ -32,8 +32,8 @@ def test_app_includes_payments_router():
     from app.main import app
 
     routes = [r.path for r in app.routes]
-    assert "/api/payments/create-order" in routes
-    assert "/api/payments/verify" in routes
+    assert "/api/payments/create-checkout-session" in routes
+    assert "/api/payments/webhook" in routes
 
 
 def test_app_includes_admin_router():

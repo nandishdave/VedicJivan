@@ -1,6 +1,4 @@
-import hmac
-import hashlib
-
+import stripe
 from bson import ObjectId
 from fastapi import APIRouter, Depends, Request
 
@@ -9,11 +7,10 @@ from app.database import get_db
 from app.dependencies import require_admin
 from app.models.booking import BookingStatus
 from app.models.payment import (
-    PaymentCreateOrder,
+    PaymentCreateCheckout,
     PaymentInDB,
     PaymentResponse,
     PaymentStatus,
-    PaymentVerify,
 )
 from app.services.email_service import (
     send_admin_booking_notification,
@@ -23,17 +20,11 @@ from app.utils.exceptions import BadRequestError, NotFoundError
 
 router = APIRouter(prefix="/api/payments", tags=["Payments"])
 
-
-def get_razorpay_client():
-    import razorpay
-
-    return razorpay.Client(
-        auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
-    )
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-@router.post("/create-order", response_model=dict)
-async def create_order(data: PaymentCreateOrder):
+@router.post("/create-checkout-session", response_model=dict)
+async def create_checkout_session(data: PaymentCreateCheckout):
     db = get_db()
 
     booking = await db.bookings.find_one({"_id": ObjectId(data.booking_id)})
@@ -43,155 +34,154 @@ async def create_order(data: PaymentCreateOrder):
     if booking["status"] == BookingStatus.CONFIRMED:
         raise BadRequestError("Booking already paid")
 
-    client = get_razorpay_client()
-    order = client.order.create(
-        {
-            "amount": data.amount_inr * 100,  # Razorpay expects paise
-            "currency": "INR",
-            "receipt": f"booking_{data.booking_id}",
-            "notes": {
-                "booking_id": data.booking_id,
-                "service": booking["service_title"],
-            },
-        }
+    amount_paise = booking["price_inr"] * 100
+
+    description = (
+        f"Booking for {booking['date']} at {booking['time_slot']}"
+        if booking.get("duration_minutes", 0) > 0
+        else "Report booking"
+    )
+
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=[
+            {
+                "price_data": {
+                    "currency": "inr",
+                    "product_data": {
+                        "name": booking["service_title"],
+                        "description": description,
+                    },
+                    "unit_amount": amount_paise,
+                },
+                "quantity": 1,
+            }
+        ],
+        mode="payment",
+        success_url=(
+            f"{settings.FRONTEND_URL}/booking-success"
+            f"?session_id={{CHECKOUT_SESSION_ID}}&booking_id={data.booking_id}"
+        ),
+        cancel_url=(
+            f"{settings.FRONTEND_URL}/booking-cancelled"
+            f"?booking_id={data.booking_id}"
+        ),
+        customer_email=booking["user_email"],
+        metadata={"booking_id": data.booking_id},
+        payment_intent_data={"metadata": {"booking_id": data.booking_id}},
     )
 
     payment = PaymentInDB(
         booking_id=data.booking_id,
-        razorpay_order_id=order["id"],
-        amount_inr=data.amount_inr,
+        stripe_session_id=session.id,
+        amount=amount_paise,
     )
     await db.payments.insert_one(payment.model_dump())
 
-    return {
-        "order_id": order["id"],
-        "amount": order["amount"],
-        "currency": order["currency"],
-        "key_id": settings.RAZORPAY_KEY_ID,
-    }
-
-
-@router.post("/verify", response_model=dict)
-async def verify_payment(data: PaymentVerify):
-    db = get_db()
-
-    # Verify signature using HMAC SHA256
-    message = f"{data.razorpay_order_id}|{data.razorpay_payment_id}"
-    expected_signature = hmac.new(
-        settings.RAZORPAY_KEY_SECRET.encode(),
-        message.encode(),
-        hashlib.sha256,
-    ).hexdigest()
-
-    if expected_signature != data.razorpay_signature:
-        raise BadRequestError("Invalid payment signature")
-
-    # Update payment record
-    await db.payments.update_one(
-        {"razorpay_order_id": data.razorpay_order_id},
-        {
-            "$set": {
-                "razorpay_payment_id": data.razorpay_payment_id,
-                "razorpay_signature": data.razorpay_signature,
-                "status": PaymentStatus.CAPTURED,
-            }
-        },
-    )
-
-    # Confirm the booking
-    await db.bookings.update_one(
-        {"_id": ObjectId(data.booking_id)},
-        {"$set": {"status": BookingStatus.CONFIRMED}},
-    )
-
-    # Mark the time slot as booked
-    booking = await db.bookings.find_one({"_id": ObjectId(data.booking_id)})
-    if booking:
-        await db.availability.update_one(
-            {"date": booking["date"], "slots.start": booking["time_slot"]},
-            {"$set": {"slots.$.booked": True}},
-        )
-
-        # Send confirmation email to customer
-        try:
-            await send_booking_confirmation(
-                to_email=booking["user_email"],
-                user_name=booking["user_name"],
-                service_title=booking["service_title"],
-                date=booking["date"],
-                time_slot=booking["time_slot"],
-                duration_minutes=booking["duration_minutes"],
-                price_inr=booking["price_inr"],
-                booking_id=data.booking_id,
-            )
-        except Exception as e:
-            print(f"[EMAIL ERROR] Customer confirmation: {e}")
-
-        # Send notification email to admin
-        try:
-            await send_admin_booking_notification(
-                user_name=booking["user_name"],
-                user_email=booking["user_email"],
-                user_phone=booking["user_phone"],
-                service_title=booking["service_title"],
-                date=booking["date"],
-                time_slot=booking["time_slot"],
-                duration_minutes=booking["duration_minutes"],
-                price_inr=booking["price_inr"],
-                booking_id=data.booking_id,
-            )
-        except Exception as e:
-            print(f"[EMAIL ERROR] Admin notification: {e}")
-
-    return {"status": "success", "message": "Payment verified and booking confirmed"}
+    return {"checkout_url": session.url}
 
 
 @router.post("/webhook")
-async def razorpay_webhook(request: Request):
+async def stripe_webhook(request: Request):
     body = await request.body()
+    signature = request.headers.get("stripe-signature", "")
 
-    if settings.RAZORPAY_WEBHOOK_SECRET:
-        signature = request.headers.get("x-razorpay-signature", "")
-        expected = hmac.new(
-            settings.RAZORPAY_WEBHOOK_SECRET.encode(),
-            body,
-            hashlib.sha256,
-        ).hexdigest()
-
-        if expected != signature:
-            raise BadRequestError("Invalid webhook signature")
-
-    import json
-
-    payload = json.loads(body)
-    event = payload.get("event")
+    try:
+        event = stripe.Webhook.construct_event(
+            body, signature, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except stripe.SignatureVerificationError:
+        raise BadRequestError("Invalid webhook signature")
 
     db = get_db()
 
-    if event == "payment.captured":
-        payment_entity = payload["payload"]["payment"]["entity"]
-        order_id = payment_entity.get("order_id")
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        booking_id = session["metadata"]["booking_id"]
 
         await db.payments.update_one(
-            {"razorpay_order_id": order_id},
+            {"stripe_session_id": session["id"]},
             {
                 "$set": {
-                    "razorpay_payment_id": payment_entity["id"],
+                    "stripe_payment_intent_id": session.get("payment_intent"),
                     "status": PaymentStatus.CAPTURED,
                 }
             },
         )
 
-    elif event == "refund.created":
-        payment_entity = payload["payload"]["refund"]["entity"]
-        payment_id = payment_entity.get("payment_id")
+        await db.bookings.update_one(
+            {"_id": ObjectId(booking_id)},
+            {"$set": {"status": BookingStatus.CONFIRMED}},
+        )
 
+        booking = await db.bookings.find_one({"_id": ObjectId(booking_id)})
+        if booking:
+            await db.availability.update_one(
+                {"date": booking["date"], "slots.start": booking["time_slot"]},
+                {"$set": {"slots.$.booked": True}},
+            )
+
+            try:
+                await send_booking_confirmation(
+                    to_email=booking["user_email"],
+                    user_name=booking["user_name"],
+                    service_title=booking["service_title"],
+                    date=booking["date"],
+                    time_slot=booking["time_slot"],
+                    duration_minutes=booking["duration_minutes"],
+                    price_inr=booking["price_inr"],
+                    booking_id=booking_id,
+                )
+            except Exception as e:
+                print(f"[EMAIL ERROR] Customer confirmation: {e}")
+
+            try:
+                await send_admin_booking_notification(
+                    user_name=booking["user_name"],
+                    user_email=booking["user_email"],
+                    user_phone=booking["user_phone"],
+                    service_title=booking["service_title"],
+                    date=booking["date"],
+                    time_slot=booking["time_slot"],
+                    duration_minutes=booking["duration_minutes"],
+                    price_inr=booking["price_inr"],
+                    booking_id=booking_id,
+                )
+            except Exception as e:
+                print(f"[EMAIL ERROR] Admin notification: {e}")
+
+    elif event["type"] == "checkout.session.expired":
+        session = event["data"]["object"]
         await db.payments.update_one(
-            {"razorpay_payment_id": payment_id},
+            {"stripe_session_id": session["id"]},
+            {"$set": {"status": PaymentStatus.EXPIRED}},
+        )
+
+    elif event["type"] == "charge.refunded":
+        charge = event["data"]["object"]
+        payment_intent_id = charge.get("payment_intent")
+        await db.payments.update_one(
+            {"stripe_payment_intent_id": payment_intent_id},
             {"$set": {"status": PaymentStatus.REFUNDED}},
         )
 
     return {"status": "ok"}
+
+
+@router.get("/session-status")
+async def get_session_status(session_id: str, booking_id: str):
+    db = get_db()
+
+    payment = await db.payments.find_one({"stripe_session_id": session_id})
+    if not payment:
+        raise NotFoundError("Payment not found")
+
+    booking = await db.bookings.find_one({"_id": ObjectId(booking_id)})
+
+    return {
+        "payment_status": payment["status"],
+        "booking_status": booking["status"] if booking else "unknown",
+    }
 
 
 @router.get("", response_model=list[PaymentResponse])
@@ -204,9 +194,9 @@ async def list_payments(_admin: dict = Depends(require_admin)):
             PaymentResponse(
                 id=str(doc["_id"]),
                 booking_id=doc["booking_id"],
-                razorpay_order_id=doc["razorpay_order_id"],
-                razorpay_payment_id=doc.get("razorpay_payment_id"),
-                amount_inr=doc["amount_inr"],
+                stripe_session_id=doc.get("stripe_session_id", ""),
+                stripe_payment_intent_id=doc.get("stripe_payment_intent_id"),
+                amount=doc.get("amount", doc.get("amount_inr", 0)),
                 currency=doc.get("currency", "INR"),
                 status=doc["status"],
                 created_at=doc["created_at"],
