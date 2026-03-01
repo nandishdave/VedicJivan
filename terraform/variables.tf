@@ -62,6 +62,12 @@ variable "alarm_email" {
 
 # ── Test Environment Protection ──
 
+variable "maintenance_mode" {
+  description = "Enable maintenance mode — returns a 503 page for all requests"
+  type        = bool
+  default     = false
+}
+
 variable "test_site_username" {
   description = "Basic auth username for test environment (leave empty to disable)"
   type        = string
