@@ -59,3 +59,18 @@ variable "alarm_email" {
   type        = string
   default     = "vedic.jivan33@gmail.com"
 }
+
+# ── Test Environment Protection ──
+
+variable "test_site_username" {
+  description = "Basic auth username for test environment (leave empty to disable)"
+  type        = string
+  default     = ""
+}
+
+variable "test_site_password" {
+  description = "Basic auth password for test environment (leave empty to disable)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
