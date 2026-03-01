@@ -145,5 +145,9 @@ vi.mock("lucide-react", () => {
     Facebook: icon("Facebook"),
     // VideoCard
     Play: icon("Play"),
+    // Booking success / cancelled pages
+    Mail: icon("Mail"),
+    IndianRupee: icon("IndianRupee"),
+    XCircle: icon("XCircle"),
   };
 });
