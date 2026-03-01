@@ -59,11 +59,11 @@ async def create_checkout_session(data: PaymentCreateCheckout):
         ],
         mode="payment",
         success_url=(
-            f"{settings.FRONTEND_URL}/booking-success"
+            f"{settings.FRONTEND_URL}/booking-success/"
             f"?session_id={{CHECKOUT_SESSION_ID}}&booking_id={data.booking_id}"
         ),
         cancel_url=(
-            f"{settings.FRONTEND_URL}/booking-cancelled"
+            f"{settings.FRONTEND_URL}/booking-cancelled/"
             f"?booking_id={data.booking_id}"
         ),
         customer_email=booking["user_email"],
