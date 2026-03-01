@@ -625,8 +625,8 @@ export const services: Service[] = [
       "A test service to verify the payment flow. This will be removed after testing.",
     description:
       "This is a temporary test service created to verify the end-to-end payment flow with Stripe in production. It will be removed once payment integration is confirmed working.",
-    priceINR: "\u20B910",
-    priceEUR: "\u20AC0.11",
+    priceINR: "\u20B9100",
+    priceEUR: "\u20AC1.10",
     duration: "30 min",
     icon: "Phone",
     category: "consultation",

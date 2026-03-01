@@ -29,7 +29,7 @@ SERVICE_PRICES = {
     "astrological-consulting": {"30": 2499, "45": 2999, "60": 3499},
     "personal-growth-coaching": {"30": 3499, "45": 3999, "60": 4999},
     "therapeutic-healing": {"45": 4499, "60": 4999, "75": 5999},
-    "test-payment": {"30": 10},
+    "test-payment": {"30": 100},
 }
 
 
