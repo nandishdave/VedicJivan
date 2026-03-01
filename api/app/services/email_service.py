@@ -1,12 +1,19 @@
+import base64
+from pathlib import Path
+
 from app.config import settings
 
-LOGO_URL = f"{settings.FRONTEND_URL}/images/logo/logo-email.jpg"
+# Load logo once at import time and base64-encode for CID embedding
+_logo_path = Path(__file__).resolve().parent.parent / "assets" / "logo-email.jpg"
+_logo_b64 = base64.b64encode(_logo_path.read_bytes()).decode() if _logo_path.exists() else ""
+
+LOGO_CID = "vedicjivan-logo"
 
 
 def _email_header() -> str:
     return f"""
     <div style="text-align: center; padding: 24px 0 16px;">
-        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 60px; width: auto;" />
+        <img src="cid:{LOGO_CID}" alt="VedicJivan" style="height: 60px; width: auto;" />
     </div>
     <hr style="border: none; border-top: 2px solid #7c3aed; margin: 0 0 24px;" />
     """
@@ -24,6 +31,20 @@ def _email_footer() -> str:
     """
 
 
+def _logo_attachment() -> list:
+    """Return inline logo attachment for CID embedding."""
+    if not _logo_b64:
+        return []
+    return [
+        {
+            "filename": "logo-email.jpg",
+            "content": _logo_b64,
+            "content_type": "image/jpeg",
+            "content_id": LOGO_CID,
+        }
+    ]
+
+
 def _send_email(to: str, subject: str, html: str):
     """Send an email via Resend. Returns silently if no API key configured."""
     if not settings.RESEND_API_KEY:
@@ -34,7 +55,13 @@ def _send_email(to: str, subject: str, html: str):
 
     resend.api_key = settings.RESEND_API_KEY
     resend.Emails.send(
-        {"from": settings.EMAIL_FROM, "to": to, "subject": subject, "html": html}
+        {
+            "from": settings.EMAIL_FROM,
+            "to": to,
+            "subject": subject,
+            "html": html,
+            "attachments": _logo_attachment(),
+        }
     )
 
 
