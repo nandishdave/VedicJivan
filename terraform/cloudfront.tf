@@ -3,7 +3,6 @@
 # ══════════════════════════════════════════════
 
 resource "aws_cloudfront_function" "maintenance" {
-  count   = var.maintenance_mode ? 1 : 0
   name    = "${local.name_prefix}-maintenance"
   runtime = "cloudfront-js-2.0"
   comment = "Maintenance mode for ${local.env}"
@@ -175,7 +174,7 @@ resource "aws_cloudfront_distribution" "website" {
       for_each = var.maintenance_mode ? [1] : (var.test_site_username != "" ? [1] : [])
       content {
         event_type   = "viewer-request"
-        function_arn = var.maintenance_mode ? aws_cloudfront_function.maintenance[0].arn : aws_cloudfront_function.basic_auth[0].arn
+        function_arn = var.maintenance_mode ? aws_cloudfront_function.maintenance.arn : aws_cloudfront_function.basic_auth[0].arn
       }
     }
 
