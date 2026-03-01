@@ -24,7 +24,7 @@ def test_settings_stripe_defaults_empty(monkeypatch):
 def test_settings_email_defaults(monkeypatch):
     monkeypatch.delenv("ADMIN_EMAIL", raising=False)
     s = Settings(JWT_SECRET="test", _env_file=None)
-    assert s.EMAIL_FROM == "noreply@vedicjivan.com"
+    assert s.EMAIL_FROM == "noreply@nandishdave.world"
     assert s.ADMIN_EMAIL == "vedic.jivan33@gmail.com"
 
 
