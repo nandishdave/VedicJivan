@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Email
     RESEND_API_KEY: str = ""
-    EMAIL_FROM: str = "noreply@nandishdave.world"
+    EMAIL_FROM: str = "VedicJivan <noreply@vedicjivan.nandishdave.world>"
     ADMIN_EMAIL: str = "vedic.jivan33@gmail.com"
 
     class Config:
