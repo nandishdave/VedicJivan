@@ -617,6 +617,55 @@ export const services: Service[] = [
       },
     ],
   },
+  {
+    slug: "test-payment",
+    title: "Test Payment",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80",
+    shortDescription:
+      "A test service to verify the payment flow. This will be removed after testing.",
+    description:
+      "This is a temporary test service created to verify the end-to-end payment flow with Razorpay in production. It will be removed once payment integration is confirmed working.",
+    priceINR: "\u20B910",
+    priceEUR: "\u20AC0.11",
+    duration: null,
+    icon: "FileText",
+    category: "report",
+    features: [
+      "Verify Razorpay payment flow",
+      "Test booking creation",
+      "Test payment confirmation emails",
+      "Test admin notification emails",
+    ],
+    process: [
+      {
+        step: 1,
+        title: "Enter Details",
+        description: "Provide your name, email, and phone number.",
+      },
+      {
+        step: 2,
+        title: "Make Payment",
+        description: "Pay \u20B910 via Razorpay to test the payment flow.",
+      },
+      {
+        step: 3,
+        title: "Verify Confirmation",
+        description: "Check that you receive a booking confirmation email.",
+      },
+    ],
+    faqs: [
+      {
+        question: "Why does this service exist?",
+        answer:
+          "This is a temporary service to test the payment integration in production. It will be removed after verification.",
+      },
+      {
+        question: "Will I be charged?",
+        answer:
+          "Yes, this is a real payment of \u20B910. It is used to verify the payment flow works correctly.",
+      },
+    ],
+  },
 ];
 
 export function getServiceBySlug(slug: string): Service | undefined {
