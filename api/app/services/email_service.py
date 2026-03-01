@@ -1,6 +1,6 @@
 from app.config import settings
 
-LOGO_URL = f"{settings.FRONTEND_URL}/images/logo/logo-final.png"
+LOGO_URL = f"{settings.FRONTEND_URL}/images/logo/logo-email.jpg"
 
 
 def _email_header() -> str:
