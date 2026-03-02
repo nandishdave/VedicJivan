@@ -147,3 +147,38 @@ async def send_booking_cancellation(
     </div>
     """
     _send_email(to_email, subject, html)
+
+
+async def send_booking_reminder(
+    to_email: str,
+    user_name: str,
+    service_title: str,
+    date: str,
+    time_slot: str,
+    duration_minutes: int,
+    booking_id: str,
+):
+    subject = f"Reminder: Your {service_title} session is tomorrow | VedicJivan"
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        {_email_header()}
+        <h2 style="color: #7c3aed; text-align: center; margin: 0 0 8px;">Your Session is Tomorrow!</h2>
+        <p style="text-align: center; color: #666; margin: 0 0 24px;">Just a friendly reminder about your upcoming session</p>
+        <p>Dear {user_name},</p>
+        <p>This is a reminder that your session is scheduled for <strong>tomorrow</strong>. Here are the details:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Service</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee;">{service_title}</td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Date</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee;"><strong>{date}</strong></td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Time</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee;"><strong>{time_slot}</strong></td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Duration</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee;">{duration_minutes} minutes</td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Booking ID</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-family: monospace; font-size: 12px; color: #888;">{booking_id}</td></tr>
+        </table>
+        <div style="background: #f3f0ff; border-left: 4px solid #7c3aed; padding: 16px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0 0 8px; font-weight: bold; color: #7c3aed;">Prepare for Your Session</p>
+            <p style="margin: 0; font-size: 14px;">A Zoom meeting link will be shared with you shortly. Please ensure you are in a quiet space and have a stable internet connection.</p>
+        </div>
+        <p style="color: #666; font-size: 14px;">If you need to cancel or have questions, please contact us as soon as possible.</p>
+        {_email_footer()}
+    </div>
+    """
+    _send_email(to_email, subject, html)

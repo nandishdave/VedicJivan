@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "VedicJivan <noreply@nandishdave.world>"
     ADMIN_EMAIL: str = "vedic.jivan33@gmail.com"
 
+    # Internal endpoints (booking reminders, etc.)
+    INTERNAL_SECRET: str = ""
+
     class Config:
         env_file = ".env"
 

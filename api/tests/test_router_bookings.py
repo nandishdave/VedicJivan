@@ -17,11 +17,15 @@ from tests.conftest import BOOKING_ID, MockCursor
 
 
 def test_get_price_valid_service_and_duration():
-    assert get_price("call-consultation", 30) == 1999
+    price_inr, price_eur = get_price("call-consultation", 30)
+    assert price_inr == 1999
+    assert price_eur == 29
 
 
 def test_get_price_45_min():
-    assert get_price("call-consultation", 45) == 2499
+    price_inr, price_eur = get_price("call-consultation", 45)
+    assert price_inr == 2499
+    assert price_eur == 35
 
 
 def test_get_price_unknown_service():
@@ -36,7 +40,9 @@ def test_get_price_invalid_duration():
 
 def test_get_price_report_service_any_duration():
     # Report services have "0" key — falls back to it for any duration
-    assert get_price("premium-kundli", 15) == 4999
+    price_inr, price_eur = get_price("premium-kundli", 15)
+    assert price_inr == 4999
+    assert price_eur == 59
 
 
 def test_get_price_all_services_have_entries():

@@ -29,5 +29,6 @@ locals {
     "STRIPE_WEBHOOK_SECRET",
     "RESEND_API_KEY",
     "ADMIN_EMAIL",
+    "INTERNAL_SECRET",
   ]
 }

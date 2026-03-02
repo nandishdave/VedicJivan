@@ -97,6 +97,7 @@ class BookingInDB(BaseModel):
     price_eur: int = 0
     status: BookingStatus = BookingStatus.PENDING
     payment_id: str | None = None
+    reminder_sent: bool = False
     notes: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
