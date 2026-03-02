@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # Internal endpoints (booking reminders, etc.)
     INTERNAL_SECRET: str = ""
 
+    # Google Calendar (admin only)
+    GOOGLE_CALENDAR_CREDENTIALS: str = ""  # base64-encoded service account JSON
+    GOOGLE_CALENDAR_ID: str = ""
+
     class Config:
         env_file = ".env"
 

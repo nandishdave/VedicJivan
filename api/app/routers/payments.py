@@ -16,6 +16,7 @@ from app.services.email_service import (
     send_admin_booking_notification,
     send_booking_confirmation,
 )
+from app.services.calendar_service import create_booking_event
 from app.utils.exceptions import BadRequestError, NotFoundError
 
 router = APIRouter(prefix="/api/payments", tags=["Payments"])
@@ -156,6 +157,16 @@ async def stripe_webhook(request: Request):
                 )
             except Exception as e:
                 print(f"[EMAIL ERROR] Admin notification: {e}")
+
+            try:
+                event_id = create_booking_event({**booking, "booking_id": booking_id})
+                if event_id:
+                    await db.bookings.update_one(
+                        {"_id": ObjectId(booking_id)},
+                        {"$set": {"google_event_id": event_id}},
+                    )
+            except Exception as e:
+                print(f"[CALENDAR ERROR] {e}")
 
     elif event["type"] == "checkout.session.expired":
         session = event["data"]["object"]
