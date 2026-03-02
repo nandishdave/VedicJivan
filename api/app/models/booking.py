@@ -83,6 +83,12 @@ class BookingStatusUpdate(BaseModel):
     status: BookingStatus
 
 
+class BookingReschedule(BaseModel):
+    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    time_slot: str = Field(..., pattern=r"^\d{2}:\d{2}$")
+    duration_minutes: int = Field(..., ge=0, le=120)
+
+
 class BookingInDB(BaseModel):
     user_id: str | None = None
     user_name: str

@@ -10,10 +10,12 @@ from app.models.booking import (
     BookingCreate,
     BookingInDB,
     BookingResponse,
+    BookingReschedule,
     BookingStatus,
     BookingStatusUpdate,
 )
 from app.services.settings import get_business_hours
+from app.services.email_service import send_booking_rescheduled
 from app.utils.exceptions import BadRequestError, ForbiddenError, NotFoundError
 
 router = APIRouter(prefix="/api/bookings", tags=["Bookings"])
@@ -260,6 +262,107 @@ async def update_booking_status(
 
     doc["status"] = data.status.value
     return _to_response(doc)
+
+
+@router.get("/{booking_id}/view", response_model=BookingResponse)
+async def get_booking_public(booking_id: str):
+    """Public endpoint: returns a confirmed booking by ID (for reschedule page)."""
+    db = get_db()
+    try:
+        doc = await db.bookings.find_one({"_id": ObjectId(booking_id)})
+    except Exception:
+        raise NotFoundError("Booking not found")
+    if not doc:
+        raise NotFoundError("Booking not found")
+    if doc["status"] != BookingStatus.CONFIRMED:
+        raise BadRequestError("Only confirmed bookings can be viewed publicly")
+    return _to_response(doc)
+
+
+@router.patch("/{booking_id}/reschedule", response_model=BookingResponse)
+async def reschedule_booking(booking_id: str, data: BookingReschedule):
+    """Reschedule a confirmed booking to a new date/time (public, booking ID is the auth token)."""
+    db = get_db()
+    try:
+        doc = await db.bookings.find_one({"_id": ObjectId(booking_id)})
+    except Exception:
+        raise NotFoundError("Booking not found")
+    if not doc:
+        raise NotFoundError("Booking not found")
+    if doc["status"] != BookingStatus.CONFIRMED:
+        raise BadRequestError("Only confirmed bookings can be rescheduled")
+
+    # New date must be in the future
+    new_date = date.fromisoformat(data.date)
+    if new_date <= date.today():
+        raise BadRequestError("New date must be in the future")
+
+    # Not a holiday
+    holiday = await db.unavailability.find_one({"date": data.date, "is_holiday": True})
+    if holiday:
+        raise BadRequestError("That date is a holiday")
+
+    # Business hours check
+    bh_settings = await get_business_hours()
+    day_of_week = new_date.weekday()
+    day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)
+    if not day_config or not day_config.is_open:
+        raise BadRequestError("Bookings are not available on that day")
+
+    booking_start = _time_to_minutes(data.time_slot)
+    booking_end = booking_start + max(data.duration_minutes, 30)
+    bh_open = _time_to_minutes(day_config.open_time)
+    bh_close = _time_to_minutes(day_config.close_time)
+    if booking_start < bh_open or booking_end > bh_close:
+        raise BadRequestError(
+            f"Booking must be within business hours ({day_config.open_time} - {day_config.close_time})"
+        )
+
+    # No slot conflicts (exclude this booking itself)
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
+    conflict_cursor = db.bookings.find({
+        "date": data.date,
+        "_id": {"$ne": ObjectId(booking_id)},
+        "$or": [
+            {"status": "confirmed"},
+            {"status": "pending", "created_at": {"$gte": cutoff}},
+        ],
+    })
+    async for existing in conflict_cursor:
+        ex_start = _time_to_minutes(existing["time_slot"])
+        ex_end = ex_start + existing.get("duration_minutes", 30)
+        if _overlaps(booking_start, booking_end, ex_start, ex_end):
+            raise BadRequestError("That time slot is already booked")
+
+    old_date = doc["date"]
+    old_time = doc["time_slot"]
+
+    await db.bookings.update_one(
+        {"_id": ObjectId(booking_id)},
+        {"$set": {
+            "date": data.date,
+            "time_slot": data.time_slot,
+            "duration_minutes": data.duration_minutes,
+            "reminder_sent": False,
+        }},
+    )
+
+    try:
+        await send_booking_rescheduled(
+            to_email=doc["user_email"],
+            user_name=doc["user_name"],
+            service_title=doc["service_title"],
+            old_date=old_date,
+            old_time=old_time,
+            new_date=data.date,
+            new_time=data.time_slot,
+            booking_id=booking_id,
+        )
+    except Exception as e:
+        print(f"[RESCHEDULE EMAIL] Failed for booking {booking_id}: {e}")
+
+    updated = await db.bookings.find_one({"_id": ObjectId(booking_id)})
+    return _to_response(updated)
 
 
 def _to_response(doc: dict) -> BookingResponse:

@@ -210,6 +210,15 @@ export const bookingsApi = {
 
   resume: (id: string) =>
     apiRequest<Booking>(`/api/bookings/${id}/resume`),
+
+  view: (id: string) =>
+    apiRequest<Booking>(`/api/bookings/${id}/view`),
+
+  reschedule: (id: string, data: { date: string; time_slot: string; duration_minutes: number }) =>
+    apiRequest<Booking>(`/api/bookings/${id}/reschedule`, {
+      method: "PATCH",
+      body: data,
+    }),
 };
 
 // ── Payments ──

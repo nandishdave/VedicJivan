@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from bson import ObjectId
 
@@ -386,3 +386,118 @@ async def test_resume_booking_already_confirmed(client, mock_db, sample_booking_
     resp = await client.get(f"/api/bookings/{BOOKING_ID}/resume")
     assert resp.status_code == 400
     assert "no longer pending" in resp.json()["detail"].lower()
+
+
+# ═══════════════════════════════════════
+# Public view endpoint tests
+# ═══════════════════════════════════════
+
+_CONFIRMED_BOOKING_DOC = {
+    "_id": BOOKING_ID,
+    **_VALID_BOOKING_DATA,
+    "price_inr": 1999,
+    "price_eur": 29,
+    "status": "confirmed",
+    "payment_id": "pi_test",
+    "created_at": datetime.now(timezone.utc),
+}
+
+
+async def test_view_booking_confirmed(client, mock_db):
+    mock_db.bookings.find_one = AsyncMock(return_value=_CONFIRMED_BOOKING_DOC)
+    resp = await client.get(f"/api/bookings/{BOOKING_ID}/view")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "confirmed"
+
+
+async def test_view_booking_not_confirmed(client, mock_db, sample_booking_doc):
+    """Pending bookings should not be accessible via view endpoint."""
+    mock_db.bookings.find_one = AsyncMock(return_value=sample_booking_doc)
+    resp = await client.get(f"/api/bookings/{BOOKING_ID}/view")
+    assert resp.status_code == 400
+
+
+async def test_view_booking_not_found(client, mock_db):
+    mock_db.bookings.find_one = AsyncMock(return_value=None)
+    resp = await client.get(f"/api/bookings/{str(ObjectId())}/view")
+    assert resp.status_code == 404
+
+
+# ═══════════════════════════════════════
+# Reschedule endpoint tests
+# ═══════════════════════════════════════
+
+_RESCHEDULE_DATA = {
+    "date": "2026-03-20",  # Friday, future date
+    "time_slot": "11:00",
+    "duration_minutes": 30,
+}
+
+
+async def test_reschedule_booking_success(client, mock_db):
+    updated_doc = {**_CONFIRMED_BOOKING_DOC, "date": "2026-03-20", "time_slot": "11:00"}
+    mock_db.bookings.find_one = AsyncMock(
+        side_effect=[_CONFIRMED_BOOKING_DOC, updated_doc]
+    )
+    mock_db.unavailability.find_one = AsyncMock(return_value=None)
+    mock_db.unavailability.find = MagicMock(return_value=MockCursor([]))
+    mock_db.bookings.find = MagicMock(return_value=MockCursor([]))
+    mock_db.bookings.update_one = AsyncMock(return_value=MagicMock(modified_count=1))
+
+    with patch("app.routers.bookings.send_booking_rescheduled", new_callable=AsyncMock):
+        resp = await client.patch(f"/api/bookings/{BOOKING_ID}/reschedule", json=_RESCHEDULE_DATA)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["date"] == "2026-03-20"
+    assert data["time_slot"] == "11:00"
+
+
+async def test_reschedule_non_confirmed_booking(client, mock_db, sample_booking_doc):
+    """Cannot reschedule a pending booking."""
+    mock_db.bookings.find_one = AsyncMock(return_value=sample_booking_doc)
+
+    resp = await client.patch(f"/api/bookings/{BOOKING_ID}/reschedule", json=_RESCHEDULE_DATA)
+    assert resp.status_code == 400
+    assert "confirmed" in resp.json()["detail"].lower()
+
+
+async def test_reschedule_past_date(client, mock_db):
+    mock_db.bookings.find_one = AsyncMock(return_value=_CONFIRMED_BOOKING_DOC)
+
+    past_data = {**_RESCHEDULE_DATA, "date": "2020-01-01"}
+    resp = await client.patch(f"/api/bookings/{BOOKING_ID}/reschedule", json=past_data)
+    assert resp.status_code == 400
+    assert "future" in resp.json()["detail"].lower()
+
+
+async def test_reschedule_holiday(client, mock_db):
+    mock_db.bookings.find_one = AsyncMock(return_value=_CONFIRMED_BOOKING_DOC)
+    mock_db.unavailability.find_one = AsyncMock(
+        return_value={"_id": ObjectId(), "date": "2026-03-20", "is_holiday": True}
+    )
+
+    resp = await client.patch(f"/api/bookings/{BOOKING_ID}/reschedule", json=_RESCHEDULE_DATA)
+    assert resp.status_code == 400
+    assert "holiday" in resp.json()["detail"].lower()
+
+
+async def test_reschedule_slot_conflict(client, mock_db):
+    mock_db.bookings.find_one = AsyncMock(return_value=_CONFIRMED_BOOKING_DOC)
+    mock_db.unavailability.find_one = AsyncMock(return_value=None)
+    mock_db.unavailability.find = MagicMock(return_value=MockCursor([]))
+    mock_db.bookings.find = MagicMock(
+        return_value=MockCursor([
+            {"time_slot": "11:00", "duration_minutes": 30, "status": "confirmed"},
+        ])
+    )
+
+    resp = await client.patch(f"/api/bookings/{BOOKING_ID}/reschedule", json=_RESCHEDULE_DATA)
+    assert resp.status_code == 400
+    assert "already booked" in resp.json()["detail"].lower()
+
+
+async def test_reschedule_not_found(client, mock_db):
+    mock_db.bookings.find_one = AsyncMock(return_value=None)
+    resp = await client.patch(f"/api/bookings/{str(ObjectId())}/reschedule", json=_RESCHEDULE_DATA)
+    assert resp.status_code == 404
