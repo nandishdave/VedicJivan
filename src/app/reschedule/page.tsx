@@ -55,6 +55,7 @@ function RescheduleContent() {
       setNewDate(selectedDate);
       setNewSlot(selectedSlot);
       setSuccess(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: unknown) {
       setSubmitError(e instanceof Error ? e.message : "Failed to reschedule");
     } finally {
@@ -139,7 +140,7 @@ function RescheduleContent() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <button
-              onClick={() => { setSuccess(false); setSelectedDate(""); setSelectedSlot(""); }}
+              onClick={() => { setSuccess(false); setSelectedDate(""); setSelectedSlot(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               className="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
             >
               Reschedule Again
