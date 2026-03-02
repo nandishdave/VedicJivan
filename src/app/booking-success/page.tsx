@@ -160,9 +160,9 @@ function BookingSuccessContent() {
           Please save your Booking ID for reference.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
-          {bookingId && status === "confirmed" && booking && booking.duration_minutes > 0 && (
+          {bookingId && booking && booking.duration_minutes > 0 && (
             <Link
-              href={`/reschedule/${bookingId}`}
+              href={`/reschedule?id=${bookingId}`}
               className="rounded-lg border border-primary-300 dark:border-primary-700 px-6 py-2.5 text-sm font-medium text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20"
             >
               Reschedule

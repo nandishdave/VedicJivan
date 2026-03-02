@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Calendar, Clock, ArrowLeft, Loader2 } from "lucide-react";
 import { Container } from "@/components/ui/Container";
@@ -9,8 +9,9 @@ import { BookingCalendar } from "@/components/booking/BookingCalendar";
 import { TimeSlotPicker } from "@/components/booking/TimeSlotPicker";
 import { bookingsApi, type Booking } from "@/lib/api";
 
-export default function ReschedulePage() {
-  const { booking_id } = useParams<{ booking_id: string }>();
+function RescheduleContent() {
+  const searchParams = useSearchParams();
+  const bookingId = searchParams.get("id") ?? "";
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loadError, setLoadError] = useState("");
@@ -23,12 +24,15 @@ export default function ReschedulePage() {
   const [newSlot, setNewSlot] = useState("");
 
   useEffect(() => {
-    if (!booking_id) return;
+    if (!bookingId) {
+      setLoadError("No booking ID provided.");
+      return;
+    }
     bookingsApi
-      .view(booking_id)
+      .view(bookingId)
       .then(setBooking)
       .catch((e) => setLoadError(e.message || "Booking not found"));
-  }, [booking_id]);
+  }, [bookingId]);
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr + "T00:00:00").toLocaleDateString("en-IN", {
@@ -43,7 +47,7 @@ export default function ReschedulePage() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      await bookingsApi.reschedule(booking_id, {
+      await bookingsApi.reschedule(bookingId, {
         date: selectedDate,
         time_slot: selectedSlot,
         duration_minutes: booking.duration_minutes,
@@ -150,7 +154,10 @@ export default function ReschedulePage() {
           <h2 className="font-heading text-lg font-semibold text-vedic-dark dark:text-gray-100 mb-3">
             Select New Date
           </h2>
-          <BookingCalendar selectedDate={selectedDate} onDateSelect={(d) => { setSelectedDate(d); setSelectedSlot(""); }} />
+          <BookingCalendar
+            selectedDate={selectedDate}
+            onDateSelect={(d) => { setSelectedDate(d); setSelectedSlot(""); }}
+          />
         </div>
 
         {/* Time slot picker */}
@@ -189,5 +196,19 @@ export default function ReschedulePage() {
         </button>
       </div>
     </Container>
+  );
+}
+
+export default function ReschedulePage() {
+  return (
+    <Suspense
+      fallback={
+        <Container className="py-20 text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary-600" />
+        </Container>
+      }
+    >
+      <RescheduleContent />
+    </Suspense>
   );
 }

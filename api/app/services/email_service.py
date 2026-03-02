@@ -71,7 +71,7 @@ async def send_booking_confirmation(
         </div>
         <p>If you have any questions, please reach out via WhatsApp or email.</p>
         <div style="text-align: center; margin: 24px 0;">
-            <a href="{settings.FRONTEND_URL}/reschedule/{booking_id}" style="color: #7c3aed; font-size: 13px; text-decoration: underline;">Need to reschedule?</a>
+            <a href="{settings.FRONTEND_URL}/reschedule?id={booking_id}" style="color: #7c3aed; font-size: 13px; text-decoration: underline;">Need to reschedule?</a>
         </div>
         <p style="color: #666; font-size: 14px;">Thank you for choosing VedicJivan!</p>
         {_email_footer()}
