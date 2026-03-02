@@ -14,6 +14,7 @@ class PaymentStatus(str, Enum):
 
 class PaymentCreateCheckout(BaseModel):
     booking_id: str
+    currency: str = "INR"
 
 
 class PaymentResponse(BaseModel):

@@ -18,7 +18,7 @@ from app.utils.exceptions import BadRequestError, ForbiddenError, NotFoundError
 
 router = APIRouter(prefix="/api/bookings", tags=["Bookings"])
 
-# Service pricing (INR in paise-friendly integers)
+# Service pricing — INR (rupees)
 SERVICE_PRICES = {
     "call-consultation": {"30": 1999, "45": 2499, "60": 2999},
     "video-consultation": {"30": 2499, "45": 2999, "60": 3999},
@@ -32,21 +32,37 @@ SERVICE_PRICES = {
     "test-payment": {"30": 100},
 }
 
+# Service pricing — EUR (euros, proportional to INR)
+SERVICE_PRICES_EUR = {
+    "call-consultation": {"30": 29, "45": 35, "60": 39},
+    "video-consultation": {"30": 35, "45": 39, "60": 49},
+    "premium-kundli": {"0": 59},
+    "numerology-report": {"0": 19},
+    "vastu-consultation": {"30": 35, "45": 39, "60": 45},
+    "matchmaking": {"0": 35},
+    "astrological-consulting": {"30": 35, "45": 39, "60": 45},
+    "personal-growth-coaching": {"30": 45, "45": 52, "60": 59},
+    "therapeutic-healing": {"45": 52, "60": 59, "75": 69},
+    "test-payment": {"30": 1},
+}
 
-def get_price(service_slug: str, duration_minutes: int) -> int:
-    prices = SERVICE_PRICES.get(service_slug)
-    if not prices:
+
+def get_price(service_slug: str, duration_minutes: int) -> tuple[int, int]:
+    """Return (price_inr, price_eur) for a service/duration."""
+    prices_inr = SERVICE_PRICES.get(service_slug)
+    prices_eur = SERVICE_PRICES_EUR.get(service_slug)
+    if not prices_inr or not prices_eur:
         raise BadRequestError(f"Unknown service: {service_slug}")
 
-    price = prices.get(str(duration_minutes))
-    if price is None:
-        available = ", ".join(f"{k} min" for k in prices.keys() if k != "0")
-        if "0" in prices:
-            return prices["0"]
+    key = str(duration_minutes)
+    if key not in prices_inr:
+        available = ", ".join(f"{k} min" for k in prices_inr.keys() if k != "0")
+        if "0" in prices_inr:
+            return prices_inr["0"], prices_eur["0"]
         raise BadRequestError(
             f"Duration {duration_minutes} min not available for this service. Options: {available}"
         )
-    return price
+    return prices_inr[key], prices_eur[key]
 
 
 def _time_to_minutes(t: str) -> int:
@@ -63,7 +79,7 @@ async def create_booking(data: BookingCreate):
     db = get_db()
 
     # Validate price
-    price = get_price(data.service_slug, data.duration_minutes)
+    price_inr, price_eur = get_price(data.service_slug, data.duration_minutes)
 
     is_report = data.duration_minutes == 0
 
@@ -127,7 +143,8 @@ async def create_booking(data: BookingCreate):
         date=data.date,
         time_slot=data.time_slot,
         duration_minutes=data.duration_minutes,
-        price_inr=price,
+        price_inr=price_inr,
+        price_eur=price_eur,
         notes=data.notes,
         date_of_birth=data.date_of_birth,
         time_of_birth=data.time_of_birth,
@@ -257,6 +274,7 @@ def _to_response(doc: dict) -> BookingResponse:
         time_slot=doc["time_slot"],
         duration_minutes=doc["duration_minutes"],
         price_inr=doc["price_inr"],
+        price_eur=doc.get("price_eur", 0),
         status=doc["status"],
         payment_id=doc.get("payment_id"),
         notes=doc.get("notes", ""),

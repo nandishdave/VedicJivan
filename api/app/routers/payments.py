@@ -34,7 +34,13 @@ async def create_checkout_session(data: PaymentCreateCheckout):
     if booking["status"] == BookingStatus.CONFIRMED:
         raise BadRequestError("Booking already paid")
 
-    amount_paise = booking["price_inr"] * 100
+    currency = data.currency.upper()
+    if currency == "EUR":
+        amount_cents = booking.get("price_eur", 0) * 100
+        stripe_currency = "eur"
+    else:
+        amount_cents = booking["price_inr"] * 100
+        stripe_currency = "inr"
 
     description = (
         f"Booking for {booking['date']} at {booking['time_slot']}"
@@ -47,12 +53,12 @@ async def create_checkout_session(data: PaymentCreateCheckout):
         line_items=[
             {
                 "price_data": {
-                    "currency": "inr",
+                    "currency": stripe_currency,
                     "product_data": {
                         "name": booking["service_title"],
                         "description": description,
                     },
-                    "unit_amount": amount_paise,
+                    "unit_amount": amount_cents,
                 },
                 "quantity": 1,
             }
@@ -74,7 +80,8 @@ async def create_checkout_session(data: PaymentCreateCheckout):
     payment = PaymentInDB(
         booking_id=data.booking_id,
         stripe_session_id=session.id,
-        amount=amount_paise,
+        amount=amount_cents,
+        currency=currency,
     )
     await db.payments.insert_one(payment.model_dump())
 

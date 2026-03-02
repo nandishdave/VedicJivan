@@ -64,6 +64,7 @@ class BookingResponse(BaseModel):
     time_slot: str
     duration_minutes: int
     price_inr: int
+    price_eur: int = 0
     status: BookingStatus
     payment_id: str | None = None
     notes: str
@@ -93,6 +94,7 @@ class BookingInDB(BaseModel):
     time_slot: str
     duration_minutes: int
     price_inr: int
+    price_eur: int = 0
     status: BookingStatus = BookingStatus.PENDING
     payment_id: str | None = None
     notes: str = ""

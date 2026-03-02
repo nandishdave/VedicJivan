@@ -154,6 +154,7 @@ export interface Booking {
   time_slot: string;
   duration_minutes: number;
   price_inr: number;
+  price_eur: number;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   payment_id: string | null;
   notes: string;
@@ -213,7 +214,7 @@ export const bookingsApi = {
 
 // ── Payments ──
 export const paymentsApi = {
-  createCheckoutSession: (data: { booking_id: string }) =>
+  createCheckoutSession: (data: { booking_id: string; currency?: string }) =>
     apiRequest<{ checkout_url: string }>("/api/payments/create-checkout-session", {
       method: "POST",
       body: data,

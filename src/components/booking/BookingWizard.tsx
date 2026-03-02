@@ -81,6 +81,8 @@ export function BookingWizard({ service }: BookingWizardProps) {
   });
   const [bookingId, setBookingId] = useState("");
   const [price, setPrice] = useState(0);
+  const [priceEur, setPriceEur] = useState(0);
+  const [currency, setCurrency] = useState<"INR" | "EUR">("INR");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resumeBooking, setResumeBooking] = useState<Booking | null>(null);
@@ -166,6 +168,16 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
   const currentStepIndex = steps.findIndex((s) => s.key === step);
 
+  // Detect user's country via IP and set currency
+  useEffect(() => {
+    fetch("https://ipapi.co/json/")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.country_code !== "IN") setCurrency("EUR");
+      })
+      .catch(() => {/* default to INR on failure */});
+  }, []);
+
   // Scroll to the top of the wizard when the step changes
   useEffect(() => {
     if (wizardRef.current && typeof wizardRef.current.scrollIntoView === "function") {
@@ -193,6 +205,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
     if (!resumeBooking) return;
     setBookingId(resumeBooking.id);
     setPrice(resumeBooking.price_inr);
+    setPriceEur(resumeBooking.price_eur ?? 0);
     setSelectedDate(resumeBooking.date);
     setSelectedSlot(resumeBooking.time_slot);
     setSelectedDuration(resumeBooking.duration_minutes);
@@ -245,6 +258,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
 
       setBookingId(booking.id);
       setPrice(booking.price_inr);
+      setPriceEur(booking.price_eur ?? 0);
 
       // Save to localStorage so user can resume if they leave
       localStorage.setItem(
@@ -272,6 +286,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
     try {
       const { checkout_url } = await paymentsApi.createCheckoutSession({
         booking_id: bookingId,
+        currency,
       });
 
       // Redirect to Stripe Checkout
@@ -309,7 +324,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
               <p><strong>Duration:</strong> {selectedDuration} minutes</p>
             </>
           )}
-          <p><strong>Amount Paid:</strong> {"\u20B9"}{price}</p>
+          <p><strong>Amount Paid:</strong> {currency === "EUR" ? `\u20AC${priceEur}` : `\u20B9${price}`}</p>
         </div>
         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
           A confirmation email with meeting details has been sent to {formData.email}.
@@ -579,7 +594,9 @@ export function BookingWizard({ service }: BookingWizardProps) {
               <hr className="border-gray-200 dark:border-gray-600" />
               <div className="flex justify-between text-base font-bold dark:text-gray-100">
                 <span>Price</span>
-                <span className="text-primary-600 dark:text-primary-400">{service.priceINR}</span>
+                <span className="text-primary-600 dark:text-primary-400">
+                  {currency === "EUR" ? service.priceEUR : service.priceINR}
+                </span>
               </div>
             </div>
           </div>
@@ -589,8 +606,30 @@ export function BookingWizard({ service }: BookingWizardProps) {
           <div className="text-center py-8">
             <CreditCard className="mx-auto mb-4 h-12 w-12 text-primary-600 dark:text-primary-400" />
             <h3 className="mb-2 font-heading text-xl font-bold dark:text-gray-100">Complete Payment</h3>
+
+            {/* Currency toggle */}
+            <div className="mb-5 inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-dark-surface p-1">
+              <button
+                type="button"
+                onClick={() => setCurrency("INR")}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${currency === "INR" ? "bg-primary-600 text-white shadow" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
+              >
+                🇮🇳 ₹ INR
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrency("EUR")}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${currency === "EUR" ? "bg-primary-600 text-white shadow" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
+              >
+                🌍 € EUR
+              </button>
+            </div>
+
             <p className="mb-6 text-gray-600 dark:text-gray-400">
-              Amount: <strong className="text-primary-600 dark:text-primary-400">{"\u20B9"}{price}</strong>
+              Amount:{" "}
+              <strong className="text-primary-600 dark:text-primary-400">
+                {currency === "EUR" ? `\u20AC${priceEur}` : `\u20B9${price}`}
+              </strong>
             </p>
             <Button
               variant="gold"
@@ -598,10 +637,10 @@ export function BookingWizard({ service }: BookingWizardProps) {
               onClick={handlePayment}
               disabled={loading}
             >
-              {loading ? "Processing..." : `Pay \u20B9${price}`}
+              {loading ? "Processing..." : currency === "EUR" ? `Pay \u20AC${priceEur}` : `Pay \u20B9${price}`}
             </Button>
             <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-              Secured by Stripe. Supports Cards, UPI, Netbanking & more.
+              Secured by Stripe. Supports Cards & major payment methods.
             </p>
             <button
               type="button"
