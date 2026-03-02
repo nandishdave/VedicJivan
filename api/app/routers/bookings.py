@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, Query
@@ -291,6 +292,16 @@ async def reschedule_booking(booking_id: str, data: BookingReschedule):
         raise NotFoundError("Booking not found")
     if doc["status"] != BookingStatus.CONFIRMED:
         raise BadRequestError("Only confirmed bookings can be rescheduled")
+
+    # 24-hour cutoff: block reschedule if session is within 24 hours
+    ist = ZoneInfo("Asia/Kolkata")
+    booking_dt = datetime.fromisoformat(
+        f"{doc['date']}T{doc['time_slot']}:00"
+    ).replace(tzinfo=ist)
+    if booking_dt - datetime.now(timezone.utc) < timedelta(hours=24):
+        raise BadRequestError(
+            "Rescheduling is not available within 24 hours of your session"
+        )
 
     # New date must be in the future
     new_date = date.fromisoformat(data.date)

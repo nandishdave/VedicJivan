@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Calendar, Clock, ArrowLeft, Loader2 } from "lucide-react";
+import { CheckCircle2, Calendar, Clock, ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { BookingCalendar } from "@/components/booking/BookingCalendar";
 import { TimeSlotPicker } from "@/components/booking/TimeSlotPicker";
@@ -78,6 +78,46 @@ function RescheduleContent() {
       <Container className="py-20 text-center">
         <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary-600" />
         <p className="mt-3 text-gray-500">Loading booking details...</p>
+      </Container>
+    );
+  }
+
+  // 24-hour cutoff check — booking times are stored in IST (UTC+5:30)
+  const bookingIST = new Date(`${booking.date}T${booking.time_slot}:00+05:30`);
+  const isWithin24Hours = bookingIST.getTime() - Date.now() < 24 * 60 * 60 * 1000;
+
+  if (isWithin24Hours) {
+    return (
+      <Container className="py-20">
+        <div className="mx-auto max-w-lg text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+            <AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+          </div>
+          <h1 className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100">
+            Rescheduling Not Available
+          </h1>
+          <p className="mt-3 text-gray-600 dark:text-gray-400">
+            Your <strong>{booking.service_title}</strong> session is scheduled for{" "}
+            <strong>{formatDate(booking.date)}</strong> at <strong>{booking.time_slot}</strong>.
+          </p>
+          <p className="mt-2 text-gray-500 dark:text-gray-400 text-sm">
+            Rescheduling must be requested more than 24 hours before your session. This window has passed.
+          </p>
+          <div className="mt-8 flex justify-center gap-4">
+            <Link
+              href="/contact"
+              className="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+            >
+              Contact Us
+            </Link>
+            <Link
+              href="/"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
       </Container>
     );
   }

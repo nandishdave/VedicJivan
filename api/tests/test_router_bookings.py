@@ -501,3 +501,19 @@ async def test_reschedule_not_found(client, mock_db):
     mock_db.bookings.find_one = AsyncMock(return_value=None)
     resp = await client.patch(f"/api/bookings/{str(ObjectId())}/reschedule", json=_RESCHEDULE_DATA)
     assert resp.status_code == 404
+
+
+async def test_reschedule_within_24_hours(client, mock_db):
+    """Cannot reschedule when the session is less than 24 hours away."""
+    from datetime import datetime, timezone, timedelta
+    soon = datetime.now(timezone.utc) + timedelta(hours=2)
+    doc = {
+        **_CONFIRMED_BOOKING_DOC,
+        "date": soon.strftime("%Y-%m-%d"),
+        "time_slot": soon.strftime("%H:%M"),
+    }
+    mock_db.bookings.find_one = AsyncMock(return_value=doc)
+
+    resp = await client.patch(f"/api/bookings/{BOOKING_ID}/reschedule", json=_RESCHEDULE_DATA)
+    assert resp.status_code == 400
+    assert "24 hours" in resp.json()["detail"].lower()
