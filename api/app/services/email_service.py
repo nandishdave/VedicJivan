@@ -180,6 +180,9 @@ async def send_booking_rescheduled(
             <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Booking ID</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-family: monospace; font-size: 12px; color: #888;">{booking_id}</td></tr>
         </table>
         <p style="color: #666; font-size: 14px;">A Zoom meeting link will be shared with you before your new session time.</p>
+        <p style="text-align: center; margin: 16px 0; font-size: 13px; color: #888;">
+            <a href="{settings.FRONTEND_URL}/reschedule?id={booking_id}" style="color: #7c3aed; font-size: 13px; text-decoration: underline;">Need to reschedule again?</a>
+        </p>
         {_email_footer()}
     </div>
     """

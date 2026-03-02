@@ -137,10 +137,16 @@ function RescheduleContent() {
             <strong>{formatDate(newDate)}</strong> at <strong>{newSlot}</strong>.
             A confirmation email has been sent to you.
           </p>
-          <div className="mt-8 flex justify-center gap-4">
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <button
+              onClick={() => { setSuccess(false); setSelectedDate(""); setSelectedSlot(""); }}
+              className="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+            >
+              Reschedule Again
+            </button>
             <Link
               href="/services"
-              className="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
             >
               Browse Services
             </Link>
