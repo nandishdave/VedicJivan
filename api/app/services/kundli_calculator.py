@@ -55,6 +55,9 @@ SWE_PLANETS = {
     "Venus": 3,    # swe.VENUS
     "Saturn": 6,   # swe.SATURN
     "Rahu": 11,    # swe.MEAN_NODE (North Node)
+    "Uranus": 7,   # swe.URANUS
+    "Neptune": 8,  # swe.NEPTUNE
+    "Pluto": 9,    # swe.PLUTO
 }
 
 # Tithi names

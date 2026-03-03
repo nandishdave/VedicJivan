@@ -143,6 +143,7 @@ def mock_db():
     db.unavailability = _make_mock_collection()
     db.availability = _make_mock_collection()
     db.settings = _make_mock_collection()
+    db.kundlis = _make_mock_collection()
 
     with patch("app.database.db", db), patch("app.database.get_db", return_value=db):
         yield db

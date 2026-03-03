@@ -29,6 +29,7 @@ SIGN_NAMES = [
 PLANET_ABBR = {
     "Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
     "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke",
+    "Uranus": "Ur", "Neptune": "Ne", "Pluto": "Pl",
 }
 
 # North Indian chart house text positions (x, y) in a 300×300 SVG
@@ -192,7 +193,7 @@ def _basic_details(d: dict) -> str:
 
 
 def _planet_row(name: str, info: dict) -> str:
-    retro = "R" if info["retrograde"] else ""
+    retro = "*" if info["retrograde"] else ""
     return f"<tr><td><strong>{name}</strong></td><td>{info['sign_name']}</td><td>{info['degree_in_sign']:.1f}°</td><td>{info['house']}</td><td>{info['sign_lord']}</td><td>{retro}</td></tr>"
 
 
@@ -405,9 +406,10 @@ def _chart_svg(house_signs: dict[int, int], house_planets: dict[int, list[str]],
         x, y = _HOUSE_TEXT_POS[house_num]
         sign = house_signs.get(house_num, 0)
         planets = house_planets.get(house_num, [])
-        # Sign abbreviation (bold, larger)
-        svg += f'<text x="{x}" y="{y}" text-anchor="middle" font-size="11" font-weight="bold" fill="{BRAND}">{SIGN_ABBR[sign]}</text>'
-        # Planet abbreviations (smaller, below sign)
+        # Rashi number (1-12) — bold, in brand color
+        rashi_num = sign + 1  # 0-indexed sign → 1-indexed Rashi number
+        svg += f'<text x="{x}" y="{y}" text-anchor="middle" font-size="11" font-weight="bold" fill="{BRAND}">{rashi_num}</text>'
+        # Planet abbreviations (smaller, below number)
         if planets:
             planet_str = " ".join(planets)
             # Split into multiple lines if too many planets
@@ -438,7 +440,7 @@ def _build_d1_chart_data(d: dict) -> tuple[dict, dict]:
         house = info["house"]
         abbr = PLANET_ABBR.get(name, name[:2])
         if info.get("retrograde"):
-            abbr += "(R)"
+            abbr += "*"
         house_planets[house].append(abbr)
 
     return house_signs, house_planets
@@ -457,11 +459,15 @@ def _build_divisional_chart_data(d: dict, chart_type: str) -> tuple[dict, dict]:
         house_signs[h] = (lagna_sign + h - 1) % 12
 
     house_planets: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    planets_data = d.get("planets", {})
     for name in PLANET_ABBR:
         if name in chart:
             planet_sign = chart[name]
             house = ((planet_sign - lagna_sign) % 12) + 1
-            house_planets[house].append(PLANET_ABBR[name])
+            abbr = PLANET_ABBR[name]
+            if planets_data.get(name, {}).get("retrograde"):
+                abbr += "*"
+            house_planets[house].append(abbr)
 
     return house_signs, house_planets
 
@@ -480,9 +486,10 @@ def _birth_chart_page(d: dict) -> str:
     Signs progress clockwise through the twelve houses.</p>
     {chart_svg}
     <p style="text-align: center; font-size: 9pt; color: #888;">
-    Ar=Aries, Ta=Taurus, Ge=Gemini, Cn=Cancer, Le=Leo, Vi=Virgo,
-    Li=Libra, Sc=Scorpio, Sg=Sagittarius, Cp=Capricorn, Aq=Aquarius, Pi=Pisces<br/>
-    Su=Sun, Mo=Moon, Ma=Mars, Me=Mercury, Ju=Jupiter, Ve=Venus, Sa=Saturn, Ra=Rahu, Ke=Ketu, (R)=Retrograde
+    1=Aries(Mesh), 2=Taurus(Vrushabh), 3=Gemini(Mithun), 4=Cancer(Karka), 5=Leo(Simha), 6=Virgo(Kanya),
+    7=Libra(Tula), 8=Scorpio(Vruschik), 9=Sagittarius(Dhanu), 10=Capricorn(Makar), 11=Aquarius(Kumbh), 12=Pisces(Meen)<br/>
+    Su=Sun, Mo=Moon, Ma=Mars, Me=Mercury, Ju=Jupiter, Ve=Venus, Sa=Saturn, Ra=Rahu, Ke=Ketu,
+    Ur=Uranus, Ne=Neptune, Pl=Pluto &nbsp;|&nbsp; *=Retrograde
     </p>
     <h3>Moon Chart (Chandra Kundli)</h3>
     <p>The Moon chart places the Moon's sign in the first house, showing planetary positions relative to the Moon.</p>
@@ -502,6 +509,8 @@ def _moon_chart_svg(d: dict) -> str:
         planet_sign = info["sign"]
         house = ((planet_sign - moon_sign) % 12) + 1
         abbr = PLANET_ABBR.get(name, name[:2])
+        if info.get("retrograde"):
+            abbr += "*"
         house_planets[house].append(abbr)
 
     return _chart_svg(house_signs, house_planets, "Moon")

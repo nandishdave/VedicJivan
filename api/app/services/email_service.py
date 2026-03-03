@@ -265,15 +265,20 @@ async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
     </div>
     """
 
-    resend.Emails.send({
-        "from": settings.EMAIL_FROM,
-        "to": to_email,
-        "subject": subject,
-        "html": html,
-        "attachments": [
-            {
-                "filename": f"Kundli_Report_{user_name.replace(' ', '_')}.pdf",
-                "content": base64.b64encode(pdf_bytes).decode("utf-8"),
-            }
-        ],
-    })
+    import asyncio
+
+    await asyncio.to_thread(
+        resend.Emails.send,
+        {
+            "from": settings.EMAIL_FROM,
+            "to": to_email,
+            "subject": subject,
+            "html": html,
+            "attachments": [
+                {
+                    "filename": f"Kundli_Report_{user_name.replace(' ', '_')}.pdf",
+                    "content": base64.b64encode(pdf_bytes).decode("utf-8"),
+                }
+            ],
+        },
+    )
