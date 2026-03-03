@@ -112,17 +112,20 @@ def get_julian_day(dob: str, tob: str, lat: float, lon: float) -> float:
 # ── Planet positions ─────────────────────────────────────────────────────────
 
 def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
-    """Calculate sidereal (Lahiri) planetary positions and house placements."""
+    """Calculate sidereal (Lahiri) planetary positions and house placements.
+    Uses Whole Sign house system (standard in Vedic astrology):
+    each house = one entire sign, house 1 = Ascendant sign.
+    """
     import swisseph as swe
 
     swe.set_sid_mode(swe.SIDM_LAHIRI)
     flags = swe.FLG_SIDEREAL | swe.FLG_SPEED
 
-    # House cusps (Placidus)
-    cusps, ascmc = swe.houses_ex(jd, lat, lon, b"P", swe.FLG_SIDEREAL)
-    # pyswisseph returns 0-indexed: cusps[0..11] = house cusps 1–12
-    # ascmc[0] = Ascendant longitude (sidereal)
+    # Ascendant longitude (sidereal) — only need ascmc, not Placidus cusps
+    _cusps, ascmc = swe.houses_ex(jd, lat, lon, b"W", swe.FLG_SIDEREAL)
+    # b"W" = Whole Sign system; ascmc[0] = Ascendant longitude
     asc_lon = ascmc[0] % 360
+    lagna_sign = int(asc_lon / 30)
 
     planets = {}
     for name, code in SWE_PLANETS.items():
@@ -131,7 +134,7 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
         speed = result[3]
         sign = int(lon_deg / 30)
         degree_in_sign = lon_deg % 30
-        house = _get_house(lon_deg, cusps)
+        house = _whole_sign_house(sign, lagna_sign)
         planets[name] = {
             "longitude": round(lon_deg, 4),
             "sign": sign,
@@ -152,12 +155,11 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
         "sign_name": SIGN_NAMES[ketu_sign],
         "sign_lord": SIGN_LORDS[ketu_sign],
         "degree_in_sign": round(ketu_lon % 30, 4),
-        "house": _get_house(ketu_lon, cusps),
+        "house": _whole_sign_house(ketu_sign, lagna_sign),
         "retrograde": True,  # Rahu/Ketu always retrograde
     }
     planets["Rahu"]["retrograde"] = True
 
-    lagna_sign = int(asc_lon / 30)
     return {
         "planets": planets,
         "lagna": {
@@ -167,24 +169,12 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
             "sign_lord": SIGN_LORDS[lagna_sign],
             "degree": round(asc_lon % 30, 4),
         },
-        "cusps": list(cusps),  # houses 1–12 (0-indexed from pyswisseph)
     }
 
 
-def _get_house(planet_lon: float, cusps: tuple) -> int:
-    """Determine which house (1–12) a given longitude falls in.
-    cusps is 0-indexed: cusps[0]=house1, cusps[1]=house2, ..., cusps[11]=house12."""
-    for i in range(12):
-        cusp_start = cusps[i] % 360
-        cusp_end = cusps[(i + 1) % 12] % 360
-        # Handle wrap-around (e.g. cusp at 350° → next at 20°)
-        if cusp_start <= cusp_end:
-            if cusp_start <= planet_lon < cusp_end:
-                return i + 1
-        else:
-            if planet_lon >= cusp_start or planet_lon < cusp_end:
-                return i + 1
-    return 1
+def _whole_sign_house(planet_sign: int, lagna_sign: int) -> int:
+    """Whole Sign house: house 1 = Lagna sign, house 2 = next sign, etc."""
+    return ((planet_sign - lagna_sign) % 12) + 1
 
 
 # ── Nakshatra ────────────────────────────────────────────────────────────────
@@ -301,12 +291,12 @@ def calc_manglik(planets: dict, lagna_sign: int) -> dict:
     """
     Manglik = Mars in houses 1, 2, 4, 7, 8, or 12 from Lagna or Moon.
     Mars in 2nd is included per Parashara tradition.
+    Uses Whole Sign houses for both Lagna and Moon.
     """
     MANGLIK_HOUSES = {1, 2, 4, 7, 8, 12}
-    mars_house_lagna = planets["Mars"]["house"]
-    # Mars house from Moon = calculate relative position
-    moon_sign = planets["Moon"]["sign"]
     mars_sign = planets["Mars"]["sign"]
+    moon_sign = planets["Moon"]["sign"]
+    mars_house_lagna = ((mars_sign - lagna_sign) % 12) + 1
     mars_house_from_moon = ((mars_sign - moon_sign) % 12) + 1
 
     from_lagna = mars_house_lagna in MANGLIK_HOUSES
@@ -534,7 +524,6 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     position_data = calc_planet_positions(jd, lat, lon)
     planets = position_data["planets"]
     lagna = position_data["lagna"]
-    cusps = position_data["cusps"]
 
     moon_lon = planets["Moon"]["longitude"]
     nakshatra = calc_nakshatra(moon_lon)
@@ -563,7 +552,6 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "ayanamsa": round(ayanamsa, 4),
         "lagna": lagna,
         "planets": planets,
-        "cusps": cusps,
         "nakshatra": nakshatra,
         "panchanga": panchanga,
         "dasha": dasha,
