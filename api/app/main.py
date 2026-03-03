@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import close_db, connect_db
-from app.routers import admin, auth, availability, bookings, internal, payments
+from app.routers import admin, auth, availability, bookings, internal, kundli, payments
 
 
 @asynccontextmanager
@@ -44,6 +44,7 @@ app.include_router(bookings.router)
 app.include_router(payments.router)
 app.include_router(admin.router)
 app.include_router(internal.router)
+app.include_router(kundli.router)
 
 
 @app.get("/api/health")

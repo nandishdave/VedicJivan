@@ -292,3 +292,21 @@ export const adminApi = {
       daily_revenue: { date: string; revenue: number }[];
     }>("/api/admin/stats", { token }),
 };
+
+// ── Kundli ──
+export const kundliApi = {
+  generate: (data: {
+    name: string;
+    gender: string;
+    dob: string;
+    tob: string;
+    lat: number;
+    lon: number;
+    place_name: string;
+    email: string;
+  }) =>
+    apiRequest<{ message: string }>("/api/kundli/generate", {
+      method: "POST",
+      body: data,
+    }),
+};

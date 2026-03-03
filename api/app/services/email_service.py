@@ -222,3 +222,58 @@ async def send_booking_reminder(
     </div>
     """
     _send_email(to_email, subject, html)
+
+
+async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
+    """Send Kundli PDF report as email attachment via Resend."""
+    if not settings.RESEND_API_KEY:
+        print(f"[EMAIL SKIP] No RESEND_API_KEY. Would send Kundli to {to_email}")
+        return
+
+    import base64
+
+    import resend
+
+    resend.api_key = settings.RESEND_API_KEY
+
+    subject = "Your Free Kundli Report | VedicJivan"
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        {_email_header()}
+        <h2 style="color: #7c3aed; text-align: center; margin: 0 0 8px;">Your Kundli Report is Ready!</h2>
+        <p style="text-align: center; color: #666; margin: 0 0 24px;">Your personalised Vedic birth chart</p>
+        <p>Dear {user_name},</p>
+        <p>Thank you for using VedicJivan's free Kundli generator. Your personalised Vedic birth chart report is attached to this email as a PDF.</p>
+        <p>Your report includes:</p>
+        <ul style="color: #555; line-height: 1.8;">
+            <li>Birth chart details &amp; planetary positions</li>
+            <li>Ascendant &amp; Nakshatra analysis</li>
+            <li>Character, career &amp; life predictions</li>
+            <li>Manglik Dosha analysis</li>
+            <li>Sade Sati report</li>
+            <li>Vimshottari Dasha periods</li>
+            <li>Planetary effects &amp; remedies</li>
+        </ul>
+        <div style="background: #f3f0ff; border-left: 4px solid #7c3aed; padding: 16px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0 0 8px; font-weight: bold; color: #7c3aed;">Want deeper insights?</p>
+            <p style="margin: 0; font-size: 14px;">Book a personalised consultation with our Vedic astrology expert for detailed guidance tailored to your life questions.</p>
+        </div>
+        <div style="text-align: center; margin: 24px 0;">
+            <a href="{settings.FRONTEND_URL}/services/" style="background: #7c3aed; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Book a Consultation</a>
+        </div>
+        {_email_footer()}
+    </div>
+    """
+
+    resend.Emails.send({
+        "from": settings.EMAIL_FROM,
+        "to": to_email,
+        "subject": subject,
+        "html": html,
+        "attachments": [
+            {
+                "filename": f"Kundli_Report_{user_name.replace(' ', '_')}.pdf",
+                "content": base64.b64encode(pdf_bytes).decode("utf-8"),
+            }
+        ],
+    })

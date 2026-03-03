@@ -1,0 +1,453 @@
+"""
+Vedic astrology chart calculator using Swiss Ephemeris (pyswisseph).
+All calculations use Lahiri Ayanamsa (sidereal mode) — same as AstroSage.
+"""
+
+from __future__ import annotations
+
+import math
+from datetime import date, datetime, timedelta, timezone
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.kundli import KundliRequest
+
+# ── Constants ────────────────────────────────────────────────────────────────
+
+SIGN_NAMES = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]
+
+SIGN_LORDS = [
+    "Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury",
+    "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter",
+]
+
+NAKSHATRA_NAMES = [
+    "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
+    "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
+    "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
+    "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishtha",
+    "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati",
+]
+
+NAKSHATRA_LORDS = [
+    "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu",
+    "Jupiter", "Saturn", "Mercury", "Ketu", "Venus", "Sun",
+    "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury",
+    "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu",
+    "Jupiter", "Saturn", "Mercury",
+]
+
+# Vimshottari Dasha: planet → years
+DASHA_YEARS = {
+    "Ketu": 7, "Venus": 20, "Sun": 6, "Moon": 10, "Mars": 7,
+    "Rahu": 18, "Jupiter": 16, "Saturn": 19, "Mercury": 17,
+}
+DASHA_SEQUENCE = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"]
+
+# Nakshatra → dasha lord mapping (0-indexed)
+NAKSHATRA_DASHA_LORD = NAKSHATRA_LORDS  # same order
+
+# Planet codes for pyswisseph
+SWE_PLANETS = {
+    "Sun": 0,      # swe.SUN
+    "Moon": 1,     # swe.MOON
+    "Mars": 4,     # swe.MARS
+    "Mercury": 2,  # swe.MERCURY
+    "Jupiter": 5,  # swe.JUPITER
+    "Venus": 3,    # swe.VENUS
+    "Saturn": 6,   # swe.SATURN
+    "Rahu": 11,    # swe.MEAN_NODE (North Node)
+}
+
+# Tithi names
+TITHI_NAMES = [
+    "Pratipada", "Dvitiya", "Tritiya", "Chaturthi", "Panchami",
+    "Shashthi", "Saptami", "Ashtami", "Navami", "Dashami",
+    "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi", "Purnima/Amavasya",
+]
+
+# Yoga names
+YOGA_NAMES = [
+    "Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana",
+    "Atiganda", "Sukarman", "Dhriti", "Shoola", "Ganda",
+    "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra",
+    "Siddhi", "Vyatipata", "Variyan", "Parigha", "Shiva",
+    "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma",
+    "Indra", "Vaidhriti",
+]
+
+# Karan names (11 karanas, each half-tithi)
+KARAN_NAMES = [
+    "Bava", "Balava", "Kaulava", "Taitila", "Garija",
+    "Vanija", "Vishti", "Shakuni", "Chatushpada", "Naga", "Kimstughna",
+]
+
+
+# ── Julian Day helper ────────────────────────────────────────────────────────
+
+def get_julian_day(dob: str, tob: str, lat: float, lon: float) -> float:
+    """Convert local birth datetime to Julian Day (UT) using timezone from coordinates."""
+    from timezonefinder import TimezoneFinder
+    from zoneinfo import ZoneInfo
+
+    tf = TimezoneFinder()
+    tz_name = tf.timezone_at(lat=lat, lng=lon) or "UTC"
+    tz = ZoneInfo(tz_name)
+
+    birth_date = date.fromisoformat(dob)
+    h, m = map(int, tob.split(":"))
+    local_dt = datetime(birth_date.year, birth_date.month, birth_date.day, h, m, tzinfo=tz)
+    utc_dt = local_dt.astimezone(timezone.utc)
+
+    # Julian Day calculation (astronomical formula)
+    y, mo, d = utc_dt.year, utc_dt.month, utc_dt.day
+    ut = utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0
+    if mo <= 2:
+        y -= 1
+        mo += 12
+    A = int(y / 100)
+    B = 2 - A + int(A / 4)
+    jd = int(365.25 * (y + 4716)) + int(30.6001 * (mo + 1)) + d + B - 1524.5 + ut / 24.0
+    return jd
+
+
+# ── Planet positions ─────────────────────────────────────────────────────────
+
+def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
+    """Calculate sidereal (Lahiri) planetary positions and house placements."""
+    import swisseph as swe
+
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    flags = swe.FLG_SIDEREAL | swe.FLG_SPEED
+
+    # House cusps (Placidus)
+    cusps, ascmc = swe.houses_ex(jd, lat, lon, b"P", swe.FLG_SIDEREAL)
+    # cusps[0] unused, cusps[1..12] = house cusp longitudes
+    # ascmc[0] = Ascendant longitude (sidereal)
+    asc_lon = ascmc[0] % 360
+
+    planets = {}
+    for name, code in SWE_PLANETS.items():
+        result, _ = swe.calc_ut(jd, code, flags)
+        lon_deg = result[0] % 360
+        speed = result[3]
+        sign = int(lon_deg / 30)
+        degree_in_sign = lon_deg % 30
+        house = _get_house(lon_deg, cusps)
+        planets[name] = {
+            "longitude": round(lon_deg, 4),
+            "sign": sign,
+            "sign_name": SIGN_NAMES[sign],
+            "sign_lord": SIGN_LORDS[sign],
+            "degree_in_sign": round(degree_in_sign, 4),
+            "house": house,
+            "retrograde": speed < 0,
+        }
+
+    # Ketu = Rahu + 180°
+    rahu_lon = planets["Rahu"]["longitude"]
+    ketu_lon = (rahu_lon + 180) % 360
+    ketu_sign = int(ketu_lon / 30)
+    planets["Ketu"] = {
+        "longitude": round(ketu_lon, 4),
+        "sign": ketu_sign,
+        "sign_name": SIGN_NAMES[ketu_sign],
+        "sign_lord": SIGN_LORDS[ketu_sign],
+        "degree_in_sign": round(ketu_lon % 30, 4),
+        "house": _get_house(ketu_lon, cusps),
+        "retrograde": True,  # Rahu/Ketu always retrograde
+    }
+    planets["Rahu"]["retrograde"] = True
+
+    lagna_sign = int(asc_lon / 30)
+    return {
+        "planets": planets,
+        "lagna": {
+            "longitude": round(asc_lon, 4),
+            "sign": lagna_sign,
+            "sign_name": SIGN_NAMES[lagna_sign],
+            "sign_lord": SIGN_LORDS[lagna_sign],
+            "degree": round(asc_lon % 30, 4),
+        },
+        "cusps": list(cusps[1:13]),  # houses 1–12
+    }
+
+
+def _get_house(planet_lon: float, cusps: tuple) -> int:
+    """Determine which house (1–12) a given longitude falls in."""
+    for i in range(12):
+        cusp_start = cusps[i + 1] % 360
+        cusp_end = cusps[(i + 1) % 12 + 1] % 360
+        # Handle wrap-around (e.g. cusp at 350° → next at 20°)
+        if cusp_start <= cusp_end:
+            if cusp_start <= planet_lon < cusp_end:
+                return i + 1
+        else:
+            if planet_lon >= cusp_start or planet_lon < cusp_end:
+                return i + 1
+    return 1
+
+
+# ── Nakshatra ────────────────────────────────────────────────────────────────
+
+def calc_nakshatra(moon_lon: float) -> dict:
+    """Calculate birth Nakshatra and Pada from Moon's sidereal longitude."""
+    nak_size = 360 / 27  # 13°20' each
+    pada_size = nak_size / 4
+    nak_num = int(moon_lon / nak_size)  # 0–26
+    pada = int((moon_lon % nak_size) / pada_size) + 1  # 1–4
+    return {
+        "num": nak_num,
+        "name": NAKSHATRA_NAMES[nak_num],
+        "lord": NAKSHATRA_LORDS[nak_num],
+        "pada": pada,
+        "degree_in_nak": round(moon_lon % nak_size, 4),
+    }
+
+
+# ── Panchanga (Tithi, Yoga, Karan) ──────────────────────────────────────────
+
+def calc_panchanga(jd: float) -> dict:
+    """Calculate Tithi, Yoga, and Karan."""
+    import swisseph as swe
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    flags = swe.FLG_SIDEREAL
+
+    sun, _ = swe.calc_ut(jd, swe.SUN, flags)
+    moon, _ = swe.calc_ut(jd, swe.MOON, flags)
+    sun_lon, moon_lon = sun[0] % 360, moon[0] % 360
+
+    # Tithi: each 12° difference = 1 tithi (30 tithis per lunar month)
+    diff = (moon_lon - sun_lon) % 360
+    tithi_num = int(diff / 12) + 1  # 1–30
+    tithi_name = TITHI_NAMES[min((tithi_num - 1) % 15, 14)]
+    paksha = "Shukla" if tithi_num <= 15 else "Krishna"
+
+    # Yoga: (Sun lon + Moon lon) / (360/27)
+    yoga_lon = (sun_lon + moon_lon) % 360
+    yoga_num = int(yoga_lon / (360 / 27))
+    yoga_name = YOGA_NAMES[yoga_num % 27]
+
+    # Karan: half-tithi (each 6° diff)
+    karan_num = int(diff / 6) % 11
+    karan_name = KARAN_NAMES[karan_num]
+
+    return {
+        "tithi_num": tithi_num,
+        "tithi_name": tithi_name,
+        "paksha": paksha,
+        "yoga_name": yoga_name,
+        "karan_name": karan_name,
+    }
+
+
+# ── Vimshottari Dasha ────────────────────────────────────────────────────────
+
+def calc_vimshottari_dasha(moon_lon: float, dob: str) -> dict:
+    """Calculate full Vimshottari Dasha sequence from birth."""
+    nak_size = 360 / 27
+    nak_num = int(moon_lon / nak_size)
+    fraction_elapsed = (moon_lon % nak_size) / nak_size
+
+    lord = NAKSHATRA_LORDS[nak_num]
+    lord_idx = DASHA_SEQUENCE.index(lord)
+    years_remaining = DASHA_YEARS[lord] * (1 - fraction_elapsed)
+
+    birth_date = date.fromisoformat(dob)
+    dashas = []
+    current_date = birth_date
+
+    # First dasha (partial)
+    end_date = _add_years(current_date, years_remaining)
+    dashas.append({
+        "planet": lord,
+        "start_date": current_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "years": round(years_remaining, 2),
+    })
+    current_date = end_date
+
+    # Subsequent dashas (full)
+    for i in range(1, 9):
+        planet = DASHA_SEQUENCE[(lord_idx + i) % 9]
+        years = DASHA_YEARS[planet]
+        end_date = _add_years(current_date, years)
+        dashas.append({
+            "planet": planet,
+            "start_date": current_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "years": years,
+        })
+        current_date = end_date
+
+    # Find current dasha
+    today = date.today()
+    current_dasha = next(
+        (d for d in dashas if date.fromisoformat(d["start_date"]) <= today <= date.fromisoformat(d["end_date"])),
+        dashas[0],
+    )
+
+    return {"dashas": dashas, "current_dasha": current_dasha}
+
+
+def _add_years(d: date, years: float) -> date:
+    """Add fractional years to a date."""
+    days = years * 365.25
+    return d + timedelta(days=days)
+
+
+# ── Manglik Dosha ────────────────────────────────────────────────────────────
+
+def calc_manglik(planets: dict, lagna_sign: int) -> dict:
+    """
+    Manglik = Mars in houses 1, 2, 4, 7, 8, or 12 from Lagna or Moon.
+    Mars in 2nd is included per Parashara tradition.
+    """
+    MANGLIK_HOUSES = {1, 2, 4, 7, 8, 12}
+    mars_house_lagna = planets["Mars"]["house"]
+    # Mars house from Moon = calculate relative position
+    moon_sign = planets["Moon"]["sign"]
+    mars_sign = planets["Mars"]["sign"]
+    mars_house_from_moon = ((mars_sign - moon_sign) % 12) + 1
+
+    from_lagna = mars_house_lagna in MANGLIK_HOUSES
+    from_moon = mars_house_from_moon in MANGLIK_HOUSES
+    is_manglik = from_lagna or from_moon
+
+    return {
+        "is_manglik": is_manglik,
+        "from_lagna": from_lagna,
+        "from_moon": from_moon,
+        "mars_house_lagna": mars_house_lagna,
+        "mars_house_moon": mars_house_from_moon,
+    }
+
+
+# ── Sade Sati ────────────────────────────────────────────────────────────────
+
+def calc_sadesati(moon_sign: int) -> list[dict]:
+    """
+    Calculate Saturn's Sade Sati periods (past and future) from 1950 to 2100.
+    Sade Sati = Saturn transiting 12th, 1st, 2nd house from Moon sign (7.5 years total).
+    Saturn average transit per sign ≈ 2.46 years.
+    """
+    # Saturn approximate entry dates per sign (Vedic/sidereal)
+    # Dates based on Lahiri ayanamsa Saturn transits
+    SATURN_TRANSITS = [
+        # (sign_num 0-11, entry_date)
+        (8,  date(1987, 12, 17)),  # Sagittarius
+        (9,  date(1990,  5, 21)),  # Capricorn
+        (10, date(1993,  1, 26)),  # Aquarius
+        (11, date(1995,  6, 23)),  # Pisces
+        (0,  date(1998,  4, 29)),  # Aries
+        (1,  date(2000,  8,  8)),  # Taurus
+        (2,  date(2002, 11,  8)),  # Gemini
+        (3,  date(2004,  9, 16)),  # Cancer
+        (4,  date(2007, 12, 16)),  # Leo
+        (5,  date(2009,  9, 11)),  # Virgo
+        (6,  date(2011, 11, 15)),  # Libra
+        (7,  date(2014, 11,  2)),  # Scorpio
+        (8,  date(2017,  1, 26)),  # Sagittarius
+        (9,  date(2020,  1, 24)),  # Capricorn
+        (10, date(2022,  4, 29)),  # Aquarius
+        (11, date(2025,  3, 29)),  # Pisces
+        (0,  date(2027,  6,  5)),  # Aries
+        (1,  date(2029,  9,  2)),  # Taurus
+        (2,  date(2032,  1, 10)),  # Gemini
+        (3,  date(2034,  8, 10)),  # Cancer
+        (4,  date(2036, 10, 21)),  # Leo
+        (5,  date(2039,  8,  3)),  # Virgo
+        (6,  date(2041, 10, 13)),  # Libra
+        (7,  date(2044, 10,  1)),  # Scorpio
+        (8,  date(2046, 12,  5)),  # Sagittarius
+    ]
+
+    sadesati_signs = {
+        (moon_sign - 1) % 12: "Rising",
+        moon_sign: "Peak",
+        (moon_sign + 1) % 12: "Setting",
+    }
+
+    periods = []
+    for i, (sign, entry) in enumerate(SATURN_TRANSITS):
+        if sign in sadesati_signs:
+            # End = next transit entry (or estimate 2.46 years later)
+            if i + 1 < len(SATURN_TRANSITS):
+                exit_date = SATURN_TRANSITS[i + 1][1]
+            else:
+                exit_date = _add_years(entry, 2.46)
+            periods.append({
+                "phase": sadesati_signs[sign],
+                "rashi": SIGN_NAMES[sign],
+                "start_date": entry.isoformat(),
+                "end_date": exit_date.isoformat(),
+            })
+
+    return sorted(periods, key=lambda p: p["start_date"])
+
+
+# ── Sunrise / Sunset ─────────────────────────────────────────────────────────
+
+def calc_sunrise_sunset(jd: float, lat: float, lon: float) -> dict:
+    """Calculate sunrise and sunset times for the birth date."""
+    import swisseph as swe
+    # Rise/set: event type 1 = sunrise, 2 = sunset
+    try:
+        sunrise_jd, _ = swe.rise_trans(jd - 1, swe.SUN, lon, lat, 0, 0, swe.CALC_RISE)
+        sunset_jd, _ = swe.rise_trans(jd - 1, swe.SUN, lon, lat, 0, 0, swe.CALC_SET)
+        def jd_to_hm(j):
+            frac = (j + 0.5) % 1.0  # fractional day
+            minutes = round(frac * 24 * 60)
+            return f"{minutes // 60:02d}:{minutes % 60:02d}"
+        return {"sunrise": jd_to_hm(sunrise_jd), "sunset": jd_to_hm(sunset_jd)}
+    except Exception:
+        return {"sunrise": "N/A", "sunset": "N/A"}
+
+
+# ── Master builder ───────────────────────────────────────────────────────────
+
+def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: float, place_name: str) -> dict:
+    """Build the full chart_data dict for a Kundli."""
+    jd = get_julian_day(dob, tob, lat, lon)
+    position_data = calc_planet_positions(jd, lat, lon)
+    planets = position_data["planets"]
+    lagna = position_data["lagna"]
+    cusps = position_data["cusps"]
+
+    moon_lon = planets["Moon"]["longitude"]
+    nakshatra = calc_nakshatra(moon_lon)
+    panchanga = calc_panchanga(jd)
+    dasha = calc_vimshottari_dasha(moon_lon, dob)
+    manglik = calc_manglik(planets, lagna["sign"])
+    sadesati = calc_sadesati(planets["Moon"]["sign"])
+    sun_sunset = calc_sunrise_sunset(jd, lat, lon)
+
+    # Ayanamsa value
+    import swisseph as swe
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    ayanamsa = swe.get_ayanamsa_ut(jd)
+
+    return {
+        "name": name,
+        "gender": gender,
+        "dob": dob,
+        "tob": tob,
+        "lat": lat,
+        "lon": lon,
+        "place_name": place_name,
+        "julian_day": round(jd, 5),
+        "ayanamsa": round(ayanamsa, 4),
+        "lagna": lagna,
+        "planets": planets,
+        "cusps": cusps,
+        "nakshatra": nakshatra,
+        "panchanga": panchanga,
+        "dasha": dasha,
+        "manglik": manglik,
+        "sadesati": sadesati,
+        "sunrise": sun_sunset["sunrise"],
+        "sunset": sun_sunset["sunset"],
+    }
