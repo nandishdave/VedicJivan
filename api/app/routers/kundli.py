@@ -43,15 +43,17 @@ async def generate_kundli(req: KundliRequest):
             place_name=req.place_name,
         )
     except Exception as e:
-        print(f"[KUNDLI CALC ERROR] {e}")
-        raise HTTPException(status_code=500, detail="Failed to calculate chart. Please check your birth details.")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to calculate chart: {e}")
 
     # Generate PDF
     try:
         pdf_bytes = generate_pdf(chart_data)
     except Exception as e:
-        print(f"[KUNDLI PDF ERROR] {e}")
-        raise HTTPException(status_code=500, detail="Failed to generate report PDF.")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {e}")
 
     # Send email with PDF attachment
     try:
