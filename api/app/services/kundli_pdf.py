@@ -33,20 +33,20 @@ PLANET_ABBR = {
 }
 
 # North Indian chart house text positions (x, y) in a 300×300 SVG
-# Houses 1-12 correspond to fixed positions in the diamond layout
+# Houses go COUNTER-CLOCKWISE from top center (standard North Indian layout)
 _HOUSE_TEXT_POS = {
-    1:  (150, 68),
-    2:  (225, 25),
-    3:  (270, 68),
-    4:  (225, 150),
-    5:  (270, 232),
-    6:  (225, 275),
-    7:  (150, 232),
-    8:  (75, 275),
-    9:  (30, 232),
-    10: (75, 150),
-    11: (30, 68),
-    12: (75, 25),
+    1:  (150, 68),    # top center
+    2:  (75, 25),     # top left
+    3:  (30, 68),     # left upper
+    4:  (75, 150),    # left center
+    5:  (30, 232),    # left lower
+    6:  (75, 275),    # bottom left
+    7:  (150, 232),   # bottom center
+    8:  (225, 275),   # bottom right
+    9:  (270, 232),   # right lower
+    10: (225, 150),   # right center
+    11: (270, 68),    # right upper
+    12: (225, 25),    # top right
 }
 
 CHART_DESCRIPTIONS = {
