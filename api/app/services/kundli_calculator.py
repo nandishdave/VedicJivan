@@ -5,12 +5,7 @@ All calculations use Lahiri Ayanamsa (sidereal mode) — same as AstroSage.
 
 from __future__ import annotations
 
-import math
 from datetime import date, datetime, timedelta, timezone
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from app.models.kundli import KundliRequest
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -390,23 +385,143 @@ def calc_sadesati(moon_sign: int) -> list[dict]:
     return sorted(periods, key=lambda p: p["start_date"])
 
 
+# ── Divisional Charts (Vargas) ────────────────────────────────────────────────
+
+def calc_divisional_charts(planets: dict, lagna: dict) -> dict:
+    """Calculate divisional chart positions: D2, D3, D9, D10, D12, D60."""
+    charts = {}
+    for chart_type in ("D2", "D3", "D9", "D10", "D12", "D60"):
+        chart = {}
+        for name, info in planets.items():
+            chart[name] = _calc_varga_sign(info["sign"], info["degree_in_sign"], chart_type)
+        # Also calculate Lagna position in each varga
+        chart["Lagna"] = _calc_varga_sign(lagna["sign"], lagna["degree"], chart_type)
+        charts[chart_type] = chart
+    return charts
+
+
+def _calc_varga_sign(sign: int, degree: float, chart_type: str) -> int:
+    """Calculate the resulting sign (0–11) for a planet in a divisional chart."""
+    is_odd = sign % 2 == 0  # 0-indexed: Aries(0)=odd, Taurus(1)=even
+
+    if chart_type == "D2":
+        # Hora: 2 parts per sign (15° each)
+        # Odd sign: 0-15° → Leo(4), 15-30° → Cancer(3)
+        # Even sign: 0-15° → Cancer(3), 15-30° → Leo(4)
+        half = 0 if degree < 15 else 1
+        if is_odd:
+            return 4 if half == 0 else 3
+        else:
+            return 3 if half == 0 else 4
+
+    elif chart_type == "D3":
+        # Drekkana: 3 parts (10° each)
+        # 1st (0-10°): same sign, 2nd (10-20°): 5th from sign, 3rd (20-30°): 9th from sign
+        part = min(int(degree / 10), 2)
+        offsets = [0, 4, 8]
+        return (sign + offsets[part]) % 12
+
+    elif chart_type == "D9":
+        # Navamsa: 9 parts (3°20' each)
+        # Fire signs (0,4,8): start from Aries(0)
+        # Earth signs (1,5,9): start from Capricorn(9)
+        # Air signs (2,6,10): start from Libra(6)
+        # Water signs (3,7,11): start from Cancer(3)
+        element = sign % 4
+        starts = {0: 0, 1: 9, 2: 6, 3: 3}
+        part = min(int(degree / (30 / 9)), 8)
+        return (starts[element] + part) % 12
+
+    elif chart_type == "D10":
+        # Dasamsa: 10 parts (3° each)
+        # Odd sign: start from same sign
+        # Even sign: start from 9th sign (sign + 8)
+        part = min(int(degree / 3), 9)
+        start = sign if is_odd else (sign + 8) % 12
+        return (start + part) % 12
+
+    elif chart_type == "D12":
+        # Dwadasamsa: 12 parts (2°30' each), start from same sign
+        part = min(int(degree / 2.5), 11)
+        return (sign + part) % 12
+
+    elif chart_type == "D60":
+        # Shastiamsa: 60 parts (0°30' each), start from same sign
+        part = min(int(degree / 0.5), 59)
+        return (sign + part) % 12
+
+    return sign
+
+
+# ── Antardasha (Sub-periods) ─────────────────────────────────────────────────
+
+def calc_antardasha(dashas: list[dict]) -> list[dict]:
+    """Calculate Antardasha (sub-periods) for each Mahadasha."""
+    result = []
+    for dasha in dashas:
+        planet = dasha["planet"]
+        md_years = dasha["years"]
+        md_start = date.fromisoformat(dasha["start_date"])
+        lord_idx = DASHA_SEQUENCE.index(planet)
+
+        sub_periods = []
+        current = md_start
+        for i in range(9):
+            ad_planet = DASHA_SEQUENCE[(lord_idx + i) % 9]
+            ad_years = (md_years * DASHA_YEARS[ad_planet]) / 120
+            ad_end = _add_years(current, ad_years)
+            sub_periods.append({
+                "planet": ad_planet,
+                "start_date": current.isoformat(),
+                "end_date": ad_end.isoformat(),
+                "years": round(ad_years, 2),
+            })
+            current = ad_end
+
+        result.append({
+            "mahadasha": planet,
+            "mahadasha_years": md_years,
+            "start_date": dasha["start_date"],
+            "end_date": dasha["end_date"],
+            "antardashas": sub_periods,
+        })
+    return result
+
+
 # ── Sunrise / Sunset ─────────────────────────────────────────────────────────
 
+def _get_local_tz(lat: float, lon: float):
+    """Get ZoneInfo timezone for given coordinates."""
+    from timezonefinder import TimezoneFinder
+    from zoneinfo import ZoneInfo
+    tf = TimezoneFinder()
+    tz_name = tf.timezone_at(lat=lat, lng=lon) or "UTC"
+    return ZoneInfo(tz_name)
+
+
 def calc_sunrise_sunset(jd: float, lat: float, lon: float) -> dict:
-    """Calculate sunrise and sunset times for the birth date."""
+    """Calculate sunrise and sunset times for the birth date (local time)."""
     import swisseph as swe
     try:
         geopos = (lon, lat, 0)  # (longitude, latitude, altitude)
         sunrise_jd = swe.rise_trans(jd - 1, swe.SUN, "", 0, swe.CALC_RISE, geopos, 0, 0)
         sunset_jd = swe.rise_trans(jd - 1, swe.SUN, "", 0, swe.CALC_SET, geopos, 0, 0)
-        # rise_trans returns (jd_result, flag) — extract the JD
         sr_jd = sunrise_jd[0] if isinstance(sunrise_jd, tuple) else sunrise_jd
         ss_jd = sunset_jd[0] if isinstance(sunset_jd, tuple) else sunset_jd
-        def jd_to_hm(j):
-            frac = (j + 0.5) % 1.0  # fractional day
-            minutes = round(frac * 24 * 60)
-            return f"{minutes // 60:02d}:{minutes % 60:02d}"
-        return {"sunrise": jd_to_hm(sr_jd), "sunset": jd_to_hm(ss_jd)}
+
+        local_tz = _get_local_tz(lat, lon)
+
+        def jd_to_local_hm(j):
+            """Convert Julian Day to local HH:MM string."""
+            # JD → UTC datetime
+            frac = (j + 0.5) % 1.0
+            total_minutes_utc = round(frac * 24 * 60)
+            utc_dt = datetime(2000, 1, 1, total_minutes_utc // 60, total_minutes_utc % 60, tzinfo=timezone.utc)
+            # Convert to local
+            local_dt = utc_dt.astimezone(local_tz)
+            return f"{local_dt.hour:02d}:{local_dt.minute:02d}"
+
+        return {"sunrise": jd_to_local_hm(sr_jd), "sunset": jd_to_local_hm(ss_jd)}
     except Exception:
         return {"sunrise": "N/A", "sunset": "N/A"}
 
@@ -428,6 +543,8 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     manglik = calc_manglik(planets, lagna["sign"])
     sadesati = calc_sadesati(planets["Moon"]["sign"])
     sun_sunset = calc_sunrise_sunset(jd, lat, lon)
+    divisional = calc_divisional_charts(planets, lagna)
+    antardasha = calc_antardasha(dasha["dashas"])
 
     # Ayanamsa value
     import swisseph as swe
@@ -454,4 +571,6 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "sadesati": sadesati,
         "sunrise": sun_sunset["sunrise"],
         "sunset": sun_sunset["sunset"],
+        "divisional_charts": divisional,
+        "antardasha": antardasha,
     }

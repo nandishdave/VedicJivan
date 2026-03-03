@@ -464,3 +464,69 @@ FAVOURABLE = {
     "Aquarius": {"lucky_numbers": "8", "good_numbers": "2, 4, 6, 8", "evil_numbers": "1, 3, 9", "lucky_days": "Saturday, Friday, Wednesday", "good_planets": "Saturn, Venus, Mercury", "lucky_metal": "Iron", "lucky_stone": "Blue Sapphire", "varna": "Shudra", "yoni": "Ashwa", "gana": "Manushya", "nadi": "Aadi"},
     "Pisces": {"lucky_numbers": "3", "good_numbers": "1, 3, 7, 9", "evil_numbers": "2, 5, 8", "lucky_days": "Thursday, Tuesday, Sunday", "good_planets": "Jupiter, Moon, Mars", "lucky_metal": "Gold", "lucky_stone": "Yellow Sapphire", "varna": "Bramhin", "yoni": "Gau", "gana": "Devta", "nadi": "Antya"},
 }
+
+
+# ── BHAVA (House) Analysis ─────────────────────────────────────────────────────
+
+BHAVA_DATA = {
+    1: {
+        "name": "First House (Lagna / Ascendant)",
+        "signification": "Self, Personality, Physical Body, Health, Vitality",
+        "description": "The First House, known as the Lagna or Ascendant, is the most important house in the birth chart. It represents your physical body, overall health, personality, temperament, and how you present yourself to the world. The sign on the cusp of this house and any planets placed here significantly shape your character and life direction.\n\nA strong First House gives good health, confidence, and a magnetic personality. Benefic planets here bestow charm, intelligence, and success in life. Malefic planets may create health challenges or a combative nature, but can also give tremendous willpower and determination. The lord of the First House and its placement reveal the overall direction and quality of life.",
+    },
+    2: {
+        "name": "Second House (Dhana Bhava)",
+        "signification": "Wealth, Family, Speech, Food, Right Eye",
+        "description": "The Second House governs accumulated wealth, family lineage, speech, and food habits. It is one of the primary houses for financial prosperity and is called Dhana Bhava (House of Wealth). This house also rules the face, right eye, and oral cavity.\n\nBenefic planets in the Second House bestow eloquent speech, a harmonious family life, and steady wealth accumulation. The native may enjoy good food and have a pleasant voice. Malefic planets here can create harsh speech, family disputes, or difficulties in saving money. The lord of the Second House and its dignity determine the native's financial stability and relationship with family.",
+    },
+    3: {
+        "name": "Third House (Sahaja Bhava)",
+        "signification": "Siblings, Courage, Communication, Short Journeys, Efforts",
+        "description": "The Third House represents younger siblings, courage, valor, mental strength, and all forms of communication. It governs short travels, writing, media, and the use of hands. This house shows your initiative, self-effort, and ability to take bold actions.\n\nA strong Third House with benefic influences gives excellent communication skills, good relationships with siblings, and the courage to pursue goals. The native may excel in writing, journalism, or performing arts. Malefic planets here can give restlessness, strained sibling relationships, or hearing problems, but also immense physical courage and athletic ability.",
+    },
+    4: {
+        "name": "Fourth House (Sukha Bhava)",
+        "signification": "Mother, Home, Property, Vehicles, Emotional Peace",
+        "description": "The Fourth House is the house of domestic happiness, mother, property, vehicles, and emotional well-being. Known as Sukha Bhava (House of Happiness), it represents your roots, homeland, and inner peace. This house governs real estate, agriculture, and formal education.\n\nBenefic planets in the Fourth House bless the native with a loving mother, comfortable home, vehicles, and deep emotional satisfaction. There may be ancestral property and a strong connection to one's homeland. Malefic planets can create domestic disturbances, property disputes, or emotional turbulence, but may also give determination to build wealth from scratch.",
+    },
+    5: {
+        "name": "Fifth House (Putra Bhava)",
+        "signification": "Children, Intelligence, Creativity, Romance, Past Merit",
+        "description": "The Fifth House governs children, intelligence, creativity, romance, and past-life merits (Purva Punya). It is one of the most auspicious houses, representing your creative expression, speculative gains, and higher learning. This house also rules the stomach and digestive system.\n\nA strong Fifth House with benefic planets gives intelligent and obedient children, sharp intellect, success in creative pursuits, and gains from speculation or investments. The native may have a strong spiritual inclination and good fortune from past-life merits. Malefic influences can delay childbirth, create digestive issues, or lead to poor investment decisions.",
+    },
+    6: {
+        "name": "Sixth House (Ripu Bhava)",
+        "signification": "Enemies, Disease, Debts, Service, Daily Work",
+        "description": "The Sixth House represents enemies, diseases, debts, obstacles, and daily work or service. While it is classified as a Dusthana (difficult house), it also governs the ability to overcome challenges, compete, and serve others. This house rules the immune system and healing abilities.\n\nBenefic planets in the Sixth House give victory over enemies, good health, and success in competitive fields like law, medicine, or sports. The native may excel in service-oriented professions. Malefic planets here can actually be beneficial (Vipareet Raja Yoga), giving the strength to destroy obstacles. However, they may also indicate chronic health issues, legal troubles, or debt accumulation.",
+    },
+    7: {
+        "name": "Seventh House (Kalatra Bhava)",
+        "signification": "Marriage, Spouse, Partnership, Business, Foreign Travel",
+        "description": "The Seventh House is the house of marriage, spouse, partnerships, and all forms of one-on-one relationships. It governs business partnerships, foreign travel, and public dealings. This house sits directly opposite the Ascendant and represents how others perceive you.\n\nBenefic planets in the Seventh House bless the native with a loving, supportive spouse and successful partnerships. Marriage brings happiness and prosperity. The native may excel in business and enjoy foreign travel. Malefic planets can create marital difficulties, delays in marriage, or challenging business partnerships, but may also give a strong, independent spouse.",
+    },
+    8: {
+        "name": "Eighth House (Ayur Bhava)",
+        "signification": "Longevity, Transformation, Occult, Inheritance, Sudden Events",
+        "description": "The Eighth House governs longevity, death, transformation, occult sciences, inheritance, and sudden unexpected events. It represents hidden wealth, insurance, spouse's finances, and deep research. This house is associated with mysteries, secrets, and the unknown.\n\nBenefic planets in the Eighth House can give long life, sudden gains through inheritance or insurance, and deep interest in occult or spiritual sciences. The native may have healing abilities or psychic intuition. Malefic planets here can create health crises, accidents, or chronic ailments, but also give tremendous resilience and the ability to transform through adversity.",
+    },
+    9: {
+        "name": "Ninth House (Dharma Bhava)",
+        "signification": "Fortune, Father, Religion, Higher Education, Long Journeys",
+        "description": "The Ninth House is the most auspicious house in the chart, representing fortune, dharma (righteous path), father, guru, higher education, and long-distance travel. Known as the house of Bhagya (luck), it governs philosophy, religion, law, and spiritual wisdom.\n\nA strong Ninth House with benefic planets is one of the greatest blessings in a birth chart. It gives good fortune, a wise father, opportunities for higher education, and spiritual growth. The native may travel abroad, receive blessings from teachers, and lead a righteous life. Malefic planets can create difficulties with father, obstacles in higher education, or challenges with faith and belief systems.",
+    },
+    10: {
+        "name": "Tenth House (Karma Bhava)",
+        "signification": "Career, Profession, Status, Authority, Fame",
+        "description": "The Tenth House represents career, profession, social status, authority, and public reputation. Known as Karma Bhava, it shows your life's work, achievements, and contribution to society. This house governs government, administration, and the relationship with authority figures.\n\nBenefic planets in the Tenth House give a successful career, high social standing, and recognition for achievements. The native may hold positions of authority and earn fame through professional accomplishments. Strong planets here can indicate government positions, leadership roles, or entrepreneurial success. Malefic planets may create career obstacles or controversies but can also drive intense ambition.",
+    },
+    11: {
+        "name": "Eleventh House (Labha Bhava)",
+        "signification": "Gains, Income, Friends, Elder Siblings, Aspirations",
+        "description": "The Eleventh House governs gains, income, profits, friendships, elder siblings, and the fulfillment of desires. Known as Labha Bhava (House of Gains), it represents networking, social circles, and financial growth beyond regular income. This house shows your ability to manifest aspirations.\n\nBenefic planets in the Eleventh House give excellent financial gains, a strong social network, supportive friends, and the fulfillment of desires. The native may have influential connections and benefit from group activities. This is one of the best houses for wealth accumulation. Malefic planets here can create unreliable friendships or strained relationships with elder siblings, but may still give substantial material gains.",
+    },
+    12: {
+        "name": "Twelfth House (Vyaya Bhava)",
+        "signification": "Expenses, Losses, Foreign Lands, Spirituality, Liberation",
+        "description": "The Twelfth House represents expenses, losses, foreign lands, spirituality, liberation (moksha), and the subconscious mind. While often considered challenging, it is the house of final emancipation and spiritual transcendence. It governs sleep, dreams, hospitals, and isolated places.\n\nBenefic planets in the Twelfth House give spiritual inclination, foreign travel or settlement, charitable nature, and peaceful sleep. The native may find success in foreign lands or in spiritual/healing professions. Jupiter here is especially auspicious, promising spiritual growth and eventual liberation. Malefic planets can create excessive expenses, sleep disorders, or feelings of isolation, but may also drive deep spiritual seeking.",
+    },
+}

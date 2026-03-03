@@ -8,6 +8,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from app.services.kundli_data import (
+    BHAVA_DATA,
     DASHA_PREDICTIONS,
     FAVOURABLE,
     GHATAK,
@@ -19,6 +20,43 @@ from app.services.kundli_data import (
 
 LOGO_URL = "https://vedicjivan-website.s3.ap-south-1.amazonaws.com/images/logo/logo-email.jpg"
 BRAND = "#7c3aed"
+
+SIGN_ABBR = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"]
+SIGN_NAMES = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]
+PLANET_ABBR = {
+    "Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
+    "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke",
+}
+
+# North Indian chart house text positions (x, y) in a 300×300 SVG
+# Houses 1-12 correspond to fixed positions in the diamond layout
+_HOUSE_TEXT_POS = {
+    1:  (150, 68),
+    2:  (225, 25),
+    3:  (270, 68),
+    4:  (225, 150),
+    5:  (270, 232),
+    6:  (225, 275),
+    7:  (150, 232),
+    8:  (75, 275),
+    9:  (30, 232),
+    10: (75, 150),
+    11: (30, 68),
+    12: (75, 25),
+}
+
+CHART_DESCRIPTIONS = {
+    "D1": ("Rasi Chart (Lagna)", "The Rasi or Lagna chart is the main birth chart showing the positions of all planets in the zodiac signs at the time of birth. This is the foundation of all Vedic astrology analysis."),
+    "D2": ("Hora Chart", "The Hora chart divides each sign into two halves and is primarily used for analyzing wealth and financial matters. Planets in Sun's Hora (Leo) indicate wealth through effort, while Moon's Hora (Cancer) indicates wealth through inheritance or luck."),
+    "D3": ("Drekkana Chart", "The Drekkana chart divides each sign into three equal parts and is used for analyzing siblings, courage, and communication. It also has significance in predicting the nature of one's death in traditional texts."),
+    "D9": ("Navamsa Chart", "The Navamsa is the most important divisional chart after the Rasi chart. It divides each sign into nine parts and is primarily used for marriage analysis, spouse characteristics, and the overall strength of planets. A strong Navamsa can elevate weak Rasi placements."),
+    "D10": ("Dasamsa Chart", "The Dasamsa chart divides each sign into ten parts and is specifically used for career and professional analysis. It reveals the nature of one's profession, career achievements, and public reputation."),
+    "D12": ("Dwadasamsa Chart", "The Dwadasamsa divides each sign into twelve parts and is used for analyzing parents, lineage, and ancestral karma. It provides insights into the relationship with parents and inherited traits."),
+    "D60": ("Shastiamsa Chart", "The Shastiamsa is the most subtle divisional chart, dividing each sign into sixty parts. It is used for confirming the results indicated by other charts and for fine-tuning predictions. Classical texts consider it the final arbiter of planetary strength."),
+}
 
 
 def generate_pdf(chart_data: dict) -> bytes:
@@ -35,14 +73,18 @@ def _build_html(d: dict) -> str:
     sections = [
         _css(),
         _cover(d),
+        _birth_chart_page(d),
         _basic_details(d),
         _favourable_ghatak(d),
         _ascendant_section(d),
         _nakshatra_section(d),
         _character_life(d),
+        _bhava_analysis(d),
+        _divisional_charts_section(d),
         _manglik_section(d),
         _sadesati_section(d),
         _dasha_section(d),
+        _antardasha_section(d),
         _planet_positions(d),
         _footer(),
     ]
@@ -55,7 +97,10 @@ def _build_html(d: dict) -> str:
 
 def _css() -> str:
     return f"""<style>
-    @page {{ size: A4; margin: 20mm 15mm; }}
+    @page {{ size: A4; margin: 20mm 15mm 25mm 15mm;
+        @bottom-center {{ content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; }}
+        @bottom-right {{ content: "VedicJivan"; font-size: 8pt; color: {BRAND}; }}
+    }}
     body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; font-size: 11pt; }}
     h1 {{ color: {BRAND}; text-align: center; font-size: 22pt; margin: 0 0 5px; }}
     h2 {{ color: {BRAND}; font-size: 16pt; border-bottom: 2px solid {BRAND}; padding-bottom: 4px; margin-top: 30px; page-break-after: avoid; }}
@@ -110,7 +155,7 @@ def _basic_details(d: dict) -> str:
         ("Date of Birth", d["dob"]),
         ("Time of Birth", d["tob"]),
         ("Place of Birth", d["place_name"]),
-        ("Latitude / Longitude", f"{d['lat']:.2f}N / {d['lon']:.2f}E"),
+        ("Latitude / Longitude", f"{abs(d['lat']):.2f}{'N' if d['lat'] >= 0 else 'S'} / {abs(d['lon']):.2f}{'E' if d['lon'] >= 0 else 'W'}"),
         ("", ""),
         ("Lagna (Ascendant)", f"{lagna['sign_name']}"),
         ("Lagna Lord", lagna["sign_lord"]),
@@ -333,6 +378,237 @@ def _planet_positions(d: dict) -> str:
             <p><strong>If malefic:</strong> {malefic}</p>
             {remedies_html}
         </div>"""
+
+    return html
+
+
+# ── North Indian Chart SVG ────────────────────────────────────────────────────
+
+def _chart_svg(house_signs: dict[int, int], house_planets: dict[int, list[str]], title: str = "") -> str:
+    """Render a North Indian style Kundli chart as inline SVG.
+    house_signs: {1: sign_num, 2: sign_num, ...} (0-indexed sign numbers)
+    house_planets: {1: ["Su", "Mo"], 2: ["Ma"], ...} (planet abbreviations per house)
+    """
+    W = 300
+    # SVG lines: outer square + diamond (midpoints) + two diagonals
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {W}" width="280" height="280"
+        style="display: block; margin: 10px auto;">
+    <rect x="1" y="1" width="{W-2}" height="{W-2}" fill="white" stroke="{BRAND}" stroke-width="2"/>
+    <!-- Diamond connecting midpoints -->
+    <polygon points="150,0 300,150 150,300 0,150" fill="none" stroke="{BRAND}" stroke-width="1.5"/>
+    <!-- Diagonals -->
+    <line x1="0" y1="0" x2="300" y2="300" stroke="{BRAND}" stroke-width="1" opacity="0.6"/>
+    <line x1="300" y1="0" x2="0" y2="300" stroke="{BRAND}" stroke-width="1" opacity="0.6"/>
+    """
+
+    for house_num in range(1, 13):
+        x, y = _HOUSE_TEXT_POS[house_num]
+        sign = house_signs.get(house_num, 0)
+        planets = house_planets.get(house_num, [])
+        # Sign abbreviation (bold, larger)
+        svg += f'<text x="{x}" y="{y}" text-anchor="middle" font-size="11" font-weight="bold" fill="{BRAND}">{SIGN_ABBR[sign]}</text>'
+        # Planet abbreviations (smaller, below sign)
+        if planets:
+            planet_str = " ".join(planets)
+            # Split into multiple lines if too many planets
+            if len(planets) <= 3:
+                svg += f'<text x="{x}" y="{y + 14}" text-anchor="middle" font-size="9" fill="#333">{planet_str}</text>'
+            else:
+                line1 = " ".join(planets[:3])
+                line2 = " ".join(planets[3:])
+                svg += f'<text x="{x}" y="{y + 14}" text-anchor="middle" font-size="9" fill="#333">{line1}</text>'
+                svg += f'<text x="{x}" y="{y + 24}" text-anchor="middle" font-size="9" fill="#333">{line2}</text>'
+
+    if title:
+        svg += f'<text x="150" y="155" text-anchor="middle" font-size="10" fill="#666">{title}</text>'
+
+    svg += "</svg>"
+    return svg
+
+
+def _build_d1_chart_data(d: dict) -> tuple[dict, dict]:
+    """Build house_signs and house_planets dicts for D1 (Rasi) chart."""
+    lagna_sign = d["lagna"]["sign"]
+    house_signs = {}
+    for h in range(1, 13):
+        house_signs[h] = (lagna_sign + h - 1) % 12
+
+    house_planets: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    for name, info in d["planets"].items():
+        house = info["house"]
+        abbr = PLANET_ABBR.get(name, name[:2])
+        if info.get("retrograde"):
+            abbr += "(R)"
+        house_planets[house].append(abbr)
+
+    return house_signs, house_planets
+
+
+def _build_divisional_chart_data(d: dict, chart_type: str) -> tuple[dict, dict]:
+    """Build house_signs and house_planets for a divisional chart."""
+    charts = d.get("divisional_charts", {})
+    chart = charts.get(chart_type, {})
+    if not chart:
+        return {h: 0 for h in range(1, 13)}, {}
+
+    lagna_sign = chart.get("Lagna", d["lagna"]["sign"])
+    house_signs = {}
+    for h in range(1, 13):
+        house_signs[h] = (lagna_sign + h - 1) % 12
+
+    house_planets: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    for name in PLANET_ABBR:
+        if name in chart:
+            planet_sign = chart[name]
+            house = ((planet_sign - lagna_sign) % 12) + 1
+            house_planets[house].append(PLANET_ABBR[name])
+
+    return house_signs, house_planets
+
+
+# ── New PDF sections ──────────────────────────────────────────────────────────
+
+def _birth_chart_page(d: dict) -> str:
+    """D1 Rasi/Lagna chart with visual diagram."""
+    house_signs, house_planets = _build_d1_chart_data(d)
+    chart_svg = _chart_svg(house_signs, house_planets, "D1")
+    return f"""
+    <div class="page-break"></div>
+    <h2>Lagna Chart (D1 — Rasi Chart)</h2>
+    <p>The Lagna chart shows the positions of all nine planets in the twelve houses at the time of your birth.
+    The ascendant sign <strong>{d['lagna']['sign_name']}</strong> is placed in the first house (top center).
+    Signs progress clockwise through the twelve houses.</p>
+    {chart_svg}
+    <p style="text-align: center; font-size: 9pt; color: #888;">
+    Ar=Aries, Ta=Taurus, Ge=Gemini, Cn=Cancer, Le=Leo, Vi=Virgo,
+    Li=Libra, Sc=Scorpio, Sg=Sagittarius, Cp=Capricorn, Aq=Aquarius, Pi=Pisces<br/>
+    Su=Sun, Mo=Moon, Ma=Mars, Me=Mercury, Ju=Jupiter, Ve=Venus, Sa=Saturn, Ra=Rahu, Ke=Ketu, (R)=Retrograde
+    </p>
+    <h3>Moon Chart (Chandra Kundli)</h3>
+    <p>The Moon chart places the Moon's sign in the first house, showing planetary positions relative to the Moon.</p>
+    {_moon_chart_svg(d)}
+    """
+
+
+def _moon_chart_svg(d: dict) -> str:
+    """Render a Moon chart (Chandra Kundli) where Moon sign = House 1."""
+    moon_sign = d["planets"]["Moon"]["sign"]
+    house_signs = {}
+    for h in range(1, 13):
+        house_signs[h] = (moon_sign + h - 1) % 12
+
+    house_planets: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    for name, info in d["planets"].items():
+        planet_sign = info["sign"]
+        house = ((planet_sign - moon_sign) % 12) + 1
+        abbr = PLANET_ABBR.get(name, name[:2])
+        house_planets[house].append(abbr)
+
+    return _chart_svg(house_signs, house_planets, "Moon")
+
+
+def _bhava_analysis(d: dict) -> str:
+    """House-by-house Bhava analysis section."""
+    lagna_sign = d["lagna"]["sign"]
+    html = '<div class="page-break"></div><h2>Bhava (House) Analysis</h2>'
+    html += "<p>Each house (Bhava) in the birth chart governs specific areas of life. Below is the analysis of each house based on the sign placed in it and any planets occupying it.</p>"
+
+    # Collect which planets are in each house
+    planets_in_house: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    for name, info in d["planets"].items():
+        planets_in_house[info["house"]].append(name)
+
+    for house_num in range(1, 13):
+        bhava = BHAVA_DATA.get(house_num, {})
+        if not bhava:
+            continue
+        house_sign = (lagna_sign + house_num - 1) % 12
+        sign_name = SIGN_NAMES[house_sign]
+        planets = planets_in_house[house_num]
+        planet_str = ", ".join(planets) if planets else "No planets"
+
+        html += f"""
+        <div class="section">
+            <h3>{bhava['name']}</h3>
+            <p><strong>Sign:</strong> {sign_name} &nbsp;|&nbsp; <strong>Planets:</strong> {planet_str}</p>
+            <p><strong>Significations:</strong> {bhava['signification']}</p>
+            <p>{bhava['description']}</p>
+        </div>"""
+
+    return html
+
+
+def _divisional_charts_section(d: dict) -> str:
+    """Render all divisional chart pages with SVG diagrams."""
+    charts = d.get("divisional_charts", {})
+    if not charts:
+        return ""
+
+    html = ""
+    for chart_type in ("D9", "D10", "D2", "D3", "D12", "D60"):
+        if chart_type not in charts:
+            continue
+        title, description = CHART_DESCRIPTIONS.get(chart_type, (chart_type, ""))
+        house_signs, house_planets = _build_divisional_chart_data(d, chart_type)
+        chart_svg = _chart_svg(house_signs, house_planets, chart_type)
+
+        # Build a table of planet positions for this chart
+        chart_data = charts[chart_type]
+        planet_rows = ""
+        for name in PLANET_ABBR:
+            if name in chart_data:
+                sign_num = chart_data[name]
+                planet_rows += f"<tr><td><strong>{name}</strong></td><td>{SIGN_NAMES[sign_num]}</td></tr>"
+
+        html += f"""
+        <div class="page-break"></div>
+        <h2>{title} ({chart_type})</h2>
+        <p>{description}</p>
+        {chart_svg}
+        <h3>Planetary Positions in {chart_type}</h3>
+        <table>
+            <tr><th>Planet</th><th>Sign</th></tr>
+            {planet_rows}
+        </table>"""
+
+    return html
+
+
+def _antardasha_section(d: dict) -> str:
+    """Render Antardasha (sub-period) tables for each Mahadasha."""
+    antardasha_list = d.get("antardasha", [])
+    if not antardasha_list:
+        return ""
+
+    html = '<div class="page-break"></div><h2>Antardasha (Sub-Periods)</h2>'
+    html += "<p>Each Mahadasha is divided into nine Antardashas (sub-periods). The Antardasha planet modifies the results of the Mahadasha, creating specific effects during each sub-period. Below is the complete breakdown of all sub-periods within each Mahadasha.</p>"
+
+    current_dasha = d["dasha"]["current_dasha"]
+
+    for md in antardasha_list:
+        is_current_md = (md["mahadasha"] == current_dasha["planet"] and md["start_date"] == current_dasha["start_date"])
+        md_label = " (Current Mahadasha)" if is_current_md else ""
+        highlight_style = f' style="background: #f3f0ff;"' if is_current_md else ""
+
+        rows = ""
+        for ad in md["antardashas"]:
+            rows += f"<tr><td>{ad['planet']}</td><td>{ad['years']}</td><td>{ad['start_date']}</td><td>{ad['end_date']}</td></tr>"
+
+        html += f"""
+        <div class="section">
+            <h3{highlight_style}>{md['mahadasha']} Mahadasha — {md['mahadasha_years']} years{md_label}</h3>
+            <p><strong>Period:</strong> {md['start_date']} to {md['end_date']}</p>
+            <table>
+                <tr><th>Antardasha Planet</th><th>Years</th><th>Start Date</th><th>End Date</th></tr>
+                {rows}
+            </table>
+        </div>"""
+
+        # Add prediction text for current mahadasha
+        if is_current_md:
+            pred = DASHA_PREDICTIONS.get(md["mahadasha"], "")
+            if pred:
+                html += f'<div class="phase-card"><h3>Current {md["mahadasha"]} Mahadasha Interpretation</h3><p>{pred}</p></div>'
 
     return html
 
