@@ -4,7 +4,7 @@ WORKDIR /app
 
 # System deps: gcc for pyswisseph compilation, libs for WeasyPrint PDF rendering
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
+    build-essential \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libpangoft2-1.0-0 \
@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt \
-    && apt-get purge -y --auto-remove gcc
+    && apt-get purge -y --auto-remove build-essential
 
 # Copy application code
 COPY . .
