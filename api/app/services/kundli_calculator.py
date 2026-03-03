@@ -125,7 +125,7 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
 
     # House cusps (Placidus)
     cusps, ascmc = swe.houses_ex(jd, lat, lon, b"P", swe.FLG_SIDEREAL)
-    # cusps[0] unused, cusps[1..12] = house cusp longitudes
+    # pyswisseph returns 0-indexed: cusps[0..11] = house cusps 1–12
     # ascmc[0] = Ascendant longitude (sidereal)
     asc_lon = ascmc[0] % 360
 
@@ -172,15 +172,16 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
             "sign_lord": SIGN_LORDS[lagna_sign],
             "degree": round(asc_lon % 30, 4),
         },
-        "cusps": list(cusps[1:13]),  # houses 1–12
+        "cusps": list(cusps),  # houses 1–12 (0-indexed from pyswisseph)
     }
 
 
 def _get_house(planet_lon: float, cusps: tuple) -> int:
-    """Determine which house (1–12) a given longitude falls in."""
+    """Determine which house (1–12) a given longitude falls in.
+    cusps is 0-indexed: cusps[0]=house1, cusps[1]=house2, ..., cusps[11]=house12."""
     for i in range(12):
-        cusp_start = cusps[i + 1] % 360
-        cusp_end = cusps[(i + 1) % 12 + 1] % 360
+        cusp_start = cusps[i] % 360
+        cusp_end = cusps[(i + 1) % 12] % 360
         # Handle wrap-around (e.g. cusp at 350° → next at 20°)
         if cusp_start <= cusp_end:
             if cusp_start <= planet_lon < cusp_end:
@@ -394,15 +395,18 @@ def calc_sadesati(moon_sign: int) -> list[dict]:
 def calc_sunrise_sunset(jd: float, lat: float, lon: float) -> dict:
     """Calculate sunrise and sunset times for the birth date."""
     import swisseph as swe
-    # Rise/set: event type 1 = sunrise, 2 = sunset
     try:
-        sunrise_jd, _ = swe.rise_trans(jd - 1, swe.SUN, lon, lat, 0, 0, swe.CALC_RISE)
-        sunset_jd, _ = swe.rise_trans(jd - 1, swe.SUN, lon, lat, 0, 0, swe.CALC_SET)
+        geopos = (lon, lat, 0)  # (longitude, latitude, altitude)
+        sunrise_jd = swe.rise_trans(jd - 1, swe.SUN, "", 0, swe.CALC_RISE, geopos, 0, 0)
+        sunset_jd = swe.rise_trans(jd - 1, swe.SUN, "", 0, swe.CALC_SET, geopos, 0, 0)
+        # rise_trans returns (jd_result, flag) — extract the JD
+        sr_jd = sunrise_jd[0] if isinstance(sunrise_jd, tuple) else sunrise_jd
+        ss_jd = sunset_jd[0] if isinstance(sunset_jd, tuple) else sunset_jd
         def jd_to_hm(j):
             frac = (j + 0.5) % 1.0  # fractional day
             minutes = round(frac * 24 * 60)
             return f"{minutes // 60:02d}:{minutes % 60:02d}"
-        return {"sunrise": jd_to_hm(sunrise_jd), "sunset": jd_to_hm(sunset_jd)}
+        return {"sunrise": jd_to_hm(sr_jd), "sunset": jd_to_hm(ss_jd)}
     except Exception:
         return {"sunrise": "N/A", "sunset": "N/A"}
 
