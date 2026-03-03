@@ -13,7 +13,7 @@ from app.services.kundli_pdf import generate_pdf
 
 router = APIRouter(prefix="/api/kundli", tags=["Kundli"])
 
-MAX_PER_EMAIL_PER_DAY = 3
+MAX_PER_EMAIL_PER_DAY = 10
 
 
 @router.post("/generate")
