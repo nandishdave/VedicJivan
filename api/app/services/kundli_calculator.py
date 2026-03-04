@@ -247,8 +247,8 @@ def _dignity_points(planet: str, sign: int) -> float:
         if sign in _OWN_SIGNS_EXT.get(planet, []):
             return 30.0
         if sign == debit_sign:
-            return 7.5
-        return 15.0  # neutral (no classical friendship table for these)
+            return 1.875
+        return 11.25  # neutral (no classical friendship table for these)
 
     exalt_sign = int(_EXALTATION[planet] / 30)
     debit_sign = (exalt_sign + 6) % 12
@@ -259,13 +259,13 @@ def _dignity_points(planet: str, sign: int) -> float:
     if sign in _OWN_SIGNS.get(planet, []):
         return 30.0
     if sign == debit_sign:
-        return 7.5
+        return 1.875
     lord = SIGN_LORDS[sign]
     if lord in _PLANET_FRIENDS.get(planet, set()):
         return 22.5
     if lord in _PLANET_ENEMIES.get(planet, set()):
-        return 11.25
-    return 15.0  # neutral
+        return 7.5
+    return 11.25  # neutral
 
 
 def _drik_bala(planet: str, planet_lon: float, planets: dict) -> float:
@@ -294,7 +294,14 @@ def _drik_bala(planet: str, planet_lon: float, planets: dict) -> float:
     return round(max(-45.0, min(45.0, total)), 2)
 
 
-def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, divisional_charts: dict) -> dict:
+def _parse_hm(t: str) -> float:
+    """Parse HH:MM string to float hours."""
+    h, m = map(int, t.split(":"))
+    return h + m / 60.0
+
+
+def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
+                  divisional_charts: dict, sun_sunset: dict | None = None) -> dict:
     """Calculate Shadbala (six-fold planetary strength) for the 7 classical Vedic planets."""
     import math
     import swisseph as swe
@@ -305,7 +312,6 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
     birth_date = date_cls.fromisoformat(dob)
     birth_h, birth_m = map(int, tob.split(":"))
     birth_time = birth_h + birth_m / 60.0
-    is_day = 6 <= birth_time <= 18
 
     moon_phase = (planets["Moon"]["longitude"] - planets["Sun"]["longitude"]) % 360
 
@@ -315,7 +321,7 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
     month_planet = _WEEKDAY_PLANETS[(date_cls(birth_date.year, birth_date.month, 1).weekday() + 1) % 7]
     hora_num = max(0, int(birth_time - 6) if birth_time >= 6 else int(birth_time + 18))
     hora_planet = _WEEKDAY_PLANETS[(_WEEKDAY_PLANETS.index(vara_planet) + hora_num) % 7]
-    if is_day:
+    if 6 <= birth_time <= 18:
         thribhaga_planet = ["Jupiter", "Sun", "Saturn"][min(int((birth_time - 6) / 4), 2)]
     else:
         thribhaga_planet = ["Moon", "Venus", "Mars"][min(int(((birth_time - 18) % 24) / 4), 2)]
@@ -327,12 +333,28 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
         r, _ = swe.calc_ut(jd, code, swe.FLG_SPEED)
         tropical_lons[name] = r[0] % 360
 
-    # day_frac/phase_frac computed once — shared by classical and extended planet loops
-    day_frac = max(0, min(1, (birth_time - 6) / 12)) if is_day else 0
+    # Solar noon from actual sunrise/sunset — fixes Nathonnatha Bala
+    # Using midpoint of sunrise/sunset as solar noon (accurate for the birth location)
+    if sun_sunset and sun_sunset.get("sunrise") not in (None, "N/A"):
+        sr_h = _parse_hm(sun_sunset["sunrise"])
+        ss_h = _parse_hm(sun_sunset["sunset"])
+        solar_noon = (sr_h + ss_h) / 2
+        day_half = (ss_h - sr_h) / 2
+    else:
+        sr_h, ss_h, solar_noon, day_half = 6.0, 18.0, 12.0, 6.0
+
+    # noon_frac: 1.0 at solar noon, 0.0 at sunrise/sunset — triangle function
+    noon_frac = max(0.0, 1.0 - abs(birth_time - solar_noon) / day_half) if day_half > 0 else 0.0
+
+    # moon_phase_frac: 0=new moon, 1=full moon
     moon_phase_frac = moon_phase / 180
     if moon_phase_frac > 1:
         moon_phase_frac = 2 - moon_phase_frac
     moon_phase_frac = max(0, min(1, moon_phase_frac))
+
+    # Planet gender for Drekkana Bala
+    _MALE_PLANETS = {"Sun", "Mars", "Jupiter"}
+    _FEMALE_PLANETS = {"Moon", "Venus"}
 
     result = {}
     for planet in SHADBALA_PLANETS:
@@ -347,25 +369,35 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
             dist = 360 - dist
         ochcha_bala = round((180 - dist) / 3, 2)
 
-        # Saptavargaja: weighted dignity across D1(×1), D9(×0.5), D3(×0.25)
-        sv = _dignity_points(planet, psign)
-        if "D9" in divisional_charts and planet in divisional_charts["D9"]:
-            sv += _dignity_points(planet, divisional_charts["D9"][planet]) * 0.5
-        if "D3" in divisional_charts and planet in divisional_charts["D3"]:
-            sv += _dignity_points(planet, divisional_charts["D3"][planet]) * 0.25
+        # Saptavargaja: sum dignity across all 7 vargas (D1,D2,D3,D7,D9,D12,D30) equally
+        sv = _dignity_points(planet, psign)  # D1
+        for _v in ("D2", "D3", "D7", "D9", "D12", "D30"):
+            if _v in divisional_charts and planet in divisional_charts[_v]:
+                sv += _dignity_points(planet, divisional_charts[_v][planet])
         saptavargaja_bala = round(sv, 2)
 
         # Ojayugmarasyamsa: odd/even sign strength
         is_odd = psign % 2 == 0
-        if planet in ("Sun", "Mars", "Jupiter", "Saturn"):
+        if planet in ("Sun", "Mars", "Jupiter"):
             ojayugma_bala = 15 if is_odd else 0
         elif planet in ("Moon", "Venus"):
             ojayugma_bala = 30 if not is_odd else 0
+        elif planet == "Saturn":
+            ojayugma_bala = 15 if not is_odd else 0  # Saturn strong in even signs
         else:
             ojayugma_bala = 15  # Mercury: neutral
 
         kendra_bala = 60 if phouse in (1, 4, 7, 10) else 30 if phouse in (2, 5, 8, 11) else 15
-        drekkana_bala = 15  # standard fixed value
+
+        # Drekkana Bala: 15 if planet is in its gender-appropriate drekkana, else 0
+        drekkana_pos = int(pdeg / 10)  # 0=1st(0-10°), 1=2nd(10-20°), 2=3rd(20-30°)
+        if planet in _MALE_PLANETS:
+            drekkana_bala = 15 if drekkana_pos == 0 else 0
+        elif planet in _FEMALE_PLANETS:
+            drekkana_bala = 15 if drekkana_pos == 2 else 0
+        else:  # Mercury, Saturn — neuter, strong in 2nd drekkana
+            drekkana_bala = 15 if drekkana_pos == 1 else 0
+
         sthan_bala = round(ochcha_bala + saptavargaja_bala + ojayugma_bala + kendra_bala + drekkana_bala, 2)
 
         # ── Dig Bala ──
@@ -376,10 +408,11 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
         dig_bala = round((180 - diff) / 3, 2)
 
         # ── Kala Bala ──
+        # Nathonnatha: day planets peak at solar noon, night planets peak at midnight
         if planet in ("Sun", "Jupiter", "Venus"):
-            nathonnatha_bala = round(60 * day_frac, 2)
+            nathonnatha_bala = round(60 * noon_frac, 2)
         elif planet in ("Moon", "Mars", "Saturn"):
-            nathonnatha_bala = round(60 * (1 - day_frac), 2)
+            nathonnatha_bala = round(60 * (1 - noon_frac), 2)
         else:
             nathonnatha_bala = 30
 
@@ -482,11 +515,11 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
             diff = 360 - diff
         dig_bala = round((180 - diff) / 3, 2)
 
-        # Nathonnatha Bala
+        # Nathonnatha Bala (same noon_frac logic as classical)
         if planet in _DAY_PLANET_EXT:
-            nathonnatha_bala = round(60 * day_frac, 2)
+            nathonnatha_bala = round(60 * noon_frac, 2)
         elif planet in _NIGHT_PLANET_EXT:
-            nathonnatha_bala = round(60 * (1 - day_frac), 2)
+            nathonnatha_bala = round(60 * (1 - noon_frac), 2)
         else:
             nathonnatha_bala = 30  # Uranus: neutral
 
@@ -757,9 +790,9 @@ def calc_sadesati(moon_sign: int) -> list[dict]:
 # ── Divisional Charts (Vargas) ────────────────────────────────────────────────
 
 def calc_divisional_charts(planets: dict, lagna: dict) -> dict:
-    """Calculate divisional chart positions: D2, D3, D9, D10, D12, D60."""
+    """Calculate divisional chart positions: D2, D3, D7, D9, D10, D12, D30, D60."""
     charts = {}
-    for chart_type in ("D2", "D3", "D9", "D10", "D12", "D60"):
+    for chart_type in ("D2", "D3", "D7", "D9", "D10", "D12", "D30", "D60"):
         chart = {}
         for name, info in planets.items():
             chart[name] = _calc_varga_sign(info["sign"], info["degree_in_sign"], chart_type)
@@ -813,6 +846,32 @@ def _calc_varga_sign(sign: int, degree: float, chart_type: str) -> int:
         # Dwadasamsa: 12 parts (2°30' each), start from same sign
         part = min(int(degree / 2.5), 11)
         return (sign + part) % 12
+
+    elif chart_type == "D7":
+        # Saptamsa: 7 equal parts of 4°17' each
+        # Odd signs: start from same sign; Even signs: start from 7th sign
+        part = min(int(degree / (30 / 7)), 6)
+        start = sign if is_odd else (sign + 6) % 12
+        return (start + part) % 12
+
+    elif chart_type == "D30":
+        # Trimshamsa: unequal parts (no portion for 0° boundary planet)
+        # Odd signs: Mars(0-5)→Aries, Saturn(5-10)→Aquarius,
+        #   Jupiter(10-18)→Sagittarius, Mercury(18-25)→Gemini, Venus(25-30)→Libra
+        # Even signs: Venus(0-5)→Taurus, Mercury(5-12)→Virgo,
+        #   Jupiter(12-20)→Pisces, Saturn(20-25)→Capricorn, Mars(25-30)→Scorpio
+        if is_odd:
+            if degree < 5:    return 0   # Aries
+            elif degree < 10: return 10  # Aquarius
+            elif degree < 18: return 8   # Sagittarius
+            elif degree < 25: return 2   # Gemini
+            else:             return 6   # Libra
+        else:
+            if degree < 5:    return 1   # Taurus
+            elif degree < 12: return 5   # Virgo
+            elif degree < 20: return 11  # Pisces
+            elif degree < 25: return 9   # Capricorn
+            else:             return 7   # Scorpio
 
     elif chart_type == "D60":
         # Shastiamsa: 60 parts (0°30' each), start from same sign
@@ -913,7 +972,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     sun_sunset = calc_sunrise_sunset(jd, lat, lon)
     divisional = calc_divisional_charts(planets, lagna)
     antardasha = calc_antardasha(dasha["dashas"])
-    shadbala = calc_shadbala(planets, lagna, jd, dob, tob, divisional)
+    shadbala = calc_shadbala(planets, lagna, jd, dob, tob, divisional, sun_sunset=sun_sunset)
 
     # Ayanamsa value
     import swisseph as swe
