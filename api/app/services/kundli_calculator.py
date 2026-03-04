@@ -146,6 +146,7 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
             "degree_in_sign": round(degree_in_sign, 4),
             "house": house,
             "retrograde": speed < 0,
+            "speed": round(speed, 6),
         }
 
     # Ketu = Rahu + 180°
@@ -178,6 +179,232 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
 def _whole_sign_house(planet_sign: int, lagna_sign: int) -> int:
     """Whole Sign house: house 1 = Lagna sign, house 2 = next sign, etc."""
     return ((planet_sign - lagna_sign) % 12) + 1
+
+
+# ── Shadbala (Six-fold Planetary Strength) ───────────────────────────────────
+
+# Exaltation degrees (sidereal, 0–359°)
+_EXALTATION = {"Sun": 10, "Moon": 33, "Mars": 298, "Mercury": 165, "Jupiter": 95, "Venus": 357, "Saturn": 200}
+_MOOLATRIKONA = {"Sun": 4, "Moon": 3, "Mars": 0, "Mercury": 5, "Jupiter": 8, "Venus": 6, "Saturn": 9}
+_OWN_SIGNS = {
+    "Sun": [4], "Moon": [3], "Mars": [0, 7], "Mercury": [2, 5],
+    "Jupiter": [8, 11], "Venus": [1, 6], "Saturn": [9, 10],
+}
+_PLANET_FRIENDS = {
+    "Sun": {"Moon", "Mars", "Jupiter"}, "Moon": {"Sun", "Mercury"},
+    "Mars": {"Sun", "Moon", "Jupiter"}, "Mercury": {"Sun", "Venus"},
+    "Jupiter": {"Sun", "Moon", "Mars"}, "Venus": {"Mercury", "Saturn"},
+    "Saturn": {"Mercury", "Venus"},
+}
+_PLANET_ENEMIES = {
+    "Sun": {"Venus", "Saturn"}, "Moon": set(), "Mars": {"Mercury"},
+    "Mercury": {"Moon"}, "Jupiter": {"Mercury", "Venus"},
+    "Venus": {"Sun", "Moon"}, "Saturn": {"Sun", "Moon", "Mars"},
+}
+_NAISARGEKA = {"Sun": 60, "Moon": 51.43, "Venus": 42.86, "Jupiter": 34.28, "Mercury": 25.71, "Mars": 17.14, "Saturn": 8.57}
+_MIN_SHADBALA = {"Sun": 5, "Moon": 6, "Mars": 5, "Mercury": 7, "Jupiter": 6.5, "Venus": 5.5, "Saturn": 5}
+_WEEKDAY_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+_DIG_STRONG_HOUSE = {"Sun": 10, "Jupiter": 10, "Moon": 4, "Venus": 4, "Mars": 7, "Saturn": 7, "Mercury": 1}
+_MEAN_SPEED = {"Mars": 0.524, "Mercury": 1.383, "Jupiter": 0.083, "Venus": 1.2, "Saturn": 0.034}
+_CLASSICAL_SWE_CODES = {"Sun": 0, "Moon": 1, "Mars": 4, "Mercury": 2, "Jupiter": 5, "Venus": 3, "Saturn": 6}
+
+
+def _dignity_points(planet: str, sign: int) -> float:
+    """Return dignity points (0–45) for a planet in a given sign (Saptavargaja component)."""
+    exalt_sign = int(_EXALTATION[planet] / 30)
+    debit_sign = (exalt_sign + 6) % 12
+    if sign == exalt_sign:
+        return 45.0
+    if sign == _MOOLATRIKONA.get(planet, -1):
+        return 37.5
+    if sign in _OWN_SIGNS.get(planet, []):
+        return 30.0
+    if sign == debit_sign:
+        return 7.5
+    lord = SIGN_LORDS[sign]
+    if lord in _PLANET_FRIENDS.get(planet, set()):
+        return 22.5
+    if lord in _PLANET_ENEMIES.get(planet, set()):
+        return 11.25
+    return 15.0  # neutral
+
+
+def _drik_bala(planet: str, planet_lon: float, planets: dict) -> float:
+    """Simplified Drik Bala from benefic (+) / malefic (−) aspects."""
+    BENEFICS = {"Jupiter", "Venus", "Mercury", "Moon"}
+    MALEFICS = {"Sun", "Mars", "Saturn", "Rahu", "Ketu"}
+    total = 0.0
+    for other, od in planets.items():
+        if other == planet or other not in {**dict.fromkeys(BENEFICS), **dict.fromkeys(MALEFICS)}:
+            continue
+        diff = (od["longitude"] - planet_lon) % 360
+        # Aspect strength: opposition=1.0, trine=0.5, square=0.75 (Mars/Sat), Jupiter 5th/9th=1.0
+        strength = 0.0
+        if 175 <= diff <= 185:
+            strength = 1.0
+        elif 115 <= diff <= 125:
+            strength = 1.0 if other == "Jupiter" else 0.5
+        elif 235 <= diff <= 245:
+            strength = 1.0 if other == "Jupiter" else 0.5
+        elif 85 <= diff <= 95:
+            strength = 0.75 if other in {"Mars", "Saturn"} else 0.25
+        elif 55 <= diff <= 65:
+            strength = 0.25
+        if strength > 0:
+            total += strength * 15 if other in BENEFICS else -(strength * 15)
+    return round(max(-45.0, min(45.0, total)), 2)
+
+
+def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, divisional_charts: dict) -> dict:
+    """Calculate Shadbala (six-fold planetary strength) for the 7 classical Vedic planets."""
+    import math
+    import swisseph as swe
+    from datetime import date as date_cls
+
+    SHADBALA_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+
+    birth_date = date_cls.fromisoformat(dob)
+    birth_h, birth_m = map(int, tob.split(":"))
+    birth_time = birth_h + birth_m / 60.0
+    is_day = 6 <= birth_time <= 18
+
+    moon_phase = (planets["Moon"]["longitude"] - planets["Sun"]["longitude"]) % 360
+
+    # Temporal lords
+    vara_planet = _WEEKDAY_PLANETS[(birth_date.weekday() + 1) % 7]
+    year_planet = _WEEKDAY_PLANETS[(date_cls(birth_date.year, 1, 1).weekday() + 1) % 7]
+    month_planet = _WEEKDAY_PLANETS[(date_cls(birth_date.year, birth_date.month, 1).weekday() + 1) % 7]
+    hora_num = max(0, int(birth_time - 6) if birth_time >= 6 else int(birth_time + 18))
+    hora_planet = _WEEKDAY_PLANETS[(_WEEKDAY_PLANETS.index(vara_planet) + hora_num) % 7]
+    if is_day:
+        thribhaga_planet = ["Jupiter", "Sun", "Saturn"][min(int((birth_time - 6) / 4), 2)]
+    else:
+        thribhaga_planet = ["Moon", "Venus", "Mars"][min(int(((birth_time - 18) % 24) / 4), 2)]
+
+    # Tropical longitudes for Ayana Bala
+    obliquity = math.radians(23.4397)
+    tropical_lons = {}
+    for name, code in _CLASSICAL_SWE_CODES.items():
+        r, _ = swe.calc_ut(jd, code, swe.FLG_SPEED)
+        tropical_lons[name] = r[0] % 360
+
+    result = {}
+    for planet in SHADBALA_PLANETS:
+        if planet not in planets:
+            continue
+        pd = planets[planet]
+        plon, psign, pdeg, phouse = pd["longitude"], pd["sign"], pd["degree_in_sign"], pd["house"]
+
+        # ── Sthana Bala ──
+        dist = abs(plon - _EXALTATION[planet])
+        if dist > 180:
+            dist = 360 - dist
+        ochcha_bala = round((180 - dist) / 3, 2)
+
+        # Saptavargaja: weighted dignity across D1(×1), D9(×0.5), D3(×0.25)
+        sv = _dignity_points(planet, psign)
+        if "D9" in divisional_charts and planet in divisional_charts["D9"]:
+            sv += _dignity_points(planet, divisional_charts["D9"][planet]) * 0.5
+        if "D3" in divisional_charts and planet in divisional_charts["D3"]:
+            sv += _dignity_points(planet, divisional_charts["D3"][planet]) * 0.25
+        saptavargaja_bala = round(sv, 2)
+
+        # Ojayugmarasyamsa: odd/even sign strength
+        is_odd = psign % 2 == 0
+        if planet in ("Sun", "Mars", "Jupiter", "Saturn"):
+            ojayugma_bala = 15 if is_odd else 0
+        elif planet in ("Moon", "Venus"):
+            ojayugma_bala = 30 if not is_odd else 0
+        else:
+            ojayugma_bala = 15  # Mercury: neutral
+
+        kendra_bala = 60 if phouse in (1, 4, 7, 10) else 30 if phouse in (2, 5, 8, 11) else 15
+        drekkana_bala = 15  # standard fixed value
+        sthan_bala = round(ochcha_bala + saptavargaja_bala + ojayugma_bala + kendra_bala + drekkana_bala, 2)
+
+        # ── Dig Bala ──
+        strong_lon = (lagna["longitude"] + (_DIG_STRONG_HOUSE[planet] - 1) * 30) % 360
+        diff = abs(plon - strong_lon)
+        if diff > 180:
+            diff = 360 - diff
+        dig_bala = round((180 - diff) / 3, 2)
+
+        # ── Kala Bala ──
+        day_frac = max(0, min(1, (birth_time - 6) / 12)) if is_day else 0
+        if planet in ("Sun", "Jupiter", "Venus"):
+            nathonnatha_bala = round(60 * day_frac, 2)
+        elif planet in ("Moon", "Mars", "Saturn"):
+            nathonnatha_bala = round(60 * (1 - day_frac), 2)
+        else:
+            nathonnatha_bala = 30
+
+        phase_frac = moon_phase / 180
+        if phase_frac > 1:
+            phase_frac = 2 - phase_frac
+        phase_frac = max(0, min(1, phase_frac))
+        if planet in ("Moon", "Mercury", "Jupiter", "Venus"):
+            paksha_bala = round(60 * phase_frac, 2)
+        else:
+            paksha_bala = round(60 * (1 - phase_frac), 2)
+
+        thribhaga_bala = 60 if (planet == thribhaga_planet or planet == "Mercury") else 0
+        abda_bala = 15 if planet == year_planet else 0
+        masa_bala = 30 if planet == month_planet else 0
+        vara_bala = 45 if planet == vara_planet else 0
+        hora_bala = 60 if planet == hora_planet else 0
+
+        trop_lon = tropical_lons.get(planet, plon)
+        dec = math.degrees(math.asin(max(-1, min(1, math.sin(obliquity) * math.sin(math.radians(trop_lon))))))
+        max_dec = math.degrees(math.asin(math.sin(obliquity)))
+        if planet == "Venus":
+            ayana_bala = max(0, min(60, round(30 - (30 * dec / max_dec), 2)))
+        else:
+            ayana_bala = max(0, min(60, round(30 + (30 * dec / max_dec), 2)))
+
+        yuddha_bala = 0  # planetary war — requires close conjunction check
+
+        kala_bala = round(nathonnatha_bala + paksha_bala + thribhaga_bala + abda_bala +
+                          masa_bala + vara_bala + hora_bala + ayana_bala + yuddha_bala, 2)
+
+        # Chesta Bala
+        if planet in ("Sun", "Moon"):
+            chesta_bala = ayana_bala
+        elif pd["retrograde"]:
+            chesta_bala = 60
+        else:
+            mean = _MEAN_SPEED.get(planet, 1)
+            chesta_bala = round(min(60, 30 * abs(pd.get("speed", 0)) / mean), 2)
+
+        # ── Naisargeka Bala ──
+        naisargeka_bala = _NAISARGEKA[planet]
+
+        # ── Drik Bala ──
+        drik = _drik_bala(planet, plon, planets)
+
+        total = round(sthan_bala + dig_bala + kala_bala + naisargeka_bala + drik, 2)
+        rupas = round(total / 60, 2)
+        min_req = _MIN_SHADBALA[planet]
+
+        result[planet] = {
+            "ochcha_bala": ochcha_bala, "saptavargaja_bala": saptavargaja_bala,
+            "ojayugma_bala": ojayugma_bala, "kendra_bala": kendra_bala,
+            "drekkana_bala": drekkana_bala, "sthan_bala": sthan_bala,
+            "dig_bala": dig_bala,
+            "nathonnatha_bala": nathonnatha_bala, "paksha_bala": paksha_bala,
+            "thribhaga_bala": thribhaga_bala, "abda_bala": abda_bala,
+            "masa_bala": masa_bala, "vara_bala": vara_bala, "hora_bala": hora_bala,
+            "ayana_bala": ayana_bala, "yuddha_bala": yuddha_bala, "kala_bala": kala_bala,
+            "chesta_bala": chesta_bala, "naisargeka_bala": naisargeka_bala,
+            "drik_bala": drik,
+            "total_shadbala": total, "shadbala_rupas": rupas,
+            "min_requirement": min_req, "ratio": round(rupas / min_req, 2),
+        }
+
+    sorted_p = sorted(result, key=lambda p: result[p]["total_shadbala"], reverse=True)
+    for rank, p in enumerate(sorted_p, 1):
+        result[p]["rank"] = rank
+
+    return result
 
 
 # ── Nakshatra ────────────────────────────────────────────────────────────────
@@ -537,6 +764,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     sun_sunset = calc_sunrise_sunset(jd, lat, lon)
     divisional = calc_divisional_charts(planets, lagna)
     antardasha = calc_antardasha(dasha["dashas"])
+    shadbala = calc_shadbala(planets, lagna, jd, dob, tob, divisional)
 
     # Ayanamsa value
     import swisseph as swe
@@ -564,4 +792,5 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "sunset": sun_sunset["sunset"],
         "divisional_charts": divisional,
         "antardasha": antardasha,
+        "shadbala": shadbala,
     }

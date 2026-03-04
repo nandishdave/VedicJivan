@@ -82,6 +82,7 @@ def _build_html(d: dict) -> str:
         _character_life(d),
         _bhava_analysis(d),
         _divisional_charts_section(d),
+        _shadbala_section(d),
         _manglik_section(d),
         _sadesati_section(d),
         _dasha_section(d),
@@ -620,6 +621,102 @@ def _antardasha_section(d: dict) -> str:
                 html += f'<div class="phase-card"><h3>Current {md["mahadasha"]} Mahadasha Interpretation</h3><p>{pred}</p></div>'
 
     return html
+
+
+def _shadbala_section(d: dict) -> str:
+    """Shadbala and Bhavabala – Planetary Strength Calculations table."""
+    shadbala = d.get("shadbala", {})
+    if not shadbala:
+        return ""
+
+    planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    present = [p for p in planets if p in shadbala]
+
+    def row(label: str, key: str) -> str:
+        cells = "".join(f"<td>{shadbala[p][key]}</td>" for p in present)
+        return f"<tr><td style='font-weight:bold;color:#555;'>{label}</td>{cells}</tr>"
+
+    headers = "".join(f"<th>{p[:3].upper()}</th>" for p in present)
+
+    # Ranks row
+    rank_cells = "".join(
+        f"<td style='font-weight:bold;color:{BRAND};'>{shadbala[p]['rank']}</td>"
+        for p in present
+    )
+
+    # Strength status row (above/below minimum)
+    status_cells = ""
+    for p in present:
+        rupas = shadbala[p]["shadbala_rupas"]
+        min_r = shadbala[p]["min_requirement"]
+        color = "#16a34a" if rupas >= min_r else "#dc2626"
+        status_cells += f"<td style='color:{color};font-weight:bold;'>{'Strong' if rupas >= min_r else 'Weak'}</td>"
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Shadbala &amp; Bhavabala – Strength Calculations</h2>
+    <p>Shadbala (six-fold strength) measures the overall strength of each planet across six dimensions.
+    Planets with a ratio &ge; 1.0 are considered strong enough to deliver their results effectively.</p>
+    <table style="font-size:9pt;">
+        <tr><th>Strength Component</th>{headers}</tr>
+        {row("Ochcha Bala", "ochcha_bala")}
+        {row("Saptavargaja Bala", "saptavargaja_bala")}
+        {row("Ojayugmarasyamsa Bala", "ojayugma_bala")}
+        {row("Kendra Bala", "kendra_bala")}
+        {row("Drekkana Bala", "drekkana_bala")}
+        <tr style="background:#f3f0ff;font-weight:bold;">
+            <td>Total Sthana Bala</td>
+            {"".join(f"<td>{shadbala[p]['sthan_bala']}</td>" for p in present)}
+        </tr>
+        <tr style="background:#f3f0ff;font-weight:bold;">
+            <td>Total Dig Bala</td>
+            {"".join(f"<td>{shadbala[p]['dig_bala']}</td>" for p in present)}
+        </tr>
+        {row("Nathonnatha Bala", "nathonnatha_bala")}
+        {row("Paksha Bala", "paksha_bala")}
+        {row("Thribhaga Bala", "thribhaga_bala")}
+        {row("Abda Bala", "abda_bala")}
+        {row("Masa Bala", "masa_bala")}
+        {row("Vara Bala", "vara_bala")}
+        {row("Hora Bala", "hora_bala")}
+        {row("Ayana Bala", "ayana_bala")}
+        {row("Yuddha Bala", "yuddha_bala")}
+        <tr style="background:#f3f0ff;font-weight:bold;">
+            <td>Total Kala Bala</td>
+            {"".join(f"<td>{shadbala[p]['kala_bala']}</td>" for p in present)}
+        </tr>
+        {row("Chesta Bala", "chesta_bala")}
+        {row("Naisargeka Bala", "naisargeka_bala")}
+        {row("Drik Bala", "drik_bala")}
+        <tr style="background:{BRAND};color:white;font-weight:bold;">
+            <td>Total Shadbala (Virupas)</td>
+            {"".join(f"<td>{shadbala[p]['total_shadbala']}</td>" for p in present)}
+        </tr>
+        <tr style="font-weight:bold;">
+            <td>Shadbala in Rupas</td>
+            {"".join(f"<td>{shadbala[p]['shadbala_rupas']}</td>" for p in present)}
+        </tr>
+        <tr>
+            <td style="font-weight:bold;color:#555;">Minimum Requirement</td>
+            {"".join(f"<td>{shadbala[p]['min_requirement']}</td>" for p in present)}
+        </tr>
+        <tr style="font-weight:bold;">
+            <td>Ratio</td>
+            {"".join(f"<td style='color:{'#16a34a' if shadbala[p]['ratio'] >= 1 else '#dc2626'};'>{shadbala[p]['ratio']}</td>" for p in present)}
+        </tr>
+        <tr>
+            <td style="font-weight:bold;color:#555;">Relative Rank</td>
+            {rank_cells}
+        </tr>
+        <tr>
+            <td style="font-weight:bold;color:#555;">Strength Status</td>
+            {status_cells}
+        </tr>
+    </table>
+    <p style="font-size:9pt;color:#888;margin-top:8px;">
+        <em>Note: Shadbala values are in Virupas (1 Rupa = 60 Virupas). Values use Lahiri Ayanamsa and Whole Sign houses.
+        Saptavargaja Bala is weighted across D1, D9, and D3 charts.</em>
+    </p>"""
 
 
 def _footer() -> str:
