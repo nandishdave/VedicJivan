@@ -214,8 +214,8 @@ _CLASSICAL_SWE_CODES = {"Sun": 0, "Moon": 1, "Mars": 4, "Mercury": 2, "Jupiter":
 # Outer planet exaltations follow contemporary Jyotish research.
 _EXALTATION_EXT = {"Rahu": 60, "Ketu": 240, "Uranus": 220, "Neptune": 95, "Pluto": 10}
 _OWN_SIGNS_EXT = {
-    "Rahu": [10, 2],   # Aquarius, Gemini
-    "Ketu": [7, 8],    # Scorpio, Sagittarius
+    "Rahu": [10],   # Aquarius only — Gemini is exaltation, kept separate
+    "Ketu": [7],    # Scorpio only — Sagittarius is exaltation, kept separate
     "Uranus": [10],    # Aquarius (modern ruler)
     "Neptune": [11],   # Pisces (modern ruler)
     "Pluto": [7],      # Scorpio (modern ruler)
