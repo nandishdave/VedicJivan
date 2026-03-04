@@ -635,7 +635,7 @@ def _shadbala_table(shadbala: dict, planet_list: list, label_note: str) -> str:
 
     headers = "".join(f"<th>{p[:3].upper()}</th>" for p in present)
     rank_cells = "".join(
-        f"<td style='font-weight:bold;color:{BRAND};'>{shadbala[p]['rank']}</td>"
+        f"<td style='font-weight:bold;color:{BRAND};'>{shadbala[p].get('rank', '-')}</td>"
         for p in present
     )
     status_cells = "".join(

@@ -327,6 +327,13 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
         r, _ = swe.calc_ut(jd, code, swe.FLG_SPEED)
         tropical_lons[name] = r[0] % 360
 
+    # day_frac/phase_frac computed once — shared by classical and extended planet loops
+    day_frac = max(0, min(1, (birth_time - 6) / 12)) if is_day else 0
+    moon_phase_frac = moon_phase / 180
+    if moon_phase_frac > 1:
+        moon_phase_frac = 2 - moon_phase_frac
+    moon_phase_frac = max(0, min(1, moon_phase_frac))
+
     result = {}
     for planet in SHADBALA_PLANETS:
         if planet not in planets:
@@ -369,7 +376,6 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
         dig_bala = round((180 - diff) / 3, 2)
 
         # ── Kala Bala ──
-        day_frac = max(0, min(1, (birth_time - 6) / 12)) if is_day else 0
         if planet in ("Sun", "Jupiter", "Venus"):
             nathonnatha_bala = round(60 * day_frac, 2)
         elif planet in ("Moon", "Mars", "Saturn"):
@@ -377,14 +383,10 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
         else:
             nathonnatha_bala = 30
 
-        phase_frac = moon_phase / 180
-        if phase_frac > 1:
-            phase_frac = 2 - phase_frac
-        phase_frac = max(0, min(1, phase_frac))
         if planet in ("Moon", "Mercury", "Jupiter", "Venus"):
-            paksha_bala = round(60 * phase_frac, 2)
+            paksha_bala = round(60 * moon_phase_frac, 2)
         else:
-            paksha_bala = round(60 * (1 - phase_frac), 2)
+            paksha_bala = round(60 * (1 - moon_phase_frac), 2)
 
         thribhaga_bala = 60 if (planet == thribhaga_planet or planet == "Mercury") else 0
         abda_bala = 15 if planet == year_planet else 0
@@ -489,7 +491,7 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
             nathonnatha_bala = 30  # Uranus: neutral
 
         # Paksha Bala — all extended treated as malefic (strong in Krishna)
-        paksha_bala = round(60 * (1 - phase_frac), 2)
+        paksha_bala = round(60 * (1 - moon_phase_frac), 2)
 
         # Temporal lords: extended planets are not weekday/hora lords
         thribhaga_bala = 0
