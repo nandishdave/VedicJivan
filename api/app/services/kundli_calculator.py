@@ -504,7 +504,14 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
         ojayugma_bala = 15
 
         kendra_bala = 60 if phouse in (1, 4, 7, 10) else 30 if phouse in (2, 5, 8, 11) else 15
-        drekkana_bala = 15
+        # Drekkana Bala: Uranus/Pluto=male, Neptune=female, Rahu/Ketu=neutral
+        drekkana_pos = int(pdeg / 10)
+        if planet in ("Uranus", "Pluto"):
+            drekkana_bala = 15 if drekkana_pos == 0 else 0
+        elif planet == "Neptune":
+            drekkana_bala = 15 if drekkana_pos == 2 else 0
+        else:  # Rahu, Ketu — neutral
+            drekkana_bala = 15 if drekkana_pos == 1 else 0
         sthan_bala = round(ochcha_bala + saptavargaja_bala + ojayugma_bala + kendra_bala + drekkana_bala, 2)
 
         # Dig Bala
