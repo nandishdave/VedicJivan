@@ -623,40 +623,28 @@ def _antardasha_section(d: dict) -> str:
     return html
 
 
-def _shadbala_section(d: dict) -> str:
-    """Shadbala and Bhavabala – Planetary Strength Calculations table."""
-    shadbala = d.get("shadbala", {})
-    if not shadbala:
+def _shadbala_table(shadbala: dict, planet_list: list, label_note: str) -> str:
+    """Render a Shadbala strength table for a given list of planets."""
+    present = [p for p in planet_list if p in shadbala]
+    if not present:
         return ""
-
-    planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
-    present = [p for p in planets if p in shadbala]
 
     def row(label: str, key: str) -> str:
         cells = "".join(f"<td>{shadbala[p][key]}</td>" for p in present)
         return f"<tr><td style='font-weight:bold;color:#555;'>{label}</td>{cells}</tr>"
 
     headers = "".join(f"<th>{p[:3].upper()}</th>" for p in present)
-
-    # Ranks row
     rank_cells = "".join(
         f"<td style='font-weight:bold;color:{BRAND};'>{shadbala[p]['rank']}</td>"
         for p in present
     )
-
-    # Strength status row (above/below minimum)
-    status_cells = ""
-    for p in present:
-        rupas = shadbala[p]["shadbala_rupas"]
-        min_r = shadbala[p]["min_requirement"]
-        color = "#16a34a" if rupas >= min_r else "#dc2626"
-        status_cells += f"<td style='color:{color};font-weight:bold;'>{'Strong' if rupas >= min_r else 'Weak'}</td>"
+    status_cells = "".join(
+        f"<td style='color:{'#16a34a' if shadbala[p]['ratio'] >= 1 else '#dc2626'};font-weight:bold;'>"
+        f"{'Strong' if shadbala[p]['ratio'] >= 1 else 'Weak'}</td>"
+        for p in present
+    )
 
     return f"""
-    <div class="page-break"></div>
-    <h2>Shadbala &amp; Bhavabala – Strength Calculations</h2>
-    <p>Shadbala (six-fold strength) measures the overall strength of each planet across six dimensions.
-    Planets with a ratio &ge; 1.0 are considered strong enough to deliver their results effectively.</p>
     <table style="font-size:9pt;">
         <tr><th>Strength Component</th>{headers}</tr>
         {row("Ochcha Bala", "ochcha_bala")}
@@ -713,10 +701,44 @@ def _shadbala_section(d: dict) -> str:
             {status_cells}
         </tr>
     </table>
-    <p style="font-size:9pt;color:#888;margin-top:8px;">
-        <em>Note: Shadbala values are in Virupas (1 Rupa = 60 Virupas). Values use Lahiri Ayanamsa and Whole Sign houses.
-        Saptavargaja Bala is weighted across D1, D9, and D3 charts.</em>
-    </p>"""
+    <p style="font-size:9pt;color:#888;margin-top:4px;"><em>{label_note}</em></p>"""
+
+
+def _shadbala_section(d: dict) -> str:
+    """Shadbala and Bhavabala – Planetary Strength Calculations (classical + extended)."""
+    shadbala = d.get("shadbala", {})
+    if not shadbala:
+        return ""
+
+    classical = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    extended  = ["Rahu", "Ketu", "Uranus", "Neptune", "Pluto"]
+
+    classical_table = _shadbala_table(
+        shadbala, classical,
+        "Classical Shadbala — Virupas (1 Rupa = 60 Virupas). Uses Lahiri Ayanamsa, "
+        "Whole Sign houses. Saptavargaja weighted across D1, D9, D3."
+    )
+    extended_table = _shadbala_table(
+        shadbala, extended,
+        "Extended Strength — adapted Shadbala framework applied to Rahu, Ketu, and outer planets. "
+        "Exaltations and dignities follow contemporary Jyotish research (not classical texts). "
+        "Temporal lord components (Thribhaga, Hora, Vara, Abda, Masa) are not applicable and shown as 0."
+    )
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Shadbala &amp; Bhavabala – Strength Calculations</h2>
+    <p>Shadbala (six-fold strength) measures planetary strength across positional, directional,
+    temporal, natural, and aspectual dimensions. Ratio &ge; 1.0 indicates sufficient strength.</p>
+
+    <h3>Classical Shadbala — Seven Traditional Planets</h3>
+    {classical_table}
+
+    <h3 style="margin-top:24px;">Extended Strength Analysis — Rahu, Ketu &amp; Outer Planets</h3>
+    <p style="font-size:10pt;color:#555;">This section applies an adapted Shadbala framework to the
+    lunar nodes and outer planets — a modern extension unique to this report. It provides comparative
+    strength analysis across all planetary bodies in your chart.</p>
+    {extended_table}"""
 
 
 def _footer() -> str:

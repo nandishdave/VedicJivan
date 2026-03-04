@@ -208,9 +208,48 @@ _DIG_STRONG_HOUSE = {"Sun": 10, "Jupiter": 10, "Moon": 4, "Venus": 4, "Mars": 7,
 _MEAN_SPEED = {"Mars": 0.524, "Mercury": 1.383, "Jupiter": 0.083, "Venus": 1.2, "Saturn": 0.034}
 _CLASSICAL_SWE_CODES = {"Sun": 0, "Moon": 1, "Mars": 4, "Mercury": 2, "Jupiter": 5, "Venus": 3, "Saturn": 6}
 
+# ── Extended Shadbala parameters for Rahu, Ketu & outer planets ──────────────
+# Based on adapted Vedic conventions — not classical texts but a modern extension.
+# Rahu exalted in Gemini; Ketu in Sagittarius (Parashara tradition).
+# Outer planet exaltations follow contemporary Jyotish research.
+_EXALTATION_EXT = {"Rahu": 60, "Ketu": 240, "Uranus": 220, "Neptune": 95, "Pluto": 10}
+_OWN_SIGNS_EXT = {
+    "Rahu": [10, 2],   # Aquarius, Gemini
+    "Ketu": [7, 8],    # Scorpio, Sagittarius
+    "Uranus": [10],    # Aquarius (modern ruler)
+    "Neptune": [11],   # Pisces (modern ruler)
+    "Pluto": [7],      # Scorpio (modern ruler)
+}
+# Directional strength: Rahu/Saturn-like (west/7th), Ketu/Mars-like (east/1st),
+# Uranus (west like Saturn), Neptune (north like Moon), Pluto (south like Sun)
+_DIG_STRONG_HOUSE_EXT = {"Rahu": 7, "Ketu": 1, "Uranus": 7, "Neptune": 4, "Pluto": 10}
+# Naisargeka: Rahu/Ketu midway between Saturn and Moon; outer planets below Saturn
+_NAISARGEKA_EXT = {"Rahu": 12.86, "Ketu": 12.86, "Uranus": 7.14, "Neptune": 5.71, "Pluto": 4.29}
+# Minimum strength requirements (adapted — roughly proportional to natural strength)
+_MIN_SHADBALA_EXT = {"Rahu": 4.5, "Ketu": 4.5, "Uranus": 4.0, "Neptune": 3.5, "Pluto": 3.0}
+# Day/night affinity: Rahu=night, Ketu=day, Uranus=neutral, Neptune=night, Pluto=day
+_DAY_PLANET_EXT = {"Ketu": True, "Pluto": True}
+_NIGHT_PLANET_EXT = {"Rahu": True, "Neptune": True}
+# Paksha affinity: all malefic (strong in Krishna paksha = waning moon)
+_BENEFIC_PAKSHA_EXT: set[str] = set()  # none — all treated as malefic
+# Mean speeds for Chesta Bala (deg/day)
+_MEAN_SPEED_EXT = {"Uranus": 0.012, "Neptune": 0.006, "Pluto": 0.004}
+
 
 def _dignity_points(planet: str, sign: int) -> float:
     """Return dignity points (0–45) for a planet in a given sign (Saptavargaja component)."""
+    # Extended planets use their own exaltation/own-sign tables
+    if planet in _EXALTATION_EXT:
+        exalt_sign = int(_EXALTATION_EXT[planet] / 30)
+        debit_sign = (exalt_sign + 6) % 12
+        if sign == exalt_sign:
+            return 45.0
+        if sign in _OWN_SIGNS_EXT.get(planet, []):
+            return 30.0
+        if sign == debit_sign:
+            return 7.5
+        return 15.0  # neutral (no classical friendship table for these)
+
     exalt_sign = int(_EXALTATION[planet] / 30)
     debit_sign = (exalt_sign + 6) % 12
     if sign == exalt_sign:
@@ -400,8 +439,116 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str, div
             "min_requirement": min_req, "ratio": round(rupas / min_req, 2),
         }
 
-    sorted_p = sorted(result, key=lambda p: result[p]["total_shadbala"], reverse=True)
-    for rank, p in enumerate(sorted_p, 1):
+    # Classical ranks
+    classical = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    sorted_classical = sorted([p for p in classical if p in result],
+                               key=lambda p: result[p]["total_shadbala"], reverse=True)
+    for rank, p in enumerate(sorted_classical, 1):
+        result[p]["rank"] = rank
+        result[p]["is_extended"] = False
+
+    # ── Extended planets: Rahu, Ketu, Uranus, Neptune, Pluto ──────────────────
+    EXT_PLANETS = ["Rahu", "Ketu", "Uranus", "Neptune", "Pluto"]
+    for planet in EXT_PLANETS:
+        if planet not in planets:
+            continue
+        pd = planets[planet]
+        plon, psign, pdeg, phouse = pd["longitude"], pd["sign"], pd["degree_in_sign"], pd["house"]
+
+        # Ochcha Bala
+        exalt_lon = _EXALTATION_EXT[planet]
+        dist = abs(plon - exalt_lon)
+        if dist > 180:
+            dist = 360 - dist
+        ochcha_bala = round((180 - dist) / 3, 2)
+
+        # Saptavargaja (D1 only for extended — no classical vargas defined)
+        saptavargaja_bala = round(_dignity_points(planet, psign), 2)
+
+        # Ojayugmarasyamsa — neutral for all extended planets
+        ojayugma_bala = 15
+
+        kendra_bala = 60 if phouse in (1, 4, 7, 10) else 30 if phouse in (2, 5, 8, 11) else 15
+        drekkana_bala = 15
+        sthan_bala = round(ochcha_bala + saptavargaja_bala + ojayugma_bala + kendra_bala + drekkana_bala, 2)
+
+        # Dig Bala
+        strong_house = _DIG_STRONG_HOUSE_EXT[planet]
+        strong_lon = (lagna["longitude"] + (strong_house - 1) * 30) % 360
+        diff = abs(plon - strong_lon)
+        if diff > 180:
+            diff = 360 - diff
+        dig_bala = round((180 - diff) / 3, 2)
+
+        # Nathonnatha Bala
+        if planet in _DAY_PLANET_EXT:
+            nathonnatha_bala = round(60 * day_frac, 2)
+        elif planet in _NIGHT_PLANET_EXT:
+            nathonnatha_bala = round(60 * (1 - day_frac), 2)
+        else:
+            nathonnatha_bala = 30  # Uranus: neutral
+
+        # Paksha Bala — all extended treated as malefic (strong in Krishna)
+        paksha_bala = round(60 * (1 - phase_frac), 2)
+
+        # Temporal lords: extended planets are not weekday/hora lords
+        thribhaga_bala = 0
+        abda_bala = 0
+        masa_bala = 0
+        vara_bala = 0
+        hora_bala = 0
+
+        # Ayana Bala from tropical declination
+        trop_lon = tropical_lons.get(planet, plon)
+        dec = math.degrees(math.asin(max(-1, min(1, math.sin(obliquity) * math.sin(math.radians(trop_lon))))))
+        max_dec = math.degrees(math.asin(math.sin(obliquity)))
+        # Neptune: south-favoring (like Venus); others: north-favoring
+        if planet == "Neptune":
+            ayana_bala = max(0, min(60, round(30 - (30 * dec / max_dec), 2)))
+        else:
+            ayana_bala = max(0, min(60, round(30 + (30 * dec / max_dec), 2)))
+
+        yuddha_bala = 0
+
+        kala_bala = round(nathonnatha_bala + paksha_bala + thribhaga_bala +
+                          abda_bala + masa_bala + vara_bala + hora_bala + ayana_bala, 2)
+
+        # Chesta Bala — Rahu/Ketu always retrograde = 60
+        if planet in ("Rahu", "Ketu"):
+            chesta_bala = 60
+        elif pd["retrograde"]:
+            chesta_bala = 60
+        else:
+            mean = _MEAN_SPEED_EXT.get(planet, 0.01)
+            chesta_bala = round(min(60, 30 * abs(pd.get("speed", 0)) / mean), 2)
+
+        naisargeka_bala = _NAISARGEKA_EXT[planet]
+        drik = _drik_bala(planet, plon, planets)
+
+        total = round(sthan_bala + dig_bala + kala_bala + naisargeka_bala + drik, 2)
+        rupas = round(total / 60, 2)
+        min_req = _MIN_SHADBALA_EXT[planet]
+
+        result[planet] = {
+            "ochcha_bala": ochcha_bala, "saptavargaja_bala": saptavargaja_bala,
+            "ojayugma_bala": ojayugma_bala, "kendra_bala": kendra_bala,
+            "drekkana_bala": drekkana_bala, "sthan_bala": sthan_bala,
+            "dig_bala": dig_bala,
+            "nathonnatha_bala": nathonnatha_bala, "paksha_bala": paksha_bala,
+            "thribhaga_bala": thribhaga_bala, "abda_bala": abda_bala,
+            "masa_bala": masa_bala, "vara_bala": vara_bala, "hora_bala": hora_bala,
+            "ayana_bala": ayana_bala, "yuddha_bala": yuddha_bala, "kala_bala": kala_bala,
+            "chesta_bala": chesta_bala, "naisargeka_bala": naisargeka_bala,
+            "drik_bala": drik,
+            "total_shadbala": total, "shadbala_rupas": rupas,
+            "min_requirement": min_req, "ratio": round(rupas / min_req, 2),
+            "is_extended": True,
+        }
+
+    # Extended ranks (separate from classical)
+    sorted_ext = sorted([p for p in EXT_PLANETS if p in result],
+                        key=lambda p: result[p]["total_shadbala"], reverse=True)
+    for rank, p in enumerate(sorted_ext, 1):
         result[p]["rank"] = rank
 
     return result
