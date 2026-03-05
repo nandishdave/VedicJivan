@@ -319,19 +319,23 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
     vara_planet = _WEEKDAY_PLANETS[(birth_date.weekday() + 1) % 7]
     year_planet = _WEEKDAY_PLANETS[(date_cls(birth_date.year, 1, 1).weekday() + 1) % 7]
     month_planet = _WEEKDAY_PLANETS[(date_cls(birth_date.year, birth_date.month, 1).weekday() + 1) % 7]
-    hora_num = max(0, int(birth_time - 6) if birth_time >= 6 else int(birth_time + 18))
-    hora_planet = _WEEKDAY_PLANETS[(_WEEKDAY_PLANETS.index(vara_planet) + hora_num) % 7]
+    # Hora lord uses Chaldean order (descending orbital period), NOT weekday order
+    _CHALDEAN = ["Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]
+    hora_num = max(0, int(birth_time - sr_h) if birth_time >= sr_h else int(birth_time + 24 - sr_h))
+    hora_planet = _CHALDEAN[(_CHALDEAN.index(vara_planet) + hora_num) % 7]
     if 6 <= birth_time <= 18:
         thribhaga_planet = ["Jupiter", "Sun", "Saturn"][min(int((birth_time - 6) / 4), 2)]
     else:
         thribhaga_planet = ["Moon", "Venus", "Mars"][min(int(((birth_time - 18) % 24) / 4), 2)]
 
-    # Tropical longitudes for Ayana Bala
+    # Tropical longitudes and celestial latitudes for Ayana Bala
     obliquity = math.radians(23.4397)
     tropical_lons = {}
+    celestial_lats = {}
     for name, code in _CLASSICAL_SWE_CODES.items():
         r, _ = swe.calc_ut(jd, code, swe.FLG_SPEED)
         tropical_lons[name] = r[0] % 360
+        celestial_lats[name] = r[1]  # celestial latitude in degrees
 
     # Solar noon from actual sunrise/sunset — fixes Nathonnatha Bala
     # Using midpoint of sunrise/sunset as solar noon (accurate for the birth location)
@@ -376,16 +380,19 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
                 sv += _dignity_points(planet, divisional_charts[_v][planet])
         saptavargaja_bala = round(sv, 2)
 
-        # Ojayugmarasyamsa: odd/even sign strength
-        is_odd = psign % 2 == 0
-        if planet in ("Sun", "Mars", "Jupiter"):
-            ojayugma_bala = 15 if is_odd else 0
-        elif planet in ("Moon", "Venus"):
-            ojayugma_bala = 30 if not is_odd else 0
-        elif planet == "Saturn":
-            ojayugma_bala = 15 if not is_odd else 0  # Saturn strong in even signs
-        else:
-            ojayugma_bala = 15  # Mercury: neutral
+        # Ojayugmarasyamsa: Oja (Rasi) + Yugma (Navamsa), each 15 max
+        # Male planets (Sun,Mars,Mercury,Jupiter,Saturn) prefer odd signs
+        # Female planets (Moon,Venus) prefer even signs
+        rasi_odd = psign % 2 == 0  # 0-indexed: Aries(0)=odd, Taurus(1)=even
+        nav_sign = divisional_charts.get("D9", {}).get(planet, psign)
+        nav_odd = nav_sign % 2 == 0
+        if planet in ("Moon", "Venus"):  # female — prefer even
+            oja_rasi = 15 if not rasi_odd else 0
+            oja_nav = 15 if not nav_odd else 0
+        else:  # Sun, Mars, Mercury, Jupiter, Saturn — male/prefer odd
+            oja_rasi = 15 if rasi_odd else 0
+            oja_nav = 15 if nav_odd else 0
+        ojayugma_bala = oja_rasi + oja_nav
 
         kendra_bala = 60 if phouse in (1, 4, 7, 10) else 30 if phouse in (2, 5, 8, 11) else 15
 
@@ -416,23 +423,27 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
         else:
             nathonnatha_bala = 30
 
-        if planet in ("Moon", "Mercury", "Jupiter", "Venus"):
+        if planet in ("Jupiter", "Venus"):  # only natural benefics
             paksha_bala = round(60 * moon_phase_frac, 2)
-        else:
+        else:  # Sun, Moon, Mars, Mercury, Saturn — malefic/conditional
             paksha_bala = round(60 * (1 - moon_phase_frac), 2)
 
-        thribhaga_bala = 60 if (planet == thribhaga_planet or planet == "Mercury") else 0
+        thribhaga_bala = 60 if (planet == thribhaga_planet or planet == "Jupiter") else 0
         abda_bala = 15 if planet == year_planet else 0
         masa_bala = 30 if planet == month_planet else 0
         vara_bala = 45 if planet == vara_planet else 0
         hora_bala = 60 if planet == hora_planet else 0
 
         trop_lon = tropical_lons.get(planet, plon)
-        dec = math.degrees(math.asin(max(-1, min(1, math.sin(obliquity) * math.sin(math.radians(trop_lon))))))
-        max_dec = math.degrees(math.asin(math.sin(obliquity)))
-        if planet == "Venus":
+        cel_lat = math.radians(celestial_lats.get(planet, 0.0))
+        # Declination with celestial latitude: sin(d) = sin(lat)cos(obl) + cos(lat)sin(obl)sin(lon)
+        sin_dec = (math.sin(cel_lat) * math.cos(obliquity) +
+                   math.cos(cel_lat) * math.sin(obliquity) * math.sin(math.radians(trop_lon)))
+        dec = math.degrees(math.asin(max(-1, min(1, sin_dec))))
+        max_dec = 23.4397
+        if planet in ("Moon", "Mercury", "Venus", "Saturn"):  # south-favoring
             ayana_bala = max(0, min(60, round(30 - (30 * dec / max_dec), 2)))
-        else:
+        else:  # Sun, Mars, Jupiter — north-favoring
             ayana_bala = max(0, min(60, round(30 + (30 * dec / max_dec), 2)))
 
         yuddha_bala = 0  # planetary war — requires close conjunction check
@@ -441,13 +452,24 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
                           masa_bala + vara_bala + hora_bala + ayana_bala + yuddha_bala, 2)
 
         # Chesta Bala
-        if planet in ("Sun", "Moon"):
-            chesta_bala = ayana_bala
+        if planet == "Sun":
+            # Solar anomaly (Manda Kendra): CK = tropical_sun - apogee
+            sun_apogee = 103.0  # degrees, modern epoch approximate
+            ck = math.radians(tropical_lons.get("Sun", plon) - sun_apogee)
+            chesta_bala = round(max(0, min(60, (1 + math.cos(ck)) * 30)), 2)
+        elif planet == "Moon":
+            # Moon Chesta = brightness = Paksha Bala (benefic formula)
+            chesta_bala = round(60 * moon_phase_frac, 2)
         elif pd["retrograde"]:
             chesta_bala = 60
         else:
-            mean = _MEAN_SPEED.get(planet, 1)
-            chesta_bala = round(min(60, 30 * abs(pd.get("speed", 0)) / mean), 2)
+            # Star planets: synodic arc (elongation from Sun) / 3
+            sun_trop = tropical_lons.get("Sun", planets["Sun"]["longitude"])
+            planet_trop = tropical_lons.get(planet, plon)
+            elong = abs(planet_trop - sun_trop)
+            if elong > 180:
+                elong = 360 - elong
+            chesta_bala = round(max(0, min(60, elong / 3)), 2)
 
         # ── Naisargeka Bala ──
         naisargeka_bala = _NAISARGEKA[planet]
@@ -455,7 +477,7 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
         # ── Drik Bala ──
         drik = _drik_bala(planet, plon, planets)
 
-        total = round(sthan_bala + dig_bala + kala_bala + naisargeka_bala + drik, 2)
+        total = round(sthan_bala + dig_bala + kala_bala + chesta_bala + naisargeka_bala + drik, 2)
         rupas = round(total / 60, 2)
         min_req = _MIN_SHADBALA[planet]
 
@@ -540,11 +562,14 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
         vara_bala = 0
         hora_bala = 0
 
-        # Ayana Bala from tropical declination
+        # Ayana Bala from tropical declination (with celestial latitude)
         trop_lon = tropical_lons.get(planet, plon)
-        dec = math.degrees(math.asin(max(-1, min(1, math.sin(obliquity) * math.sin(math.radians(trop_lon))))))
-        max_dec = math.degrees(math.asin(math.sin(obliquity)))
-        # Neptune: south-favoring (like Venus); others: north-favoring
+        cel_lat = math.radians(celestial_lats.get(planet, 0.0))
+        sin_dec = (math.sin(cel_lat) * math.cos(obliquity) +
+                   math.cos(cel_lat) * math.sin(obliquity) * math.sin(math.radians(trop_lon)))
+        dec = math.degrees(math.asin(max(-1, min(1, sin_dec))))
+        max_dec = 23.4397
+        # Neptune: south-favoring; others: north-favoring
         if planet == "Neptune":
             ayana_bala = max(0, min(60, round(30 - (30 * dec / max_dec), 2)))
         else:
@@ -567,7 +592,7 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
         naisargeka_bala = _NAISARGEKA_EXT[planet]
         drik = _drik_bala(planet, plon, planets)
 
-        total = round(sthan_bala + dig_bala + kala_bala + naisargeka_bala + drik, 2)
+        total = round(sthan_bala + dig_bala + kala_bala + chesta_bala + naisargeka_bala + drik, 2)
         rupas = round(total / 60, 2)
         min_req = _MIN_SHADBALA_EXT[planet]
 
