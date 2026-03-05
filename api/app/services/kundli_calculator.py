@@ -300,6 +300,10 @@ def _parse_hm(t: str) -> float:
     return h + m / 60.0
 
 
+
+
+
+
 def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
                   divisional_charts: dict, sun_sunset: dict | None = None) -> dict:
     """Calculate Shadbala (six-fold planetary strength) for the 7 classical Vedic planets."""
@@ -326,8 +330,15 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
 
     # Temporal lords
     vara_planet = _WEEKDAY_PLANETS[(birth_date.weekday() + 1) % 7]
-    year_planet = _WEEKDAY_PLANETS[(date_cls(birth_date.year, 1, 1).weekday() + 1) % 7]
-    month_planet = _WEEKDAY_PLANETS[(date_cls(birth_date.year, birth_date.month, 1).weekday() + 1) % 7]
+    # Abda & Masa lords via Ahargana (B.V. Raman / BPHS method)
+    # Epoch: July 10, 1951 (Tuesday). Ahargana = days from epoch to birth.
+    _AHARGANA_EPOCH = date_cls(1951, 7, 10)
+    _ABDA_PLANETS = ["Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Sun", "Moon"]
+    ahargana = (birth_date - _AHARGANA_EPOCH).days
+    # Year lord: (years * 3 + 1) % 7, where years = ahargana // 360
+    year_planet = _ABDA_PLANETS[(ahargana // 360 * 3 + 1) % 7]
+    # Month lord: (months * 2 + 1) % 7, where months = ahargana // 30
+    month_planet = _ABDA_PLANETS[(ahargana // 30 * 2 + 1) % 7]
     # Hora lord uses Chaldean order (descending orbital period), NOT weekday order
     _CHALDEAN = ["Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]
     hora_num = max(0, int(birth_time - sr_h) if birth_time >= sr_h else int(birth_time + 24 - sr_h))
