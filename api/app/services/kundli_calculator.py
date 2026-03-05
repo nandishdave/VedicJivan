@@ -315,6 +315,15 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
 
     moon_phase = (planets["Moon"]["longitude"] - planets["Sun"]["longitude"]) % 360
 
+    # Solar noon from actual sunrise/sunset (needed for Hora + Nathonnatha)
+    if sun_sunset and sun_sunset.get("sunrise") not in (None, "N/A"):
+        sr_h = _parse_hm(sun_sunset["sunrise"])
+        ss_h = _parse_hm(sun_sunset["sunset"])
+        solar_noon = (sr_h + ss_h) / 2
+        day_half = (ss_h - sr_h) / 2
+    else:
+        sr_h, ss_h, solar_noon, day_half = 6.0, 18.0, 12.0, 6.0
+
     # Temporal lords
     vara_planet = _WEEKDAY_PLANETS[(birth_date.weekday() + 1) % 7]
     year_planet = _WEEKDAY_PLANETS[(date_cls(birth_date.year, 1, 1).weekday() + 1) % 7]
@@ -323,10 +332,12 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
     _CHALDEAN = ["Saturn", "Jupiter", "Mars", "Sun", "Venus", "Mercury", "Moon"]
     hora_num = max(0, int(birth_time - sr_h) if birth_time >= sr_h else int(birth_time + 24 - sr_h))
     hora_planet = _CHALDEAN[(_CHALDEAN.index(vara_planet) + hora_num) % 7]
-    if 6 <= birth_time <= 18:
-        thribhaga_planet = ["Jupiter", "Sun", "Saturn"][min(int((birth_time - 6) / 4), 2)]
+    if sr_h <= birth_time <= ss_h:
+        third = (ss_h - sr_h) / 3
+        thribhaga_planet = ["Jupiter", "Sun", "Saturn"][min(int((birth_time - sr_h) / third), 2)]
     else:
-        thribhaga_planet = ["Moon", "Venus", "Mars"][min(int(((birth_time - 18) % 24) / 4), 2)]
+        third = (24 - (ss_h - sr_h)) / 3
+        thribhaga_planet = ["Moon", "Venus", "Mars"][min(int(((birth_time - ss_h) % 24) / third), 2)]
 
     # Tropical longitudes and celestial latitudes for Ayana Bala
     obliquity = math.radians(23.4397)
@@ -336,16 +347,6 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
         r, _ = swe.calc_ut(jd, code, swe.FLG_SPEED)
         tropical_lons[name] = r[0] % 360
         celestial_lats[name] = r[1]  # celestial latitude in degrees
-
-    # Solar noon from actual sunrise/sunset — fixes Nathonnatha Bala
-    # Using midpoint of sunrise/sunset as solar noon (accurate for the birth location)
-    if sun_sunset and sun_sunset.get("sunrise") not in (None, "N/A"):
-        sr_h = _parse_hm(sun_sunset["sunrise"])
-        ss_h = _parse_hm(sun_sunset["sunset"])
-        solar_noon = (sr_h + ss_h) / 2
-        day_half = (ss_h - sr_h) / 2
-    else:
-        sr_h, ss_h, solar_noon, day_half = 6.0, 18.0, 12.0, 6.0
 
     # noon_frac: 1.0 at solar noon, 0.0 at sunrise/sunset — triangle function
     noon_frac = max(0.0, 1.0 - abs(birth_time - solar_noon) / day_half) if day_half > 0 else 0.0
