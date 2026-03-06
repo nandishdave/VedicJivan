@@ -185,7 +185,7 @@ def _whole_sign_house(planet_sign: int, lagna_sign: int) -> int:
 
 # Exaltation degrees (sidereal, 0–359°)
 _EXALTATION = {"Sun": 10, "Moon": 33, "Mars": 298, "Mercury": 165, "Jupiter": 95, "Venus": 357, "Saturn": 200}
-_MOOLATRIKONA = {"Sun": 4, "Moon": 3, "Mars": 0, "Mercury": 5, "Jupiter": 8, "Venus": 6, "Saturn": 9}
+_MOOLATRIKONA = {"Sun": 4, "Moon": 3, "Mars": 0, "Mercury": 5, "Jupiter": 8, "Venus": 6, "Saturn": 10}
 _OWN_SIGNS = {
     "Sun": [4], "Moon": [3], "Mars": [0, 7], "Mercury": [2, 5],
     "Jupiter": [8, 11], "Venus": [1, 6], "Saturn": [9, 10],
@@ -236,8 +236,62 @@ _BENEFIC_PAKSHA_EXT: set[str] = set()  # none — all treated as malefic
 _MEAN_SPEED_EXT = {"Uranus": 0.012, "Neptune": 0.006, "Pluto": 0.004}
 
 
-def _dignity_points(planet: str, sign: int) -> float:
-    """Return dignity points (0–45) for a planet in a given sign (Saptavargaja component)."""
+def _compound_relationships(planets: dict) -> dict:
+    """Compute Panchadha (5-fold compound) relationships between all classical planet pairs.
+
+    Temporal friendship: planet in houses 2,3,4,10,11,12 from another = temporal friend; else enemy.
+    Compound = natural + temporal:
+        Friend+Friend → Adhi Mitra (22.5)  |  Friend+Enemy → Sama (7.5)
+        Neutral+Friend → Mitra (15)        |  Neutral+Enemy → Shatru (3.75)
+        Enemy+Friend → Sama (7.5)          |  Enemy+Enemy → Adhi Shatru (1.875)
+    """
+    _CLASSICAL = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    result = {}
+    for p in _CLASSICAL:
+        if p not in planets:
+            continue
+        p_sign = planets[p]["sign"]
+        for q in _CLASSICAL:
+            if q == p or q not in planets:
+                continue
+            q_sign = planets[q]["sign"]
+            # Temporal: houses 2,3,4,10,11,12 (diffs 1,2,3,9,10,11) = friend; else enemy
+            diff = (q_sign - p_sign) % 12
+            temporal = "friend" if diff in (1, 2, 3, 9, 10, 11) else "enemy"
+            # Natural
+            if q in _PLANET_FRIENDS.get(p, set()):
+                natural = "friend"
+            elif q in _PLANET_ENEMIES.get(p, set()):
+                natural = "enemy"
+            else:
+                natural = "neutral"
+            # Compound
+            if natural == "friend":
+                compound = "adhi_mitra" if temporal == "friend" else "sama"
+            elif natural == "enemy":
+                compound = "sama" if temporal == "friend" else "adhi_shatru"
+            else:  # neutral
+                compound = "mitra" if temporal == "friend" else "shatru"
+            result[(p, q)] = compound
+    return result
+
+
+# Compound (Panchadha) dignity scale — BPHS / B.V. Raman
+_COMPOUND_DIGNITY = {
+    "adhi_mitra": 22.5,   # intimate friend
+    "mitra": 15.0,        # friend
+    "sama": 7.5,          # neutral
+    "shatru": 3.75,       # enemy
+    "adhi_shatru": 1.875, # bitter enemy
+}
+
+
+def _dignity_points(planet: str, sign: int, compound_rels: dict | None = None) -> float:
+    """Return dignity points (0–45) for a planet in a given sign (Saptavargaja component).
+
+    If compound_rels is provided, uses Panchadha (5-fold) relationship for the sign lord.
+    Otherwise falls back to natural friendship only (used for extended planets).
+    """
     # Extended planets use their own exaltation/own-sign tables
     if planet in _EXALTATION_EXT:
         exalt_sign = int(_EXALTATION_EXT[planet] / 30)
@@ -248,7 +302,7 @@ def _dignity_points(planet: str, sign: int) -> float:
             return 30.0
         if sign == debit_sign:
             return 1.875
-        return 11.25  # neutral (no classical friendship table for these)
+        return 7.5  # neutral (no classical friendship table for these)
 
     exalt_sign = int(_EXALTATION[planet] / 30)
     debit_sign = (exalt_sign + 6) % 12
@@ -261,37 +315,79 @@ def _dignity_points(planet: str, sign: int) -> float:
     if sign == debit_sign:
         return 1.875
     lord = SIGN_LORDS[sign]
+    if lord == planet:
+        return 30.0  # own sign (safety — should be caught by _OWN_SIGNS above)
+    # Use compound relationship if available
+    if compound_rels and (planet, lord) in compound_rels:
+        return _COMPOUND_DIGNITY.get(compound_rels[(planet, lord)], 7.5)
+    # Fallback: natural friendship only
     if lord in _PLANET_FRIENDS.get(planet, set()):
         return 22.5
     if lord in _PLANET_ENEMIES.get(planet, set()):
         return 7.5
-    return 11.25  # neutral
+    return 7.5  # neutral (without compound = sama level)
+
+
+def _graha_drishti(aspecting: str, angle: float) -> float:
+    """Graha Drishti (aspect) strength for forward angle from aspecting planet.
+
+    Returns 0–60 virupas. Linearly interpolated between house cusps (every 30°).
+    Base: 3rd/10th=15(¼), 4th/8th=45(¾), 5th/9th=30(½), 7th=60(full), others=0.
+    Special: Mars 4th/8th=60, Jupiter 5th/9th=60, Saturn 3rd/10th=60.
+    """
+    base = [0, 0, 15, 45, 30, 0, 60, 45, 30, 15, 0, 0]
+    if aspecting == "Mars":
+        base[3] = 60    # 4th house full
+        base[7] = 60    # 8th house full
+    elif aspecting == "Jupiter":
+        base[4] = 60    # 5th house full
+        base[8] = 60    # 9th house full
+    elif aspecting == "Saturn":
+        base[2] = 60    # 3rd house full
+        base[9] = 60    # 10th house full
+
+    angle = angle % 360
+    idx = angle / 30.0
+    lower = int(idx) % 12
+    upper = (lower + 1) % 12
+    frac = idx - int(idx)
+    return base[lower] + (base[upper] - base[lower]) * frac
 
 
 def _drik_bala(planet: str, planet_lon: float, planets: dict) -> float:
-    """Simplified Drik Bala from benefic (+) / malefic (−) aspects."""
-    BENEFICS = {"Jupiter", "Venus", "Mercury", "Moon"}
-    MALEFICS = {"Sun", "Mars", "Saturn", "Rahu", "Ketu"}
-    total = 0.0
+    """Drik Bala — aspectual strength from benefic/malefic Graha Drishti (BPHS).
+
+    Formula: (sum of benefic Drishti on planet − sum of malefic Drishti on planet) / 4
+    Benefics: Jupiter, Venus, Mercury, waxing Moon.  Malefics: Sun, Mars, Saturn.
+    """
+    _BENEFICS = {"Jupiter", "Venus", "Mercury"}
+    _MALEFICS = {"Sun", "Mars", "Saturn"}
+
+    # Moon: benefic when waxing (phase < 180°), malefic when waning
+    moon_phase = (planets["Moon"]["longitude"] - planets["Sun"]["longitude"]) % 360
+    moon_benefic = moon_phase < 180
+
+    benefic_sum = 0.0
+    malefic_sum = 0.0
+
     for other, od in planets.items():
-        if other == planet or other not in {**dict.fromkeys(BENEFICS), **dict.fromkeys(MALEFICS)}:
+        if other == planet:
             continue
-        diff = (od["longitude"] - planet_lon) % 360
-        # Aspect strength: opposition=1.0, trine=0.5, square=0.75 (Mars/Sat), Jupiter 5th/9th=1.0
-        strength = 0.0
-        if 175 <= diff <= 185:
-            strength = 1.0
-        elif 115 <= diff <= 125:
-            strength = 1.0 if other == "Jupiter" else 0.5
-        elif 235 <= diff <= 245:
-            strength = 1.0 if other == "Jupiter" else 0.5
-        elif 85 <= diff <= 95:
-            strength = 0.75 if other in {"Mars", "Saturn"} else 0.25
-        elif 55 <= diff <= 65:
-            strength = 0.25
-        if strength > 0:
-            total += strength * 15 if other in BENEFICS else -(strength * 15)
-    return round(max(-45.0, min(45.0, total)), 2)
+        is_benefic = other in _BENEFICS or (other == "Moon" and moon_benefic)
+        is_malefic = other in _MALEFICS or (other == "Moon" and not moon_benefic)
+        if not is_benefic and not is_malefic:
+            continue
+
+        # Angle from aspecting planet (other) to target (planet) — forward
+        angle = (planet_lon - od["longitude"]) % 360
+        drishti = _graha_drishti(other, angle)
+
+        if is_benefic:
+            benefic_sum += drishti
+        else:
+            malefic_sum += drishti
+
+    return round((benefic_sum - malefic_sum) / 4, 2)
 
 
 def _parse_hm(t: str) -> float:
@@ -318,6 +414,9 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
     birth_time = birth_h + birth_m / 60.0
 
     moon_phase = (planets["Moon"]["longitude"] - planets["Sun"]["longitude"]) % 360
+
+    # Compound (Panchadha) relationships from D1 positions — used for Saptavargaja
+    compound_rels = _compound_relationships(planets)
 
     # Solar noon from actual sunrise/sunset (needed for Hora + Nathonnatha)
     if sun_sunset and sun_sunset.get("sunrise") not in (None, "N/A"):
@@ -385,11 +484,12 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
             dist = 360 - dist
         ochcha_bala = round((180 - dist) / 3, 2)
 
-        # Saptavargaja: sum dignity across all 7 vargas (D1,D2,D3,D7,D9,D12,D30) equally
-        sv = _dignity_points(planet, psign)  # D1
+        # Saptavargaja: sum dignity across all 7 vargas (D1,D2,D3,D7,D9,D12,D30)
+        # Uses compound (Panchadha) friendship for sign lord relationships
+        sv = _dignity_points(planet, psign, compound_rels)  # D1
         for _v in ("D2", "D3", "D7", "D9", "D12", "D30"):
             if _v in divisional_charts and planet in divisional_charts[_v]:
-                sv += _dignity_points(planet, divisional_charts[_v][planet])
+                sv += _dignity_points(planet, divisional_charts[_v][planet], compound_rels)
         saptavargaja_bala = round(sv, 2)
 
         # Ojayugmarasyamsa: Oja (Rasi) + Yugma (Navamsa), each 15 max
