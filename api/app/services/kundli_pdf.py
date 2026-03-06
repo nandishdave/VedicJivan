@@ -80,14 +80,18 @@ def _build_html(d: dict) -> str:
         _ascendant_section(d),
         _nakshatra_section(d),
         _character_life(d),
+        _yogas_section(d),
+        _doshas_section(d),
         _bhava_analysis(d),
-        _divisional_charts_section(d),
-        _shadbala_section(d),
         _manglik_section(d),
         _sadesati_section(d),
+        _gochar_section(d),
         _dasha_section(d),
         _antardasha_section(d),
+        _divisional_charts_section(d),
+        _shadbala_section(d),
         _planet_positions(d),
+        _numerology_section(d),
         _footer(),
     ]
     return f"""<!DOCTYPE html>
@@ -739,6 +743,249 @@ def _shadbala_section(d: dict) -> str:
     lunar nodes and outer planets — a modern extension unique to this report. It provides comparative
     strength analysis across all planetary bodies in your chart.</p>
     {extended_table}"""
+
+
+def _yogas_section(d: dict) -> str:
+    """Render detected Vedic yogas."""
+    yogas = d.get("yogas", [])
+    if not yogas:
+        return ""
+
+    _TYPE_LABEL = {
+        "mahapurusha": "Pancha Mahapurusha",
+        "raj":         "Raja Yoga",
+        "dhan":        "Dhan Yoga",
+        "chandra":     "Chandra Yoga",
+        "challenging": "Challenging Yoga",
+    }
+    _TYPE_COLOR = {
+        "mahapurusha": "#7c3aed",
+        "raj":         "#1d4ed8",
+        "dhan":        "#15803d",
+        "chandra":     "#0369a1",
+        "challenging": "#b45309",
+    }
+
+    cards = ""
+    for yoga in yogas:
+        label = _TYPE_LABEL.get(yoga.get("type", ""), yoga.get("type", "").replace("_", " ").title())
+        color = _TYPE_COLOR.get(yoga.get("type", ""), "#555")
+        planets_str = ", ".join(yoga.get("planets", []))
+        house_str = f" &nbsp;|&nbsp; House {yoga['house']}" if yoga.get("house") else ""
+        cards += f"""
+        <div style="border-left: 4px solid {color}; background: #faf9ff; padding: 10px 14px; margin: 8px 0; page-break-inside: avoid;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <strong style="color:{color}; font-size:11pt;">{yoga['name']}</strong>
+                <span style="background:{color}; color:white; font-size:8pt; padding:2px 8px; border-radius:10px;">{label}</span>
+            </div>
+            <p style="margin:4px 0 2px;">{yoga['description']}</p>
+            <p style="font-size:9pt; color:#888; margin:0;">Planets: <em>{planets_str}</em>{house_str}</p>
+        </div>"""
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Yogas — Planetary Combinations</h2>
+    <p>Yogas are specific planetary combinations in the birth chart that produce defined results.
+    Your chart contains <strong>{len(yogas)}</strong> active yoga{"s" if len(yogas) != 1 else ""}.</p>
+    {cards}
+    <p style="font-size:9pt; color:#888; margin-top:10px;"><em>Yoga strength depends on the dignity and overall chart strength of the participating planets. Consult an astrologer for detailed timing of yoga results through Dasha periods.</em></p>"""
+
+
+def _doshas_section(d: dict) -> str:
+    """Render detected Vedic doshas (excluding Manglik and Sade Sati — those have their own sections)."""
+    doshas = d.get("doshas", [])
+    if not doshas:
+        return f"""
+    <div class="page-break"></div>
+    <h2>Doshas — Planetary Afflictions</h2>
+    <p style="background:#f0fdf4; border:1px solid #4ade80; padding:12px; border-radius:6px;">
+        <strong>No major doshas detected</strong> in your birth chart. Your chart is free from the primary classical afflictions.
+    </p>"""
+
+    _SEVERITY_COLOR = {"full": "#dc2626", "partial": "#b45309", "reverse": "#15803d"}
+    _TYPE_ICON = {
+        "kaal_sarp":   "Kaal Sarp",
+        "pitra":       "Pitra Dosha",
+        "guru_chandal":"Guru Chandal",
+        "grahan":      "Grahan Dosha",
+        "angarak":     "Angarak Dosha",
+        "vish":        "Vish Yoga",
+        "shakat":      "Shakat Yoga",
+    }
+
+    cards = ""
+    for dosha in doshas:
+        severity = dosha.get("severity", "")
+        sev_label = severity.title() if severity else ""
+        sev_color = _SEVERITY_COLOR.get(severity, "#b45309")
+        badge = f'<span style="background:{sev_color}; color:white; font-size:8pt; padding:2px 8px; border-radius:10px;">{sev_label}</span>' if sev_label else ""
+        planets_str = ", ".join(dosha.get("planets", []))
+        house_str = f" &nbsp;|&nbsp; House {dosha['house']}" if dosha.get("house") else ""
+        cards += f"""
+        <div style="border-left: 4px solid #dc2626; background: #fff7f7; padding: 10px 14px; margin: 8px 0; page-break-inside: avoid;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <strong style="color:#dc2626; font-size:11pt;">{dosha['name']}</strong>
+                {badge}
+            </div>
+            <p style="margin:4px 0 2px;">{dosha['description']}</p>
+            <p style="font-size:9pt; color:#888; margin:0;">Planets: <em>{planets_str}</em>{house_str}</p>
+        </div>"""
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Doshas — Planetary Afflictions</h2>
+    <p>Doshas are challenging planetary configurations. A dosha is not a life sentence — its severity
+    depends on the overall chart strength, cancellation conditions, and free will. Remedies are available.</p>
+    {cards}
+    <p style="font-size:9pt; color:#888; margin-top:10px;"><em>Note: Mangal Dosha and Sade Sati are covered in their dedicated sections below.
+    Always consult a qualified astrologer before undertaking remedial measures.</em></p>"""
+
+
+def _gochar_section(d: dict) -> str:
+    """Render current planetary transits (Gochar) over the natal chart."""
+    gochar = d.get("gochar", {})
+    if not gochar:
+        return ""
+
+    transits = gochar.get("transits", {})
+    special_periods = gochar.get("special_periods", [])
+    dasha_note = gochar.get("dasha_gochar_note", "")
+    computed_date = gochar.get("computed_for_date", "")
+
+    # Transit table
+    transit_rows = ""
+    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+    for planet in planet_order:
+        if planet not in transits:
+            continue
+        t = transits[planet]
+        fav = t.get("moon_transit_favorable", False)
+        fav_color = "#15803d" if fav else "#dc2626"
+        fav_label = t.get("moon_transit_label", "")
+        special = t.get("special") or ""
+        transit_rows += f"""<tr>
+            <td><strong>{planet}</strong></td>
+            <td>{t.get('current_sign_name', '')} ({t.get('current_degree', 0):.1f}°)</td>
+            <td>{t.get('house_from_moon', '')}</td>
+            <td style="color:{fav_color}; font-weight:bold;">{fav_label}</td>
+            <td>{t.get('lagna_transit_label', '')}</td>
+            <td style="font-size:9pt; color:#666;">{special}</td>
+        </tr>"""
+
+    # Special periods
+    special_html = ""
+    if special_periods:
+        special_html = "<h3>Active Special Transit Periods</h3>"
+        for sp in special_periods:
+            sp_color = "#7c3aed" if "favorable" in sp.get("name", "").lower() or "guru" in sp.get("name", "").lower() else "#b45309"
+            if "Sade Sati" in sp.get("name", "") or "Ashtama" in sp.get("name", ""):
+                sp_color = "#dc2626"
+            special_html += f"""
+            <div style="border-left:4px solid {sp_color}; background:#faf9ff; padding:10px 14px; margin:6px 0;">
+                <strong style="color:{sp_color};">{sp['name']}</strong> — {sp.get('planet', '')} in house {sp.get('house_from_moon', '')} from natal Moon
+            </div>"""
+
+    # Dasha-Gochar note
+    note_html = ""
+    if dasha_note:
+        note_html = f"""
+        <div style="background:#f3f0ff; border:1px solid {BRAND}; border-radius:6px; padding:14px; margin:14px 0;">
+            <strong style="color:{BRAND};">Dasha-Gochar Synthesis</strong>
+            <p style="margin:6px 0 0;">{dasha_note}</p>
+        </div>"""
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Gochar — Current Planetary Transits</h2>
+    <p>Gochar shows where the planets are positioned <em>today</em> relative to your natal Moon sign
+    (primary reference) and Lagna (secondary). This reveals which life areas are currently activated.
+    <strong>Computed for: {computed_date}</strong></p>
+
+    <table>
+        <tr>
+            <th>Planet</th>
+            <th>Current Position</th>
+            <th>House from Moon</th>
+            <th>Moon Transit</th>
+            <th>Lagna Transit</th>
+            <th>Special</th>
+        </tr>
+        {transit_rows}
+    </table>
+
+    {special_html}
+    {note_html}
+    <p style="font-size:9pt; color:#888;"><em>Transit results are measured primarily from the natal Moon sign (Chandra Lagna) per BPHS tradition.
+    For the most accurate timing of events, combine with active Dasha-Antardasha periods.</em></p>"""
+
+
+def _numerology_section(d: dict) -> str:
+    """Render Chaldean numerology section."""
+    num = d.get("numerology", {})
+    if not num:
+        return ""
+
+    def _num_card(key: str, show_lucky: bool = True) -> str:
+        entry = num.get(key)
+        if not entry:
+            return ""
+        value = entry.get("value", "")
+        label = entry.get("label", "")
+        planet = entry.get("planet", "")
+        meaning = entry.get("meaning", "")
+        lucky_day = entry.get("lucky_day", "")
+        lucky_color = entry.get("lucky_color", "")
+        lucky_gem = entry.get("lucky_gemstone", "")
+        year = entry.get("year", "")
+
+        lucky_html = ""
+        if show_lucky and lucky_day:
+            lucky_html = f"""
+            <div style="display:flex; gap:20px; flex-wrap:wrap; font-size:9pt; color:#555; margin-top:6px;">
+                <span><strong>Lucky Day:</strong> {lucky_day}</span>
+                <span><strong>Lucky Color:</strong> {lucky_color}</span>
+                <span><strong>Gemstone:</strong> {lucky_gem}</span>
+            </div>"""
+
+        year_html = f" <span style='color:#888;font-size:9pt;'>({year})</span>" if year else ""
+
+        return f"""
+        <div style="border-left:4px solid {BRAND}; background:#faf9ff; padding:10px 14px; margin:8px 0; page-break-inside:avoid;">
+            <div style="display:flex; align-items:baseline; gap:12px;">
+                <span style="font-size:22pt; font-weight:bold; color:{BRAND};">{value}</span>
+                <div>
+                    <strong style="font-size:11pt;">{label}{year_html}</strong><br/>
+                    <span style="font-size:9pt; color:#666;">Ruling Planet: {planet}</span>
+                </div>
+            </div>
+            <p style="margin:8px 0 4px;">{meaning}</p>
+            {lucky_html}
+        </div>"""
+
+    core_cards = (
+        _num_card("moolank") +
+        _num_card("bhagyank") +
+        _num_card("personal_year")
+    )
+
+    name_cards = ""
+    if num.get("namank"):
+        name_cards = f"""
+        <h3>Name-Based Numbers</h3>
+        {_num_card("namank")}
+        {_num_card("soul_number", show_lucky=False)}
+        {_num_card("personality_number", show_lucky=False)}"""
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Numerology — Chaldean System</h2>
+    <p>Chaldean numerology assigns vibrational values to letters and numbers based on ancient Babylonian tradition,
+    aligned with Vedic planetary rulerships. Numbers reveal the energetic blueprint of the personality and destiny.</p>
+
+    <h3>Core Numbers</h3>
+    {core_cards}
+    {name_cards}
+    <p style="font-size:9pt; color:#888; margin-top:10px;"><em>Master numbers 11, 22, and 33 are preserved without further reduction as they carry heightened spiritual significance.</em></p>"""
 
 
 def _footer() -> str:
