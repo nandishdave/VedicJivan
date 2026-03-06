@@ -147,6 +147,7 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
             "house": house,
             "retrograde": speed < 0,
             "speed": round(speed, 6),
+            "dignity": _get_dignity(name, sign),
         }
 
     # Ketu = Rahu + 180°
@@ -161,6 +162,7 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
         "degree_in_sign": round(ketu_lon % 30, 4),
         "house": _whole_sign_house(ketu_sign, lagna_sign),
         "retrograde": True,  # Rahu/Ketu always retrograde
+        "dignity": "",
     }
     planets["Rahu"]["retrograde"] = True
 
@@ -179,6 +181,31 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
 def _whole_sign_house(planet_sign: int, lagna_sign: int) -> int:
     """Whole Sign house: house 1 = Lagna sign, house 2 = next sign, etc."""
     return ((planet_sign - lagna_sign) % 12) + 1
+
+
+def _get_dignity(planet: str, sign: int) -> str:
+    """Return the Vedic dignity of a planet in a given sign (sign 0-11 zero-indexed)."""
+    if planet in ("Rahu", "Ketu", "Uranus", "Neptune", "Pluto"):
+        return ""
+    exalt_lon = _EXALTATION.get(planet)
+    if exalt_lon is not None:
+        exalt_sign = int(exalt_lon) // 30
+        debil_sign = (exalt_sign + 6) % 12
+        if sign == exalt_sign:
+            return "Exalted"
+        if sign == debil_sign:
+            return "Debilitated"
+    mt_sign = _MOOLATRIKONA.get(planet)
+    if mt_sign is not None and sign == mt_sign:
+        return "Moolatrikona"
+    if sign in _OWN_SIGNS.get(planet, []):
+        return "Own Sign"
+    sign_lord = SIGN_LORDS[sign]
+    if sign_lord in _PLANET_FRIENDS.get(planet, set()):
+        return "Friendly Sign"
+    if sign_lord in _PLANET_ENEMIES.get(planet, set()):
+        return "Enemy Sign"
+    return "Neutral Sign"
 
 
 # ── Shadbala (Six-fold Planetary Strength) ───────────────────────────────────

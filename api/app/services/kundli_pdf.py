@@ -26,6 +26,10 @@ SIGN_NAMES = [
     "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
     "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
 ]
+SIGN_LORDS = [
+    "Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury",
+    "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter",
+]
 PLANET_ABBR = {
     "Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
     "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke",
@@ -92,6 +96,7 @@ def _build_html(d: dict) -> str:
         _shadbala_section(d),
         _planet_positions(d),
         _numerology_section(d),
+        _remedies_section(d),
         _footer(),
     ]
     return f"""<!DOCTYPE html>
@@ -356,9 +361,22 @@ def _dasha_section(d: dict) -> str:
     <p>{pred}</p>"""
 
 
+_DIGNITY_COLOR = {
+    "Exalted":       "#15803d",
+    "Moolatrikona":  "#1d4ed8",
+    "Own Sign":      "#1d4ed8",
+    "Friendly Sign": "#0369a1",
+    "Neutral Sign":  "#666",
+    "Enemy Sign":    "#b45309",
+    "Debilitated":   "#dc2626",
+}
+_BENEFIC_DIGNITIES = {"Exalted", "Moolatrikona", "Own Sign", "Friendly Sign"}
+_MALEFIC_DIGNITIES = {"Enemy Sign", "Debilitated"}
+
+
 def _planet_positions(d: dict) -> str:
     html = '<div class="page-break"></div><h2>Planetary Positions &amp; Effects</h2>'
-    html += "<p>Below is the analysis of each planet's position in your birth chart with effects and remedies.</p>"
+    html += "<p>Each planet's interpretation is personalised to its actual dignity in your chart.</p>"
 
     for name, info in d["planets"].items():
         house = info["house"]
@@ -366,10 +384,30 @@ def _planet_positions(d: dict) -> str:
         if not house_data:
             continue
 
+        dignity = info.get("dignity", "")
+        dignity_color = _DIGNITY_COLOR.get(dignity, "#666")
+        dignity_badge = (
+            f'&nbsp;<span style="background:{dignity_color}; color:white; font-size:8pt;'
+            f' padding:2px 8px; border-radius:10px;">{dignity}</span>'
+        ) if dignity else ""
+
         retro_str = " (Retrograde)" if info["retrograde"] else ""
         benefic = house_data.get("benefic", "")
         malefic = house_data.get("malefic", "")
         remedies = house_data.get("remedies", [])
+
+        # Show the interpretation most relevant to the planet's actual condition
+        if dignity in _BENEFIC_DIGNITIES:
+            interp_html = f"<p>{benefic}</p>"
+        elif dignity in _MALEFIC_DIGNITIES:
+            interp_html = f"<p>{malefic}</p>"
+            if remedies:
+                interp_html += '<h4 style="margin: 8px 0 4px;">Recommended Remedies</h4>'
+                for r in remedies:
+                    interp_html += f'<div class="remedy">{r}</div>'
+            remedies = []  # already rendered
+        else:
+            interp_html = f"<p><strong>If well-placed:</strong> {benefic}</p><p><strong>If ill-placed:</strong> {malefic}</p>"
 
         remedies_html = ""
         if remedies:
@@ -379,9 +417,8 @@ def _planet_positions(d: dict) -> str:
 
         html += f"""
         <div class="section">
-            <h3>{name} in {info['sign_name']} — {_ordinal(house)} House{retro_str}</h3>
-            <p><strong>If benefic:</strong> {benefic}</p>
-            <p><strong>If malefic:</strong> {malefic}</p>
+            <h3>{name} in {info['sign_name']}{dignity_badge} — {_ordinal(house)} House{retro_str}</h3>
+            {interp_html}
             {remedies_html}
         </div>"""
 
@@ -538,13 +575,27 @@ def _bhava_analysis(d: dict) -> str:
             continue
         house_sign = (lagna_sign + house_num - 1) % 12
         sign_name = SIGN_NAMES[house_sign]
+        house_lord = SIGN_LORDS[house_sign]
         planets = planets_in_house[house_num]
         planet_str = ", ".join(planets) if planets else "No planets"
+
+        # House lord placement
+        lord_info = d["planets"].get(house_lord, {})
+        lord_house = lord_info.get("house", "?")
+        lord_sign = lord_info.get("sign_name", "?")
+        lord_dignity = lord_info.get("dignity", "")
+        lord_dignity_str = f", <strong>{lord_dignity}</strong>" if lord_dignity else ""
+        lord_detail = (
+            f"<strong>{house_lord}</strong> is placed in {lord_sign} "
+            f"({_ordinal(lord_house)} House{lord_dignity_str})"
+        )
 
         html += f"""
         <div class="section">
             <h3>{bhava['name']}</h3>
-            <p><strong>Sign:</strong> {sign_name} &nbsp;|&nbsp; <strong>Planets:</strong> {planet_str}</p>
+            <p><strong>Sign:</strong> {sign_name} &nbsp;|&nbsp;
+               <strong>Lord:</strong> {lord_detail} &nbsp;|&nbsp;
+               <strong>Occupants:</strong> {planet_str}</p>
             <p><strong>Significations:</strong> {bhava['signification']}</p>
             <p>{bhava['description']}</p>
         </div>"""
@@ -986,6 +1037,167 @@ def _numerology_section(d: dict) -> str:
     {core_cards}
     {name_cards}
     <p style="font-size:9pt; color:#888; margin-top:10px;"><em>Master numbers 11, 22, and 33 are preserved without further reduction as they carry heightened spiritual significance.</em></p>"""
+
+
+_GEMSTONE: dict[str, str] = {
+    "Sun":     "Ruby (Manik)",
+    "Moon":    "Pearl (Moti)",
+    "Mars":    "Red Coral (Moonga)",
+    "Mercury": "Emerald (Panna)",
+    "Jupiter": "Yellow Sapphire (Pukhraj)",
+    "Venus":   "Diamond (Heera) / White Sapphire",
+    "Saturn":  "Blue Sapphire (Neelam)",
+    "Rahu":    "Hessonite (Gomed)",
+    "Ketu":    "Cat's Eye (Lahsuniya)",
+}
+_MANTRA: dict[str, str] = {
+    "Sun":     "Om Suryaya Namah — 108x, chanted at sunrise on Sundays",
+    "Moon":    "Om Chandraya Namah — 108x, chanted on Mondays",
+    "Mars":    "Om Angarakaya Namah — 108x, chanted on Tuesdays",
+    "Mercury": "Om Budhaya Namah — 108x, chanted on Wednesdays",
+    "Jupiter": "Om Guruve Namah — 108x, chanted on Thursdays",
+    "Venus":   "Om Shukraya Namah — 108x, chanted on Fridays",
+    "Saturn":  "Om Shanaischaraya Namah — 108x, chanted on Saturdays",
+    "Rahu":    "Om Rahave Namah — 108x, chanted on Saturdays",
+    "Ketu":    "Om Ketave Namah — 108x, chanted on Saturdays",
+}
+_DEITY: dict[str, str] = {
+    "Sun":     "Lord Surya / Lord Vishnu",
+    "Moon":    "Lord Shiva / Chandra Deva",
+    "Mars":    "Lord Hanuman / Lord Kartikeya",
+    "Mercury": "Lord Ganesha / Lord Vishnu",
+    "Jupiter": "Lord Brahma / Lord Vishnu (Guru puja)",
+    "Venus":   "Goddess Lakshmi / Goddess Parvati",
+    "Saturn":  "Lord Shani / Lord Yama",
+    "Rahu":    "Goddess Durga / Lord Bhairav",
+    "Ketu":    "Lord Ganesha / Lord Bhairav",
+}
+_LUCKY_DAY: dict[str, str] = {
+    "Sun": "Sunday", "Moon": "Monday", "Mars": "Tuesday",
+    "Mercury": "Wednesday", "Jupiter": "Thursday",
+    "Venus": "Friday", "Saturn": "Saturday",
+    "Rahu": "Saturday", "Ketu": "Saturday",
+}
+_DONATION: dict[str, str] = {
+    "Sun":     "Wheat, jaggery, copper items — on Sundays",
+    "Moon":    "Rice, milk, white cloth — on Mondays",
+    "Mars":    "Red lentils (masoor dal), red cloth — on Tuesdays",
+    "Mercury": "Green moong dal, green cloth — on Wednesdays",
+    "Jupiter": "Yellow gram, turmeric, yellow cloth — on Thursdays",
+    "Venus":   "White rice, sugar, white cloth — on Fridays",
+    "Saturn":  "Black sesame, mustard oil, black cloth — on Saturdays",
+    "Rahu":    "Coconut, blue flowers, black items — on Saturdays",
+    "Ketu":    "Blanket, black sesame, multi-coloured cloth — on Saturdays",
+}
+
+
+def _remedies_section(d: dict) -> str:
+    """Gemstone recommendations and personalised remedies section."""
+    lagna_sign = d["lagna"]["sign"]
+    lagna_lord = d["lagna"]["sign_lord"]
+    moon_lord = d["planets"]["Moon"]["sign_lord"]
+
+    # Trinal lords: 1st, 5th (lagna+4), 9th (lagna+8)
+    lord_5 = SIGN_LORDS[(lagna_sign + 4) % 12]
+    lord_9 = SIGN_LORDS[(lagna_sign + 8) % 12]
+
+    # Build primary gem recommendations (unique planets only)
+    seen: set[str] = set()
+    gem_rows = ""
+    for planet, reason in [
+        (lagna_lord, "Lagna Lord — primary, always beneficial"),
+        (lord_5,     "5th House Lord — strengthens intelligence &amp; creativity"),
+        (lord_9,     "9th House Lord — activates fortune &amp; dharma"),
+    ]:
+        if planet in _GEMSTONE and planet not in seen:
+            gem = _GEMSTONE[planet]
+            day = _LUCKY_DAY.get(planet, "")
+            gem_rows += f"""
+            <tr>
+                <td><strong>{planet}</strong></td>
+                <td>{gem}</td>
+                <td style="color:#555;">{reason}</td>
+                <td style="color:#555;">{day}</td>
+            </tr>"""
+            seen.add(planet)
+
+    # Caution gems — 6th, 8th, 12th lords (Dusthana lords)
+    lords_caution = {
+        SIGN_LORDS[(lagna_sign + 5) % 12],   # 6th lord
+        SIGN_LORDS[(lagna_sign + 7) % 12],   # 8th lord
+        SIGN_LORDS[(lagna_sign + 11) % 12],  # 12th lord
+    } - seen  # don't warn if already recommended
+    caution_text = ", ".join(
+        f"{p} ({_GEMSTONE.get(p, '')})" for p in lords_caution if p in _GEMSTONE
+    )
+
+    # Weak planets from Shadbala (ratio < 1.0)
+    shadbala = d.get("shadbala", {})
+    classical = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    weak = sorted(
+        [(p, shadbala[p]["ratio"]) for p in classical if p in shadbala and shadbala[p]["ratio"] < 1.0],
+        key=lambda x: x[1],
+    )
+
+    weak_rows = ""
+    for planet, ratio in weak:
+        weak_rows += f"""
+        <div style="border-left:4px solid #b45309; background:#fffbeb; padding:10px 14px; margin:8px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <strong style="color:#b45309;">{planet} — Shadbala Ratio {ratio:.2f}</strong>
+                <span style="font-size:9pt; color:#666;">Gemstone: {_GEMSTONE.get(planet, 'N/A')}</span>
+            </div>
+            <p style="margin:4px 0 2px; font-size:10pt;"><strong>Mantra:</strong> {_MANTRA.get(planet, '')}</p>
+            <p style="margin:2px 0; font-size:10pt;"><strong>Worship:</strong> {_DEITY.get(planet, '')}</p>
+            <p style="margin:2px 0; font-size:10pt;"><strong>Donate:</strong> {_DONATION.get(planet, '')}</p>
+        </div>"""
+
+    # Dasha lord remedy
+    dasha_lord = d["dasha"]["current_dasha"]["planet"]
+    dasha_remedy = ""
+    if dasha_lord in _MANTRA:
+        dasha_remedy = f"""
+        <h3>Current Mahadasha — {dasha_lord}</h3>
+        <div style="border-left:4px solid {BRAND}; background:#faf9ff; padding:10px 14px; margin:8px 0;">
+            <p style="margin:4px 0;"><strong>Gemstone:</strong> {_GEMSTONE.get(dasha_lord, 'N/A')}</p>
+            <p style="margin:4px 0;"><strong>Mantra:</strong> {_MANTRA.get(dasha_lord, '')}</p>
+            <p style="margin:4px 0;"><strong>Worship:</strong> {_DEITY.get(dasha_lord, '')}</p>
+            <p style="margin:4px 0;"><strong>Donate:</strong> {_DONATION.get(dasha_lord, '')}</p>
+        </div>"""
+
+    caution_html = ""
+    if caution_text:
+        caution_html = f"""
+        <p style="background:#fef9ec; border:1px solid #fbbf24; padding:10px; border-radius:6px; font-size:10pt;">
+            <strong>Gems to wear with caution (Dusthana lords):</strong> {caution_text}.
+            Consult a qualified astrologer before wearing these gemstones.
+        </p>"""
+
+    weak_section = ""
+    if weak:
+        weak_section = f"""
+        <h3>Planets Needing Strengthening (Shadbala &lt; 1.0)</h3>
+        <p>The following planets are below the required Shadbala threshold in your chart. Strengthening them
+        through mantra, worship, and charity can improve their results in your life.</p>
+        {weak_rows}"""
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Gemstone &amp; Remedy Recommendations</h2>
+    <p>Vedic remedies work by strengthening beneficial planets and mitigating the effects of afflicted or weak ones.
+    <strong>Always wear gemstones only after consulting a qualified Jyotishi</strong> — an incorrect gemstone can cause harm.</p>
+
+    <h3>Recommended Gemstones</h3>
+    <p>Based on your Lagna and trinal house lords, the following gemstones are considered universally beneficial for your chart:</p>
+    <table>
+        <tr><th>Planet</th><th>Gemstone</th><th>Reason</th><th>Lucky Day</th></tr>
+        {gem_rows}
+    </table>
+    {caution_html}
+    {weak_section}
+    {dasha_remedy}
+    <p style="font-size:9pt; color:#888; margin-top:12px;"><em>Remedies in Vedic astrology are tools for self-improvement, not guarantees of outcome.
+    The best remedy is right action (Karma), charity (Dana), and spiritual practice (Sadhana).</em></p>"""
 
 
 def _footer() -> str:
