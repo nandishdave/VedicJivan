@@ -89,3 +89,27 @@ class BusinessHoursResponse(BaseModel):
 
     timezone: str
     weekly_hours: list[DayHours]
+
+
+class ReportSection(BaseModel):
+    """A single configurable section in the Kundli report."""
+
+    id: str
+    label: str
+    description: str
+    is_paid: bool = True
+    enabled: bool = True
+    order: int
+
+
+DEFAULT_REPORT_SECTIONS: list[ReportSection] = [
+    ReportSection(id="overview",    label="Personal Overview",       description="Lagna, Sun sign, Moon sign, Nakshatra — the cosmic snapshot.", is_paid=False, enabled=True, order=1),
+    ReportSection(id="birth_chart", label="Birth Chart",             description="North Indian Rashi Chakra SVG + full planet positions table.",  is_paid=False, enabled=True, order=2),
+    ReportSection(id="yogas",       label="Yogas",                   description="Classical planetary combinations present in the chart.",          is_paid=False, enabled=True, order=3),
+    ReportSection(id="doshas",      label="Doshas & Afflictions",    description="Kaal Sarp, Pitra, Guru Chandal, Mangal Dosha etc. + remedies.",  is_paid=True,  enabled=True, order=4),
+    ReportSection(id="dasha",       label="Dasha Analysis",          description="Active Mahadasha/Antardasha, duration, and period guidance.",     is_paid=True,  enabled=True, order=5),
+    ReportSection(id="predictions", label="Life Area Predictions",   description="AI-generated Career, Relationships, Health, Spirituality predictions (Desh-Kaal-Patra).", is_paid=True, enabled=True, order=6),
+    ReportSection(id="shadbala",    label="Planetary Strength",      description="Shadbala table — which planets are strong or weak and why.",     is_paid=True,  enabled=True, order=7),
+    ReportSection(id="divisional",  label="Divisional Charts",       description="D9 (marriage), D10 (career), D7 (children) analysis.",           is_paid=True,  enabled=True, order=8),
+    ReportSection(id="remedies",    label="Gemstone & Remedies",     description="Gemstone recommendations + personalised remedial measures.",      is_paid=True,  enabled=True, order=9),
+]

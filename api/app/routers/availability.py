@@ -9,6 +9,8 @@ from app.models.availability import (
     AvailableSlot,
     BusinessHoursResponse,
     BusinessHoursSettings,
+    DEFAULT_REPORT_SECTIONS,
+    ReportSection,
     UnavailabilityCreate,
     UnavailabilityResponse,
 )
@@ -277,3 +279,39 @@ async def update_business_hours_settings(
         timezone=data.timezone,
         weekly_hours=data.weekly_hours,
     )
+
+
+# ── Report Sections Settings ──
+
+
+@router.get("/settings/report-sections", response_model=list[ReportSection])
+async def get_report_sections():
+    """Get report section configuration (public — used during PDF generation)."""
+    db = get_db()
+    doc = await db.settings.find_one({"_id": "report_sections"})
+    if not doc or not doc.get("sections"):
+        return DEFAULT_REPORT_SECTIONS
+    saved = {s["id"]: s for s in doc["sections"]}
+    # Merge: defaults provide the source of truth for new sections; saved overrides
+    merged = []
+    for default in DEFAULT_REPORT_SECTIONS:
+        if default.id in saved:
+            merged.append(ReportSection(**saved[default.id]))
+        else:
+            merged.append(default)
+    return sorted(merged, key=lambda s: s.order)
+
+
+@router.put("/settings/report-sections", response_model=list[ReportSection])
+async def update_report_sections(
+    sections: list[ReportSection],
+    _admin: dict = Depends(require_admin),
+):
+    """Update report section configuration (admin only)."""
+    db = get_db()
+    await db.settings.replace_one(
+        {"_id": "report_sections"},
+        {"_id": "report_sections", "sections": [s.model_dump() for s in sections]},
+        upsert=True,
+    )
+    return sorted(sections, key=lambda s: s.order)

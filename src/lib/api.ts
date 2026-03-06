@@ -94,6 +94,15 @@ export interface BusinessHoursSettings {
   weekly_hours: DayHours[];
 }
 
+export interface ReportSection {
+  id: string;
+  label: string;
+  description: string;
+  is_paid: boolean;
+  enabled: boolean;
+  order: number;
+}
+
 export const availabilityApi = {
   getSlots: (date: string) =>
     apiRequest<AvailableSlot[]>(`/api/availability/slots?date=${date}`),
@@ -138,6 +147,16 @@ export const availabilityApi = {
     apiRequest<BusinessHoursSettings>("/api/availability/settings", {
       method: "PUT",
       body: data,
+      token,
+    }),
+
+  getReportSections: () =>
+    apiRequest<ReportSection[]>("/api/availability/settings/report-sections"),
+
+  updateReportSections: (sections: ReportSection[], token: string) =>
+    apiRequest<ReportSection[]>("/api/availability/settings/report-sections", {
+      method: "PUT",
+      body: sections,
       token,
     }),
 };
