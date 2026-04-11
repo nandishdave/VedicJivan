@@ -30,4 +30,5 @@ class KundliInDB(BaseModel):
     email: str
     chart_data: dict = {}
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    status: Literal["generated", "failed"] = "generated"
+    status: Literal["pending", "generated", "failed"] = "pending"
+    error: str | None = None

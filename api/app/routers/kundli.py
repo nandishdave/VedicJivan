@@ -1,10 +1,20 @@
-"""Public endpoint for free Kundli report generation."""
+"""Public endpoint for free Kundli report generation.
+
+The endpoint returns 202 Accepted as soon as the request is validated and
+rate-limited. Chart calculation, PDF rendering, email delivery and the final
+DB write all run in a FastAPI BackgroundTask after the response is sent. This
+keeps every request well under the 30-second API Gateway HTTP API integration
+timeout, which was being hit because PDF generation alone exceeds 30s on a
+0.25 vCPU Fargate task.
+"""
 
 from __future__ import annotations
 
+import traceback
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, HTTPException
+from bson import ObjectId
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from app.database import get_db
 from app.models.kundli import KundliInDB, KundliRequest
@@ -17,11 +27,61 @@ router = APIRouter(prefix="/api/kundli", tags=["Kundli"])
 MAX_PER_EMAIL_PER_DAY = 10
 
 
-@router.post("/generate")
-async def generate_kundli(req: KundliRequest):
+async def _generate_and_email(record_id: ObjectId, req: KundliRequest) -> None:
+    """Background work: calculate chart, render PDF, email it, mark record done.
+
+    Runs after the HTTP response has already been returned. Any failure is
+    logged to CloudWatch and persisted on the kundli record so it surfaces in
+    the admin dashboard.
+    """
+    db = get_db()
+    try:
+        # Load admin section toggles (free tier = sections where is_paid=False).
+        sections_models = await load_report_sections()
+        free_sections = [
+            s.model_dump() for s in sections_models
+            if s.enabled and not s.is_paid
+        ]
+
+        chart_data = build_chart(
+            name=req.name,
+            gender=req.gender,
+            dob=req.dob,
+            tob=req.tob,
+            lat=req.lat,
+            lon=req.lon,
+            place_name=req.place_name,
+        )
+
+        pdf_bytes = generate_pdf(chart_data, sections=free_sections)
+
+        from app.services.email_service import send_kundli_report
+        await send_kundli_report(req.email, req.name, pdf_bytes)
+
+        await db.kundlis.update_one(
+            {"_id": record_id},
+            {"$set": {"chart_data": chart_data, "status": "generated"}},
+        )
+    except Exception as e:
+        traceback.print_exc()
+        await db.kundlis.update_one(
+            {"_id": record_id},
+            {"$set": {"status": "failed", "error": str(e)[:500]}},
+        )
+
+
+@router.post("/generate", status_code=202)
+async def generate_kundli(req: KundliRequest, background_tasks: BackgroundTasks):
+    """Queue a Kundli report for generation.
+
+    Returns 202 Accepted immediately. The actual chart calculation, PDF
+    rendering and email delivery run as a background task. The user receives
+    the report by email when it's ready (typically under a minute).
+    """
     db = get_db()
 
-    # Rate limit: max 3 per email per 24h
+    # Rate limit: max 10 per email per 24h. Counts both pending and completed
+    # records so a user spamming the form can't queue 100 background tasks.
     since = datetime.now(timezone.utc) - timedelta(hours=24)
     count = await db.kundlis.count_documents(
         {"email": req.email, "created_at": {"$gte": since}}
@@ -32,46 +92,8 @@ async def generate_kundli(req: KundliRequest):
             detail="You have reached the maximum number of free reports per day. Please try again tomorrow.",
         )
 
-    # Calculate chart
-    try:
-        chart_data = build_chart(
-            name=req.name,
-            gender=req.gender,
-            dob=req.dob,
-            tob=req.tob,
-            lat=req.lat,
-            lon=req.lon,
-            place_name=req.place_name,
-        )
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Failed to calculate chart. Please check your birth details.")
-
-    # Load admin section toggles (free tier = sections where is_paid=False).
-    sections_models = await load_report_sections()
-    free_sections = [
-        s.model_dump() for s in sections_models
-        if s.enabled and not s.is_paid
-    ]
-
-    # Generate PDF
-    try:
-        pdf_bytes = generate_pdf(chart_data, sections=free_sections)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Failed to generate report PDF.")
-
-    # Send email with PDF attachment
-    try:
-        from app.services.email_service import send_kundli_report
-        await send_kundli_report(req.email, req.name, pdf_bytes)
-    except Exception as e:
-        print(f"[KUNDLI EMAIL ERROR] {e}")
-        # Don't fail the whole request if email fails — save the record anyway
-
-    # Save to MongoDB
+    # Insert a pending record up-front so the rate-limit query above includes
+    # in-flight tasks and so admin can see failed runs in the dashboard.
     record = KundliInDB(
         name=req.name,
         gender=req.gender,
@@ -81,9 +103,12 @@ async def generate_kundli(req: KundliRequest):
         lon=req.lon,
         place_name=req.place_name,
         email=req.email,
-        chart_data=chart_data,
-        status="generated",
+        chart_data={},
+        status="pending",
     )
-    await db.kundlis.insert_one(record.model_dump())
+    insert_result = await db.kundlis.insert_one(record.model_dump())
 
-    return {"message": "Your Kundli report has been sent to your email!"}
+    # Schedule the heavy work to run after the response is sent.
+    background_tasks.add_task(_generate_and_email, insert_result.inserted_id, req)
+
+    return {"message": "Your Kundli report is being generated and will arrive in your email within a minute."}
