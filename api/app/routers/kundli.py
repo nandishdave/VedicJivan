@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.kundli import KundliInDB, KundliRequest
 from app.services.kundli_calculator import build_chart
 from app.services.kundli_pdf import generate_pdf
+from app.services.report_sections import load_report_sections
 
 router = APIRouter(prefix="/api/kundli", tags=["Kundli"])
 
@@ -47,9 +48,16 @@ async def generate_kundli(req: KundliRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Failed to calculate chart. Please check your birth details.")
 
+    # Load admin section toggles (free tier = sections where is_paid=False).
+    sections_models = await load_report_sections()
+    free_sections = [
+        s.model_dump() for s in sections_models
+        if s.enabled and not s.is_paid
+    ]
+
     # Generate PDF
     try:
-        pdf_bytes = generate_pdf(chart_data)
+        pdf_bytes = generate_pdf(chart_data, sections=free_sections)
     except Exception as e:
         import traceback
         traceback.print_exc()

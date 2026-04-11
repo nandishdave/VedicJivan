@@ -64,45 +64,97 @@ CHART_DESCRIPTIONS = {
 }
 
 
-def generate_pdf(chart_data: dict) -> bytes:
-    """Generate a Kundli report PDF from chart_data dict. Returns raw PDF bytes."""
-    html = _build_html(chart_data)
+def generate_pdf(chart_data: dict, sections: list[dict] | None = None) -> bytes:
+    """Generate a Kundli report PDF from chart_data dict. Returns raw PDF bytes.
+
+    sections: optional ordered list of `{id, enabled, ...}` dicts (from the
+    admin report-section toggles in MongoDB). If None, the default order
+    matching DEFAULT_REPORT_SECTIONS is used and the output is byte-identical
+    to the pre-toggle behaviour.
+    """
+    html = _build_html(chart_data, sections)
     from weasyprint import HTML
     return HTML(string=html).write_pdf()
 
 
 # ── HTML builder ─────────────────────────────────────────────────────────────
 
-def _build_html(d: dict) -> str:
-    """Build the full HTML document for the Kundli report."""
-    sections = [
-        _css(),
-        _cover(d),
-        _birth_chart_page(d),
-        _basic_details(d),
-        _favourable_ghatak(d),
-        _ascendant_section(d),
-        _nakshatra_section(d),
-        _character_life(d),
-        _yogas_section(d),
-        _doshas_section(d),
-        _bhava_analysis(d),
-        _manglik_section(d),
-        _sadesati_section(d),
-        _gochar_section(d),
-        _dasha_section(d),
-        _antardasha_section(d),
-        _divisional_charts_section(d),
-        _shadbala_section(d),
-        _planet_positions(d),
-        _numerology_section(d),
-        _remedies_section(d),
-        _footer(),
-    ]
+# Section ID → builder. Each builder takes the chart_data dict and returns an
+# HTML string. Cover, footer, and CSS are not toggleable — they always render.
+SECTION_BUILDERS = {
+    "birth_chart":      lambda d: _birth_chart_page(d),
+    "basic_details":    lambda d: _basic_details(d),
+    "favourable":       lambda d: _favourable_ghatak(d),
+    "ascendant":        lambda d: _ascendant_section(d),
+    "nakshatra":        lambda d: _nakshatra_section(d),
+    "character_life":   lambda d: _character_life(d),
+    "yogas":            lambda d: _yogas_section(d),
+    "doshas":           lambda d: _doshas_section(d),
+    "bhava_analysis":   lambda d: _bhava_analysis(d),
+    "manglik":          lambda d: _manglik_section(d),
+    "sadesati":         lambda d: _sadesati_section(d),
+    "gochar":           lambda d: _gochar_section(d),
+    "dasha":            lambda d: _dasha_section(d),
+    "antardasha":       lambda d: _antardasha_section(d),
+    "divisional":       lambda d: _divisional_charts_section(d),
+    "shadbala":         lambda d: _shadbala_section(d),
+    "planet_positions": lambda d: _planet_positions(d),
+    "numerology":       lambda d: _numerology_section(d),
+    "remedies":         lambda d: _remedies_section(d),
+}
+
+# Default order matches the original hardcoded list in _build_html so that
+# generate_pdf(chart_data) with no sections argument is byte-identical to
+# the pre-toggle output.
+_DEFAULT_SECTION_ORDER = [
+    "birth_chart",
+    "basic_details",
+    "favourable",
+    "ascendant",
+    "nakshatra",
+    "character_life",
+    "yogas",
+    "doshas",
+    "bhava_analysis",
+    "manglik",
+    "sadesati",
+    "gochar",
+    "dasha",
+    "antardasha",
+    "divisional",
+    "shadbala",
+    "planet_positions",
+    "numerology",
+    "remedies",
+]
+
+
+def _build_html(d: dict, sections: list[dict] | None = None) -> str:
+    """Build the full HTML document for the Kundli report.
+
+    If `sections` is None, render the default ordered list (byte-identical to
+    pre-toggle output). Otherwise iterate the provided list, skipping any
+    section where `enabled` is falsy or whose id has no registered builder.
+    """
+    if sections is None:
+        body_section_ids = _DEFAULT_SECTION_ORDER
+    else:
+        body_section_ids = [
+            s["id"] for s in sections
+            if s.get("enabled", True) and s.get("id") in SECTION_BUILDERS
+        ]
+
+    parts = [_css(), _cover(d)]
+    for sid in body_section_ids:
+        builder = SECTION_BUILDERS.get(sid)
+        if builder is not None:
+            parts.append(builder(d))
+    parts.append(_footer())
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><title>Kundli Report - {d['name']}</title></head>
-<body>{''.join(sections)}</body>
+<body>{''.join(parts)}</body>
 </html>"""
 
 
