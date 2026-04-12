@@ -110,6 +110,53 @@ def test_birth_time_details_has_all_expected_keys():
     assert expected.issubset(set(bt.keys()))
 
 
+def test_capricorn_favourable_matches_astrosage_reference():
+    """All 10 Capricorn Favourable Points fields must match the Astrosage PDF.
+
+    Astrosage page-2 reference (Capricorn lagna):
+        Lucky Numbers   4
+        Good Numbers    2, 4, 5, 8
+        Evil Numbers    1, 7, 9
+        Good Years      13, 22, 31, 40, 49
+        Lucky Days      Thursday, Tuesday
+        Good Planets    Jupiter, Mars, Moon
+        Friendly Signs  Ari, Leo, Sag
+        Good Lagna      Sag, Pis, Tau, Cap
+        Lucky Metal     Gold
+        Lucky Stone     Red Coral
+    """
+    from app.services.kundli_data import FAVOURABLE
+    cap = FAVOURABLE["Capricorn"]
+    assert cap["lucky_numbers"] == "4"
+    assert cap["good_numbers"] == "2, 4, 5, 8"
+    assert cap["evil_numbers"] == "1, 7, 9"
+    assert cap["good_years"] == "13, 22, 31, 40, 49"
+    assert cap["lucky_days"] == "Thursday, Tuesday"
+    assert cap["good_planets"] == "Jupiter, Mars, Moon"
+    assert cap["friendly_signs"] == "Ari, Leo, Sag"
+    assert cap["good_lagna"] == "Sag, Pis, Tau, Cap"
+    assert cap["lucky_metal"] == "Gold"
+    assert cap["lucky_stone"] == "Red Coral"
+
+
+def test_all_lagnas_have_complete_favourable_set():
+    """Every lagna must define all 10 Favourable fields and zero stale Avkahada keys."""
+    from app.services.kundli_data import FAVOURABLE
+    expected_keys = {
+        "lucky_numbers", "good_numbers", "evil_numbers", "good_years",
+        "lucky_days", "good_planets", "friendly_signs", "good_lagna",
+        "lucky_metal", "lucky_stone",
+    }
+    stale_keys = {"varna", "yoni", "gana", "nadi"}
+    assert len(FAVOURABLE) == 12
+    for sign, fields in FAVOURABLE.items():
+        actual = set(fields.keys())
+        missing = expected_keys - actual
+        leaked = actual & stale_keys
+        assert not missing, f"{sign} missing Favourable fields: {missing}"
+        assert not leaked, f"{sign} still has stale Avkahada keys: {leaked}"
+
+
 def test_capricorn_ghatak_matches_astrosage_reference():
     """All 10 Capricorn Ghatak fields must match the Astrosage Nandish Dave PDF.
 

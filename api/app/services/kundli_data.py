@@ -458,19 +458,33 @@ GHATAK = {
 
 # ── FAVOURABLE POINTS (by Lagna sign) ────────────────────────────────────────
 
+# Favourable Points — classical "lucky" reference table indexed by Lagna,
+# matching the panel that Astrosage and other Jyotish software display.
+# Each entry exposes 10 fields:
+#   lucky_numbers, good_numbers, evil_numbers, good_years, lucky_days,
+#   good_planets, friendly_signs, good_lagna, lucky_metal, lucky_stone
+# Capricorn values are anchored to the Astrosage Nandish Dave reference PDF.
+# Other lagnas follow these derivable patterns (verify against Astrosage if
+# you have a reference chart for them):
+#   good_years    : arithmetic sequence (lagna_num + 3) + 9k for k=0..4
+#   friendly_signs: signs at houses 4, 8, 12 from the Lagna
+#   good_lagna    : signs at houses 12, 3, 5, 1 from the Lagna (in that order)
+# Varna/Yoni/Gana/Nadi were previously stored here too — they have moved to
+# the Avkahada Chakra section (calc_avkahada in kundli_calculator.py) where
+# they are now correctly computed from the Moon's nakshatra and rashi.
 FAVOURABLE = {
-    "Aries": {"lucky_numbers": "9", "good_numbers": "1, 3, 5, 9", "evil_numbers": "2, 6, 8", "lucky_days": "Tuesday, Saturday, Friday", "good_planets": "Mars, Jupiter, Sun", "lucky_metal": "Copper", "lucky_stone": "Red Coral", "varna": "Kshatriya", "yoni": "Mesha", "gana": "Devta", "nadi": "Aadi"},
-    "Taurus": {"lucky_numbers": "6", "good_numbers": "2, 4, 6, 8", "evil_numbers": "1, 5, 7", "lucky_days": "Friday, Wednesday, Saturday", "good_planets": "Venus, Mercury, Saturn", "lucky_metal": "Silver", "lucky_stone": "Diamond", "varna": "Vaishya", "yoni": "Gau", "gana": "Manushya", "nadi": "Madhya"},
-    "Gemini": {"lucky_numbers": "5", "good_numbers": "3, 5, 7, 9", "evil_numbers": "2, 4, 6", "lucky_days": "Wednesday, Friday, Thursday", "good_planets": "Mercury, Venus, Saturn", "lucky_metal": "Gold", "lucky_stone": "Emerald", "varna": "Shudra", "yoni": "Sarpa", "gana": "Devta", "nadi": "Antya"},
-    "Cancer": {"lucky_numbers": "2", "good_numbers": "1, 2, 4, 7", "evil_numbers": "3, 5, 8", "lucky_days": "Monday, Thursday, Sunday", "good_planets": "Moon, Mars, Jupiter", "lucky_metal": "Silver", "lucky_stone": "Pearl", "varna": "Bramhin", "yoni": "Shwan", "gana": "Devta", "nadi": "Aadi"},
-    "Leo": {"lucky_numbers": "1", "good_numbers": "1, 3, 5, 9", "evil_numbers": "2, 6, 8", "lucky_days": "Sunday, Tuesday, Wednesday", "good_planets": "Sun, Mars, Jupiter", "lucky_metal": "Gold", "lucky_stone": "Ruby", "varna": "Kshatriya", "yoni": "Mushak", "gana": "Manushya", "nadi": "Madhya"},
-    "Virgo": {"lucky_numbers": "5", "good_numbers": "2, 4, 5, 8", "evil_numbers": "1, 3, 9", "lucky_days": "Wednesday, Friday, Monday", "good_planets": "Mercury, Venus, Saturn", "lucky_metal": "Bronze", "lucky_stone": "Emerald", "varna": "Vaishya", "yoni": "Gau", "gana": "Devta", "nadi": "Antya"},
-    "Libra": {"lucky_numbers": "6", "good_numbers": "2, 6, 7, 8", "evil_numbers": "1, 5, 9", "lucky_days": "Friday, Wednesday, Saturday", "good_planets": "Venus, Mercury, Saturn", "lucky_metal": "Silver", "lucky_stone": "Diamond", "varna": "Shudra", "yoni": "Mriga", "gana": "Manushya", "nadi": "Aadi"},
-    "Scorpio": {"lucky_numbers": "9", "good_numbers": "1, 3, 7, 9", "evil_numbers": "2, 4, 6", "lucky_days": "Tuesday, Thursday, Sunday", "good_planets": "Mars, Jupiter, Moon", "lucky_metal": "Copper", "lucky_stone": "Red Coral", "varna": "Bramhin", "yoni": "Mriga", "gana": "Rakshasa", "nadi": "Madhya"},
-    "Sagittarius": {"lucky_numbers": "3", "good_numbers": "1, 3, 5, 8", "evil_numbers": "2, 6, 7", "lucky_days": "Thursday, Tuesday, Sunday", "good_planets": "Jupiter, Sun, Mars", "lucky_metal": "Gold", "lucky_stone": "Yellow Sapphire", "varna": "Kshatriya", "yoni": "Ashwa", "gana": "Devta", "nadi": "Antya"},
-    "Capricorn": {"lucky_numbers": "4", "good_numbers": "2, 4, 5, 8", "evil_numbers": "1, 7, 9", "lucky_days": "Thursday, Tuesday", "good_planets": "Jupiter, Mars, Moon", "lucky_metal": "Gold", "lucky_stone": "Red Coral", "varna": "Bramhin", "yoni": "Mriga", "gana": "Devta", "nadi": "Madhya"},
-    "Aquarius": {"lucky_numbers": "8", "good_numbers": "2, 4, 6, 8", "evil_numbers": "1, 3, 9", "lucky_days": "Saturday, Friday, Wednesday", "good_planets": "Saturn, Venus, Mercury", "lucky_metal": "Iron", "lucky_stone": "Blue Sapphire", "varna": "Shudra", "yoni": "Ashwa", "gana": "Manushya", "nadi": "Aadi"},
-    "Pisces": {"lucky_numbers": "3", "good_numbers": "1, 3, 7, 9", "evil_numbers": "2, 5, 8", "lucky_days": "Thursday, Tuesday, Sunday", "good_planets": "Jupiter, Moon, Mars", "lucky_metal": "Gold", "lucky_stone": "Yellow Sapphire", "varna": "Bramhin", "yoni": "Gau", "gana": "Devta", "nadi": "Antya"},
+    "Aries":       {"lucky_numbers": "9", "good_numbers": "1, 3, 5, 9", "evil_numbers": "2, 6, 8", "good_years": "4, 13, 22, 31, 40, 49", "lucky_days": "Tuesday, Saturday, Friday", "good_planets": "Mars, Jupiter, Sun",       "friendly_signs": "Can, Sco, Pis", "good_lagna": "Pis, Gem, Leo, Ari", "lucky_metal": "Copper", "lucky_stone": "Red Coral"},
+    "Taurus":      {"lucky_numbers": "6", "good_numbers": "2, 4, 6, 8", "evil_numbers": "1, 5, 7", "good_years": "5, 14, 23, 32, 41, 50", "lucky_days": "Friday, Wednesday, Saturday","good_planets": "Venus, Mercury, Saturn",  "friendly_signs": "Leo, Sag, Ari", "good_lagna": "Ari, Can, Vir, Tau", "lucky_metal": "Silver", "lucky_stone": "Diamond"},
+    "Gemini":      {"lucky_numbers": "5", "good_numbers": "3, 5, 7, 9", "evil_numbers": "2, 4, 6", "good_years": "6, 15, 24, 33, 42, 51", "lucky_days": "Wednesday, Friday, Thursday","good_planets": "Mercury, Venus, Saturn",  "friendly_signs": "Vir, Cap, Tau", "good_lagna": "Tau, Leo, Lib, Gem", "lucky_metal": "Gold",   "lucky_stone": "Emerald"},
+    "Cancer":      {"lucky_numbers": "2", "good_numbers": "1, 2, 4, 7", "evil_numbers": "3, 5, 8", "good_years": "7, 16, 25, 34, 43, 52", "lucky_days": "Monday, Thursday, Sunday",   "good_planets": "Moon, Mars, Jupiter",     "friendly_signs": "Lib, Aqu, Gem", "good_lagna": "Gem, Vir, Sco, Can", "lucky_metal": "Silver", "lucky_stone": "Pearl"},
+    "Leo":         {"lucky_numbers": "1", "good_numbers": "1, 3, 5, 9", "evil_numbers": "2, 6, 8", "good_years": "8, 17, 26, 35, 44, 53", "lucky_days": "Sunday, Tuesday, Wednesday", "good_planets": "Sun, Mars, Jupiter",      "friendly_signs": "Sco, Pis, Can", "good_lagna": "Can, Lib, Sag, Leo", "lucky_metal": "Gold",   "lucky_stone": "Ruby"},
+    "Virgo":       {"lucky_numbers": "5", "good_numbers": "2, 4, 5, 8", "evil_numbers": "1, 3, 9", "good_years": "9, 18, 27, 36, 45, 54", "lucky_days": "Wednesday, Friday, Monday",  "good_planets": "Mercury, Venus, Saturn",  "friendly_signs": "Sag, Ari, Leo", "good_lagna": "Leo, Sco, Cap, Vir", "lucky_metal": "Bronze", "lucky_stone": "Emerald"},
+    "Libra":       {"lucky_numbers": "6", "good_numbers": "2, 6, 7, 8", "evil_numbers": "1, 5, 9", "good_years": "10, 19, 28, 37, 46, 55","lucky_days": "Friday, Wednesday, Saturday","good_planets": "Venus, Mercury, Saturn",  "friendly_signs": "Cap, Tau, Vir", "good_lagna": "Vir, Sag, Aqu, Lib", "lucky_metal": "Silver", "lucky_stone": "Diamond"},
+    "Scorpio":     {"lucky_numbers": "9", "good_numbers": "1, 3, 7, 9", "evil_numbers": "2, 4, 6", "good_years": "11, 20, 29, 38, 47, 56","lucky_days": "Tuesday, Thursday, Sunday",  "good_planets": "Mars, Jupiter, Moon",     "friendly_signs": "Aqu, Gem, Lib", "good_lagna": "Lib, Cap, Pis, Sco", "lucky_metal": "Copper", "lucky_stone": "Red Coral"},
+    "Sagittarius": {"lucky_numbers": "3", "good_numbers": "1, 3, 5, 8", "evil_numbers": "2, 6, 7", "good_years": "12, 21, 30, 39, 48, 57","lucky_days": "Thursday, Tuesday, Sunday",  "good_planets": "Jupiter, Sun, Mars",      "friendly_signs": "Pis, Can, Sco", "good_lagna": "Sco, Aqu, Ari, Sag", "lucky_metal": "Gold",   "lucky_stone": "Yellow Sapphire"},
+    "Capricorn":   {"lucky_numbers": "4", "good_numbers": "2, 4, 5, 8", "evil_numbers": "1, 7, 9", "good_years": "13, 22, 31, 40, 49",    "lucky_days": "Thursday, Tuesday",          "good_planets": "Jupiter, Mars, Moon",     "friendly_signs": "Ari, Leo, Sag", "good_lagna": "Sag, Pis, Tau, Cap", "lucky_metal": "Gold",   "lucky_stone": "Red Coral"},
+    "Aquarius":    {"lucky_numbers": "8", "good_numbers": "2, 4, 6, 8", "evil_numbers": "1, 3, 9", "good_years": "14, 23, 32, 41, 50",    "lucky_days": "Saturday, Friday, Wednesday","good_planets": "Saturn, Venus, Mercury",  "friendly_signs": "Tau, Vir, Cap", "good_lagna": "Cap, Ari, Gem, Aqu", "lucky_metal": "Iron",   "lucky_stone": "Blue Sapphire"},
+    "Pisces":      {"lucky_numbers": "3", "good_numbers": "1, 3, 7, 9", "evil_numbers": "2, 5, 8", "good_years": "15, 24, 33, 42, 51",    "lucky_days": "Thursday, Tuesday, Sunday",  "good_planets": "Jupiter, Moon, Mars",     "friendly_signs": "Gem, Lib, Aqu", "good_lagna": "Aqu, Tau, Can, Pis", "lucky_metal": "Gold",   "lucky_stone": "Yellow Sapphire"},
 }
 
 

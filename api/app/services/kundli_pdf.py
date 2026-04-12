@@ -313,12 +313,29 @@ def _planet_row(name: str, info: dict) -> str:
 
 
 def _favourable_section(d: dict) -> str:
-    """Astrosage-style Favourable Points panel."""
+    """Astrosage-style Favourable Points panel.
+
+    Renders the 10 Favourable Points fields in Astrosage's display order:
+    Lucky Numbers → Good Numbers → Evil Numbers → Good Years → Lucky Days →
+    Good Planets → Friendly Signs → Good Lagna → Lucky Metal → Lucky Stone.
+    """
     sign = d["lagna"]["sign_name"]
     fav = FAVOURABLE.get(sign, {})
+    ordered_fields = [
+        ("lucky_numbers",  "Lucky Numbers"),
+        ("good_numbers",   "Good Numbers"),
+        ("evil_numbers",   "Evil Numbers"),
+        ("good_years",     "Good Years"),
+        ("lucky_days",     "Lucky Days"),
+        ("good_planets",   "Good Planets"),
+        ("friendly_signs", "Friendly Signs"),
+        ("good_lagna",     "Good Lagna"),
+        ("lucky_metal",    "Lucky Metal"),
+        ("lucky_stone",    "Lucky Stone"),
+    ]
     rows = "".join(
-        f"<tr><td style='font-weight:bold; color:#555; width:45%;'>{k.replace('_', ' ').title()}</td><td>{v}</td></tr>"
-        for k, v in fav.items()
+        f"<tr><td style='font-weight:bold; color:#555; width:45%;'>{label}</td><td>{fav.get(key, '—')}</td></tr>"
+        for key, label in ordered_fields
     )
     return f"""
     <h2>Favourable Points</h2>
