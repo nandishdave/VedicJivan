@@ -2001,6 +2001,62 @@ def calc_numerology(name: str, dob_str: str, current_year: int) -> dict:
     return result
 
 
+# ── Western Planetary Aspects ───────────────────────────────────────────────
+# Angular relationships between planets using Western (Ptolemaic + minor) aspects.
+# Each aspect is defined by its exact angle and a maximum orb tolerance.
+
+WESTERN_ASPECTS = [
+    {"name": "Conjunction", "abbr": "CONJ", "angle": 0,   "orb": 15, "weight": 10},
+    {"name": "Opposition",  "abbr": "OPPN", "angle": 180, "orb": 15, "weight": 10},
+    {"name": "Trine",       "abbr": "TRIN", "angle": 120, "orb": 6,  "weight": 3},
+    {"name": "Square",      "abbr": "SQUR", "angle": 90,  "orb": 6,  "weight": 3},
+    {"name": "Sextile",     "abbr": "SEXT", "angle": 60,  "orb": 6,  "weight": 3},
+    {"name": "Nonile",      "abbr": "NONL", "angle": 40,  "orb": 1,  "weight": 1},
+    {"name": "Quintile",    "abbr": "QUIN", "angle": 72,  "orb": 1,  "weight": 1},
+    {"name": "Semi-Square", "abbr": "SSQU", "angle": 45,  "orb": 1,  "weight": 1},
+    {"name": "Sesquiquadrate", "abbr": "SQQD", "angle": 135, "orb": 1, "weight": 1},
+    {"name": "Quincunx",    "abbr": "QCUN", "angle": 150, "orb": 1,  "weight": 1},
+]
+
+_ALL_ASPECT_PLANETS = [
+    "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn",
+    "Rahu", "Ketu", "Uranus", "Neptune", "Pluto",
+]
+
+
+def calc_western_aspects(planets: dict) -> dict:
+    """Compute Western-style angular aspects between all planet pairs.
+
+    Returns a dict with:
+      planets : ordered list of planet names included (only those present in chart).
+      matrix  : dict-of-dicts keyed by (from, to) with value:
+                  {"abbr": "CONJ", "orb": 1.23} or None if no aspect within orb.
+    """
+    active = [p for p in _ALL_ASPECT_PLANETS if p in planets]
+    matrix: dict[str, dict[str, dict | None]] = {}
+
+    for p in active:
+        matrix[p] = {}
+        p_lon = planets[p]["longitude"]
+        for q in active:
+            if q == p:
+                matrix[p][q] = None
+                continue
+            q_lon = planets[q]["longitude"]
+            diff = abs(p_lon - q_lon) % 360
+            if diff > 180:
+                diff = 360 - diff
+            best = None
+            for asp in WESTERN_ASPECTS:
+                orb = abs(diff - asp["angle"])
+                if orb <= asp["orb"]:
+                    if best is None or orb < best["orb"]:
+                        best = {"abbr": asp["abbr"], "orb": round(orb, 2), "weight": asp["weight"]}
+            matrix[p][q] = best
+
+    return {"planets": active, "matrix": matrix}
+
+
 # ── Friendship Tables (Naisargika + Tatkalika + Panchadha) ─────────────────
 
 _CLASSICAL_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
@@ -2297,6 +2353,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     avkahada = calc_avkahada(nakshatra["num"], planets["Moon"]["sign"])
     birth_time = calc_birth_time_details(dob, tob, lat, lon, jd, sun_sunset["sunrise"])
     friendships = calc_friendships(planets)
+    western_aspects = calc_western_aspects(planets)
     divisional = calc_divisional_charts(planets, lagna)
     antardasha = calc_antardasha(dasha["dashas"])
     shadbala = calc_shadbala(planets, lagna, jd, dob, tob, divisional, sun_sunset=sun_sunset)
@@ -2335,6 +2392,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "avkahada": avkahada,
         "birth_time": birth_time,
         "friendships": friendships,
+        "western_aspects": western_aspects,
         "divisional_charts": divisional,
         "antardasha": antardasha,
         "shadbala": shadbala,

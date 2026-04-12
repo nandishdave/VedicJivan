@@ -110,6 +110,58 @@ def test_birth_time_details_has_all_expected_keys():
     assert expected.issubset(set(bt.keys()))
 
 
+def test_western_aspects_sun_mercury_conjunction():
+    """Sun (Libra 25°26') and Mercury (Libra 13°45') are in the same sign — conjunction
+    with orb ~11.7°. Must be detected since conjunction orb is 15°."""
+    from app.services.kundli_calculator import calc_western_aspects
+
+    planets = {
+        "Sun":     {"longitude": 205.43},  # Libra ~25°
+        "Mercury": {"longitude": 193.75},  # Libra ~13°
+    }
+    wa = calc_western_aspects(planets)
+    asp = wa["matrix"]["Sun"]["Mercury"]
+    assert asp is not None
+    assert asp["abbr"] == "CONJ"
+    assert 11 < asp["orb"] < 13
+
+
+def test_western_aspects_opposition_detected():
+    """Two planets 180° apart should produce an OPPN aspect."""
+    from app.services.kundli_calculator import calc_western_aspects
+
+    planets = {
+        "Sun":  {"longitude": 10.0},
+        "Moon": {"longitude": 190.0},
+    }
+    wa = calc_western_aspects(planets)
+    asp = wa["matrix"]["Sun"]["Moon"]
+    assert asp is not None
+    assert asp["abbr"] == "OPPN"
+    assert asp["orb"] == 0.0
+
+
+def test_western_aspects_no_aspect_for_far_apart():
+    """Planets ~50° apart shouldn't match any major aspect (closest is sextile at 60°,
+    orb 6° → 50° is 10° away from sextile, outside orb)."""
+    from app.services.kundli_calculator import calc_western_aspects
+
+    planets = {
+        "Sun":  {"longitude": 10.0},
+        "Moon": {"longitude": 60.0},
+    }
+    wa = calc_western_aspects(planets)
+    asp = wa["matrix"]["Sun"]["Moon"]
+    assert asp is None
+
+
+def test_western_aspects_self_is_none():
+    from app.services.kundli_calculator import calc_western_aspects
+    planets = {"Sun": {"longitude": 10.0}}
+    wa = calc_western_aspects(planets)
+    assert wa["matrix"]["Sun"]["Sun"] is None
+
+
 def test_calc_friendships_permanent_matches_classical_bphs():
     """Sun row of the permanent friendship matrix must match BPHS:
     Moon=Friend, Mars=Friend, Mercury=Neutral, Jupiter=Friend, Venus=Enemy, Saturn=Enemy.

@@ -101,6 +101,7 @@ SECTION_BUILDERS = {
     "divisional":       lambda d: _divisional_charts_section(d),
     "friendship":       lambda d: _friendship_section(d),
     "shadbala":         lambda d: _shadbala_section(d),
+    "western_aspects":  lambda d: _western_aspects_section(d),
     "planet_positions": lambda d: _planet_positions(d),
     "numerology":       lambda d: _numerology_section(d),
     "remedies":         lambda d: _remedies_section(d),
@@ -128,6 +129,7 @@ _DEFAULT_SECTION_ORDER = [
     "divisional",
     "friendship",
     "shadbala",
+    "western_aspects",
     "planet_positions",
     "numerology",
     "remedies",
@@ -344,6 +346,53 @@ def _favourable_section(d: dict) -> str:
     <table>{rows}</table>"""
 
 
+def _western_aspects_section(d: dict) -> str:
+    """Astrosage-style Western Planetary Aspects matrix.
+
+    Renders all planet-pair aspects (Conjunction, Opposition, Trine, Square,
+    Sextile and minor aspects) with their orbs. Cells with no aspect show "—".
+    """
+    wa = d.get("western_aspects")
+    if not wa:
+        return ""
+
+    planets = wa["planets"]
+    matrix = wa["matrix"]
+
+    header = "<th></th>" + "".join(
+        f"<th style='text-align:center; font-size:8pt; padding:4px;'>{PLANET_ABBR.get(p, p[:2])}</th>"
+        for p in planets
+    )
+
+    rows = ""
+    for from_p in planets:
+        cells = ""
+        for to_p in planets:
+            if from_p == to_p:
+                cells += "<td style='text-align:center; background:#f3f0ff;'>—</td>"
+            else:
+                asp = matrix[from_p].get(to_p)
+                if asp:
+                    cells += (
+                        f"<td style='text-align:center; font-size:8pt; padding:3px;'>"
+                        f"<strong>{asp['abbr']}</strong><br/>{asp['orb']:.2f}°</td>"
+                    )
+                else:
+                    cells += "<td style='text-align:center; color:#ccc;'>—</td>"
+        rows += f"<tr><th style='text-align:left; font-size:9pt;'>{PLANET_ABBR.get(from_p, from_p[:2])}</th>{cells}</tr>"
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Planetary Aspects (Western)</h2>
+    <p style='font-size:10pt; color:#666;'>Angular relationships between planets using Western (Ptolemaic + minor) aspects.
+    Each cell shows the aspect type and orb. CONJ=Conjunction(0°), OPPN=Opposition(180°), TRIN=Trine(120°),
+    SQUR=Square(90°), SEXT=Sextile(60°), NONL=Nonile(40°), QUIN=Quintile(72°).</p>
+    <table style='font-size:9pt;'>
+        <tr>{header}</tr>
+        {rows}
+    </table>"""
+
+
 def _friendship_section(d: dict) -> str:
     """Astrosage-style Friendship Tables — Permanent, Temporary, Compound.
 
@@ -455,6 +504,7 @@ def _character_life(d: dict) -> str:
         ("Career", "career"),
         ("Occupation", "occupation"),
         ("Hobbies", "hobbies"),
+        ("Education", "education"),
         ("Love Matters", "love"),
         ("Finance", "finance"),
     ]
