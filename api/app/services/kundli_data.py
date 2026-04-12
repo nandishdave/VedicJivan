@@ -432,19 +432,27 @@ SADESATI_PHASES = {
 
 # ── GHATAK (Malefic indicators by Lagna sign) ────────────────────────────────
 
+# Ghata Chakra (Ghatak) — classical Vedic table of inauspicious points to avoid
+# for important undertakings, indexed by Lagna sign. Each entry exposes 10
+# fields matching the panel that Astrosage and other Jyotish software display:
+#   bad_day, bad_karana, bad_lagna, bad_masa, bad_nakshatra, bad_prahara,
+#   bad_rashi, bad_tithi, bad_yoga, bad_planets
+# Capricorn values are anchored to the Nandish Dave Astrosage reference PDF.
+# Lagna and Rashi are stored in Sanskrit (Vrishchika, Vrish, etc.) so the
+# render layer can show them verbatim without an English→Sanskrit map.
 GHATAK = {
-    "Aries": {"bad_day": "Saturday", "bad_nakshatra": "Swati", "bad_rashi": "Aquarius", "bad_tithi": "2, 7, 12", "bad_yoga": "Siddha", "bad_planets": "Saturn"},
-    "Taurus": {"bad_day": "Sunday", "bad_nakshatra": "Vishakha", "bad_rashi": "Pisces", "bad_tithi": "3, 8, 13", "bad_yoga": "Vyatipata", "bad_planets": "Sun"},
-    "Gemini": {"bad_day": "Monday", "bad_nakshatra": "Anuradha", "bad_rashi": "Aries", "bad_tithi": "4, 9, 14", "bad_yoga": "Brahma", "bad_planets": "Moon"},
-    "Cancer": {"bad_day": "Tuesday", "bad_nakshatra": "Jyeshtha", "bad_rashi": "Taurus", "bad_tithi": "5, 10, 15", "bad_yoga": "Atiganda", "bad_planets": "Mars"},
-    "Leo": {"bad_day": "Wednesday", "bad_nakshatra": "Mula", "bad_rashi": "Gemini", "bad_tithi": "1, 6, 11", "bad_yoga": "Sukarman", "bad_planets": "Mercury"},
-    "Virgo": {"bad_day": "Thursday", "bad_nakshatra": "Purva Ashadha", "bad_rashi": "Cancer", "bad_tithi": "2, 7, 12", "bad_yoga": "Dhriti", "bad_planets": "Jupiter"},
-    "Libra": {"bad_day": "Friday", "bad_nakshatra": "Uttara Ashadha", "bad_rashi": "Leo", "bad_tithi": "3, 8, 13", "bad_yoga": "Shoola", "bad_planets": "Venus"},
-    "Scorpio": {"bad_day": "Saturday", "bad_nakshatra": "Shravana", "bad_rashi": "Virgo", "bad_tithi": "4, 9, 14", "bad_yoga": "Ganda", "bad_planets": "Saturn"},
-    "Sagittarius": {"bad_day": "Sunday", "bad_nakshatra": "Dhanishtha", "bad_rashi": "Libra", "bad_tithi": "5, 10, 15", "bad_yoga": "Vriddhi", "bad_planets": "Sun"},
-    "Capricorn": {"bad_day": "Friday", "bad_nakshatra": "Revati", "bad_rashi": "Taurus", "bad_tithi": "1, 6, 11", "bad_yoga": "Brahma", "bad_planets": "Mercury"},
-    "Aquarius": {"bad_day": "Monday", "bad_nakshatra": "Ashwini", "bad_rashi": "Gemini", "bad_tithi": "2, 7, 12", "bad_yoga": "Vishkambha", "bad_planets": "Moon"},
-    "Pisces": {"bad_day": "Tuesday", "bad_nakshatra": "Bharani", "bad_rashi": "Cancer", "bad_tithi": "3, 8, 13", "bad_yoga": "Priti", "bad_planets": "Mars"},
+    "Aries":       {"bad_day": "Saturday",  "bad_karana": "Vishti",  "bad_lagna": "Kumbha",       "bad_masa": "Sravana",     "bad_nakshatra": "Swati",          "bad_prahara": "1", "bad_rashi": "Kumbha",  "bad_tithi": "2, 7, 12", "bad_yoga": "Siddha",     "bad_planets": "Saturn"},
+    "Taurus":      {"bad_day": "Sunday",    "bad_karana": "Kaulava", "bad_lagna": "Meena",        "bad_masa": "Bhadrapada",  "bad_nakshatra": "Vishakha",       "bad_prahara": "2", "bad_rashi": "Meena",   "bad_tithi": "3, 8, 13", "bad_yoga": "Vyatipata",  "bad_planets": "Sun"},
+    "Gemini":      {"bad_day": "Monday",    "bad_karana": "Bava",    "bad_lagna": "Mesha",        "bad_masa": "Ashwina",     "bad_nakshatra": "Anuradha",       "bad_prahara": "3", "bad_rashi": "Mesha",   "bad_tithi": "4, 9, 14", "bad_yoga": "Brahma",     "bad_planets": "Moon"},
+    "Cancer":      {"bad_day": "Tuesday",   "bad_karana": "Balava",  "bad_lagna": "Vrish",        "bad_masa": "Karttika",    "bad_nakshatra": "Jyeshtha",       "bad_prahara": "4", "bad_rashi": "Vrish",   "bad_tithi": "5, 10, 15","bad_yoga": "Atiganda",   "bad_planets": "Mars"},
+    "Leo":         {"bad_day": "Wednesday", "bad_karana": "Taitila", "bad_lagna": "Mithuna",      "bad_masa": "Margashira",  "bad_nakshatra": "Mula",           "bad_prahara": "1", "bad_rashi": "Mithuna", "bad_tithi": "1, 6, 11", "bad_yoga": "Sukarman",   "bad_planets": "Mercury"},
+    "Virgo":       {"bad_day": "Thursday",  "bad_karana": "Garaja",  "bad_lagna": "Karka",        "bad_masa": "Pausha",      "bad_nakshatra": "Purva Ashadha",  "bad_prahara": "2", "bad_rashi": "Karka",   "bad_tithi": "2, 7, 12", "bad_yoga": "Dhriti",     "bad_planets": "Jupiter"},
+    "Libra":       {"bad_day": "Friday",    "bad_karana": "Vanija",  "bad_lagna": "Simha",        "bad_masa": "Magha",       "bad_nakshatra": "Uttara Ashadha", "bad_prahara": "3", "bad_rashi": "Simha",   "bad_tithi": "3, 8, 13", "bad_yoga": "Shoola",     "bad_planets": "Venus"},
+    "Scorpio":     {"bad_day": "Saturday",  "bad_karana": "Vishti",  "bad_lagna": "Kanya",        "bad_masa": "Phalguna",    "bad_nakshatra": "Shravana",       "bad_prahara": "4", "bad_rashi": "Kanya",   "bad_tithi": "4, 9, 14", "bad_yoga": "Ganda",      "bad_planets": "Saturn"},
+    "Sagittarius": {"bad_day": "Sunday",    "bad_karana": "Bava",    "bad_lagna": "Tula",         "bad_masa": "Chaitra",     "bad_nakshatra": "Dhanishtha",     "bad_prahara": "1", "bad_rashi": "Tula",    "bad_tithi": "5, 10, 15","bad_yoga": "Vriddhi",    "bad_planets": "Sun"},
+    "Capricorn":   {"bad_day": "Friday",    "bad_karana": "Garaja",  "bad_lagna": "Vrishchika",   "bad_masa": "Ashwin",      "bad_nakshatra": "Revati",         "bad_prahara": "1", "bad_rashi": "Vrish",   "bad_tithi": "1, 6, 11", "bad_yoga": "Brahma",     "bad_planets": "Mercury"},
+    "Aquarius":    {"bad_day": "Monday",    "bad_karana": "Balava",  "bad_lagna": "Dhanu",        "bad_masa": "Karttika",    "bad_nakshatra": "Ashwini",        "bad_prahara": "2", "bad_rashi": "Dhanu",   "bad_tithi": "2, 7, 12", "bad_yoga": "Vishkambha", "bad_planets": "Moon"},
+    "Pisces":      {"bad_day": "Tuesday",   "bad_karana": "Taitila", "bad_lagna": "Makara",       "bad_masa": "Margashira",  "bad_nakshatra": "Bharani",        "bad_prahara": "3", "bad_rashi": "Makara",  "bad_tithi": "3, 8, 13", "bad_yoga": "Priti",      "bad_planets": "Mars"},
 }
 
 

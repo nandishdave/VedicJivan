@@ -110,6 +110,48 @@ def test_birth_time_details_has_all_expected_keys():
     assert expected.issubset(set(bt.keys()))
 
 
+def test_capricorn_ghatak_matches_astrosage_reference():
+    """All 10 Capricorn Ghatak fields must match the Astrosage Nandish Dave PDF.
+
+    Astrosage page-2 reference (Capricorn lagna):
+        Bad Day        Friday
+        Bad Karan      Garija
+        Bad Lagna      Vrishchika
+        Bad Month      Ashwin
+        Bad Nakshatra  Revati
+        Bad Prahar     1
+        Bad Rasi       Vrish
+        Bad Tithi      1, 6, 11
+        Bad Yoga       Brahma
+        Bad Planets    Mercury
+    """
+    from app.services.kundli_data import GHATAK
+    cap = GHATAK["Capricorn"]
+    assert cap["bad_day"] == "Friday"
+    assert cap["bad_karana"] == "Garaja"  # Astrosage spells it "Garija"
+    assert cap["bad_lagna"] == "Vrishchika"
+    assert cap["bad_masa"] == "Ashwin"
+    assert cap["bad_nakshatra"] == "Revati"
+    assert cap["bad_prahara"] == "1"
+    assert cap["bad_rashi"] == "Vrish"
+    assert cap["bad_tithi"] == "1, 6, 11"
+    assert cap["bad_yoga"] == "Brahma"
+    assert cap["bad_planets"] == "Mercury"
+
+
+def test_all_lagnas_have_complete_ghatak_set():
+    """Every lagna must define all 10 Ghatak fields so the renderer never blanks."""
+    from app.services.kundli_data import GHATAK
+    expected_keys = {
+        "bad_day", "bad_karana", "bad_lagna", "bad_masa", "bad_nakshatra",
+        "bad_prahara", "bad_rashi", "bad_tithi", "bad_yoga", "bad_planets",
+    }
+    assert len(GHATAK) == 12
+    for sign, fields in GHATAK.items():
+        missing = expected_keys - set(fields.keys())
+        assert not missing, f"{sign} missing Ghatak fields: {missing}"
+
+
 def test_birth_before_sunrise_wraps_ishtkaal():
     """A 03:00 birth with sunrise at 06:00 means yesterday's ishtkaal — 21 hours."""
     bt = calc_birth_time_details(

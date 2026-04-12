@@ -326,12 +326,30 @@ def _favourable_section(d: dict) -> str:
 
 
 def _ghatak_section(d: dict) -> str:
-    """Astrosage-style Ghatak (Malefics) panel — points to avoid."""
+    """Astrosage-style Ghatak (Malefics) panel — points to avoid.
+
+    Renders the 10 classical Ghata Chakra fields in Astrosage's display order:
+    Day, Karan, Lagna, Month, Nakshatra, Prahar, Rasi, Tithi, Yoga, Planets.
+    """
     sign = d["lagna"]["sign_name"]
     ghat = GHATAK.get(sign, {})
+
+    # Astrosage's exact field order and labels (Bad <Field>).
+    ordered_fields = [
+        ("bad_day",       "Bad Day"),
+        ("bad_karana",    "Bad Karan"),
+        ("bad_lagna",     "Bad Lagna"),
+        ("bad_masa",      "Bad Month"),
+        ("bad_nakshatra", "Bad Nakshatra"),
+        ("bad_prahara",   "Bad Prahar"),
+        ("bad_rashi",     "Bad Rasi"),
+        ("bad_tithi",     "Bad Tithi"),
+        ("bad_yoga",      "Bad Yoga"),
+        ("bad_planets",   "Bad Planets"),
+    ]
     rows = "".join(
-        f"<tr><td style='font-weight:bold; color:#555; width:45%;'>{k.replace('bad_', '').replace('_', ' ').title()}</td><td>{v}</td></tr>"
-        for k, v in ghat.items()
+        f"<tr><td style='font-weight:bold; color:#555; width:45%;'>{label}</td><td>{ghat.get(key, '—')}</td></tr>"
+        for key, label in ordered_fields
     )
     return f"""
     <h2>Ghatak (Malefics)</h2>
