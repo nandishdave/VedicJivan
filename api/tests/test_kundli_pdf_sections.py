@@ -80,6 +80,14 @@ def test_avkahada_and_ghatak_present_in_default_order(stub_section_builders, cha
     assert html.index("<favourable />") < html.index("<ghatak />")
 
 
+def test_friendship_section_present_before_shadbala(stub_section_builders, chart_data):
+    """Astrosage page-49 alignment: friendship table sits between divisional and shadbala."""
+    html = _build_html(chart_data)
+    assert "<friendship />" in html
+    assert html.index("<divisional />") < html.index("<friendship />")
+    assert html.index("<friendship />") < html.index("<shadbala />")
+
+
 def test_disabled_section_excluded(stub_section_builders, chart_data):
     """A section with enabled=False is dropped from the rendered HTML."""
     sections = [

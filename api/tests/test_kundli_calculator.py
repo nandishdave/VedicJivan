@@ -110,6 +110,83 @@ def test_birth_time_details_has_all_expected_keys():
     assert expected.issubset(set(bt.keys()))
 
 
+def test_calc_friendships_permanent_matches_classical_bphs():
+    """Sun row of the permanent friendship matrix must match BPHS:
+    Moon=Friend, Mars=Friend, Mercury=Neutral, Jupiter=Friend, Venus=Enemy, Saturn=Enemy.
+    """
+    from app.services.kundli_calculator import calc_friendships
+
+    # Minimal stub planet positions — only sign field is used for permanent.
+    planets = {p: {"sign": i} for i, p in enumerate(
+        ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    )}
+    fr = calc_friendships(planets)
+
+    sun_row = fr["permanent"]["Sun"]
+    assert sun_row["Sun"] == "—"
+    assert sun_row["Moon"] == "Friend"
+    assert sun_row["Mars"] == "Friend"
+    assert sun_row["Mercury"] == "Neutral"
+    assert sun_row["Jupiter"] == "Friend"
+    assert sun_row["Venus"] == "Enemy"
+    assert sun_row["Saturn"] == "Enemy"
+
+    # Symmetric check on Saturn row — Sun should be Enemy.
+    assert fr["permanent"]["Saturn"]["Sun"] == "Enemy"
+    assert fr["permanent"]["Saturn"]["Mercury"] == "Friend"
+
+
+def test_calc_friendships_temporary_uses_house_diff():
+    """Two planets in the 2nd from each other are temporary friends; in the 1st they
+    would be temporary enemies (same sign / 1st from each other)."""
+    from app.services.kundli_calculator import calc_friendships
+
+    # Sun in Aries (0), Moon in Taurus (1) → Moon is 2nd from Sun.
+    planets = {
+        "Sun":     {"sign": 0},
+        "Moon":    {"sign": 1},
+        "Mars":    {"sign": 0},   # same sign as Sun
+        "Mercury": {"sign": 6},   # 7th from Sun (1+6=7)
+        "Jupiter": {"sign": 4},
+        "Venus":   {"sign": 9},
+        "Saturn":  {"sign": 11},
+    }
+    fr = calc_friendships(planets)
+    # Moon is 2nd from Sun → temporary friend
+    assert fr["temporary"]["Sun"]["Moon"] == "T.Friend"
+    # Mars is 1st from Sun → temporary enemy
+    assert fr["temporary"]["Sun"]["Mars"] == "T.Enemy"
+    # Mercury is 7th from Sun → temporary enemy
+    assert fr["temporary"]["Sun"]["Mercury"] == "T.Enemy"
+
+
+def test_calc_friendships_compound_combines_natural_and_temporary():
+    """Compound (Panchadha) labels should include all five categories."""
+    from app.services.kundli_calculator import calc_friendships
+
+    planets = {p: {"sign": i * 2} for i, p in enumerate(
+        ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    )}
+    fr = calc_friendships(planets)
+    valid = {"Best Friend", "Friend", "Neutral", "Enemy", "Bitter Enemy", "—"}
+    for from_p in fr["planets"]:
+        for to_p in fr["planets"]:
+            assert fr["compound"][from_p][to_p] in valid
+
+
+def test_friendship_matrix_diagonal_is_dash():
+    """Self-relation cells must be '—' in all three matrices."""
+    from app.services.kundli_calculator import calc_friendships
+    planets = {p: {"sign": i} for i, p in enumerate(
+        ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    )}
+    fr = calc_friendships(planets)
+    for p in fr["planets"]:
+        assert fr["permanent"][p][p] == "—"
+        assert fr["temporary"][p][p] == "—"
+        assert fr["compound"][p][p] == "—"
+
+
 def test_capricorn_favourable_matches_astrosage_reference():
     """All 10 Capricorn Favourable Points fields must match the Astrosage PDF.
 

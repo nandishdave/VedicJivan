@@ -120,10 +120,11 @@ DEFAULT_REPORT_SECTIONS: list[ReportSection] = [
     ReportSection(id="dasha",           label="Mahadasha",              description="Vimshottari Mahadasha sequence — 120-year planetary period cycle.",                            is_paid=False, enabled=True, order=15),
     ReportSection(id="antardasha",      label="Antardasha",             description="Sub-periods within the current Mahadasha.",                                                    is_paid=False, enabled=True, order=16),
     ReportSection(id="divisional",      label="Divisional Charts",      description="D9 (marriage), D10 (career), D7 (children) analysis.",                                         is_paid=False, enabled=True, order=17),
-    ReportSection(id="shadbala",        label="Planetary Strength",     description="Shadbala — which planets are strong or weak and why.",                                         is_paid=False, enabled=True, order=18),
-    ReportSection(id="planet_positions",label="Planet Positions",       description="Complete planet ephemeris table with degrees, sign, nakshatra, dignity.",                      is_paid=False, enabled=True, order=19),
-    ReportSection(id="numerology",      label="Numerology",             description="Moolank, Bhagyank, Namank and personal year analysis (Chaldean + Vedic).",                     is_paid=False, enabled=True, order=20),
-    ReportSection(id="remedies",        label="Gemstone & Remedies",    description="Gemstone recommendations and personalised remedial measures.",                                 is_paid=False, enabled=True, order=21),
+    ReportSection(id="friendship",      label="Friendship Table",       description="Permanent (Naisargika), Temporary (Tatkalika) and Compound (Panchadha) friendship matrices.", is_paid=False, enabled=True, order=18),
+    ReportSection(id="shadbala",        label="Planetary Strength",     description="Shadbala — which planets are strong or weak and why.",                                         is_paid=False, enabled=True, order=19),
+    ReportSection(id="planet_positions",label="Planet Positions",       description="Complete planet ephemeris table with degrees, sign, nakshatra, dignity.",                      is_paid=False, enabled=True, order=20),
+    ReportSection(id="numerology",      label="Numerology",             description="Moolank, Bhagyank, Namank and personal year analysis (Chaldean + Vedic).",                     is_paid=False, enabled=True, order=21),
+    ReportSection(id="remedies",        label="Gemstone & Remedies",    description="Gemstone recommendations and personalised remedial measures.",                                 is_paid=False, enabled=True, order=22),
     # Reserved for the v2 paid narrative tier — disabled in free PDF until Phase 4 ships.
     ReportSection(id="predictions",     label="Life Area Predictions",  description="AI-generated combined-reading narrative across 15 life areas (v2 paid tier).",                 is_paid=True,  enabled=False, order=99),
 ]

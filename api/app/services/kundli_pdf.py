@@ -99,6 +99,7 @@ SECTION_BUILDERS = {
     "dasha":            lambda d: _dasha_section(d),
     "antardasha":       lambda d: _antardasha_section(d),
     "divisional":       lambda d: _divisional_charts_section(d),
+    "friendship":       lambda d: _friendship_section(d),
     "shadbala":         lambda d: _shadbala_section(d),
     "planet_positions": lambda d: _planet_positions(d),
     "numerology":       lambda d: _numerology_section(d),
@@ -125,6 +126,7 @@ _DEFAULT_SECTION_ORDER = [
     "dasha",
     "antardasha",
     "divisional",
+    "friendship",
     "shadbala",
     "planet_positions",
     "numerology",
@@ -340,6 +342,56 @@ def _favourable_section(d: dict) -> str:
     return f"""
     <h2>Favourable Points</h2>
     <table>{rows}</table>"""
+
+
+def _friendship_section(d: dict) -> str:
+    """Astrosage-style Friendship Tables — Permanent, Temporary, Compound.
+
+    Renders three 7×7 matrices between the seven traditional planets:
+
+      Permanent (Naisargika): static classical table per BPHS — same for everyone.
+      Temporary (Tatkalika)  : derived from each planet's current sign placement.
+      Compound (Panchadha)   : combination of the above; the strongest practical
+                               friendship measure used in dignity calculations.
+    """
+    fr = d.get("friendships")
+    if not fr:
+        return ""
+
+    planets = fr["planets"]
+
+    def _build_table(matrix: dict, caption: str) -> str:
+        header = "<th></th>" + "".join(
+            f"<th style='text-align:center;'>{PLANET_ABBR.get(p, p[:2])}</th>"
+            for p in planets
+        )
+        rows = ""
+        for from_p in planets:
+            row_cells = "".join(
+                f"<td style='text-align:center; font-size:9pt;'>{matrix[from_p][to_p]}</td>"
+                for to_p in planets
+            )
+            rows += (
+                f"<tr><th style='text-align:left;'>{from_p}</th>{row_cells}</tr>"
+            )
+        return f"""
+        <h3>{caption}</h3>
+        <table>
+            <tr>{header}</tr>
+            {rows}
+        </table>"""
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Friendship Table</h2>
+    <p>The classical Vedic friendship matrix between the seven traditional
+    planets. Permanent friendship is fixed by classical doctrine; Temporary
+    friendship depends on each planet's current sign placement; Compound
+    friendship (Panchadha Maitri) combines the two and is used to judge a
+    planet's effective dignity in any sign.</p>
+    {_build_table(fr['permanent'], 'Permanent Friendship (Naisargika)')}
+    {_build_table(fr['temporary'], 'Temporary Friendship (Tatkalika)')}
+    {_build_table(fr['compound'], 'Compound Friendship (Panchadha Maitri)')}"""
 
 
 def _ghatak_section(d: dict) -> str:
