@@ -84,7 +84,9 @@ def generate_pdf(chart_data: dict, sections: list[dict] | None = None) -> bytes:
 SECTION_BUILDERS = {
     "birth_chart":      lambda d: _birth_chart_page(d),
     "basic_details":    lambda d: _basic_details(d),
-    "favourable":       lambda d: _favourable_ghatak(d),
+    "avkahada":         lambda d: _avkahada_chakra(d),
+    "favourable":       lambda d: _favourable_section(d),
+    "ghatak":           lambda d: _ghatak_section(d),
     "ascendant":        lambda d: _ascendant_section(d),
     "nakshatra":        lambda d: _nakshatra_section(d),
     "character_life":   lambda d: _character_life(d),
@@ -103,13 +105,14 @@ SECTION_BUILDERS = {
     "remedies":         lambda d: _remedies_section(d),
 }
 
-# Default order matches the original hardcoded list in _build_html so that
-# generate_pdf(chart_data) with no sections argument is byte-identical to
-# the pre-toggle output.
+# Default order — Astrosage page-2 layout (basic details → avkahada →
+# favourable → ghatak) followed by the rest of the report.
 _DEFAULT_SECTION_ORDER = [
     "birth_chart",
     "basic_details",
+    "avkahada",
     "favourable",
+    "ghatak",
     "ascendant",
     "nakshatra",
     "character_life",
@@ -206,52 +209,101 @@ def _cover(d: dict) -> str:
 
 
 def _basic_details(d: dict) -> str:
-    lagna = d["lagna"]
-    nak = d["nakshatra"]
+    """Astrosage-style Basic Details panel.
+
+    Mirrors the leftmost panel on Astrosage page 2 — birth particulars,
+    coordinates, time conversions, panchanga summary and luminary timings.
+    """
     pan = d["panchanga"]
-    dasha = d["dasha"]["dashas"][0]
-    moon = d["planets"]["Moon"]
+    bt = d.get("birth_time", {})
+
+    # Day duration: sunset - sunrise
+    sr = d.get("sunrise", "N/A")
+    ss = d.get("sunset", "N/A")
+    day_duration = "—"
+    try:
+        sh, sm = map(int, sr.split(":"))
+        eh, em = map(int, ss.split(":"))
+        total = (eh * 60 + em) - (sh * 60 + sm)
+        if total < 0:
+            total += 24 * 60
+        day_duration = f"{total // 60:02d}:{total % 60:02d}:00"
+    except (ValueError, AttributeError):
+        pass
 
     rows = [
-        ("Name", d["name"]),
-        ("Gender", d["gender"].title()),
-        ("Date of Birth", d["dob"]),
-        ("Time of Birth", d["tob"]),
+        ("Sex", d["gender"].title()),
+        ("Date of Birth", d["dob"].replace("-", " : ")),
+        ("Time of Birth", d["tob"] + ":00"),
+        ("Day of Birth", bt.get("day_of_birth", "—")),
+        ("Ishtkaal", bt.get("ishtkaal", "—")),
         ("Place of Birth", d["place_name"]),
-        ("Latitude / Longitude", f"{abs(d['lat']):.2f}{'N' if d['lat'] >= 0 else 'S'} / {abs(d['lon']):.2f}{'E' if d['lon'] >= 0 else 'W'}"),
-        ("", ""),
-        ("Lagna (Ascendant)", f"{lagna['sign_name']}"),
-        ("Lagna Lord", lagna["sign_lord"]),
-        ("Rasi (Moon Sign)", moon["sign_name"]),
-        ("Rasi Lord", moon["sign_lord"]),
-        ("Nakshatra - Pada", f"{nak['name']} - {nak['pada']}"),
-        ("Nakshatra Lord", nak["lord"]),
+        ("Time Zone", str(bt.get("tz_offset_hours", "—"))),
+        ("Latitude", bt.get("latitude_dms", "—")),
+        ("Longitude", bt.get("longitude_dms", "—")),
+        ("Local Time Correction", bt.get("local_time_correction", "—")),
+        ("LMT at Birth", bt.get("lmt_at_birth", "—")),
+        ("GMT at Birth", bt.get("gmt_at_birth", "—")),
+        ("Sidereal Time", bt.get("sidereal_time", "—")),
         ("Tithi", pan["tithi_name"]),
         ("Paksha", pan["paksha"]),
         ("Yoga", pan["yoga_name"]),
         ("Karan", pan["karan_name"]),
-        ("Sunrise / Sunset", f"{d.get('sunrise', 'N/A')} / {d.get('sunset', 'N/A')}"),
-        ("Dasha Balance at Birth", f"{dasha['planet']}  {dasha['years']:.1f} years"),
-        ("Ayanamsa (Lahiri)", f"{d['ayanamsa']:.4f}°"),
+        ("Sunrise", sr),
+        ("Sunset", ss),
+        ("Day Duration", day_duration),
+    ]
+
+    rows_html = "".join(
+        f"<tr><td style='font-weight:bold; color:#555; width:45%;'>{label}</td><td>{value}</td></tr>"
+        for label, value in rows
+    )
+    return f"""
+    <h2>Basic Details</h2>
+    <table>{rows_html}</table>"""
+
+
+def _avkahada_chakra(d: dict) -> str:
+    """Astrosage-style Avkahada Chakra — traditional Vedic chart attributes."""
+    av = d.get("avkahada", {})
+    lagna = d["lagna"]
+    nak = d["nakshatra"]
+    moon = d["planets"]["Moon"]
+    dasha = d["dasha"]["dashas"][0]
+
+    # Sun sign — sidereal Indian and tropical Western (rough approximation:
+    # Western = Indian + 1 sign for the equinox precession of ~24°).
+    sun = d["planets"]["Sun"]
+    sun_sign_indian = sun["sign_name"]
+
+    rows = [
+        ("Paya (Nakshatra Based)", av.get("paya", "—")),
+        ("Varna", av.get("varna", "—")),
+        ("Vasya", av.get("vasya", "—")),
+        ("Yoni", av.get("yoni", "—")),
+        ("Gana", av.get("gana", "—")),
+        ("Nadi", av.get("nadi", "—")),
+        ("Tatva", av.get("tatva", "—")),
+        ("Dasa Balance", f"{dasha['planet']}  {dasha['years']:.1f} years"),
+        ("Lagna", lagna["sign_name"]),
+        ("Lagna Lord", lagna["sign_lord"]),
+        ("Rasi", moon["sign_name"]),
+        ("Rasi Lord", moon["sign_lord"]),
+        ("Nakshatra - Pada", f"{nak['name']} - {nak['pada']}"),
+        ("Nakshatra Lord", nak["lord"]),
+        ("SunSign (Indian)", sun_sign_indian),
+        ("Ayanamsa", f"{d['ayanamsa']:.4f}°"),
+        ("Ayanamsa Name", "Lahiri"),
         ("Julian Day", str(d["julian_day"])),
     ]
 
-    rows_html = ""
-    for label, value in rows:
-        if label == "":
-            rows_html += '<tr><td colspan="2" style="height: 6px; border: none;"></td></tr>'
-        else:
-            rows_html += f"<tr><td style='font-weight:bold; color:#555; width:45%;'>{label}</td><td>{value}</td></tr>"
-
+    rows_html = "".join(
+        f"<tr><td style='font-weight:bold; color:#555; width:45%;'>{label}</td><td>{value}</td></tr>"
+        for label, value in rows
+    )
     return f"""
-    <h2>Basic Details</h2>
-    <table>{rows_html}</table>
-
-    <h3>Planetary Positions</h3>
-    <table>
-        <tr><th>Planet</th><th>Sign</th><th>Degree</th><th>House</th><th>Lord</th><th>Retro</th></tr>
-        {''.join(_planet_row(name, info) for name, info in d['planets'].items())}
-    </table>"""
+    <h2>Avkahada Chakra</h2>
+    <table>{rows_html}</table>"""
 
 
 def _planet_row(name: str, info: dict) -> str:
@@ -259,33 +311,31 @@ def _planet_row(name: str, info: dict) -> str:
     return f"<tr><td><strong>{name}</strong></td><td>{info['sign_name']}</td><td>{info['degree_in_sign']:.1f}°</td><td>{info['house']}</td><td>{info['sign_lord']}</td><td>{retro}</td></tr>"
 
 
-def _favourable_ghatak(d: dict) -> str:
+def _favourable_section(d: dict) -> str:
+    """Astrosage-style Favourable Points panel."""
     sign = d["lagna"]["sign_name"]
     fav = FAVOURABLE.get(sign, {})
-    ghat = GHATAK.get(sign, {})
-
-    fav_rows = "".join(
-        f"<tr><td style='font-weight:bold; color:#555;'>{k.replace('_', ' ').title()}</td><td>{v}</td></tr>"
+    rows = "".join(
+        f"<tr><td style='font-weight:bold; color:#555; width:45%;'>{k.replace('_', ' ').title()}</td><td>{v}</td></tr>"
         for k, v in fav.items()
     )
-    ghat_rows = "".join(
-        f"<tr><td style='font-weight:bold; color:#555;'>{k.replace('bad_', '').replace('_', ' ').title()}</td><td>{v}</td></tr>"
+    return f"""
+    <h2>Favourable Points</h2>
+    <table>{rows}</table>"""
+
+
+def _ghatak_section(d: dict) -> str:
+    """Astrosage-style Ghatak (Malefics) panel — points to avoid."""
+    sign = d["lagna"]["sign_name"]
+    ghat = GHATAK.get(sign, {})
+    rows = "".join(
+        f"<tr><td style='font-weight:bold; color:#555; width:45%;'>{k.replace('bad_', '').replace('_', ' ').title()}</td><td>{v}</td></tr>"
         for k, v in ghat.items()
     )
-
     return f"""
-    <div class="page-break"></div>
-    <h2>Avakahada Chakra &amp; Favourable Points</h2>
-    <div class="two-col">
-        <div>
-            <h3>Favourable Points</h3>
-            <table>{fav_rows}</table>
-        </div>
-        <div>
-            <h3>Ghatak (Malefics)</h3>
-            <table>{ghat_rows}</table>
-        </div>
-    </div>"""
+    <h2>Ghatak (Malefics)</h2>
+    <p style='font-size:10pt; color:#666; margin-bottom:8px;'>Points and timings to avoid for important undertakings.</p>
+    <table>{rows}</table>"""
 
 
 def _ascendant_section(d: dict) -> str:

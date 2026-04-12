@@ -418,9 +418,12 @@ def _drik_bala(planet: str, planet_lon: float, planets: dict) -> float:
 
 
 def _parse_hm(t: str) -> float:
-    """Parse HH:MM string to float hours."""
-    h, m = map(int, t.split(":"))
-    return h + m / 60.0
+    """Parse HH:MM or HH:MM:SS string to float hours."""
+    parts = t.split(":")
+    h = int(parts[0])
+    m = int(parts[1]) if len(parts) > 1 else 0
+    s = int(parts[2]) if len(parts) > 2 else 0
+    return h + m / 60.0 + s / 3600.0
 
 
 
@@ -1099,28 +1102,40 @@ def _get_local_tz(lat: float, lon: float):
 
 
 def calc_sunrise_sunset(jd: float, lat: float, lon: float) -> dict:
-    """Calculate sunrise and sunset times for the birth date (local time)."""
+    """Calculate sunrise and sunset times for the birth date (local time).
+
+    Uses the modern pyswisseph rise_trans signature (tjd, body, rsmi, geopos).
+    The previous code passed the legacy 8-argument form which silently raised
+    on pyswisseph 2.10+, leaving sunrise as N/A in production.
+    """
     import swisseph as swe
     try:
         geopos = (lon, lat, 0)  # (longitude, latitude, altitude)
-        sunrise_jd = swe.rise_trans(jd - 1, swe.SUN, "", 0, swe.CALC_RISE, geopos, 0, 0)
-        sunset_jd = swe.rise_trans(jd - 1, swe.SUN, "", 0, swe.CALC_SET, geopos, 0, 0)
-        sr_jd = sunrise_jd[0] if isinstance(sunrise_jd, tuple) else sunrise_jd
-        ss_jd = sunset_jd[0] if isinstance(sunset_jd, tuple) else sunset_jd
+        sr_ret = swe.rise_trans(jd - 1, swe.SUN, swe.CALC_RISE, geopos)
+        ss_ret = swe.rise_trans(jd - 1, swe.SUN, swe.CALC_SET, geopos)
+        # rise_trans returns (retflag, (jd, ...)) — extract the JD.
+        sr_jd = sr_ret[1][0] if isinstance(sr_ret, tuple) and len(sr_ret) > 1 else sr_ret
+        ss_jd = ss_ret[1][0] if isinstance(ss_ret, tuple) and len(ss_ret) > 1 else ss_ret
 
         local_tz = _get_local_tz(lat, lon)
 
-        def jd_to_local_hm(j):
-            """Convert Julian Day to local HH:MM string."""
-            # JD → UTC datetime
-            frac = (j + 0.5) % 1.0
-            total_minutes_utc = round(frac * 24 * 60)
-            utc_dt = datetime(2000, 1, 1, total_minutes_utc // 60, total_minutes_utc % 60, tzinfo=timezone.utc)
-            # Convert to local
+        def jd_to_local_hms(j):
+            """Convert Julian Day (UT) to local HH:MM:SS string."""
+            # JD epoch is noon UT on Jan 1, 4713 BC; +0.5 puts midnight UT at integer.
+            # Decompose into date + time fraction → UTC datetime → local.
+            jd_int = int(j + 0.5)
+            frac = (j + 0.5) - jd_int
+            total_seconds = round(frac * 86400)
+            h, rem = divmod(total_seconds, 3600)
+            mi, s = divmod(rem, 60)
+            # Convert JD integer back to a calendar date for the UTC instant.
+            # We don't actually need the exact date here — just the time-of-day —
+            # because rise/set always lands on the requested civil date.
+            utc_dt = datetime(2000, 1, 1, h % 24, mi, s, tzinfo=timezone.utc)
             local_dt = utc_dt.astimezone(local_tz)
-            return f"{local_dt.hour:02d}:{local_dt.minute:02d}"
+            return f"{local_dt.hour:02d}:{local_dt.minute:02d}:{local_dt.second:02d}"
 
-        return {"sunrise": jd_to_local_hm(sr_jd), "sunset": jd_to_local_hm(ss_jd)}
+        return {"sunrise": jd_to_local_hms(sr_jd), "sunset": jd_to_local_hms(ss_jd)}
     except Exception:
         return {"sunrise": "N/A", "sunset": "N/A"}
 
@@ -1986,6 +2001,205 @@ def calc_numerology(name: str, dob_str: str, current_year: int) -> dict:
     return result
 
 
+# ── Avkahada Chakra (traditional Vedic chart attributes) ───────────────────
+
+# Yoni (animal yoni) by nakshatra index 0..26 — Sanskrit names per BPHS,
+# matching the Astrosage PDF convention.
+NAKSHATRA_YONI = [
+    "Ashwa", "Gaja", "Mesha", "Sarpa", "Sarpa", "Shwan",
+    "Marjara", "Mesha", "Marjara", "Mushak", "Mushak", "Gau",
+    "Mahisha", "Vyaghra", "Mahisha", "Vyaghra", "Mriga", "Mriga",
+    "Shwan", "Vanara", "Nakula", "Vanara", "Simha",
+    "Ashwa", "Simha", "Gau", "Gaja",
+]
+
+# Gana by nakshatra index 0..26 — using Astrosage's "Devta" spelling.
+NAKSHATRA_GANA = [
+    "Devta", "Manushya", "Rakshasa", "Manushya", "Devta", "Manushya",
+    "Devta", "Devta", "Rakshasa", "Rakshasa", "Manushya", "Manushya",
+    "Devta", "Rakshasa", "Devta", "Rakshasa", "Devta", "Rakshasa",
+    "Rakshasa", "Manushya", "Manushya", "Devta", "Rakshasa",
+    "Rakshasa", "Manushya", "Manushya", "Devta",
+]
+
+# Nadi by nakshatra index 0..26 — Vata=Aadi, Pitta=Madhya, Kapha=Antya.
+NAKSHATRA_NADI = [
+    "Aadi", "Madhya", "Antya", "Antya", "Madhya", "Aadi",
+    "Aadi", "Madhya", "Antya", "Antya", "Madhya", "Aadi",
+    "Aadi", "Madhya", "Antya", "Antya", "Madhya", "Aadi",
+    "Aadi", "Madhya", "Antya", "Antya", "Madhya", "Aadi",
+    "Aadi", "Madhya", "Antya",
+]
+
+# Paya (metal) by nakshatra index 0..26 — one common classical assignment.
+# Astrosage shows Anuradha = Silver, which this table matches.
+NAKSHATRA_PAYA = [
+    "Iron", "Iron", "Silver", "Silver", "Silver", "Silver",
+    "Silver", "Silver", "Silver", "Copper", "Copper", "Copper",
+    "Silver", "Silver", "Iron", "Iron", "Silver", "Silver",
+    "Iron", "Copper", "Copper", "Silver", "Iron",
+    "Iron", "Gold", "Gold", "Gold",
+]
+
+# Varna by Moon sign (rashi) index 0..11. Per BPHS — water signs Brahmin,
+# fire Kshatriya, earth Vaishya, air Shudra.
+RASHI_VARNA = [
+    "Kshatriya",  # Aries (fire)
+    "Vaishya",    # Taurus (earth)
+    "Shudra",     # Gemini (air)
+    "Brahmin",    # Cancer (water)
+    "Kshatriya",  # Leo (fire)
+    "Vaishya",    # Virgo (earth)
+    "Shudra",     # Libra (air)
+    "Brahmin",    # Scorpio (water)
+    "Kshatriya",  # Sagittarius (fire)
+    "Vaishya",    # Capricorn (earth)
+    "Shudra",     # Aquarius (air)
+    "Brahmin",    # Pisces (water)
+]
+
+# Vasya (controllability) by Moon sign index 0..11.
+RASHI_VASYA = [
+    "Chatuspada",  # Aries (quadruped)
+    "Chatuspada",  # Taurus
+    "Manava",      # Gemini (human)
+    "Jalachara",   # Cancer (aquatic)
+    "Vanachara",   # Leo (wild)
+    "Manava",      # Virgo
+    "Manava",      # Libra
+    "Keeta",       # Scorpio (insect)
+    "Chatuspada",  # Sagittarius (1st half — simplification)
+    "Jalachara",   # Capricorn (2nd half) — simplification
+    "Manava",      # Aquarius
+    "Jalachara",   # Pisces
+]
+
+# Tatva (element) by Moon sign index 0..11.
+RASHI_TATVA = [
+    "Fire", "Earth", "Air", "Water",
+    "Fire", "Earth", "Air", "Water",
+    "Fire", "Earth", "Air", "Water",
+]
+
+SIGN_NAMES_EN = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]
+
+
+def calc_avkahada(nakshatra_num: int, moon_sign: int) -> dict:
+    """Return the traditional Avkahada Chakra attributes for the chart.
+
+    Varna and Vasya are derived from the Moon sign (rashi); yoni, gana, nadi
+    and paya are derived from the Moon's nakshatra. These match what Astrosage
+    and other classical Jyotish software display on the basic-details page.
+    """
+    return {
+        "varna": RASHI_VARNA[moon_sign],
+        "vasya": RASHI_VASYA[moon_sign],
+        "yoni": NAKSHATRA_YONI[nakshatra_num],
+        "gana": NAKSHATRA_GANA[nakshatra_num],
+        "nadi": NAKSHATRA_NADI[nakshatra_num],
+        "paya": NAKSHATRA_PAYA[nakshatra_num],
+        "tatva": RASHI_TATVA[moon_sign],
+    }
+
+
+# ── Birth time details (LMT, GMT, ishtkaal, sidereal time, weekday) ────────
+
+def _hms(total_seconds: float) -> str:
+    """Format a positive seconds count as HH:MM:SS."""
+    s = int(round(total_seconds))
+    return f"{s // 3600:02d}:{(s % 3600) // 60:02d}:{s % 60:02d}"
+
+
+def _signed_hms(seconds: float) -> str:
+    """Format a possibly-negative seconds count as ±HH:MM:SS."""
+    sign = "-" if seconds < 0 else "+"
+    return sign + _hms(abs(seconds))
+
+
+def calc_birth_time_details(dob: str, tob: str, lat: float, lon: float, jd: float, sunrise_hm: str) -> dict:
+    """Compute the time-related fields shown on the Astrosage page-2 basic-details panel.
+
+    Returns weekday, time zone, latitude/longitude DMS strings, LMT/GMT/local
+    correction, ishtkaal (time from sunrise in ghati-pala-vipala), and the
+    sidereal time at GMT.
+    """
+    from timezonefinder import TimezoneFinder
+    from zoneinfo import ZoneInfo
+    import swisseph as swe
+
+    tf = TimezoneFinder()
+    tz_name = tf.timezone_at(lat=lat, lng=lon) or "UTC"
+    tz = ZoneInfo(tz_name)
+
+    birth_date = date.fromisoformat(dob)
+    h, m = map(int, tob.split(":"))
+    local_dt = datetime(birth_date.year, birth_date.month, birth_date.day, h, m, tzinfo=tz)
+    utc_dt = local_dt.astimezone(timezone.utc)
+
+    # Time zone offset in hours (e.g. 5.5 for IST)
+    tz_offset_hours = local_dt.utcoffset().total_seconds() / 3600
+
+    # Local Mean Time at the birth longitude (LMT) — UTC + (lon / 15) hours
+    lmt_offset_seconds = lon / 15 * 3600
+    lmt_dt = utc_dt + timedelta(seconds=lmt_offset_seconds)
+    # Local time correction = LMT minus civil zone time at the same instant
+    local_correction_seconds = lmt_offset_seconds - (tz_offset_hours * 3600)
+
+    # Ishtkaal — time elapsed from local sunrise to birth, expressed in
+    # ghati-pala-vipala (1 ghati = 24 min, 1 pala = 24 sec, 1 vipala = 0.4 sec).
+    # Falls back to "—" when sunrise can't be computed (e.g. swisseph error).
+    ishtkaal = "—"
+    try:
+        if sunrise_hm and sunrise_hm != "N/A" and ":" in sunrise_hm:
+            parts = sunrise_hm.split(":")
+            sr_h = int(parts[0])
+            sr_m = int(parts[1])
+            sr_s = int(parts[2]) if len(parts) > 2 else 0
+            sunrise_seconds = sr_h * 3600 + sr_m * 60 + sr_s
+            birth_seconds = h * 3600 + m * 60
+            elapsed = birth_seconds - sunrise_seconds
+            if elapsed < 0:
+                elapsed += 86400  # birth before sunrise → previous day's count
+            ghatis = int(elapsed // 1440)
+            pala_remainder = elapsed - ghatis * 1440
+            palas = int(pala_remainder // 24)
+            vipalas = int(round((pala_remainder - palas * 24) / 0.4))
+            ishtkaal = f"{ghatis:03d}-{palas:02d}-{vipalas:02d}"
+    except (ValueError, IndexError):
+        pass
+
+    # Sidereal time at Greenwich for the birth instant (in hours)
+    try:
+        sidereal_hours = swe.sidtime(jd) % 24
+        sidereal_str = _hms(sidereal_hours * 3600)
+    except Exception:
+        sidereal_str = "—"
+
+    # Latitude and longitude as DMS strings
+    def _dms(value: float, pos: str, neg: str) -> str:
+        hemi = pos if value >= 0 else neg
+        v = abs(value)
+        deg = int(v)
+        minutes = int((v - deg) * 60)
+        return f"{deg:02d}:{minutes:02d}:{hemi}"
+
+    return {
+        "day_of_birth": local_dt.strftime("%A"),
+        "tz_name": tz_name,
+        "tz_offset_hours": round(tz_offset_hours, 2),
+        "latitude_dms": _dms(lat, "N", "S"),
+        "longitude_dms": _dms(lon, "E", "W"),
+        "lmt_at_birth": _hms((lmt_dt.hour * 3600) + (lmt_dt.minute * 60) + lmt_dt.second),
+        "gmt_at_birth": _hms((utc_dt.hour * 3600) + (utc_dt.minute * 60) + utc_dt.second),
+        "local_time_correction": _signed_hms(local_correction_seconds),
+        "ishtkaal": ishtkaal,
+        "sidereal_time": sidereal_str,
+    }
+
+
 # ── Master builder ───────────────────────────────────────────────────────────
 
 def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: float, place_name: str) -> dict:
@@ -2002,6 +2216,8 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     manglik = calc_manglik(planets, lagna["sign"])
     sadesati = calc_sadesati(planets["Moon"]["sign"])
     sun_sunset = calc_sunrise_sunset(jd, lat, lon)
+    avkahada = calc_avkahada(nakshatra["num"], planets["Moon"]["sign"])
+    birth_time = calc_birth_time_details(dob, tob, lat, lon, jd, sun_sunset["sunrise"])
     divisional = calc_divisional_charts(planets, lagna)
     antardasha = calc_antardasha(dasha["dashas"])
     shadbala = calc_shadbala(planets, lagna, jd, dob, tob, divisional, sun_sunset=sun_sunset)
@@ -2037,6 +2253,8 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "sadesati": sadesati,
         "sunrise": sun_sunset["sunrise"],
         "sunset": sun_sunset["sunset"],
+        "avkahada": avkahada,
+        "birth_time": birth_time,
         "divisional_charts": divisional,
         "antardasha": antardasha,
         "shadbala": shadbala,

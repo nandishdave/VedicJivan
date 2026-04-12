@@ -60,14 +60,24 @@ def test_default_order_byte_identical(stub_section_builders, chart_data):
     assert _build_html(chart_data) == _build_html(chart_data, explicit)
 
 
-def test_default_order_matches_legacy_section_count(stub_section_builders, chart_data):
-    """Default order produces 19 body sections (the legacy hardcoded count)."""
+def test_default_order_includes_all_known_sections(stub_section_builders, chart_data):
+    """Default order produces every section from _DEFAULT_SECTION_ORDER."""
     html = _build_html(chart_data)
-    # Each stub emits `<{sid} />` — count them.
     body_tags = sum(1 for sid in _DEFAULT_SECTION_ORDER if f"<{sid} />" in html)
-    assert body_tags == 19
+    assert body_tags == len(_DEFAULT_SECTION_ORDER)
     assert "<cover />" in html
     assert "<footer />" in html
+
+
+def test_avkahada_and_ghatak_present_in_default_order(stub_section_builders, chart_data):
+    """Astrosage page-2 alignment: avkahada and ghatak are now top-level sections."""
+    html = _build_html(chart_data)
+    assert "<avkahada />" in html
+    assert "<ghatak />" in html
+    # Page-2 layout: basic_details → avkahada → favourable → ghatak
+    assert html.index("<basic_details />") < html.index("<avkahada />")
+    assert html.index("<avkahada />") < html.index("<favourable />")
+    assert html.index("<favourable />") < html.index("<ghatak />")
 
 
 def test_disabled_section_excluded(stub_section_builders, chart_data):
