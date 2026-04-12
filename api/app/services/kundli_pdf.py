@@ -217,18 +217,19 @@ def _basic_details(d: dict) -> str:
     pan = d["panchanga"]
     bt = d.get("birth_time", {})
 
-    # Day duration: sunset - sunrise
+    # Day duration: sunset - sunrise. Accepts either HH:MM or HH:MM:SS.
     sr = d.get("sunrise", "N/A")
     ss = d.get("sunset", "N/A")
     day_duration = "—"
     try:
-        sh, sm = map(int, sr.split(":"))
-        eh, em = map(int, ss.split(":"))
-        total = (eh * 60 + em) - (sh * 60 + sm)
+        def _to_seconds(t: str) -> int:
+            parts = t.split(":")
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + (int(parts[2]) if len(parts) > 2 else 0)
+        total = _to_seconds(ss) - _to_seconds(sr)
         if total < 0:
-            total += 24 * 60
-        day_duration = f"{total // 60:02d}:{total % 60:02d}:00"
-    except (ValueError, AttributeError):
+            total += 86400
+        day_duration = f"{total // 3600:02d}:{(total % 3600) // 60:02d}:{total % 60:02d}"
+    except (ValueError, AttributeError, IndexError):
         pass
 
     rows = [
