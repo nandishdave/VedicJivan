@@ -110,6 +110,63 @@ def test_birth_time_details_has_all_expected_keys():
     assert expected.issubset(set(bt.keys()))
 
 
+def test_graha_drishti_all_planets_aspect_7th():
+    """Every planet should aspect the 7th house from itself (inclusive count)."""
+    from app.services.kundli_calculator import calc_graha_drishti
+
+    planets = {
+        "Sun":  {"sign": 0, "house": 1},  # Aries H1 → 7th from H1 = H7
+        "Moon": {"sign": 3, "house": 4},  # Cancer H4 → 7th from H4 = H10
+    }
+    lagna = {"sign": 0}
+    gd = calc_graha_drishti(planets, lagna)
+    assert 7 in gd["planet_aspects"]["Sun"]
+    assert 10 in gd["planet_aspects"]["Moon"]
+
+
+def test_graha_drishti_mars_special_aspects():
+    """Mars should aspect 4th, 7th and 8th from its house."""
+    from app.services.kundli_calculator import calc_graha_drishti
+
+    # Mars in H1: 4th=H4, 7th=H7, 8th=H8
+    planets = {"Mars": {"sign": 0, "house": 1}}
+    lagna = {"sign": 0}
+    gd = calc_graha_drishti(planets, lagna)
+    assert sorted(gd["planet_aspects"]["Mars"]) == [4, 7, 8]
+
+
+def test_graha_drishti_rahu_ketu_jupiter_like():
+    """Rahu and Ketu should aspect 5th, 7th and 9th (Jupiter-like)."""
+    from app.services.kundli_calculator import calc_graha_drishti
+
+    planets = {"Rahu": {"sign": 10, "house": 2}, "Ketu": {"sign": 4, "house": 8}}
+    lagna = {"sign": 9}
+    gd = calc_graha_drishti(planets, lagna)
+    # Rahu in H2: 5th=H6, 7th=H8, 9th=H10
+    assert sorted(gd["planet_aspects"]["Rahu"]) == [6, 8, 10]
+    # Ketu in H8: 5th=H12, 7th=H2, 9th=H4
+    assert sorted(gd["planet_aspects"]["Ketu"]) == [2, 4, 12]
+
+
+def test_graha_drishti_house_aspected_by():
+    """The house_aspected_by reverse-lookup should list all planets aspecting it."""
+    from app.services.kundli_calculator import calc_graha_drishti
+
+    planets = {
+        "Sun":  {"sign": 0, "house": 1},
+        "Mars": {"sign": 0, "house": 1},
+    }
+    lagna = {"sign": 0}
+    gd = calc_graha_drishti(planets, lagna)
+    # Sun H1 → 7th=H7. Mars H1 → 4th=H4, 7th=H7, 8th=H8.
+    assert "Sun" in gd["house_aspected_by"][7]
+    assert "Mars" in gd["house_aspected_by"][7]
+    # Only Mars aspects H4 and H8
+    assert "Mars" in gd["house_aspected_by"][4]
+    assert "Mars" in gd["house_aspected_by"][8]
+    assert "Sun" not in gd["house_aspected_by"][4]
+
+
 def test_western_aspects_sun_mercury_conjunction():
     """Sun (Libra 25°26') and Mercury (Libra 13°45') are in the same sign — conjunction
     with orb ~11.7°. Must be detected since conjunction orb is 15°."""

@@ -124,9 +124,10 @@ DEFAULT_REPORT_SECTIONS: list[ReportSection] = [
     ReportSection(id="friendship",      label="Friendship Table",       description="Permanent (Naisargika), Temporary (Tatkalika) and Compound (Panchadha) friendship matrices.", is_paid=False, enabled=True, order=19),
     ReportSection(id="shadbala",        label="Planetary Strength",     description="Shadbala — which planets are strong or weak and why.",                                         is_paid=False, enabled=True, order=20),
     ReportSection(id="western_aspects", label="Planetary Aspects (Western)", description="Western-style angular aspects (conjunction, opposition, trine, square, sextile, minor).", is_paid=False, enabled=True, order=21),
-    ReportSection(id="planet_positions",label="Planet Positions",       description="Complete planet ephemeris table with degrees, sign, nakshatra, dignity.",                      is_paid=False, enabled=True, order=22),
-    ReportSection(id="numerology",      label="Numerology",             description="Moolank, Bhagyank, Namank and personal year analysis (Chaldean + Vedic).",                     is_paid=False, enabled=True, order=23),
-    ReportSection(id="remedies",        label="Gemstone & Remedies",    description="Gemstone recommendations and personalised remedial measures.",                                 is_paid=False, enabled=True, order=24),
+    ReportSection(id="graha_drishti",  label="Graha Drishti (Vedic Aspects)",description="Classical Vedic planetary aspects: 7th for all, plus Mars 4/8, Jupiter 5/9, Saturn 3/10, Rahu/Ketu 5/9.", is_paid=False, enabled=True, order=22),
+    ReportSection(id="planet_positions",label="Planet Positions",       description="Complete planet ephemeris table with degrees, sign, nakshatra, dignity.",                      is_paid=False, enabled=True, order=23),
+    ReportSection(id="numerology",      label="Numerology",             description="Moolank, Bhagyank, Namank and personal year analysis (Chaldean + Vedic).",                     is_paid=False, enabled=True, order=24),
+    ReportSection(id="remedies",        label="Gemstone & Remedies",    description="Gemstone recommendations and personalised remedial measures.",                                 is_paid=False, enabled=True, order=25),
     # Reserved for the v2 paid narrative tier — disabled in free PDF until Phase 4 ships.
     ReportSection(id="predictions",     label="Life Area Predictions",  description="AI-generated combined-reading narrative across 15 life areas (v2 paid tier).",                 is_paid=True,  enabled=False, order=99),
 ]

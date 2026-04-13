@@ -103,6 +103,7 @@ SECTION_BUILDERS = {
     "friendship":       lambda d: _friendship_section(d),
     "shadbala":         lambda d: _shadbala_section(d),
     "western_aspects":  lambda d: _western_aspects_section(d),
+    "graha_drishti":    lambda d: _graha_drishti_section(d),
     "planet_positions": lambda d: _planet_positions(d),
     "numerology":       lambda d: _numerology_section(d),
     "remedies":         lambda d: _remedies_section(d),
@@ -132,6 +133,7 @@ _DEFAULT_SECTION_ORDER = [
     "friendship",
     "shadbala",
     "western_aspects",
+    "graha_drishti",
     "planet_positions",
     "numerology",
     "remedies",
@@ -346,6 +348,56 @@ def _favourable_section(d: dict) -> str:
     return f"""
     <h2>Favourable Points</h2>
     <table>{rows}</table>"""
+
+
+def _graha_drishti_section(d: dict) -> str:
+    """Vedic Graha Drishti (planetary aspects) — two-way view.
+
+    Table 1: Each planet → which houses it aspects.
+    Table 2: Each house → which planets aspect it.
+    Uses the classical rules: all planets aspect 7th; Mars 4th/8th;
+    Jupiter 5th/9th; Saturn 3rd/10th; Rahu/Ketu 5th/9th.
+    """
+    gd = d.get("graha_drishti")
+    if not gd:
+        return ""
+
+    lagna_sign = d["lagna"]["sign"]
+
+    # Table 1: Planet → aspected houses
+    rows1 = ""
+    for name, houses in gd["planet_aspects"].items():
+        house_str = ", ".join(
+            f"{h} ({SIGN_NAMES[(lagna_sign + h - 1) % 12]})"
+            for h in houses
+        )
+        rows1 += f"<tr><td><strong>{name}</strong> (H{d['planets'][name]['house']})</td><td>{house_str}</td></tr>"
+
+    # Table 2: House → aspecting planets
+    rows2 = ""
+    for h in range(1, 13):
+        sign_name = SIGN_NAMES[(lagna_sign + h - 1) % 12]
+        aspecting = gd["house_aspected_by"].get(h, [])
+        planets_str = ", ".join(aspecting) if aspecting else "—"
+        rows2 += f"<tr><td><strong>H{h} ({sign_name})</strong></td><td>{planets_str}</td></tr>"
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Graha Drishti (Vedic Planetary Aspects)</h2>
+    <p style='font-size:10pt; color:#666;'>Classical Vedic aspects: all planets aspect the 7th house from themselves.
+    Mars also aspects 4th &amp; 8th; Jupiter 5th &amp; 9th; Saturn 3rd &amp; 10th; Rahu/Ketu 5th &amp; 9th.</p>
+
+    <h3>Planet → Houses Aspected</h3>
+    <table>
+        <tr><th>Planet (House)</th><th>Aspects Houses</th></tr>
+        {rows1}
+    </table>
+
+    <h3>House → Aspected By</h3>
+    <table>
+        <tr><th>House (Sign)</th><th>Aspected By</th></tr>
+        {rows2}
+    </table>"""
 
 
 def _western_aspects_section(d: dict) -> str:
