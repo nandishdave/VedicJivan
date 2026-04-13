@@ -56,11 +56,23 @@ _HOUSE_TEXT_POS = {
 CHART_DESCRIPTIONS = {
     "D1": ("Rasi Chart (Lagna)", "The Rasi or Lagna chart is the main birth chart showing the positions of all planets in the zodiac signs at the time of birth. This is the foundation of all Vedic astrology analysis."),
     "D2": ("Hora Chart", "The Hora chart divides each sign into two halves and is primarily used for analyzing wealth and financial matters. Planets in Sun's Hora (Leo) indicate wealth through effort, while Moon's Hora (Cancer) indicates wealth through inheritance or luck."),
-    "D3": ("Drekkana Chart", "The Drekkana chart divides each sign into three equal parts and is used for analyzing siblings, courage, and communication. It also has significance in predicting the nature of one's death in traditional texts."),
-    "D9": ("Navamsa Chart", "The Navamsa is the most important divisional chart after the Rasi chart. It divides each sign into nine parts and is primarily used for marriage analysis, spouse characteristics, and the overall strength of planets. A strong Navamsa can elevate weak Rasi placements."),
+    "D3": ("Drekkana Chart", "The Drekkana chart divides each sign into three equal parts and is used for analyzing siblings, courage, and communication."),
+    "D4": ("Chaturthamsha Chart", "The Chaturthamsha divides each sign into four parts and is used for analyzing property, home, fixed assets, and luck."),
+    "D6": ("Shashtiamsha (Health)", "The six-fold division is used for analyzing health, disease, enemies, and obstacles."),
+    "D7": ("Saptamsha Chart", "The Saptamsha divides each sign into seven parts and is used for analyzing children, progeny, and creative potential."),
+    "D8": ("Ashtamsha Chart", "The Ashtamsha divides each sign into eight parts and relates to longevity, sudden events, and hidden matters."),
+    "D9": ("Navamsa Chart", "The Navamsa is the most important divisional chart after the Rasi chart. It divides each sign into nine parts and is primarily used for marriage analysis, spouse characteristics, and the overall strength of planets."),
     "D10": ("Dasamsa Chart", "The Dasamsa chart divides each sign into ten parts and is specifically used for career and professional analysis. It reveals the nature of one's profession, career achievements, and public reputation."),
-    "D12": ("Dwadasamsa Chart", "The Dwadasamsa divides each sign into twelve parts and is used for analyzing parents, lineage, and ancestral karma. It provides insights into the relationship with parents and inherited traits."),
-    "D60": ("Shastiamsa Chart", "The Shastiamsa is the most subtle divisional chart, dividing each sign into sixty parts. It is used for confirming the results indicated by other charts and for fine-tuning predictions. Classical texts consider it the final arbiter of planetary strength."),
+    "D11": ("Ekadamsha (Rudramsa)", "The Ekadamsha divides each sign into eleven parts and is used for analyzing gains from networks, friends, and large groups."),
+    "D12": ("Dwadasamsa Chart", "The Dwadasamsa divides each sign into twelve parts and is used for analyzing parents, lineage, and ancestral karma."),
+    "D16": ("Shodashamsha Chart", "The Shodashamsha divides each sign into sixteen parts and relates to vehicles, travel, conveyances, and comforts."),
+    "D20": ("Vimsamsha Chart", "The Vimsamsha divides each sign into twenty parts and is used for analyzing spiritual practices, religious inclinations, and deity alignment."),
+    "D24": ("Chaturvimsamsha Chart", "The Chaturvimsamsha divides each sign into twenty-four parts and relates to education, learning, and academic achievements."),
+    "D27": ("Saptavimsamsha (Bhamsa)", "The Saptavimsamsha divides each sign into twenty-seven parts and is used for assessing overall strength and weaknesses."),
+    "D30": ("Trimsamsha Chart", "The Trimsamsha uses unequal divisions and relates to misfortune, karmic burdens, and moral character."),
+    "D40": ("Khavedamsha Chart", "The Khavedamsha divides each sign into forty parts and relates to auspicious/inauspicious results and overall well-being."),
+    "D45": ("Akshvedamsha Chart", "The Akshvedamsha divides each sign into forty-five parts and is used for assessing general well-being and paternal legacy."),
+    "D60": ("Shastiamsa Chart", "The Shastiamsa is the most subtle divisional chart, dividing each sign into sixty parts. Classical texts consider it the final arbiter of planetary strength."),
 }
 
 
@@ -1063,7 +1075,11 @@ def _divisional_charts_section(d: dict) -> str:
         return ""
 
     html = ""
-    for chart_type in ("D9", "D10", "D2", "D3", "D12", "D60"):
+    for chart_type in (
+        "D9", "D10", "D2", "D3", "D4", "D6", "D7", "D8",
+        "D11", "D12", "D16", "D20", "D24", "D27", "D30",
+        "D40", "D45", "D60",
+    ):
         if chart_type not in charts:
             continue
         title, description = CHART_DESCRIPTIONS.get(chart_type, (chart_type, ""))

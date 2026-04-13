@@ -964,9 +964,13 @@ def calc_sadesati(moon_sign: int) -> list[dict]:
 # ── Divisional Charts (Vargas) ────────────────────────────────────────────────
 
 def calc_divisional_charts(planets: dict, lagna: dict) -> dict:
-    """Calculate divisional chart positions: D2, D3, D7, D9, D10, D12, D30, D60."""
+    """Calculate divisional chart positions: all Shodashvarga (16) + D40, D45, D60."""
     charts = {}
-    for chart_type in ("D2", "D3", "D7", "D9", "D10", "D12", "D30", "D60"):
+    for chart_type in (
+        "D2", "D3", "D4", "D6", "D7", "D8", "D9", "D10",
+        "D11", "D12", "D16", "D20", "D24", "D27", "D30",
+        "D40", "D45", "D60",
+    ):
         chart = {}
         for name, info in planets.items():
             chart[name] = _calc_varga_sign(info["sign"], info["degree_in_sign"], chart_type)
@@ -1051,6 +1055,81 @@ def _calc_varga_sign(sign: int, degree: float, chart_type: str) -> int:
         # Shastiamsa: 60 parts (0°30' each), start from same sign
         part = min(int(degree / 0.5), 59)
         return (sign + part) % 12
+
+    # ── Additional Shodashvarga charts ──────────────────────────────────────
+
+    elif chart_type == "D4":
+        # Chaturthamsha: 4 parts (7°30' each)
+        # Odd signs start from same sign; even signs start from 4th sign (sign + 3)
+        part = min(int(degree / 7.5), 3)
+        start = sign if is_odd else (sign + 3) % 12
+        return (start + part) % 12
+
+    elif chart_type == "D6":
+        # Shashtiamsha (health variant, 6 parts): 5° each
+        # Start from same sign for all
+        part = min(int(degree / 5), 5)
+        return (sign + part) % 12
+
+    elif chart_type == "D8":
+        # Ashtamsha: 8 parts (3°45' each)
+        # Movable signs start from Aries(0); Fixed from Sagittarius(8); Dual from Leo(4)
+        sign_type = sign % 3  # 0=movable(Ari,Can,Lib,Cap), 1=fixed(Tau,Leo,Sco,Aqu), 2=dual(Gem,Vir,Sag,Pis)
+        starts_d8 = {0: 0, 1: 8, 2: 4}
+        part = min(int(degree / 3.75), 7)
+        return (starts_d8.get(sign_type, 0) + part) % 12
+
+    elif chart_type == "D11":
+        # Ekadamsha (Rudramsa): 11 parts (~2°43.6' each)
+        # Start from same sign for all
+        part = min(int(degree / (30 / 11)), 10)
+        return (sign + part) % 12
+
+    elif chart_type == "D16":
+        # Shodashamsha: 16 parts (1°52.5' each)
+        # Movable signs start from Aries(0); Fixed from Leo(4); Dual from Sagittarius(8)
+        sign_type = sign % 3
+        starts_d16 = {0: 0, 1: 4, 2: 8}
+        part = min(int(degree / (30 / 16)), 15)
+        return (starts_d16.get(sign_type, 0) + part) % 12
+
+    elif chart_type == "D20":
+        # Vimsamsha: 20 parts (1°30' each)
+        # Movable signs start from Aries(0); Fixed from Sagittarius(8); Dual from Leo(4)
+        sign_type = sign % 3
+        starts_d20 = {0: 0, 1: 8, 2: 4}
+        part = min(int(degree / 1.5), 19)
+        return (starts_d20.get(sign_type, 0) + part) % 12
+
+    elif chart_type == "D24":
+        # Chaturvimsamsha: 24 parts (1°15' each)
+        # Odd signs start from Leo(4); Even signs start from Cancer(3)
+        part = min(int(degree / 1.25), 23)
+        start = 4 if is_odd else 3
+        return (start + part) % 12
+
+    elif chart_type == "D27":
+        # Saptavimsamsha (Bhamsa): 27 parts (~1°6.67' each)
+        # Fire signs start from Aries(0); Earth from Cancer(3); Air from Libra(6); Water from Capricorn(9)
+        element = sign % 4
+        starts_d27 = {0: 0, 1: 3, 2: 6, 3: 9}
+        part = min(int(degree / (30 / 27)), 26)
+        return (starts_d27.get(element, 0) + part) % 12
+
+    elif chart_type == "D40":
+        # Khavedamsha: 40 parts (0°45' each)
+        # Odd signs start from Aries(0); Even signs start from Libra(6)
+        part = min(int(degree / 0.75), 39)
+        start = 0 if is_odd else 6
+        return (start + part) % 12
+
+    elif chart_type == "D45":
+        # Akshvedamsha: 45 parts (0°40' each)
+        # Movable signs start from Aries(0); Fixed from Leo(4); Dual from Sagittarius(8)
+        sign_type = sign % 3
+        starts_d45 = {0: 0, 1: 4, 2: 8}
+        part = min(int(degree / (30 / 45)), 44)
+        return (starts_d45.get(sign_type, 0) + part) % 12
 
     return sign
 
