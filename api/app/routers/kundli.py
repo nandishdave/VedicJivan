@@ -14,7 +14,8 @@ import traceback
 from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from fastapi.responses import Response
 
 from app.database import get_db
 from app.models.kundli import KundliInDB, KundliRequest
@@ -112,3 +113,45 @@ async def generate_kundli(req: KundliRequest, background_tasks: BackgroundTasks)
     background_tasks.add_task(_generate_and_email, insert_result.inserted_id, req)
 
     return {"message": "Your Kundli report is being generated and will arrive in your email within a minute."}
+
+
+@router.get("/preview")
+async def preview_kundli(
+    name: str = Query("Preview User"),
+    gender: str = Query("male"),
+    dob: str = Query("1988-11-11"),
+    tob: str = Query("12:55"),
+    lat: float = Query(21.7333),
+    lon: float = Query(70.6167),
+    place_name: str = Query("Jetpur, Gujarat, India"),
+):
+    """Instant PDF preview — returns the PDF directly in the browser.
+
+    No email, no background task, no rate limit, no DB write. Designed for
+    fast layout iteration during development. Bookmark the URL and refresh
+    after each deploy to see changes immediately.
+
+    Example:
+      /api/kundli/preview?name=Nandish+Dave&dob=1988-11-11&tob=12:55&lat=21.7333&lon=70.6167
+    """
+    try:
+        sections_models = await load_report_sections()
+        free_sections = [
+            s.model_dump() for s in sections_models
+            if s.enabled and not s.is_paid
+        ]
+
+        chart_data = build_chart(
+            name=name, gender=gender, dob=dob, tob=tob,
+            lat=lat, lon=lon, place_name=place_name,
+        )
+        pdf_bytes = generate_pdf(chart_data, sections=free_sections)
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"inline; filename=Kundli_Preview_{name.replace(' ', '_')}.pdf"},
+        )
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Preview failed: {str(e)[:200]}")
