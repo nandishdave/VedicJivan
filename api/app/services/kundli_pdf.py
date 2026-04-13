@@ -212,7 +212,7 @@ def _css(name: str = "") -> str:
     th {{ background: {BRAND}; color: white; padding: 8px 10px; text-align: left; font-size: 10pt; }}
     td {{ padding: 7px 10px; border-bottom: 1px solid #e5e5e5; font-size: 10pt; }}
     tr:nth-child(even) {{ background: #f9f7ff; }}
-    .cover {{ text-align: center; padding: 80px 0 60px; page-break-after: always; }}
+    .cover {{ text-align: center; padding: 220px 0 60px; page-break-after: always; }}
     .cover img {{ height: 80px; margin-bottom: 30px; }}
     .cover .name {{ font-size: 28pt; color: {BRAND}; font-weight: bold; margin: 10px 0; }}
     .cover .sub {{ font-size: 12pt; color: #666; margin: 5px 0; }}
@@ -282,12 +282,12 @@ def _svg_logo() -> str:
 def _cover(d: dict) -> str:
     return f"""
     <div class="cover">
-        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 180px; margin-bottom: 10px;" />
-        <div style="font-size: 12pt; color: #888; font-style: italic; margin-bottom: 40px;">Transform Your Life Through Vedic Wisdom</div>
+        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 200px; margin-bottom: 15px;" />
+        <div style="font-size: 18pt; color: #888; font-style: italic; margin-bottom: 40px;">Transform Your Life Through Vedic Wisdom</div>
 
-        <hr style="border: none; border-top: 2px solid {BRAND}; width: 50%; margin: 20px auto;" />
-        <div style="margin-top: 20px; font-size: 16pt; color: #15803d; font-weight: bold;">Worth ₹999 — FREE</div>
-        <div style="font-size: 10pt; color: #999; margin-top: 8px;">Comprehensive Vedic Astrology Report &nbsp;|&nbsp; 25+ Sections</div>
+        <hr style="border: none; border-top: 3px solid {BRAND}; width: 70%; margin: 30px auto;" />
+        <div style="margin-top: 25px; font-size: 24pt; color: #15803d; font-weight: bold;">Worth ₹999 — FREE</div>
+        <div style="font-size: 14pt; color: #999; margin-top: 10px;">Comprehensive Vedic Astrology Report &nbsp;|&nbsp; 25+ Sections</div>
     </div>"""
 
 
@@ -1168,6 +1168,7 @@ def _birth_chart_page(d: dict) -> str:
     The ascendant sign <strong>{d['lagna']['sign_name']}</strong> is placed in the first house (top center).
     Houses run counter-clockwise from the top.</p>
     {chart_svg}
+    <p style="text-align: center; font-size: 8pt; color: #888; margin: 2px 0 10px;">* next to a planet abbreviation indicates Retrograde motion.</p>
 
     <h3 style="font-size: 10pt; margin: 15px 0 5px;">Chart Reference Guide</h3>
     <table style="font-size: 8pt; margin-bottom: 5px;">
@@ -1188,7 +1189,6 @@ def _birth_chart_page(d: dict) -> str:
         <tr><td style="text-align:center;">11</td><td>Aquarius</td><td>Kumbh</td><td style="border-left: 2px solid {BRAND};" colspan="2"></td></tr>
         <tr><td style="text-align:center;">12</td><td>Pisces</td><td>Meen</td><td style="border-left: 2px solid {BRAND};" colspan="2"></td></tr>
     </table>
-    <p style="font-size: 8pt; color: #888; margin-top: 2px;">* next to a planet abbreviation indicates Retrograde motion.</p>
 
     <div class="page-break"></div>
     <div class="chart-block">
