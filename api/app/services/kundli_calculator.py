@@ -1090,6 +1090,48 @@ def calc_antardasha(dashas: list[dict]) -> list[dict]:
     return result
 
 
+def calc_pratyantar(antardasha_data: list[dict]) -> list[dict]:
+    """Calculate Pratyantar Dasha (3rd-level sub-sub-periods) for each Antardasha.
+
+    Same proportional formula as Antardasha but one level deeper:
+    PD duration = (AD_years × planet_years) / 120.
+
+    Returns a list of {mahadasha, antardasha, start_date, end_date, pratyantars: [...]}.
+    Only computed for the current Mahadasha to keep the data payload reasonable
+    (full lifecycle pratyantar across 9 MDs × 9 ADs × 9 PDs = 729 entries).
+    """
+    result = []
+    for md in antardasha_data:
+        for ad in md["antardashas"]:
+            ad_planet = ad["planet"]
+            ad_years = ad["years"]
+            ad_start = date.fromisoformat(ad["start_date"])
+            lord_idx = DASHA_SEQUENCE.index(ad_planet)
+
+            sub_periods = []
+            current = ad_start
+            for i in range(9):
+                pd_planet = DASHA_SEQUENCE[(lord_idx + i) % 9]
+                pd_years = (ad_years * DASHA_YEARS[pd_planet]) / 120
+                pd_end = _add_years(current, pd_years)
+                sub_periods.append({
+                    "planet": pd_planet,
+                    "start_date": current.isoformat(),
+                    "end_date": pd_end.isoformat(),
+                    "days": (pd_end - current).days,
+                })
+                current = pd_end
+
+            result.append({
+                "mahadasha": md["mahadasha"],
+                "antardasha": ad_planet,
+                "start_date": ad["start_date"],
+                "end_date": ad["end_date"],
+                "pratyantars": sub_periods,
+            })
+    return result
+
+
 # ── Sunrise / Sunset ─────────────────────────────────────────────────────────
 
 def _get_local_tz(lat: float, lon: float):
@@ -2356,6 +2398,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     western_aspects = calc_western_aspects(planets)
     divisional = calc_divisional_charts(planets, lagna)
     antardasha = calc_antardasha(dasha["dashas"])
+    pratyantar = calc_pratyantar(antardasha)
     shadbala = calc_shadbala(planets, lagna, jd, dob, tob, divisional, sun_sunset=sun_sunset)
     yogas = calc_yogas(planets, lagna)
     doshas = calc_doshas(planets, lagna)
@@ -2395,6 +2438,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "western_aspects": western_aspects,
         "divisional_charts": divisional,
         "antardasha": antardasha,
+        "pratyantar": pratyantar,
         "shadbala": shadbala,
         "yogas": yogas,
         "doshas": doshas,

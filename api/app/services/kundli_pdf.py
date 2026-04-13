@@ -98,6 +98,7 @@ SECTION_BUILDERS = {
     "gochar":           lambda d: _gochar_section(d),
     "dasha":            lambda d: _dasha_section(d),
     "antardasha":       lambda d: _antardasha_section(d),
+    "pratyantar":       lambda d: _pratyantar_section(d),
     "divisional":       lambda d: _divisional_charts_section(d),
     "friendship":       lambda d: _friendship_section(d),
     "shadbala":         lambda d: _shadbala_section(d),
@@ -126,6 +127,7 @@ _DEFAULT_SECTION_ORDER = [
     "gochar",
     "dasha",
     "antardasha",
+    "pratyantar",
     "divisional",
     "friendship",
     "shadbala",
@@ -914,6 +916,52 @@ def _antardasha_section(d: dict) -> str:
             pred = DASHA_PREDICTIONS.get(md["mahadasha"], "")
             if pred:
                 html += f'<div class="phase-card"><h3>Current {md["mahadasha"]} Mahadasha Interpretation</h3><p>{pred}</p></div>'
+
+    return html
+
+
+def _pratyantar_section(d: dict) -> str:
+    """Render Pratyantar Dasha (3rd-level sub-sub-periods) tables.
+
+    Astrosage shows Pratyantar for every Mahadasha/Antardasha combination
+    (pages 45-48). We show the same — grouped by MD → AD with a compact
+    table of 9 Pratyantar entries per AD.
+    """
+    pratyantar_list = d.get("pratyantar", [])
+    if not pratyantar_list:
+        return ""
+
+    html = '<div class="page-break"></div><h2>Pratyantar Dasha (Sub-Sub-Periods)</h2>'
+    html += "<p>Each Antardasha is further divided into nine Pratyantars. These sub-sub-periods refine the timing of events within each Antardasha. The table below shows the Pratyantar breakdown for every Mahadasha/Antardasha combination.</p>"
+
+    current_md = None
+    for entry in pratyantar_list:
+        md = entry["mahadasha"]
+        ad = entry["antardasha"]
+
+        # MD header (only print once per Mahadasha)
+        if md != current_md:
+            if current_md is not None:
+                html += '</div>'  # close previous MD wrapper
+            html += f'<div class="page-break"></div><h3>{md} Mahadasha</h3>'
+            current_md = md
+
+        # AD sub-header + Pratyantar table
+        rows = ""
+        for pd in entry["pratyantars"]:
+            rows += f"<tr><td>{pd['planet']}</td><td>{pd['start_date']}</td><td>{pd['end_date']}</td><td>{pd['days']}d</td></tr>"
+
+        html += f"""
+        <div class="section">
+            <h4 style="color:#555; margin: 12px 0 4px;">{md} — {ad} Antardasha ({entry['start_date']} to {entry['end_date']})</h4>
+            <table style="font-size: 9pt;">
+                <tr><th>Pratyantar</th><th>Start</th><th>End</th><th>Duration</th></tr>
+                {rows}
+            </table>
+        </div>"""
+
+    if current_md is not None:
+        html += '</div>'
 
     return html
 
