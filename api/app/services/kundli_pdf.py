@@ -1106,12 +1106,39 @@ def _birth_chart_page(d: dict) -> str:
     The ascendant sign <strong>{d['lagna']['sign_name']}</strong> is placed in the first house (top center).
     Signs progress clockwise through the twelve houses.</p>
     {chart_svg}
-    <p style="text-align: center; font-size: 9pt; color: #888;">
-    1=Aries(Mesh), 2=Taurus(Vrushabh), 3=Gemini(Mithun), 4=Cancer(Karka), 5=Leo(Simha), 6=Virgo(Kanya),
-    7=Libra(Tula), 8=Scorpio(Vruschik), 9=Sagittarius(Dhanu), 10=Capricorn(Makar), 11=Aquarius(Kumbh), 12=Pisces(Meen)<br/>
-    Su=Sun, Mo=Moon, Ma=Mars, Me=Mercury, Ju=Jupiter, Ve=Venus, Sa=Saturn, Ra=Rahu, Ke=Ketu,
-    Ur=Uranus, Ne=Neptune, Pl=Pluto &nbsp;|&nbsp; *=Retrograde
-    </p>
+
+    <table style="font-size: 8pt; color: #666; margin: 10px auto; width: 90%;">
+        <tr>
+            <th style="background: #f3f0ff; color: #555; font-size: 8pt; padding: 4px 8px;" colspan="6">Rashi (Sign) Numbers</th>
+            <th style="background: #f3f0ff; color: #555; font-size: 8pt; padding: 4px 8px;" colspan="4">Planet Abbreviations</th>
+        </tr>
+        <tr>
+            <td style="padding: 3px 6px; font-size: 8pt;">1 = Aries (Mesh)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">2 = Taurus (Vrushabh)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">3 = Gemini (Mithun)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">4 = Cancer (Karka)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">5 = Leo (Simha)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">6 = Virgo (Kanya)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">Su = Sun</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">Mo = Moon</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">Ma = Mars</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">Me = Mercury</td>
+        </tr>
+        <tr>
+            <td style="padding: 3px 6px; font-size: 8pt;">7 = Libra (Tula)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">8 = Scorpio (Vruschik)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">9 = Sagittarius (Dhanu)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">10 = Capricorn (Makar)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">11 = Aquarius (Kumbh)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">12 = Pisces (Meen)</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">Ju = Jupiter</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">Ve = Venus</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">Sa = Saturn</td>
+            <td style="padding: 3px 6px; font-size: 8pt;">Ra = Rahu &nbsp; Ke = Ketu</td>
+        </tr>
+    </table>
+    <p style="text-align: center; font-size: 8pt; color: #999;">* next to a planet abbreviation indicates Retrograde motion.</p>
+
     <h3>Moon Chart (Chandra Kundli)</h3>
     <p>The Moon chart places the Moon's sign in the first house, showing planetary positions relative to the Moon.</p>
     {_moon_chart_svg(d)}
