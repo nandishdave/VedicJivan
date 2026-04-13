@@ -1200,24 +1200,15 @@ def _divisional_charts_section(d: dict) -> str:
         house_signs, house_planets = _build_divisional_chart_data(d, chart_type)
         chart_svg = _chart_svg(house_signs, house_planets, chart_type)
 
-        # Build a table of planet positions — classical 9 only (no outer planets)
-        # to keep the table compact and avoid the Pluto-orphan page-break problem.
-        chart_data = charts[chart_type]
-        planet_rows = ""
-        for name in ("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"):
-            if name in chart_data:
-                sign_num = chart_data[name]
-                planet_rows += f"<tr><td><strong>{name}</strong></td><td>{SIGN_NAMES[sign_num]}</td></tr>"
+        # Lagna sign for this divisional chart
+        lagna_sign = charts[chart_type].get("Lagna", 0)
+        lagna_name = SIGN_NAMES[lagna_sign]
 
         html += f"""
         <div class="chart-block">
-            <h3>{title} ({chart_type})</h3>
+            <h3>{title} ({chart_type}) — {lagna_name} Ascendant</h3>
             <p style="font-size:10pt; color:#666;">{description}</p>
             {chart_svg}
-            <table style="font-size:9pt;">
-                <tr><th>Planet</th><th>Sign</th></tr>
-                {planet_rows}
-            </table>
         </div>"""
 
     return html
