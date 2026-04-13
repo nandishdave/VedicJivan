@@ -131,9 +131,15 @@ async def preview_kundli(
     fast layout iteration during development. Bookmark the URL and refresh
     after each deploy to see changes immediately.
 
+    **Disabled in production.** Only works when APP_ENV is not "production".
+
     Example:
       /api/kundli/preview?name=Nandish+Dave&dob=1988-11-11&tob=12:55&lat=21.7333&lon=70.6167
     """
+    import os
+    if os.environ.get("APP_ENV", "").lower() == "production":
+        raise HTTPException(status_code=404, detail="Not found")
+
     try:
         sections_models = await load_report_sections()
         free_sections = [
