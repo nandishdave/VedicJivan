@@ -1139,10 +1139,47 @@ def _birth_chart_page(d: dict) -> str:
     </table>
     <p style="text-align: center; font-size: 8pt; color: #999;">* next to a planet abbreviation indicates Retrograde motion.</p>
 
-    <h3>Moon Chart (Chandra Kundli)</h3>
-    <p>The Moon chart places the Moon's sign in the first house, showing planetary positions relative to the Moon.</p>
+    <div class="page-break"></div>
+    <div class="chart-block">
+    <h2>Moon Chart (Chandra Kundli)</h2>
+    <p>The Chandra Kundli places <strong>{d['planets']['Moon']['sign_name']}</strong> (your Moon sign) in the
+    first house, showing all planetary positions relative to the Moon. While the Lagna chart reveals your
+    outer personality and physical life, the Moon chart reveals your <strong>emotional landscape, mental
+    patterns, and how you experience life internally</strong>. Vedic transit predictions (Gochar) are
+    primarily read from this chart.</p>
     {_moon_chart_svg(d)}
+    {_moon_chart_interpretation(d)}
+    </div>
     """
+
+
+def _moon_chart_interpretation(d: dict) -> str:
+    """Generate personalized interpretation of the Moon chart placements."""
+    moon_sign = d["planets"]["Moon"]["sign"]
+    moon_sign_name = d["planets"]["Moon"]["sign_name"]
+
+    # Find planets in kendra (1,4,7,10) and trikona (1,5,9) from Moon
+    kendra_planets = []
+    trikona_planets = []
+    for name, info in d["planets"].items():
+        if name == "Moon":
+            continue
+        house_from_moon = ((info["sign"] - moon_sign) % 12) + 1
+        if house_from_moon in (1, 4, 7, 10):
+            kendra_planets.append(f"{name} ({_ordinal(house_from_moon)})")
+        if house_from_moon in (1, 5, 9):
+            trikona_planets.append(f"{name} ({_ordinal(house_from_moon)})")
+
+    interpretation = ""
+    if kendra_planets:
+        interpretation += f"<p><strong>Planets in Kendra from Moon</strong> (1st, 4th, 7th, 10th — pillars of emotional stability): {', '.join(kendra_planets)}. These planets strongly influence your mental peace, domestic happiness, and emotional responses.</p>"
+    if trikona_planets:
+        interpretation += f"<p><strong>Planets in Trikona from Moon</strong> (1st, 5th, 9th — fortune and creativity): {', '.join(trikona_planets)}. These planets support emotional fulfilment, creative expression, and inner faith.</p>"
+
+    if not interpretation:
+        interpretation = "<p>No classical planets occupy Kendra or Trikona positions from the Moon in this chart.</p>"
+
+    return interpretation
 
 
 def _moon_chart_svg(d: dict) -> str:
