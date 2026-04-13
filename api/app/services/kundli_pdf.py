@@ -98,6 +98,7 @@ SECTION_BUILDERS = {
     "sadesati":         lambda d: _sadesati_section(d),
     "gochar":           lambda d: _gochar_section(d),
     "dasha":            lambda d: _dasha_section(d),
+    "mahadasha_phal":   lambda d: _mahadasha_phal_section(d),
     "antardasha":       lambda d: _antardasha_section(d),
     "pratyantar":       lambda d: _pratyantar_section(d),
     "divisional":       lambda d: _divisional_charts_section(d),
@@ -129,6 +130,7 @@ _DEFAULT_SECTION_ORDER = [
     "sadesati",
     "gochar",
     "dasha",
+    "mahadasha_phal",
     "antardasha",
     "pratyantar",
     "divisional",
@@ -758,6 +760,58 @@ def _dasha_section(d: dict) -> str:
     </table>
     <h3>Current Period: {current['planet']} Mahadasha</h3>
     <p>{pred}</p>"""
+
+
+def _mahadasha_phal_section(d: dict) -> str:
+    """Astrosage-style Mahadasha Phal — house-specific interpretation per period.
+
+    For each Mahadasha, identifies which house the lord occupies and renders
+    the PLANET_IN_HOUSE interpretation text alongside the period dates.
+    This is far more specific than the generic DASHA_PREDICTIONS paragraph
+    because it factors in the planet's actual house placement.
+    """
+    dashas = d["dasha"]["dashas"]
+    planets = d["planets"]
+    current = d["dasha"]["current_dasha"]
+
+    html = '<div class="page-break"></div><h2>Mahadasha Phal (Period Predictions)</h2>'
+    html += "<p>Detailed predictions for each Mahadasha period based on the lord's actual house placement in your birth chart. The active period is highlighted.</p>"
+
+    for dasha in dashas:
+        planet = dasha["planet"]
+        info = planets.get(planet, {})
+        sign_name = info.get("sign_name", "—")
+        house = info.get("house")
+
+        is_current = (planet == current["planet"] and dasha["start_date"] == current["start_date"])
+        highlight = ' style="background: #f3f0ff; border-left: 4px solid ' + BRAND + ';"' if is_current else ""
+        current_badge = ' <span style="color: ' + BRAND + '; font-weight: bold;">(Active)</span>' if is_current else ""
+
+        # House-specific interpretation from PLANET_IN_HOUSE
+        house_data = PLANET_IN_HOUSE.get(planet, {}).get(house, {}) if house else {}
+        benefic = house_data.get("benefic", "")
+        malefic = house_data.get("malefic", "")
+
+        interp_html = ""
+        if benefic:
+            interp_html += f"<p>{benefic}</p>"
+        if malefic:
+            interp_html += f"<p>{malefic}</p>"
+        if not interp_html:
+            # Fallback to generic DASHA_PREDICTIONS
+            generic = DASHA_PREDICTIONS.get(planet, "")
+            if generic:
+                interp_html = f"<p>{generic}</p>"
+
+        html += f"""
+        <div class="section" {highlight}>
+            <h3>{planet} Mahadasha ({dasha['start_date']} — {dasha['end_date']}){current_badge}</h3>
+            <p style="color:#555;"><strong>{planet}</strong> is in <strong>{sign_name}</strong> in your
+            <strong>{_ordinal(house) if house else '—'}</strong> house.</p>
+            {interp_html}
+        </div>"""
+
+    return html
 
 
 _DIGNITY_COLOR = {
