@@ -159,12 +159,12 @@ def test_graha_drishti_house_aspected_by():
     lagna = {"sign": 0}
     gd = calc_graha_drishti(planets, lagna)
     # Sun H1 → 7th=H7. Mars H1 → 4th=H4, 7th=H7, 8th=H8.
-    assert "Sun" in gd["house_aspected_by"][7]
-    assert "Mars" in gd["house_aspected_by"][7]
+    assert "Sun" in gd["house_aspected_by"]["7"]
+    assert "Mars" in gd["house_aspected_by"]["7"]
     # Only Mars aspects H4 and H8
-    assert "Mars" in gd["house_aspected_by"][4]
-    assert "Mars" in gd["house_aspected_by"][8]
-    assert "Sun" not in gd["house_aspected_by"][4]
+    assert "Mars" in gd["house_aspected_by"]["4"]
+    assert "Mars" in gd["house_aspected_by"]["8"]
+    assert "Sun" not in gd["house_aspected_by"]["4"]
 
 
 def test_western_aspects_sun_mercury_conjunction():

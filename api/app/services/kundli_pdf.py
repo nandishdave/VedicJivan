@@ -87,6 +87,7 @@ SECTION_BUILDERS = {
     "avkahada":         lambda d: _avkahada_chakra(d),
     "favourable":       lambda d: _favourable_section(d),
     "ghatak":           lambda d: _ghatak_section(d),
+    "planet_consideration": lambda d: _planet_consideration_section(d),
     "ascendant":        lambda d: _ascendant_section(d),
     "nakshatra":        lambda d: _nakshatra_section(d),
     "character_life":   lambda d: _character_life(d),
@@ -117,6 +118,7 @@ _DEFAULT_SECTION_ORDER = [
     "avkahada",
     "favourable",
     "ghatak",
+    "planet_consideration",
     "ascendant",
     "nakshatra",
     "character_life",
@@ -350,6 +352,109 @@ def _favourable_section(d: dict) -> str:
     <table>{rows}</table>"""
 
 
+def _planet_consideration_section(d: dict) -> str:
+    """Astrosage-style 'Planet Consideration' — per-planet narrative with
+    sign, house, lordship, aspects given/received, and interpretation.
+
+    Matches Astrosage pages 35-39: one block per planet with a summary header
+    line (sign, dignity, lordship, aspects) followed by interpretation text.
+    """
+    lagna_sign = d["lagna"]["sign"]
+    gd = d.get("graha_drishti", {})
+    planet_aspects = gd.get("planet_aspects", {})
+    house_aspected_by = gd.get("house_aspected_by", {})
+
+    # Lordship: for each planet, which houses (1-12) does it lord for this lagna?
+    _SIGN_LORD_MAP = {
+        "Sun": [4], "Moon": [3], "Mars": [0, 7], "Mercury": [2, 5],
+        "Jupiter": [8, 11], "Venus": [1, 6], "Saturn": [9, 10],
+    }
+
+    def _lordship_houses(planet_name: str) -> list[int]:
+        signs = _SIGN_LORD_MAP.get(planet_name, [])
+        houses = []
+        for s in signs:
+            h = ((s - lagna_sign) % 12) + 1
+            houses.append(h)
+        return sorted(houses)
+
+    html = '<div class="page-break"></div><h2>Planet Considerations</h2>'
+    html += "<p>Each planet's placement by sign, house, lordship, and aspects — with interpretation based on classical Vedic texts.</p>"
+
+    # Classical 7 + Rahu/Ketu
+    ordered_planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+
+    for name in ordered_planets:
+        if name not in d["planets"]:
+            continue
+        info = d["planets"][name]
+        sign_name = info["sign_name"]
+        dignity = info.get("dignity", "")
+        house = info["house"]
+
+        # Lordship
+        lord_houses = _lordship_houses(name)
+        if lord_houses:
+            lord_str = ", ".join(f"{_ordinal(h)}" for h in lord_houses)
+        else:
+            lord_str = "—"
+
+        # Houses this planet aspects
+        aspects_out = planet_aspects.get(name, [])
+        aspects_out_str = ", ".join(f"{_ordinal(h)}" for h in aspects_out) if aspects_out else "—"
+
+        # Planets aspecting this planet's house
+        aspected_by = [p for p in house_aspected_by.get(str(house), []) if p != name]
+        aspected_by_str = ", ".join(aspected_by) if aspected_by else "None"
+
+        # Dignity label for Astrosage-style summary.
+        # Dignity values like "Friendly Sign" already include "Sign", so avoid
+        # double-"sign" ("a Friendly Sign sign"). Just prepend "a/an".
+        if dignity:
+            article = "an" if dignity[0].lower() in "aeiou" else "a"
+            # If dignity already ends with "Sign", use as-is; otherwise append "sign"
+            dignity_label = f"{article} {dignity}" if "Sign" in dignity else f"{article} {dignity} sign"
+        else:
+            dignity_label = "—"
+
+        # Summary header
+        summary = (
+            f"Your {name} is in <strong>{sign_name}</strong> sign which is {dignity_label} for {name}. "
+            f"{name} is lord of <strong>{lord_str}</strong> house and situated in "
+            f"<strong>{_ordinal(house)}</strong> house. "
+            f"{name} aspects <strong>{aspects_out_str}</strong> house and "
+            f"aspected by <strong>{aspected_by_str}</strong>."
+        )
+
+        # Interpretation text from PLANET_IN_HOUSE
+        interp = PLANET_IN_HOUSE.get(name, {}).get(house, {})
+        benefic = interp.get("benefic", "")
+        malefic = interp.get("malefic", "")
+        remedies = interp.get("remedies", [])
+
+        interp_html = ""
+        if benefic:
+            interp_html += f"<p>{benefic}</p>"
+        if malefic:
+            interp_html += f"<p>{malefic}</p>"
+
+        remedies_html = ""
+        if remedies:
+            remedies_html = '<h4 style="margin: 8px 0 4px;">Remedies</h4>'
+            for r in remedies:
+                remedies_html += f'<div class="remedy">{r}</div>'
+
+        html += f"""
+        <div class="section">
+            <h3>{name} Consideration</h3>
+            <p style="color:#555;">{summary}</p>
+            {interp_html}
+            {remedies_html}
+        </div>"""
+
+    return html
+
+
 def _graha_drishti_section(d: dict) -> str:
     """Vedic Graha Drishti (planetary aspects) — two-way view.
 
@@ -377,7 +482,7 @@ def _graha_drishti_section(d: dict) -> str:
     rows2 = ""
     for h in range(1, 13):
         sign_name = SIGN_NAMES[(lagna_sign + h - 1) % 12]
-        aspecting = gd["house_aspected_by"].get(h, [])
+        aspecting = gd["house_aspected_by"].get(str(h), [])
         planets_str = ", ".join(aspecting) if aspecting else "—"
         rows2 += f"<tr><td><strong>H{h} ({sign_name})</strong></td><td>{planets_str}</td></tr>"
 

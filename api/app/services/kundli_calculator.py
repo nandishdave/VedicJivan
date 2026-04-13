@@ -2067,7 +2067,7 @@ def calc_graha_drishti(planets: dict, lagna: dict) -> dict:
     """
     lagna_sign = lagna["sign"]
     planet_aspects: dict[str, list[int]] = {}
-    house_aspected_by: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    house_aspected_by: dict[str, list[str]] = {str(h): [] for h in range(1, 13)}
 
     for name, info in planets.items():
         planet_house = info.get("house")
@@ -2084,7 +2084,7 @@ def calc_graha_drishti(planets: dict, lagna: dict) -> dict:
         for offset in aspected_offsets:
             target = ((planet_house - 1 + offset) % 12) + 1
             resolved.append(target)
-            house_aspected_by[target].append(name)
+            house_aspected_by[str(target)].append(name)
 
         planet_aspects[name] = sorted(resolved)
 
