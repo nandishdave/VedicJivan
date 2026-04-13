@@ -170,10 +170,14 @@ def _build_html(d: dict, sections: list[dict] | None = None) -> str:
     if sections is None:
         body_section_ids = _DEFAULT_SECTION_ORDER
     else:
-        body_section_ids = [
+        # Use _DEFAULT_SECTION_ORDER for ordering (source of truth for layout),
+        # and the sections list only for enabled/disabled filtering. This prevents
+        # stale MongoDB order values from scrambling the report layout.
+        enabled_ids = {
             s["id"] for s in sections
             if s.get("enabled", True) and s.get("id") in SECTION_BUILDERS
-        ]
+        }
+        body_section_ids = [sid for sid in _DEFAULT_SECTION_ORDER if sid in enabled_ids]
 
     parts = [_css(), _cover(d)]
     for sid in body_section_ids:
@@ -208,6 +212,8 @@ def _css() -> str:
     .cover .name {{ font-size: 28pt; color: {BRAND}; font-weight: bold; margin: 10px 0; }}
     .cover .sub {{ font-size: 12pt; color: #666; margin: 5px 0; }}
     .section {{ page-break-inside: avoid; }}
+    .chart-block {{ page-break-inside: avoid; }}
+    table {{ page-break-inside: avoid; }}
     .two-col {{ display: flex; gap: 20px; }}
     .two-col > div {{ flex: 1; }}
     .remedy {{ background: #f3f0ff; border-left: 3px solid {BRAND}; padding: 8px 12px; margin: 5px 0; font-size: 10pt; }}
@@ -1182,7 +1188,7 @@ def _divisional_charts_section(d: dict) -> str:
     if not charts:
         return ""
 
-    html = ""
+    html = '<div class="page-break"></div><h2>Divisional Charts</h2>'
     for chart_type in (
         "D9", "D10", "D2", "D3", "D4", "D6", "D7", "D8",
         "D11", "D12", "D16", "D20", "D24", "D27", "D30",
@@ -1194,24 +1200,25 @@ def _divisional_charts_section(d: dict) -> str:
         house_signs, house_planets = _build_divisional_chart_data(d, chart_type)
         chart_svg = _chart_svg(house_signs, house_planets, chart_type)
 
-        # Build a table of planet positions for this chart
+        # Build a table of planet positions — classical 9 only (no outer planets)
+        # to keep the table compact and avoid the Pluto-orphan page-break problem.
         chart_data = charts[chart_type]
         planet_rows = ""
-        for name in PLANET_ABBR:
+        for name in ("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"):
             if name in chart_data:
                 sign_num = chart_data[name]
                 planet_rows += f"<tr><td><strong>{name}</strong></td><td>{SIGN_NAMES[sign_num]}</td></tr>"
 
         html += f"""
-        <div class="page-break"></div>
-        <h2>{title} ({chart_type})</h2>
-        <p>{description}</p>
-        {chart_svg}
-        <h3>Planetary Positions in {chart_type}</h3>
-        <table>
-            <tr><th>Planet</th><th>Sign</th></tr>
-            {planet_rows}
-        </table>"""
+        <div class="chart-block">
+            <h3>{title} ({chart_type})</h3>
+            <p style="font-size:10pt; color:#666;">{description}</p>
+            {chart_svg}
+            <table style="font-size:9pt;">
+                <tr><th>Planet</th><th>Sign</th></tr>
+                {planet_rows}
+            </table>
+        </div>"""
 
     return html
 
@@ -1266,8 +1273,9 @@ def _pratyantar_section(d: dict) -> str:
     if not pratyantar_list:
         return ""
 
+    current_md = d.get("dasha", {}).get("current_dasha", {}).get("planet", "")
     html = '<div class="page-break"></div><h2>Pratyantar Dasha (Sub-Sub-Periods)</h2>'
-    html += "<p>Each Antardasha is further divided into nine Pratyantars. These sub-sub-periods refine the timing of events within each Antardasha. The table below shows the Pratyantar breakdown for every Mahadasha/Antardasha combination.</p>"
+    html += f"<p>Each Antardasha is further divided into nine Pratyantars. These sub-sub-periods refine the timing of events. Showing Pratyantar breakdown for the <strong>current {current_md} Mahadasha</strong>.</p>"
 
     current_md = None
     for entry in pratyantar_list:

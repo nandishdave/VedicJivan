@@ -99,14 +99,16 @@ def test_disabled_section_excluded(stub_section_builders, chart_data):
     assert "<yogas />" not in html
 
 
-def test_custom_order_respected(stub_section_builders, chart_data):
-    """The order in the section list determines the order in the HTML."""
+def test_default_order_always_used_regardless_of_input_order(stub_section_builders, chart_data):
+    """Even when sections are passed in a different order, the rendering follows
+    _DEFAULT_SECTION_ORDER so stale MongoDB order values can't scramble the layout."""
     sections = [
         {"id": "remedies", "enabled": True},
         {"id": "birth_chart", "enabled": True},
     ]
     html = _build_html(chart_data, sections)
-    assert html.index("<remedies />") < html.index("<birth_chart />")
+    # birth_chart comes before remedies in _DEFAULT_SECTION_ORDER
+    assert html.index("<birth_chart />") < html.index("<remedies />")
 
 
 def test_unknown_section_id_skipped(stub_section_builders, chart_data):

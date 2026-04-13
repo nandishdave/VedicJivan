@@ -1169,18 +1169,21 @@ def calc_antardasha(dashas: list[dict]) -> list[dict]:
     return result
 
 
-def calc_pratyantar(antardasha_data: list[dict]) -> list[dict]:
+def calc_pratyantar(antardasha_data: list[dict], current_md_planet: str | None = None) -> list[dict]:
     """Calculate Pratyantar Dasha (3rd-level sub-sub-periods) for each Antardasha.
 
     Same proportional formula as Antardasha but one level deeper:
     PD duration = (AD_years × planet_years) / 120.
 
+    If current_md_planet is provided, only computes Pratyantars for that
+    Mahadasha (keeps the report from bloating to 46+ pages of tables).
+
     Returns a list of {mahadasha, antardasha, start_date, end_date, pratyantars: [...]}.
-    Only computed for the current Mahadasha to keep the data payload reasonable
-    (full lifecycle pratyantar across 9 MDs × 9 ADs × 9 PDs = 729 entries).
     """
     result = []
     for md in antardasha_data:
+        if current_md_planet and md["mahadasha"] != current_md_planet:
+            continue
         for ad in md["antardashas"]:
             ad_planet = ad["planet"]
             ad_years = ad["years"]
@@ -2162,7 +2165,7 @@ def calc_yogini_dasha(moon_lon: float, dob: str) -> dict:
     current = period_start
     idx = start_idx
     # Generate enough cycles to cover at least 100 years from birth
-    for _ in range(36):  # 36 periods = ~4.5 full cycles, covers any lifetime
+    for _ in range(24):  # 24 periods = 3 full cycles ≈ 108 years from birth
         years = YOGINI_YEARS[idx]
         end = _add_years(current, years)
         dashas.append({
@@ -2612,7 +2615,8 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     yogini_dasha = calc_yogini_dasha(moon_lon, dob)
     divisional = calc_divisional_charts(planets, lagna)
     antardasha = calc_antardasha(dasha["dashas"])
-    pratyantar = calc_pratyantar(antardasha)
+    current_md_planet = dasha["current_dasha"]["planet"]
+    pratyantar = calc_pratyantar(antardasha, current_md_planet=current_md_planet)
     shadbala = calc_shadbala(planets, lagna, jd, dob, tob, divisional, sun_sunset=sun_sunset)
     yogas = calc_yogas(planets, lagna)
     doshas = calc_doshas(planets, lagna)
