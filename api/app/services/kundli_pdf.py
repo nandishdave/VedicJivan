@@ -113,6 +113,7 @@ SECTION_BUILDERS = {
     "mahadasha_phal":   lambda d: _mahadasha_phal_section(d),
     "antardasha":       lambda d: _antardasha_section(d),
     "pratyantar":       lambda d: _pratyantar_section(d),
+    "yogini_dasha":     lambda d: _yogini_dasha_section(d),
     "divisional":       lambda d: _divisional_charts_section(d),
     "shodashvarga":     lambda d: _shodashvarga_table_section(d),
     "friendship":       lambda d: _friendship_section(d),
@@ -146,6 +147,7 @@ _DEFAULT_SECTION_ORDER = [
     "mahadasha_phal",
     "antardasha",
     "pratyantar",
+    "yogini_dasha",
     "divisional",
     "shodashvarga",
     "friendship",
@@ -566,6 +568,50 @@ def _western_aspects_section(d: dict) -> str:
         <tr>{header}</tr>
         {rows}
     </table>"""
+
+
+def _yogini_dasha_section(d: dict) -> str:
+    """Yogini Dasha — 36-year cycle with 8 yoginis (Astrosage pages 21-22).
+
+    Shows the full Yogini Dasha sequence + sub-periods for each major period.
+    """
+    yd = d.get("yogini_dasha")
+    if not yd:
+        return ""
+
+    html = '<div class="page-break"></div><h2>Yogini Dasha</h2>'
+    html += f"""<p>The Yogini Dasha is a 36-year cycle based on 8 yoginis. It is particularly useful for
+    timing events within 1-2 year windows. Your starting yogini is <strong>{yd['starting_yogini']}</strong>
+    with <strong>{yd['balance_years']}</strong> years remaining at birth.</p>"""
+
+    # Summary table of major periods
+    summary_rows = ""
+    for entry in yd["dashas"]:
+        summary_rows += f"<tr><td><strong>{entry['abbr']}</strong> ({entry['yogini']})</td><td>{entry['years']} years</td><td>{entry['start_date']}</td><td>{entry['end_date']}</td></tr>"
+
+    html += f"""
+    <h3>Yogini Mahadasha Sequence</h3>
+    <table>
+        <tr><th>Yogini</th><th>Duration</th><th>Start</th><th>End</th></tr>
+        {summary_rows}
+    </table>"""
+
+    # Sub-periods for each major period
+    for entry in yd["dashas"]:
+        ad_rows = ""
+        for ad in entry.get("antardashas", []):
+            ad_rows += f"<tr><td>{ad['abbr']} ({ad['yogini']})</td><td>{ad['start_date']}</td><td>{ad['end_date']}</td></tr>"
+
+        html += f"""
+        <div class="section">
+            <h4 style="color:#555; margin: 12px 0 4px;">{entry['abbr']} — {entry['yogini']} ({entry['start_date']} to {entry['end_date']})</h4>
+            <table style="font-size: 9pt;">
+                <tr><th>Sub-Period</th><th>Start</th><th>End</th></tr>
+                {ad_rows}
+            </table>
+        </div>"""
+
+    return html
 
 
 def _shodashvarga_table_section(d: dict) -> str:

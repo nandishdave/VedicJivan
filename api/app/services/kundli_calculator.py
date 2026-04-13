@@ -2122,6 +2122,88 @@ def calc_numerology(name: str, dob_str: str, current_year: int) -> dict:
     return result
 
 
+# ── Yogini Dasha (36-year cycle, 8 yoginis) ─────────────────────────────────
+
+YOGINI_NAMES = ["Sankata", "Mangala", "Pingala", "Dhanya", "Bhramari", "Bhadrika", "Ulka", "Siddha"]
+YOGINI_YEARS = [8, 1, 2, 3, 4, 5, 6, 7]
+YOGINI_ABBR = ["Sn", "Ma", "Pi", "Dh", "Br", "Ba", "Ul", "Si"]
+# Each yogini's ruling planet (for sub-period calculation and interpretation)
+YOGINI_PLANETS = ["Saturn", "Moon", "Sun", "Jupiter", "Mars", "Venus", "Mercury", "Rahu"]
+
+
+def calc_yogini_dasha(moon_lon: float, dob: str) -> dict:
+    """Calculate Yogini Dasha sequence from birth.
+
+    Formula: yogini_index = (nakshatra_1indexed + 3) % 8
+    Balance at birth is determined by the Moon's fraction through its nakshatra.
+
+    Returns a dict with:
+      starting_yogini: name of the yogini at birth
+      balance_years: remaining portion of that yogini at birth
+      dashas: full sequence of yogini periods with dates
+    """
+    nak_size = 360 / 27
+    nak_num = int(moon_lon / nak_size)  # 0-indexed
+    nak_1indexed = nak_num + 1
+    degree_in_nak = moon_lon - nak_num * nak_size
+    fraction_elapsed = degree_in_nak / nak_size
+
+    # Starting yogini
+    start_idx = (nak_1indexed + 3) % 8
+    yogini_years_total = YOGINI_YEARS[start_idx]
+    balance = yogini_years_total * (1 - fraction_elapsed)
+
+    birth = date.fromisoformat(dob)
+    # Period start: backtrack by the elapsed portion
+    elapsed_days = fraction_elapsed * yogini_years_total * 365.25
+    period_start = birth - timedelta(days=int(elapsed_days))
+
+    dashas = []
+    current = period_start
+    idx = start_idx
+    # Generate enough cycles to cover at least 100 years from birth
+    for _ in range(36):  # 36 periods = ~4.5 full cycles, covers any lifetime
+        years = YOGINI_YEARS[idx]
+        end = _add_years(current, years)
+        dashas.append({
+            "yogini": YOGINI_NAMES[idx],
+            "abbr": YOGINI_ABBR[idx],
+            "planet": YOGINI_PLANETS[idx],
+            "years": years,
+            "start_date": current.isoformat(),
+            "end_date": end.isoformat(),
+        })
+        current = end
+        idx = (idx + 1) % 8
+
+    # Generate antardashas for each yogini period
+    for dasha_entry in dashas:
+        d_start = date.fromisoformat(dasha_entry["start_date"])
+        d_years = dasha_entry["years"]
+        d_idx = YOGINI_NAMES.index(dasha_entry["yogini"])
+
+        sub_periods = []
+        sub_current = d_start
+        for i in range(8):
+            sub_idx = (d_idx + i) % 8
+            sub_years = (d_years * YOGINI_YEARS[sub_idx]) / 36
+            sub_end = _add_years(sub_current, sub_years)
+            sub_periods.append({
+                "yogini": YOGINI_NAMES[sub_idx],
+                "abbr": YOGINI_ABBR[sub_idx],
+                "start_date": sub_current.isoformat(),
+                "end_date": sub_end.isoformat(),
+            })
+            sub_current = sub_end
+        dasha_entry["antardashas"] = sub_periods
+
+    return {
+        "starting_yogini": YOGINI_NAMES[start_idx],
+        "balance_years": round(balance, 2),
+        "dashas": dashas,
+    }
+
+
 # ── Vedic Graha Drishti (classical planetary aspects) ──────────────────────
 # Every planet has a full (100%) aspect on the 7th house from itself.
 # Mars, Jupiter, Saturn, Rahu and Ketu have additional special aspects.
@@ -2527,6 +2609,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     friendships = calc_friendships(planets)
     western_aspects = calc_western_aspects(planets)
     graha_drishti = calc_graha_drishti(planets, lagna)
+    yogini_dasha = calc_yogini_dasha(moon_lon, dob)
     divisional = calc_divisional_charts(planets, lagna)
     antardasha = calc_antardasha(dasha["dashas"])
     pratyantar = calc_pratyantar(antardasha)
@@ -2568,6 +2651,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "friendships": friendships,
         "western_aspects": western_aspects,
         "graha_drishti": graha_drishti,
+        "yogini_dasha": yogini_dasha,
         "divisional_charts": divisional,
         "antardasha": antardasha,
         "pratyantar": pratyantar,
