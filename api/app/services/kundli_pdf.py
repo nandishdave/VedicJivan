@@ -114,6 +114,7 @@ SECTION_BUILDERS = {
     "antardasha":       lambda d: _antardasha_section(d),
     "pratyantar":       lambda d: _pratyantar_section(d),
     "divisional":       lambda d: _divisional_charts_section(d),
+    "shodashvarga":     lambda d: _shodashvarga_table_section(d),
     "friendship":       lambda d: _friendship_section(d),
     "shadbala":         lambda d: _shadbala_section(d),
     "western_aspects":  lambda d: _western_aspects_section(d),
@@ -146,6 +147,7 @@ _DEFAULT_SECTION_ORDER = [
     "antardasha",
     "pratyantar",
     "divisional",
+    "shodashvarga",
     "friendship",
     "shadbala",
     "western_aspects",
@@ -564,6 +566,66 @@ def _western_aspects_section(d: dict) -> str:
         <tr>{header}</tr>
         {rows}
     </table>"""
+
+
+def _shodashvarga_table_section(d: dict) -> str:
+    """Astrosage-style Shodashvarga Bhav Table — a compact grid showing each
+    planet's sign across all divisional charts at a glance.
+
+    Columns = varga charts (D1 through D60); Rows = planets.
+    Each cell shows the sign abbreviation.
+    """
+    charts = d.get("divisional_charts", {})
+    if not charts:
+        return ""
+
+    varga_order = [
+        "D2", "D3", "D4", "D7", "D9", "D10",
+        "D12", "D16", "D20", "D24", "D27", "D30",
+        "D40", "D45", "D60",
+    ]
+    present_vargas = [v for v in varga_order if v in charts]
+
+    # Column headers
+    header = "<th>Planet</th>" + "".join(
+        f"<th style='text-align:center; font-size:8pt; padding:3px;'>{v}</th>"
+        for v in present_vargas
+    )
+
+    # Include D1 (Rasi) as the first column from planet positions
+    planet_names = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+
+    rows = ""
+    for name in planet_names:
+        if name not in d["planets"]:
+            continue
+        d1_sign = d["planets"][name]["sign"]
+        cells = f"<td style='text-align:center; font-size:8pt;'>{SIGN_ABBR[d1_sign]}</td>"
+        for v in present_vargas:
+            sign = charts.get(v, {}).get(name)
+            cell = SIGN_ABBR[sign] if sign is not None else "—"
+            cells += f"<td style='text-align:center; font-size:8pt;'>{cell}</td>"
+        rows += f"<tr><td style='font-weight:bold; font-size:9pt;'>{PLANET_ABBR.get(name, name[:2])}</td>{cells}</tr>"
+
+    # Lagna row
+    d1_lagna = d["lagna"]["sign"]
+    lagna_cells = f"<td style='text-align:center; font-size:8pt;'>{SIGN_ABBR[d1_lagna]}</td>"
+    for v in present_vargas:
+        lagna_sign = charts.get(v, {}).get("Lagna")
+        cell = SIGN_ABBR[lagna_sign] if lagna_sign is not None else "—"
+        lagna_cells += f"<td style='text-align:center; font-size:8pt;'>{cell}</td>"
+    rows = f"<tr style='background:#f3f0ff;'><td style='font-weight:bold; font-size:9pt;'>Asc</td>{lagna_cells}</tr>" + rows
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Shodashvarga Table</h2>
+    <p style='font-size:10pt; color:#666;'>Each planet's sign across all divisional charts at a glance.
+    D1 = Rasi (birth chart); higher vargas refine specific life areas.</p>
+    <table style='font-size:8pt;'>
+        <tr><th></th><th style='text-align:center;'>D1</th>{header.replace('<th>Planet</th>', '')}</tr>
+        {rows}
+    </table>
+    <p style='font-size:8pt; color:#999;'>{', '.join(f'{k}={v}' for k, v in zip(SIGN_ABBR, SIGN_NAMES))}</p>"""
 
 
 def _friendship_section(d: dict) -> str:
