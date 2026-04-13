@@ -18,7 +18,7 @@ from app.services.kundli_data import (
     SADESATI_PHASES,
 )
 
-LOGO_URL = "https://vedicjivan-website.s3.ap-south-1.amazonaws.com/images/logo/logo-email.jpg"
+LOGO_URL = "https://vedicjivan-website.s3.ap-south-1.amazonaws.com/images/logo/logo-final.png"
 BRAND = "#7c3aed"
 
 SIGN_ABBR = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"]
@@ -179,7 +179,7 @@ def _build_html(d: dict, sections: list[dict] | None = None) -> str:
         }
         body_section_ids = [sid for sid in _DEFAULT_SECTION_ORDER if sid in enabled_ids]
 
-    parts = [_css(), _cover(d)]
+    parts = [_css(name=d.get("name", "")), _cover(d)]
     for sid in body_section_ids:
         builder = SECTION_BUILDERS.get(sid)
         if builder is not None:
@@ -193,12 +193,17 @@ def _build_html(d: dict, sections: list[dict] | None = None) -> str:
 </html>"""
 
 
-def _css() -> str:
+def _css(name: str = "") -> str:
+    generated = datetime.now().strftime("%B %d, %Y")
     return f"""<style>
     @page {{ size: A4; margin: 20mm 15mm 25mm 15mm;
-        @bottom-center {{ content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; }}
-        @bottom-right {{ content: "VedicJivan"; font-size: 8pt; color: {BRAND}; }}
+        @top-left {{ content: "{name}"; font-size: 8pt; color: #555; font-weight: bold; }}
+        @top-right {{ content: "Vedic Birth Chart Report"; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
+        @bottom-left {{ content: "vedicjivan.nandishdave.world  |  {generated}"; font-size: 8pt; color: #555; }}
+        @bottom-center {{ content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #555; }}
+        @bottom-right {{ content: "VedicJivan"; font-size: 9pt; font-weight: bold; color: {BRAND}; }}
     }}
+    @page :first {{ @top-left {{ content: none; }} @top-right {{ content: none; }} }}
     body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; font-size: 11pt; }}
     h1 {{ color: {BRAND}; text-align: center; font-size: 22pt; margin: 0 0 5px; }}
     h2 {{ color: {BRAND}; font-size: 16pt; border-bottom: 2px solid {BRAND}; padding-bottom: 4px; margin-top: 30px; page-break-after: avoid; }}
@@ -226,19 +231,63 @@ def _css() -> str:
     </style>"""
 
 
+def _svg_logo() -> str:
+    """Inline SVG logo — vector, scales to any size without blur."""
+    gold = "#d4a017"
+    purple = "#7c3aed"
+    return f"""
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="280" height="175"
+         style="display: block; margin: 0 auto 10px;">
+      <!-- Lotus petals -->
+      <g transform="translate(160, 75)">
+        <!-- Outer petals (gold) -->
+        <ellipse cx="0" cy="-35" rx="12" ry="30" fill="{gold}" opacity="0.8"
+                 transform="rotate(0)"/>
+        <ellipse cx="0" cy="-35" rx="12" ry="30" fill="{gold}" opacity="0.7"
+                 transform="rotate(30)"/>
+        <ellipse cx="0" cy="-35" rx="12" ry="30" fill="{gold}" opacity="0.7"
+                 transform="rotate(-30)"/>
+        <ellipse cx="0" cy="-35" rx="12" ry="30" fill="{gold}" opacity="0.6"
+                 transform="rotate(60)"/>
+        <ellipse cx="0" cy="-35" rx="12" ry="30" fill="{gold}" opacity="0.6"
+                 transform="rotate(-60)"/>
+        <!-- Inner petals (purple) -->
+        <ellipse cx="0" cy="-25" rx="8" ry="22" fill="{purple}" opacity="0.7"
+                 transform="rotate(15)"/>
+        <ellipse cx="0" cy="-25" rx="8" ry="22" fill="{purple}" opacity="0.7"
+                 transform="rotate(-15)"/>
+        <ellipse cx="0" cy="-25" rx="8" ry="22" fill="{purple}" opacity="0.8"
+                 transform="rotate(0)"/>
+        <!-- Center dot -->
+        <circle cx="0" cy="0" r="6" fill="{gold}"/>
+        <circle cx="0" cy="0" r="3" fill="{purple}"/>
+        <!-- Sparkle dots -->
+        <circle cx="-40" cy="-45" r="2" fill="{gold}" opacity="0.6"/>
+        <circle cx="40" cy="-45" r="2" fill="{gold}" opacity="0.6"/>
+        <circle cx="-25" cy="-55" r="1.5" fill="{gold}" opacity="0.4"/>
+        <circle cx="25" cy="-55" r="1.5" fill="{gold}" opacity="0.4"/>
+        <circle cx="0" cy="-65" r="2" fill="{gold}" opacity="0.5"/>
+      </g>
+      <!-- Brand text -->
+      <text x="100" y="140" font-family="Georgia, 'Times New Roman', serif"
+            font-size="28" fill="{gold}" font-weight="bold" letter-spacing="1">Vedic</text>
+      <text x="177" y="142" font-family="Georgia, 'Times New Roman', serif"
+            font-size="32" fill="{purple}" font-style="italic" letter-spacing="1">Jivan</text>
+      <!-- Tagline -->
+      <text x="160" y="165" text-anchor="middle" font-family="'Segoe UI', sans-serif"
+            font-size="7" fill="#999" letter-spacing="3" text-transform="uppercase">CONNECT THE DIVINE WITHIN</text>
+    </svg>"""
+
+
 def _cover(d: dict) -> str:
-    generated = datetime.now().strftime("%B %d, %Y at %I:%M %p")
     return f"""
     <div class="cover">
-        <img src="{LOGO_URL}" alt="VedicJivan" />
-        <div style="font-size: 12pt; color: #666; letter-spacing: 2px; text-transform: uppercase;">Vedic Birth Chart</div>
-        <div class="name">{d['name']}</div>
-        <div class="sub"><strong>Date of Birth:</strong> {d['dob']} &nbsp;|&nbsp; <strong>Time:</strong> {d['tob']}</div>
-        <div class="sub"><strong>Place:</strong> {d['place_name']}</div>
-        <div class="sub"><strong>Gender:</strong> {d['gender'].title()}</div>
-        <hr style="border: none; border-top: 2px solid {BRAND}; width: 60%; margin: 30px auto;" />
-        <div class="sub" style="margin-top: 20px;">Generated on {generated}</div>
-        <div class="sub" style="color: {BRAND};">vedicjivan.nandishdave.world</div>
+        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 180px; margin-bottom: 10px;" />
+        <div style="font-size: 12pt; color: #888; font-style: italic; margin-bottom: 40px;">Transform Your Life Through Vedic Wisdom</div>
+
+        <hr style="border: none; border-top: 2px solid {BRAND}; width: 50%; margin: 20px auto;" />
+        <div style="margin-top: 20px; font-size: 16pt; color: #15803d; font-weight: bold;">Worth ₹999 — FREE</div>
+        <div style="font-size: 10pt; color: #999; margin-top: 8px;">Comprehensive Vedic Astrology Report &nbsp;|&nbsp; 25+ Sections</div>
     </div>"""
 
 
@@ -1042,10 +1091,9 @@ def _chart_svg(house_signs: dict[int, int], house_planets: dict[int, list[str]],
                 svg += f'<text x="{x}" y="{y + 14}" text-anchor="middle" font-size="9" fill="#333">{line1}</text>'
                 svg += f'<text x="{x}" y="{y + 24}" text-anchor="middle" font-size="9" fill="#333">{line2}</text>'
 
-    if title:
-        svg += f'<text x="150" y="155" text-anchor="middle" font-size="10" fill="#666">{title}</text>'
-
     svg += "</svg>"
+    if title:
+        svg += f'<div style="text-align: center; margin: 8px 0 12px; font-size: 14pt; font-weight: bold; color: {BRAND}; opacity: 0.7;">{title}</div>'
     return svg
 
 
@@ -1099,45 +1147,48 @@ def _birth_chart_page(d: dict) -> str:
     """D1 Rasi/Lagna chart with visual diagram."""
     house_signs, house_planets = _build_d1_chart_data(d)
     chart_svg = _chart_svg(house_signs, house_planets, "D1")
+    nak = d["nakshatra"]
     return f"""
     <div class="page-break"></div>
+    <div style="background: #f9f7ff; border: 1px solid #e5e0ff; border-radius: 8px; padding: 15px 20px; margin-bottom: 20px;">
+        <div style="font-size: 18pt; color: {BRAND}; font-weight: bold; margin-bottom: 5px;">{d['name']}</div>
+        <div style="font-size: 10pt; color: #555;">
+            <strong>DOB:</strong> {d['dob']} &nbsp;|&nbsp; <strong>Time:</strong> {d['tob']} &nbsp;|&nbsp;
+            <strong>Place:</strong> {d['place_name']} &nbsp;|&nbsp; <strong>Gender:</strong> {d['gender'].title()}
+        </div>
+        <div style="font-size: 10pt; color: #555; margin-top: 4px;">
+            <strong>Lagna:</strong> {d['lagna']['sign_name']} &nbsp;|&nbsp;
+            <strong>Rasi:</strong> {d['planets']['Moon']['sign_name']} &nbsp;|&nbsp;
+            <strong>Nakshatra:</strong> {nak['name']} - {nak['pada']}
+        </div>
+    </div>
+
     <h2>Lagna Chart (D1 — Rasi Chart)</h2>
     <p>The Lagna chart shows the positions of all nine planets in the twelve houses at the time of your birth.
     The ascendant sign <strong>{d['lagna']['sign_name']}</strong> is placed in the first house (top center).
-    Signs progress clockwise through the twelve houses.</p>
+    Houses run counter-clockwise from the top.</p>
     {chart_svg}
 
-    <table style="font-size: 8pt; color: #666; margin: 10px auto; width: 90%;">
+    <h3 style="font-size: 10pt; margin: 15px 0 5px;">Chart Reference Guide</h3>
+    <table style="font-size: 8pt; margin-bottom: 5px;">
         <tr>
-            <th style="background: #f3f0ff; color: #555; font-size: 8pt; padding: 4px 8px;" colspan="6">Rashi (Sign) Numbers</th>
-            <th style="background: #f3f0ff; color: #555; font-size: 8pt; padding: 4px 8px;" colspan="4">Planet Abbreviations</th>
+            <th style="text-align: center;">No.</th><th>Sign (English)</th><th>Sign (Hindi)</th>
+            <th style="border-left: 2px solid {BRAND}; text-align: center;">Abbr.</th><th>Planet</th>
         </tr>
-        <tr>
-            <td style="padding: 3px 6px; font-size: 8pt;">1 = Aries (Mesh)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">2 = Taurus (Vrushabh)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">3 = Gemini (Mithun)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">4 = Cancer (Karka)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">5 = Leo (Simha)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">6 = Virgo (Kanya)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">Su = Sun</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">Mo = Moon</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">Ma = Mars</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">Me = Mercury</td>
-        </tr>
-        <tr>
-            <td style="padding: 3px 6px; font-size: 8pt;">7 = Libra (Tula)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">8 = Scorpio (Vruschik)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">9 = Sagittarius (Dhanu)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">10 = Capricorn (Makar)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">11 = Aquarius (Kumbh)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">12 = Pisces (Meen)</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">Ju = Jupiter</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">Ve = Venus</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">Sa = Saturn</td>
-            <td style="padding: 3px 6px; font-size: 8pt;">Ra = Rahu &nbsp; Ke = Ketu</td>
-        </tr>
+        <tr><td style="text-align:center;">1</td><td>Aries</td><td>Mesh</td><td style="border-left: 2px solid {BRAND}; text-align:center;"><strong>Su</strong></td><td>Sun</td></tr>
+        <tr><td style="text-align:center;">2</td><td>Taurus</td><td>Vrushabh</td><td style="border-left: 2px solid {BRAND}; text-align:center;"><strong>Mo</strong></td><td>Moon</td></tr>
+        <tr><td style="text-align:center;">3</td><td>Gemini</td><td>Mithun</td><td style="border-left: 2px solid {BRAND}; text-align:center;"><strong>Ma</strong></td><td>Mars</td></tr>
+        <tr><td style="text-align:center;">4</td><td>Cancer</td><td>Karka</td><td style="border-left: 2px solid {BRAND}; text-align:center;"><strong>Me</strong></td><td>Mercury</td></tr>
+        <tr><td style="text-align:center;">5</td><td>Leo</td><td>Simha</td><td style="border-left: 2px solid {BRAND}; text-align:center;"><strong>Ju</strong></td><td>Jupiter</td></tr>
+        <tr><td style="text-align:center;">6</td><td>Virgo</td><td>Kanya</td><td style="border-left: 2px solid {BRAND}; text-align:center;"><strong>Ve</strong></td><td>Venus</td></tr>
+        <tr><td style="text-align:center;">7</td><td>Libra</td><td>Tula</td><td style="border-left: 2px solid {BRAND}; text-align:center;"><strong>Sa</strong></td><td>Saturn</td></tr>
+        <tr><td style="text-align:center;">8</td><td>Scorpio</td><td>Vruschik</td><td style="border-left: 2px solid {BRAND}; text-align:center;"><strong>Ra</strong></td><td>Rahu</td></tr>
+        <tr><td style="text-align:center;">9</td><td>Sagittarius</td><td>Dhanu</td><td style="border-left: 2px solid {BRAND}; text-align:center;"><strong>Ke</strong></td><td>Ketu</td></tr>
+        <tr><td style="text-align:center;">10</td><td>Capricorn</td><td>Makar</td><td style="border-left: 2px solid {BRAND};" colspan="2"></td></tr>
+        <tr><td style="text-align:center;">11</td><td>Aquarius</td><td>Kumbh</td><td style="border-left: 2px solid {BRAND};" colspan="2"></td></tr>
+        <tr><td style="text-align:center;">12</td><td>Pisces</td><td>Meen</td><td style="border-left: 2px solid {BRAND};" colspan="2"></td></tr>
     </table>
-    <p style="text-align: center; font-size: 8pt; color: #999;">* next to a planet abbreviation indicates Retrograde motion.</p>
+    <p style="font-size: 8pt; color: #888; margin-top: 2px;">* next to a planet abbreviation indicates Retrograde motion.</p>
 
     <div class="page-break"></div>
     <div class="chart-block">
