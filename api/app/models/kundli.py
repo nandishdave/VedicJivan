@@ -17,6 +17,7 @@ class KundliRequest(BaseModel):
     lon: float = Field(..., ge=-180, le=180)
     place_name: str = Field(..., min_length=1, max_length=200)
     email: EmailStr
+    timezone: str | None = Field(None, description="User's browser timezone e.g. 'Europe/Amsterdam', 'America/New_York'.")
 
 
 class KundliInDB(BaseModel):

@@ -52,6 +52,7 @@ export default function KundliPage() {
         lat: lat!,
         lon: lon!,
         place_name: placeName,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: "smooth" });

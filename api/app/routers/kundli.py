@@ -53,6 +53,8 @@ async def _generate_and_email(record_id: ObjectId, req: KundliRequest) -> None:
             lon=req.lon,
             place_name=req.place_name,
         )
+        # Attach user's browser timezone for the PDF printing date
+        chart_data["user_timezone"] = req.timezone or "Asia/Kolkata"
 
         pdf_bytes = generate_pdf(chart_data, sections=free_sections)
 
@@ -124,6 +126,7 @@ async def preview_kundli(
     lat: float = Query(21.7333),
     lon: float = Query(70.6167),
     place_name: str = Query("Jetpur, Gujarat, India"),
+    timezone: str = Query("Asia/Kolkata"),
 ):
     """Instant PDF preview — returns the PDF directly in the browser.
 
@@ -151,6 +154,7 @@ async def preview_kundli(
             name=name, gender=gender, dob=dob, tob=tob,
             lat=lat, lon=lon, place_name=place_name,
         )
+        chart_data["user_timezone"] = timezone
         pdf_bytes = generate_pdf(chart_data, sections=free_sections)
 
         return Response(

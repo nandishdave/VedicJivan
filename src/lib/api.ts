@@ -323,6 +323,7 @@ export const kundliApi = {
     lon: number;
     place_name: string;
     email: string;
+    timezone?: string;
   }) =>
     apiRequest<{ message: string }>("/api/kundli/generate", {
       method: "POST",
