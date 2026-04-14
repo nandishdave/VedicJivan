@@ -95,8 +95,10 @@ def generate_pdf(chart_data: dict, sections: list[dict] | None = None) -> bytes:
 # HTML string. Cover, footer, and CSS are not toggleable — they always render.
 SECTION_BUILDERS = {
     "birth_chart":      lambda d: _birth_chart_page(d),
+    "summary_grid":     lambda d: _summary_grid(d),
     "basic_details":    lambda d: _basic_details(d),
     "avkahada":         lambda d: _avkahada_chakra(d),
+    "at_a_glance":      lambda d: _at_a_glance(d),
     "favourable":       lambda d: _favourable_section(d),
     "ghatak":           lambda d: _ghatak_section(d),
     "planet_consideration": lambda d: _planet_consideration_section(d),
@@ -128,11 +130,9 @@ SECTION_BUILDERS = {
 # Default order — Astrosage page-2 layout (basic details → avkahada →
 # favourable → ghatak) followed by the rest of the report.
 _DEFAULT_SECTION_ORDER = [
+    "at_a_glance",
+    "summary_grid",
     "birth_chart",
-    "basic_details",
-    "avkahada",
-    "favourable",
-    "ghatak",
     "planet_consideration",
     "ascendant",
     "nakshatra",
@@ -179,7 +179,7 @@ def _build_html(d: dict, sections: list[dict] | None = None) -> str:
         }
         body_section_ids = [sid for sid in _DEFAULT_SECTION_ORDER if sid in enabled_ids]
 
-    parts = [_css(name=d.get("name", "")), _cover(d)]
+    parts = [_css(name=d.get("name", ""), user_timezone=d.get("user_timezone", "Asia/Kolkata")), _cover(d)]
     for sid in body_section_ids:
         builder = SECTION_BUILDERS.get(sid)
         if builder is not None:
@@ -193,15 +193,18 @@ def _build_html(d: dict, sections: list[dict] | None = None) -> str:
 </html>"""
 
 
-def _css(name: str = "") -> str:
-    generated = datetime.now().strftime("%B %d, %Y")
+def _css(name: str = "", user_timezone: str = "Asia/Kolkata") -> str:
+    from zoneinfo import ZoneInfo
+    try:
+        local_tz = ZoneInfo(user_timezone)
+    except Exception:
+        local_tz = ZoneInfo("Asia/Kolkata")
+    generated = datetime.now(local_tz).strftime("%d/%m/%Y %I:%M:%S %p")
     return f"""<style>
     @page {{ size: A4; margin: 20mm 15mm 25mm 15mm;
         @top-left {{ content: "{name}"; font-size: 8pt; color: #555; font-weight: bold; }}
-        @top-right {{ content: "Vedic Birth Chart Report"; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
-        @bottom-left {{ content: "vedicjivan.nandishdave.world  |  {generated}"; font-size: 8pt; color: #555; }}
-        @bottom-center {{ content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #555; }}
-        @bottom-right {{ content: "VedicJivan"; font-size: 9pt; font-weight: bold; color: {BRAND}; }}
+        @top-right {{ content: "Get free chart (kundli) at https://vedicjivan.nandishdave.world"; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
+        @bottom-center {{ content: "https://vedicjivan.nandishdave.world, E-mail: vedic.jivan33@gmail.com, Phone: +91 98242 92212, Printing Date: {generated}" "\A" "Page No. " counter(page); white-space: pre-wrap; text-align: center; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
     }}
     @page :first {{ @top-left {{ content: none; }} @top-right {{ content: none; }} }}
     body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; font-size: 11pt; }}
@@ -291,6 +294,139 @@ def _cover(d: dict) -> str:
     </div>"""
 
 
+def _format_dasa_balance(planet: str, years: float) -> str:
+    """Convert dasha balance from decimal years to 'Sat 1 Y 6 M 3 D' format."""
+    total_days = int(round(years * 365.25))
+    y = total_days // 365
+    remaining = total_days - y * 365
+    m = remaining // 30
+    d = remaining - m * 30
+    abbr = planet[:3]
+    return f"{abbr} {y} Y {m} M {d} D"
+
+
+def _summary_grid(d: dict) -> str:
+    """Astrosage-style page 2 — all 4 info blocks in a compact 2×2 grid."""
+
+    def _mini_table(rows: list[tuple[str, str]]) -> str:
+        html = '<table style="font-size: 8pt; width: 100%; margin: 0;">'
+        for label, value in rows:
+            html += f'<tr><td style="padding: 2px 4px; font-weight: bold; color: #555; width: 45%; font-size: 8pt;">{label}</td><td style="padding: 2px 4px; font-size: 8pt;">{value}</td></tr>'
+        html += '</table>'
+        return html
+
+    # Basic Details
+    pan = d["panchanga"]
+    bt = d.get("birth_time", {})
+    sr = d.get("sunrise", "N/A")
+    ss = d.get("sunset", "N/A")
+    # Day duration
+    day_duration = "—"
+    try:
+        def _to_sec(t):
+            p = t.split(":")
+            return int(p[0]) * 3600 + int(p[1]) * 60 + (int(p[2]) if len(p) > 2 else 0)
+        tot = _to_sec(ss) - _to_sec(sr)
+        if tot < 0: tot += 86400
+        day_duration = f"{tot // 3600:02d}:{(tot % 3600) // 60:02d}:{tot % 60:02d}"
+    except Exception:
+        pass
+
+    basic_rows = [
+        ("Sex", d["gender"].title()),
+        ("Date of Birth", "/".join(reversed(d["dob"].split("-")))),
+        ("Time of Birth", d["tob"] + ":00"),
+        ("Day of Birth", bt.get("day_of_birth", "—")),
+        ("Ishtkaal", bt.get("ishtkaal", "—")),
+        ("Place of Birth", d["place_name"]),
+        ("Time Zone", str(bt.get("tz_offset_hours", "—"))),
+        ("Latitude", bt.get("latitude_dms", "—")),
+        ("Longitude", bt.get("longitude_dms", "—")),
+        ("Local Time Correction", bt.get("local_time_correction", "—")),
+        ("LMT at Birth", bt.get("lmt_at_birth", "—")),
+        ("GMT at Birth", bt.get("gmt_at_birth", "—")),
+        ("Sidereal Time", bt.get("sidereal_time", "—")),
+        ("Tithi", pan["tithi_name"]),
+        ("Paksha", pan["paksha"]),
+        ("Yoga", pan["yoga_name"]),
+        ("Karan", pan["karan_name"]),
+        ("Sunrise", sr),
+        ("Sunset", ss),
+        ("Day Duration", day_duration),
+    ]
+
+    # Avkahada Chakra
+    av = d.get("avkahada", {})
+    nak = d["nakshatra"]
+    moon = d["planets"]["Moon"]
+    dasha = d["dasha"]["dashas"][0]
+    avk_rows = [
+        ("Paya", av.get("paya", "—")),
+        ("Varna", av.get("varna", "—")),
+        ("Vasya", av.get("vasya", "—")),
+        ("Yoni", av.get("yoni", "—")),
+        ("Gana", av.get("gana", "—")),
+        ("Nadi", av.get("nadi", "—")),
+        ("Tatva", av.get("tatva", "—")),
+        ("Dasa Balance", _format_dasa_balance(dasha['planet'], dasha['years'])),
+        ("Lagna", d["lagna"]["sign_name"]),
+        ("Lagna Lord", d["lagna"]["sign_lord"]),
+        ("Rasi", moon["sign_name"]),
+        ("Rasi Lord", moon["sign_lord"]),
+        ("Nakshatra - Pada", f"{nak['name']} - {nak['pada']}"),
+        ("Nakshatra Lord", nak["lord"]),
+        ("SunSign (Indian)", d["planets"]["Sun"]["sign_name"]),
+        ("Ayanamsa", f"{d['ayanamsa']:.4f}°"),
+        ("Ayanamsa Name", "Lahiri"),
+        ("Julian Day", str(d["julian_day"])),
+    ]
+
+    # Favourable Points
+    from app.services.kundli_data import FAVOURABLE, GHATAK
+    sign = d["lagna"]["sign_name"]
+    fav = FAVOURABLE.get(sign, {})
+    fav_fields = [
+        ("lucky_numbers", "Lucky Numbers"), ("good_numbers", "Good Numbers"),
+        ("evil_numbers", "Evil Numbers"), ("good_years", "Good Years"),
+        ("lucky_days", "Lucky Days"), ("good_planets", "Good Planets"),
+        ("friendly_signs", "Friendly Signs"), ("good_lagna", "Good Lagna"),
+        ("lucky_metal", "Lucky Metal"), ("lucky_stone", "Lucky Stone"),
+    ]
+    fav_rows = [(label, fav.get(key, "—")) for key, label in fav_fields]
+
+    # Ghatak
+    ghat = GHATAK.get(sign, {})
+    ghat_fields = [
+        ("bad_day", "Bad Day"), ("bad_karana", "Bad Karan"),
+        ("bad_lagna", "Bad Lagna"), ("bad_masa", "Bad Month"),
+        ("bad_nakshatra", "Bad Nakshatra"), ("bad_prahara", "Bad Prahar"),
+        ("bad_rashi", "Bad Rasi"), ("bad_tithi", "Bad Tithi"),
+        ("bad_yoga", "Bad Yoga"), ("bad_planets", "Bad Planets"),
+    ]
+    ghat_rows = [(label, ghat.get(key, "—")) for key, label in ghat_fields]
+
+    return f"""
+    <div class="page-break"></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <div style="flex: 1; min-width: 45%;">
+            <h3 style="font-size: 11pt; margin: 0 0 4px; color: {BRAND};">Basic Details</h3>
+            {_mini_table(basic_rows)}
+        </div>
+        <div style="flex: 1; min-width: 45%;">
+            <h3 style="font-size: 11pt; margin: 0 0 4px; color: {BRAND};">Avkahada Chakra</h3>
+            {_mini_table(avk_rows)}
+        </div>
+        <div style="flex: 1; min-width: 45%;">
+            <h3 style="font-size: 11pt; margin: 0 0 4px; color: {BRAND};">Favourable Points</h3>
+            {_mini_table(fav_rows)}
+        </div>
+        <div style="flex: 1; min-width: 45%;">
+            <h3 style="font-size: 11pt; margin: 0 0 4px; color: {BRAND};">Ghatak (Malefics)</h3>
+            {_mini_table(ghat_rows)}
+        </div>
+    </div>"""
+
+
 def _basic_details(d: dict) -> str:
     """Astrosage-style Basic Details panel.
 
@@ -317,7 +453,7 @@ def _basic_details(d: dict) -> str:
 
     rows = [
         ("Sex", d["gender"].title()),
-        ("Date of Birth", d["dob"].replace("-", " : ")),
+        ("Date of Birth", "/".join(reversed(d["dob"].split("-")))),
         ("Time of Birth", d["tob"] + ":00"),
         ("Day of Birth", bt.get("day_of_birth", "—")),
         ("Ishtkaal", bt.get("ishtkaal", "—")),
@@ -1055,14 +1191,15 @@ def _planet_positions(d: dict) -> str:
 
 # ── North Indian Chart SVG ────────────────────────────────────────────────────
 
-def _chart_svg(house_signs: dict[int, int], house_planets: dict[int, list[str]], title: str = "") -> str:
+def _chart_svg(house_signs: dict[int, int], house_planets: dict[int, list[str]], title: str = "", size: int = 280) -> str:
     """Render a North Indian style Kundli chart as inline SVG.
     house_signs: {1: sign_num, 2: sign_num, ...} (0-indexed sign numbers)
     house_planets: {1: ["Su", "Mo"], 2: ["Ma"], ...} (planet abbreviations per house)
+    size: rendered width/height in px (viewBox is always 300, so content scales)
     """
     W = 300
     # SVG lines: outer square + diamond (midpoints) + two diagonals
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {W}" width="280" height="280"
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {W}" width="{size}" height="{size}"
         style="display: block; margin: 10px auto;">
     <rect x="1" y="1" width="{W-2}" height="{W-2}" fill="white" stroke="{BRAND}" stroke-width="2"/>
     <!-- Diamond connecting midpoints -->
@@ -1143,6 +1280,149 @@ def _build_divisional_chart_data(d: dict, chart_type: str) -> tuple[dict, dict]:
 
 # ── New PDF sections ──────────────────────────────────────────────────────────
 
+def _at_a_glance(d: dict) -> str:
+    """Dense single-page summary — the Astrosage page-3 equivalent.
+
+    Packs header band + D1/D9 charts + Panchang + Avakhada + planetary positions
+    + Vimshottari dasha summary into a single A4 portrait page so the reader
+    has an at-a-glance snapshot before the narrative sections begin.
+    """
+    nak = d["nakshatra"]
+    pan = d["panchanga"]
+    moon = d["planets"]["Moon"]
+    dasha0 = d["dasha"]["dashas"][0]
+    current = d["dasha"]["current_dasha"]
+    av = d.get("avkahada", {})
+
+    d1_signs, d1_planets = _build_d1_chart_data(d)
+    d9_signs, d9_planets = _build_divisional_chart_data(d, "D9")
+    d1_svg = _chart_svg(d1_signs, d1_planets, "D1 — Lagna", size=200)
+    d9_svg = _chart_svg(d9_signs, d9_planets, "D9 — Navamsa", size=200)
+
+    def _kv(rows: list[tuple[str, str]]) -> str:
+        tr = "".join(
+            f'<tr><td style="padding:1px 4px; font-weight:bold; color:#555; width:45%; border:none;">{k}</td>'
+            f'<td style="padding:1px 4px; border:none;">{v}</td></tr>'
+            for k, v in rows
+        )
+        return f'<table style="width:100%; font-size:7.5pt; border-collapse:collapse; margin:0;">{tr}</table>'
+
+    panchang_rows = [
+        ("Tithi", pan["tithi_name"]),
+        ("Paksha", pan["paksha"]),
+        ("Yoga", pan["yoga_name"]),
+        ("Karan", pan["karan_name"]),
+        ("Nak.-Pada", f"{nak['name']} — {nak['pada']}"),
+        ("Nak. Lord", nak["lord"]),
+        ("Sunrise", d.get("sunrise", "—")),
+        ("Sunset", d.get("sunset", "—")),
+        ("Ayanamsa", f"{d['ayanamsa']:.4f}° Lahiri"),
+    ]
+
+    avk_rows = [
+        ("Varna", av.get("varna", "—")),
+        ("Vasya", av.get("vasya", "—")),
+        ("Yoni", av.get("yoni", "—")),
+        ("Gana", av.get("gana", "—")),
+        ("Nadi", av.get("nadi", "—")),
+        ("Tatva", av.get("tatva", "—")),
+        ("Paya", av.get("paya", "—")),
+        ("Dasa Balance", _format_dasa_balance(dasha0["planet"], dasha0["years"])),
+    ]
+
+    planet_rows_html = ""
+    for name in ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]:
+        info = d["planets"].get(name)
+        if not info:
+            continue
+        retro = "R" if info.get("retrograde") else ""
+        dignity = info.get("dignity", "")
+        dignity_color = _DIGNITY_COLOR.get(dignity, "#888")
+        deg = info["degree_in_sign"]
+        d_int = int(deg)
+        d_min = int(round((deg - d_int) * 60))
+        if d_min == 60:
+            d_int += 1
+            d_min = 0
+        deg_str = f"{d_int}°{d_min:02d}'"
+        planet_rows_html += (
+            f'<tr>'
+            f'<td style="padding:2px 4px; font-weight:bold; border-bottom:1px solid #eee;">{name}</td>'
+            f'<td style="padding:2px 4px; border-bottom:1px solid #eee;">{info["sign_name"]}</td>'
+            f'<td style="padding:2px 4px; border-bottom:1px solid #eee;">{deg_str}</td>'
+            f'<td style="padding:2px 4px; border-bottom:1px solid #eee; text-align:center;">{info["house"]}</td>'
+            f'<td style="padding:2px 4px; border-bottom:1px solid #eee;">{info["sign_lord"]}</td>'
+            f'<td style="padding:2px 4px; border-bottom:1px solid #eee; color:{dignity_color}; font-size:7pt;">{dignity}</td>'
+            f'<td style="padding:2px 4px; border-bottom:1px solid #eee; text-align:center; color:#dc2626; font-weight:bold;">{retro}</td>'
+            f'</tr>'
+        )
+
+    dasha_rows_html = ""
+    for ds in d["dasha"]["dashas"]:
+        is_cur = ds["planet"] == current["planet"] and ds["start_date"] == current["start_date"]
+        row_style = ' style="background:#f3f0ff; font-weight:bold;"' if is_cur else ""
+        label = " (Current)" if is_cur else ""
+        dasha_rows_html += (
+            f'<tr{row_style}>'
+            f'<td style="padding:2px 4px; border-bottom:1px solid #eee;">{ds["planet"]}{label}</td>'
+            f'<td style="padding:2px 4px; border-bottom:1px solid #eee;">{ds["start_date"]}</td>'
+            f'<td style="padding:2px 4px; border-bottom:1px solid #eee;">{ds["end_date"]}</td>'
+            f'</tr>'
+        )
+
+    dob_fmt = "/".join(reversed(d["dob"].split("-")))
+    section_title = (
+        f'font-size:8.5pt; font-weight:bold; color:{BRAND}; '
+        f'border-bottom:1px solid {BRAND}; margin:4px 0 2px; padding-bottom:1px;'
+    )
+    col_th = f'background:{BRAND}; color:white; padding:3px 4px; text-align:left; font-size:7.5pt;'
+
+    return f"""
+    <div class="page-break"></div>
+    <div style="page-break-inside: avoid;">
+        <div style="background:#f9f7ff; border:1px solid #e5e0ff; border-radius:6px; padding:6px 10px; margin-bottom:6px;">
+            <div style="font-size:13pt; color:{BRAND}; font-weight:bold;">{d['name']} — Birth Chart at a Glance</div>
+            <div style="font-size:8pt; color:#555; margin-top:2px; line-height:1.35;">
+                <strong>DOB:</strong> {dob_fmt}
+                &nbsp;|&nbsp; <strong>Time:</strong> {d['tob']}
+                &nbsp;|&nbsp; <strong>Place:</strong> {d['place_name']}
+                &nbsp;|&nbsp; <strong>Gender:</strong> {d['gender'].title()}
+                <br/>
+                <strong>Lagna:</strong> {d['lagna']['sign_name']} ({d['lagna']['sign_lord']})
+                &nbsp;|&nbsp; <strong>Rasi:</strong> {moon['sign_name']} ({moon['sign_lord']})
+                &nbsp;|&nbsp; <strong>Nakshatra:</strong> {nak['name']} — Pada {nak['pada']} ({nak['lord']})
+            </div>
+        </div>
+
+        <div style="display:flex; gap:6px; margin-bottom:6px;">
+            <div style="flex:1; text-align:center; border:1px solid #e5e0ff; border-radius:6px; padding:2px;">{d1_svg}</div>
+            <div style="flex:1; text-align:center; border:1px solid #e5e0ff; border-radius:6px; padding:2px;">{d9_svg}</div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+            <div style="flex:0 0 36%;">
+                <div style="{section_title}">Panchang</div>
+                {_kv(panchang_rows)}
+                <div style="{section_title}">Avakhada Chakra</div>
+                {_kv(avk_rows)}
+            </div>
+            <div style="flex:1;">
+                <div style="{section_title}">Planetary Positions</div>
+                <table style="width:100%; font-size:7.5pt; border-collapse:collapse; margin:0;">
+                    <tr><th style="{col_th}">Planet</th><th style="{col_th}">Sign</th><th style="{col_th}">Deg</th><th style="{col_th} text-align:center;">Hs</th><th style="{col_th}">Lord</th><th style="{col_th}">Dignity</th><th style="{col_th} text-align:center;">R</th></tr>
+                    {planet_rows_html}
+                </table>
+                <div style="{section_title}">Vimshottari Dasha (120-year cycle)</div>
+                <table style="width:100%; font-size:7.5pt; border-collapse:collapse; margin:0;">
+                    <tr><th style="{col_th}">Planet</th><th style="{col_th}">Start</th><th style="{col_th}">End</th></tr>
+                    {dasha_rows_html}
+                </table>
+            </div>
+        </div>
+    </div>
+    """
+
+
 def _birth_chart_page(d: dict) -> str:
     """D1 Rasi/Lagna chart with visual diagram."""
     house_signs, house_planets = _build_d1_chart_data(d)
@@ -1153,7 +1433,7 @@ def _birth_chart_page(d: dict) -> str:
     <div style="background: #f9f7ff; border: 1px solid #e5e0ff; border-radius: 8px; padding: 15px 20px; margin-bottom: 20px;">
         <div style="font-size: 18pt; color: {BRAND}; font-weight: bold; margin-bottom: 5px;">{d['name']}</div>
         <div style="font-size: 10pt; color: #555;">
-            <strong>DOB:</strong> {d['dob']} &nbsp;|&nbsp; <strong>Time:</strong> {d['tob']} &nbsp;|&nbsp;
+            <strong>DOB:</strong> {"/".join(reversed(d["dob"].split("-")))} &nbsp;|&nbsp; <strong>Time:</strong> {d['tob']} &nbsp;|&nbsp;
             <strong>Place:</strong> {d['place_name']} &nbsp;|&nbsp; <strong>Gender:</strong> {d['gender'].title()}
         </div>
         <div style="font-size: 10pt; color: #555; margin-top: 4px;">

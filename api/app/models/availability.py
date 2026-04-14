@@ -103,7 +103,9 @@ class ReportSection(BaseModel):
 
 
 DEFAULT_REPORT_SECTIONS: list[ReportSection] = [
-    ReportSection(id="birth_chart",     label="Birth Chart",            description="North Indian Rashi Chakra SVG + full planet positions table.",                                is_paid=False, enabled=True, order=1),
+    ReportSection(id="at_a_glance",     label="At-a-Glance Summary",    description="Dense single-page snapshot: header band, D1+D9 charts, Panchang, Avakhada, planet positions, Vimshottari Dasha.", is_paid=False, enabled=True, order=1),
+    ReportSection(id="summary_grid",    label="Summary Grid",           description="Compact 2×2 grid: Basic Details, Avkahada Chakra, Favourable Points, Ghatak.",             is_paid=False, enabled=True, order=2),
+    ReportSection(id="birth_chart",     label="Birth Chart",            description="North Indian Rashi Chakra SVG + full planet positions table.",                                is_paid=False, enabled=True, order=2),
     ReportSection(id="basic_details",   label="Basic Details",          description="Birth particulars, coordinates, time conversions, panchanga and luminary timings.",           is_paid=False, enabled=True, order=2),
     ReportSection(id="avkahada",        label="Avkahada Chakra",        description="Traditional Vedic chart attributes: varna, vasya, yoni, gana, nadi, paya, tatva.",            is_paid=False, enabled=True, order=3),
     ReportSection(id="favourable",      label="Favourable Points",      description="Lucky planets, days, numbers, colours, gemstones for the Lagna.",                              is_paid=False, enabled=True, order=4),
