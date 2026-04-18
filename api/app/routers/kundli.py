@@ -123,9 +123,9 @@ async def preview_kundli(
     gender: str = Query("male"),
     dob: str = Query("1988-11-11"),
     tob: str = Query("12:55"),
-    lat: float = Query(21.7333),
-    lon: float = Query(70.6167),
-    place_name: str = Query("Jetpur, Gujarat, India"),
+    lat: float = Query(22.3072),
+    lon: float = Query(73.1812),
+    place_name: str = Query("Vadodara, Gujarat, India"),
     timezone: str = Query("Asia/Kolkata"),
 ):
     """Instant PDF preview — returns the PDF directly in the browser.
