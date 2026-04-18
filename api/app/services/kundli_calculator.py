@@ -77,11 +77,12 @@ YOGA_NAMES = [
     "Indra", "Vaidhriti",
 ]
 
-# Karan names (11 karanas, each half-tithi)
+# Karan names (11 karanas, each half-tithi). 7 movable + 4 fixed.
 KARAN_NAMES = [
     "Bava", "Balava", "Kaulava", "Taitila", "Garija",
     "Vanija", "Vishti", "Shakuni", "Chatushpada", "Naga", "Kimstughna",
 ]
+_MOVABLE_KARANAS = KARAN_NAMES[:7]
 
 
 # ── Julian Day helper ────────────────────────────────────────────────────────
@@ -162,7 +163,7 @@ def calc_planet_positions(jd: float, lat: float, lon: float) -> dict:
         "degree_in_sign": round(ketu_lon % 30, 4),
         "house": _whole_sign_house(ketu_sign, lagna_sign),
         "retrograde": True,  # Rahu/Ketu always retrograde
-        "dignity": "",
+        "dignity": _get_dignity("Ketu", ketu_sign),
     }
     planets["Rahu"]["retrograde"] = True
 
@@ -184,9 +185,30 @@ def _whole_sign_house(planet_sign: int, lagna_sign: int) -> int:
 
 
 def _get_dignity(planet: str, sign: int) -> str:
-    """Return the Vedic dignity of a planet in a given sign (sign 0-11 zero-indexed)."""
+    """Return the Vedic dignity of a planet in a given sign (sign 0-11 zero-indexed).
+
+    For Rahu/Ketu, uses the Parashara tradition: Rahu exalted in Gemini (debil.
+    Sagittarius), Ketu exalted in Sagittarius (debil. Gemini). Own-sign follows
+    the classical pairing — Rahu=Aquarius, Ketu=Scorpio.
+    """
     if planet in ("Rahu", "Ketu", "Uranus", "Neptune", "Pluto"):
-        return ""
+        exalt_lon_ext = _EXALTATION_EXT.get(planet)
+        if exalt_lon_ext is not None:
+            exalt_sign = int(exalt_lon_ext) // 30
+            debil_sign = (exalt_sign + 6) % 12
+            if sign == exalt_sign:
+                return "Exalted"
+            if sign == debil_sign:
+                return "Debilitated"
+        if sign in _OWN_SIGNS_EXT.get(planet, []):
+            return "Own Sign"
+        sign_lord = SIGN_LORDS[sign]
+        if sign_lord in _PLANET_FRIENDS_EXT.get(planet, set()):
+            return "Friendly Sign"
+        if sign_lord in _PLANET_ENEMIES_EXT.get(planet, set()):
+            return "Enemy Sign"
+        return "Neutral Sign"
+
     exalt_lon = _EXALTATION.get(planet)
     if exalt_lon is not None:
         exalt_sign = int(exalt_lon) // 30
@@ -261,6 +283,26 @@ _NIGHT_PLANET_EXT = {"Rahu": True, "Neptune": True}
 _BENEFIC_PAKSHA_EXT: set[str] = set()  # none — all treated as malefic
 # Mean speeds for Chesta Bala (deg/day)
 _MEAN_SPEED_EXT = {"Uranus": 0.012, "Neptune": 0.006, "Pluto": 0.004}
+
+# Friendship / enmity for the shadow and outer planets. Classical texts don't
+# assign these relations, so the mapping below follows the widely-used modern
+# Jyotish convention (Rahu/Ketu) and the "higher octave" reasoning for the outer
+# planets: Uranus → octave of Mercury / co-ruler with Saturn, Neptune → octave
+# of Venus/Jupiter, Pluto → octave of Mars.
+_PLANET_FRIENDS_EXT = {
+    "Rahu":    {"Venus", "Saturn", "Mercury"},
+    "Ketu":    {"Mars", "Venus", "Saturn", "Jupiter"},
+    "Uranus":  {"Saturn", "Mercury", "Venus"},
+    "Neptune": {"Jupiter", "Moon", "Venus"},
+    "Pluto":   {"Mars", "Saturn", "Sun", "Jupiter"},
+}
+_PLANET_ENEMIES_EXT = {
+    "Rahu":    {"Sun", "Moon", "Mars"},
+    "Ketu":    {"Sun", "Moon"},
+    "Uranus":  {"Sun", "Moon", "Mars"},
+    "Neptune": {"Mercury", "Saturn", "Mars"},
+    "Pluto":   {"Venus", "Moon", "Mercury"},
+}
 
 
 def _compound_relationships(planets: dict) -> dict:
@@ -803,9 +845,20 @@ def calc_panchanga(jd: float) -> dict:
     yoga_num = int(yoga_lon / (360 / 27))
     yoga_name = YOGA_NAMES[yoga_num % 27]
 
-    # Karan: half-tithi (each 6° diff)
-    karan_num = int(diff / 6) % 11
-    karan_name = KARAN_NAMES[karan_num]
+    # Karan: half-tithi (each 6° diff). There are 60 half-tithis in a lunar month,
+    # 4 of which are fixed (Kimstughna at HT1, Shakuni/Chatushpada/Naga at HT58–60)
+    # and the remaining 56 cycle through the 7 movable karanas (Bava … Vishti).
+    half_tithi = int(diff / 6)  # 0–59
+    if half_tithi == 0:
+        karan_name = "Kimstughna"
+    elif half_tithi == 57:
+        karan_name = "Shakuni"
+    elif half_tithi == 58:
+        karan_name = "Chatushpada"
+    elif half_tithi == 59:
+        karan_name = "Naga"
+    else:
+        karan_name = _MOVABLE_KARANAS[(half_tithi - 1) % 7]
 
     return {
         "tithi_num": tithi_num,
@@ -900,42 +953,86 @@ def calc_manglik(planets: dict, lagna_sign: int) -> dict:
 
 # ── Sade Sati ────────────────────────────────────────────────────────────────
 
-def calc_sadesati(moon_sign: int) -> list[dict]:
+def _compute_saturn_transits(start_year: int, end_year: int) -> list[tuple[int, date]]:
+    """Sidereal Saturn ingress dates between two years using Swiss Ephemeris.
+
+    Walks 14-day steps detecting sign changes, then binary-refines each
+    candidate to the exact ingress day. Includes retrograde re-entries —
+    callers can collapse those with `_collapse_retrograde_transits`.
     """
-    Calculate Saturn's Sade Sati periods (past and future) from 1950 to 2100.
-    Sade Sati = Saturn transiting 12th, 1st, 2nd house from Moon sign (7.5 years total).
-    Saturn average transit per sign ≈ 2.46 years.
+    import swisseph as swe
+    from datetime import timedelta
+
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    flags = swe.FLG_SIDEREAL
+
+    def saturn_sign(d: date) -> int:
+        jd = swe.julday(d.year, d.month, d.day, 12.0)
+        pos, _ = swe.calc_ut(jd, swe.SATURN, flags)
+        return int(pos[0] % 360 / 30)
+
+    cursor = date(start_year, 1, 1)
+    end = date(end_year, 12, 31)
+    current_sign = saturn_sign(cursor)
+    transits: list[tuple[int, date]] = [(current_sign, cursor)]
+
+    while cursor < end:
+        nxt = min(cursor + timedelta(days=14), end)
+        nxt_sign = saturn_sign(nxt)
+        if nxt_sign != current_sign:
+            lo, hi = cursor, nxt
+            while (hi - lo).days > 1:
+                mid = lo + timedelta(days=(hi - lo).days // 2)
+                if saturn_sign(mid) == current_sign:
+                    lo = mid
+                else:
+                    hi = mid
+            transits.append((nxt_sign, hi))
+            current_sign = nxt_sign
+        cursor = nxt
+
+    return transits
+
+
+def _collapse_retrograde_transits(transits: list[tuple[int, date]]) -> list[tuple[int, date]]:
+    """Collapse retrograde back-and-forth into a single final ingress per sign.
+
+    A typical retrograde pattern is A → previous_sign → A again within a few
+    months. Keep only the LAST ingress into A — that's the "permanent" entry.
     """
-    # Saturn approximate entry dates per sign (Vedic/sidereal)
-    # Dates based on Lahiri ayanamsa Saturn transits
-    SATURN_TRANSITS = [
-        # (sign_num 0-11, entry_date)
-        (8,  date(1987, 12, 17)),  # Sagittarius
-        (9,  date(1990,  5, 21)),  # Capricorn
-        (10, date(1993,  1, 26)),  # Aquarius
-        (11, date(1995,  6, 23)),  # Pisces
-        (0,  date(1998,  4, 29)),  # Aries
-        (1,  date(2000,  8,  8)),  # Taurus
-        (2,  date(2002, 11,  8)),  # Gemini
-        (3,  date(2004,  9, 16)),  # Cancer
-        (4,  date(2007, 12, 16)),  # Leo
-        (5,  date(2009,  9, 11)),  # Virgo
-        (6,  date(2011, 11, 15)),  # Libra
-        (7,  date(2014, 11,  2)),  # Scorpio
-        (8,  date(2017,  1, 26)),  # Sagittarius
-        (9,  date(2020,  1, 24)),  # Capricorn
-        (10, date(2022,  4, 29)),  # Aquarius
-        (11, date(2025,  3, 29)),  # Pisces
-        (0,  date(2027,  6,  5)),  # Aries
-        (1,  date(2029,  9,  2)),  # Taurus
-        (2,  date(2032,  1, 10)),  # Gemini
-        (3,  date(2034,  8, 10)),  # Cancer
-        (4,  date(2036, 10, 21)),  # Leo
-        (5,  date(2039,  8,  3)),  # Virgo
-        (6,  date(2041, 10, 13)),  # Libra
-        (7,  date(2044, 10,  1)),  # Scorpio
-        (8,  date(2046, 12,  5)),  # Sagittarius
-    ]
+    if not transits:
+        return []
+    result: list[tuple[int, date]] = [transits[0]]
+    for sign, d in transits[1:]:
+        if len(result) >= 2 and result[-2][0] == sign and (d - result[-1][1]).days < 365:
+            result.pop()
+            result[-1] = (sign, d)
+        else:
+            result.append((sign, d))
+    return result
+
+
+def calc_sadesati(moon_sign: int, dob: str | None = None) -> list[dict]:
+    """
+    Calculate Saturn's Sade Sati periods.
+
+    Sade Sati = Saturn transiting the 12th, 1st, and 2nd houses from the
+    Moon sign (~7.5 years total per cycle, recurring every ~30 years).
+    When `dob` is supplied, periods that ended before birth are dropped and
+    the search window covers ~100 years from the birth year, so all three
+    Sade Satis a person can experience in a normal lifespan are returned.
+    """
+    birth_date = date.fromisoformat(dob) if dob else None
+    if birth_date:
+        start_year = birth_date.year
+        end_year = birth_date.year + 100
+    else:
+        start_year = date.today().year - 30
+        end_year = date.today().year + 70
+
+    transits = _collapse_retrograde_transits(
+        _compute_saturn_transits(start_year, end_year)
+    )
 
     sadesati_signs = {
         (moon_sign - 1) % 12: "Rising",
@@ -944,19 +1041,21 @@ def calc_sadesati(moon_sign: int) -> list[dict]:
     }
 
     periods = []
-    for i, (sign, entry) in enumerate(SATURN_TRANSITS):
-        if sign in sadesati_signs:
-            # End = next transit entry (or estimate 2.46 years later)
-            if i + 1 < len(SATURN_TRANSITS):
-                exit_date = SATURN_TRANSITS[i + 1][1]
-            else:
-                exit_date = _add_years(entry, 2.46)
-            periods.append({
-                "phase": sadesati_signs[sign],
-                "rashi": SIGN_NAMES[sign],
-                "start_date": entry.isoformat(),
-                "end_date": exit_date.isoformat(),
-            })
+    for i, (sign, entry) in enumerate(transits):
+        if sign not in sadesati_signs:
+            continue
+        if i + 1 < len(transits):
+            exit_date = transits[i + 1][1]
+        else:
+            exit_date = _add_years(entry, 2.46)
+        if birth_date and exit_date < birth_date:
+            continue
+        periods.append({
+            "phase": sadesati_signs[sign],
+            "rashi": SIGN_NAMES[sign],
+            "start_date": entry.isoformat(),
+            "end_date": exit_date.isoformat(),
+        })
 
     return sorted(periods, key=lambda p: p["start_date"])
 
@@ -2591,6 +2690,52 @@ def calc_birth_time_details(dob: str, tob: str, lat: float, lon: float, jd: floa
     }
 
 
+# ── Ashtakavarga ─────────────────────────────────────────────────────────────
+# Classical Parashara rules. For each of the 7 planets, lists — for each of 8
+# contributors (Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn, Lagna) —
+# the house positions *from the contributor* that grant one bindu (benefic
+# point) to the planet. Each planet's total across the 12 signs should match:
+# Sun=48, Moon=49, Mars=39, Mercury=54, Jupiter=56, Venus=52, Saturn=39 (337).
+ASHTAKAVARGA_RULES: dict[str, list[set[int]]] = {
+    "Sun":     [{1,2,4,7,8,9,10,11}, {3,6,10,11}, {1,2,4,7,8,9,10,11}, {3,5,6,9,10,11,12}, {5,6,9,11}, {6,7,12}, {1,2,4,7,8,9,10,11}, {3,4,6,10,11,12}],
+    "Moon":    [{3,6,7,8,10,11}, {1,3,6,7,10,11}, {2,3,5,6,9,10,11}, {1,3,4,5,7,8,10,11}, {1,4,7,8,10,11,12}, {3,4,5,7,9,10,11}, {3,5,6,11}, {3,6,10,11}],
+    "Mars":    [{3,5,6,10,11}, {3,6,11}, {1,2,4,7,8,10,11}, {3,5,6,11}, {6,10,11,12}, {6,8,11,12}, {1,4,7,8,9,10,11}, {1,3,6,10,11}],
+    "Mercury": [{5,6,9,11,12}, {2,4,6,8,10,11}, {1,2,4,7,8,9,10,11}, {1,3,5,6,9,10,11,12}, {6,8,11,12}, {1,2,3,4,5,8,9,11}, {1,2,4,7,8,9,10,11}, {1,2,4,6,8,10,11}],
+    "Jupiter": [{1,2,3,4,7,8,9,10,11}, {2,5,7,9,11}, {1,2,4,7,8,10,11}, {1,2,4,5,6,9,10,11}, {1,2,3,4,7,8,10,11}, {2,5,6,9,10,11}, {3,5,6,12}, {1,2,4,5,6,7,9,10,11}],
+    "Venus":   [{8,11,12}, {1,2,3,4,5,8,9,11,12}, {3,5,6,9,11,12}, {3,5,6,9,11}, {5,8,9,10,11}, {1,2,3,4,5,8,9,10,11}, {3,4,5,8,9,10,11}, {1,2,3,4,5,8,9,11}],
+    "Saturn":  [{1,2,4,7,8,10,11}, {3,6,11}, {3,5,6,10,11,12}, {6,8,9,10,11,12}, {5,6,11,12}, {6,11,12}, {3,5,6,11}, {1,3,4,6,10,11}],
+}
+
+
+def calc_ashtakavarga(planets: dict, lagna_sign: int) -> dict:
+    """Return Bhinnashtakavarga (per-planet bindus per sign) and Sarvashtakavarga totals.
+
+    Output shape:
+      {
+        "bindus":     {planet: [b_sign1, b_sign2, ..., b_sign12]},  # 7 planets
+        "totals":     [t_sign1, ..., t_sign12],                     # Sarvashtakavarga
+        "grand_total": int,                                         # should be 337
+      }
+    """
+    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    contrib_signs = [planets[name]["sign"] for name in planet_order] + [lagna_sign]
+
+    bindus: dict[str, list[int]] = {}
+    totals = [0] * 12
+    for planet, rules in ASHTAKAVARGA_RULES.items():
+        row = [0] * 12
+        for contrib_sign, benefic_houses in zip(contrib_signs, rules):
+            for target_sign in range(12):
+                house_from_contrib = ((target_sign - contrib_sign) % 12) + 1
+                if house_from_contrib in benefic_houses:
+                    row[target_sign] += 1
+        bindus[planet] = row
+        for i in range(12):
+            totals[i] += row[i]
+
+    return {"bindus": bindus, "totals": totals, "grand_total": sum(totals)}
+
+
 # ── Master builder ───────────────────────────────────────────────────────────
 
 def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: float, place_name: str) -> dict:
@@ -2605,7 +2750,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     panchanga = calc_panchanga(jd)
     dasha = calc_vimshottari_dasha(moon_lon, dob)
     manglik = calc_manglik(planets, lagna["sign"])
-    sadesati = calc_sadesati(planets["Moon"]["sign"])
+    sadesati = calc_sadesati(planets["Moon"]["sign"], dob=dob)
     sun_sunset = calc_sunrise_sunset(jd, lat, lon)
     avkahada = calc_avkahada(nakshatra["num"], planets["Moon"]["sign"])
     birth_time = calc_birth_time_details(dob, tob, lat, lon, jd, sun_sunset["sunrise"])
@@ -2625,6 +2770,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     from datetime import date as _today
     current_year = _today.today().year
     numerology = calc_numerology(name, dob, current_year)
+    ashtakavarga = calc_ashtakavarga(planets, lagna["sign"])
 
     # Ayanamsa value
     import swisseph as swe
@@ -2664,4 +2810,5 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "doshas": doshas,
         "gochar": gochar,
         "numerology": numerology,
+        "ashtakavarga": ashtakavarga,
     }
