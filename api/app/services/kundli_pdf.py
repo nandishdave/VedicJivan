@@ -7,7 +7,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from app.services.kundli_calculator import SIGN_NAMES as _SIGN_NAMES_PDF, calc_nakshatra
+from app.services.kundli_calculator import (
+    JAIMINI_CHARA_ROLES,
+    SIGN_NAMES as _SIGN_NAMES_PDF,
+    calc_nakshatra,
+)
 from app.services.kundli_data import (
     BHAVA_DATA,
     DASHA_PREDICTIONS,
@@ -27,6 +31,12 @@ try:
     from app.services.kundli_data import MUDDA_DASHA_BHAV_DATA
 except ImportError:
     MUDDA_DASHA_BHAV_DATA = {}
+
+# LAL_KITAB_DATA is also large and authored separately.
+try:
+    from app.services.kundli_data import LAL_KITAB_DATA
+except ImportError:
+    LAL_KITAB_DATA = {}
 
 LOGO_URL = "https://vedicjivan-website.s3.ap-south-1.amazonaws.com/images/logo/logo-final.png"
 BRAND = "#7c3aed"
@@ -125,7 +135,9 @@ SECTION_BUILDERS = {
     "mahadasha_phal":   lambda d: _mahadasha_phal_section(d),
     "antardasha":       lambda d: _antardasha_section(d),
     "pratyantar":       lambda d: _pratyantar_section(d),
+    "jaimini":          lambda d: _jaimini_section(d),
     "yogini_dasha":     lambda d: _yogini_dasha_section(d),
+    "char_dasha":       lambda d: _char_dasha_section(d),
     "divisional":       lambda d: _divisional_charts_section(d),
     "shodashvarga":     lambda d: _shodashvarga_table_section(d),
     "friendship":       lambda d: _friendship_section(d),
@@ -135,6 +147,8 @@ SECTION_BUILDERS = {
     "planet_positions": lambda d: _planet_positions(d),
     "numerology":       lambda d: _numerology_section(d),
     "varshaphal":       lambda d: _varshaphal_section(d),
+    "lal_kitab_calc":   lambda d: _lal_kitab_calculation_section(d),
+    "lal_kitab":        lambda d: _lal_kitab_section(d),
     "remedies":         lambda d: _remedies_section(d),
 }
 
@@ -154,11 +168,12 @@ _DEFAULT_SECTION_ORDER = [
     "manglik",
     "sadesati",
     "gochar",
-    "dasha",
+    "jaimini",
     "mahadasha_phal",
     "antardasha",
     "pratyantar",
     "yogini_dasha",
+    "char_dasha",
     "divisional",
     "shodashvarga",
     "friendship",
@@ -168,6 +183,8 @@ _DEFAULT_SECTION_ORDER = [
     "planet_positions",
     "numerology",
     "varshaphal",
+    "lal_kitab_calc",
+    "lal_kitab",
     "remedies",
 ]
 
@@ -774,37 +791,204 @@ def _western_aspects_section(d: dict) -> str:
     </table>"""
 
 
+def _jaimini_section(d: dict) -> str:
+    """Jaimini System — Chara Karakas, Karakamsa Chart, Swamsa Chart, Karak table."""
+    j = d.get("jaimini")
+    if not j:
+        return ""
+
+    # Karakamsa = D1 rotated so AK's D9 sign is 1st.
+    # Swamsa    = D9 rotated so AK's D9 sign is 1st.
+    kk_signs, kk_planets = _build_jaimini_d1_chart(d, j["karakamsa_sign"])
+    sw_signs, sw_planets = _build_jaimini_d9_chart(d, j["swamsa_sign"])
+    kk_svg = _chart_svg(kk_signs, kk_planets, "Karakamsa Chart", size=240)
+    sw_svg = _chart_svg(sw_signs, sw_planets, "Swamsa Chart", size=240)
+
+    # Karak table: Sthira + Chara side-by-side per role.
+    karak_rows = ""
+    for role in JAIMINI_CHARA_ROLES:
+        sthira = j["sthira"].get(role, "—")
+        chara_entry = j["chara"].get(role, {})
+        chara_planet = chara_entry.get("planet", "—")
+        chara_deg = chara_entry.get("degree", "")
+        karak_rows += (
+            f'<tr>'
+            f'<td style="font-weight:bold; padding:4px 8px;">{role}</td>'
+            f'<td style="padding:4px 8px;">{sthira}</td>'
+            f'<td style="padding:4px 8px;">{chara_planet}'
+            f'{f" <span style=\"color:#888; font-size:8pt;\">({chara_deg}°)</span>" if chara_deg != "" else ""}'
+            f'</td>'
+            f'</tr>'
+        )
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Jaimini System — Karakamsa &amp; Swamsa</h2>
+    <p>The Jaimini system overlays the standard Parashari chart with a parallel
+    set of significators (the <em>Chara Karakas</em>) and two derived charts
+    used for soul-purpose and dharma readings. Both charts use the same lagna
+    — your <strong>Atmakaraka</strong>'s navamsa sign — but show different
+    placements: the <strong>Karakamsa Chart</strong> rotates your <em>Rasi
+    (D1) chart</em> so this sign sits as the 1st house, while the
+    <strong>Swamsa Chart</strong> rotates your <em>Navamsa (D9) chart</em>
+    the same way. Your AK is <strong>{j["atmakaraka"]}</strong> and its
+    navamsa sign is <strong>{j["karakamsa_sign_name"]}</strong>.</p>
+
+    <div style="display:flex; gap:8px; margin-bottom:6px; page-break-inside: avoid;">
+        <div style="flex:1; text-align:center; border:1px solid #e5e0ff; border-radius:6px; padding:4px;">{kk_svg}</div>
+        <div style="flex:1; text-align:center; border:1px solid #e5e0ff; border-radius:6px; padding:4px;">{sw_svg}</div>
+    </div>
+
+    <h3 style="margin-top:14px;">Karak Table — Sthira (Fixed) and Chara (Movable)</h3>
+    <p>Sthira Karakas are the classical fixed assignments used as a baseline.
+    Chara Karakas are computed from your chart by ranking the seven classical
+    planets by their degree-within-sign in descending order — the highest-degree
+    planet is the Atmakaraka (soul indicator), the lowest is the Darakaraka
+    (spouse indicator).</p>
+    <table style="width:100%; border-collapse:collapse;">
+        <tr>
+            <th style="background:{BRAND}; color:white; padding:6px 8px; text-align:left;">Karak</th>
+            <th style="background:{BRAND}; color:white; padding:6px 8px; text-align:left;">Sthira (Fixed)</th>
+            <th style="background:{BRAND}; color:white; padding:6px 8px; text-align:left;">Chara (Your Chart)</th>
+        </tr>
+        {karak_rows}
+    </table>
+
+    {_avastha_table(j.get("avasthas", []))}
+    """
+
+
+def _avastha_table(avasthas: list[dict]) -> str:
+    """Render the Avastha (planetary state) table — Jagradadi + Baladi + Deeptadi."""
+    if not avasthas:
+        return ""
+    rows = ""
+    for a in avasthas:
+        rows += (
+            f'<tr>'
+            f'<td style="padding:4px 8px; font-weight:bold;">{a["planet"]}</td>'
+            f'<td style="padding:4px 8px;">{a["jagradadi"]}</td>'
+            f'<td style="padding:4px 8px;">{a["baladi"]}</td>'
+            f'<td style="padding:4px 8px;">{a["deeptadi"]}</td>'
+            f'</tr>'
+        )
+    return f"""
+    <h3 style="margin-top:18px;">Avastha — Planetary States</h3>
+    <p>The Avasthas describe the condition of each planet in your chart across
+    three classical scales: <strong>Jagradadi</strong> (waking / dreaming /
+    sleeping — based on the sign-lord relationship), <strong>Baladi</strong>
+    (5-stage life progression based on degree in sign — infant to dead), and
+    <strong>Deeptadi</strong> (9-stage condition combining sign dignity,
+    combustion, planetary war, Shadbala strength and malefic affliction).
+    Stronger Avasthas amplify the planet's positive results; weaker ones
+    diminish them.</p>
+    <table style="width:100%; border-collapse:collapse;">
+        <tr>
+            <th style="background:{BRAND}; color:white; padding:6px 8px; text-align:left;">Planet</th>
+            <th style="background:{BRAND}; color:white; padding:6px 8px; text-align:left;">Jagradadi</th>
+            <th style="background:{BRAND}; color:white; padding:6px 8px; text-align:left;">Baladi</th>
+            <th style="background:{BRAND}; color:white; padding:6px 8px; text-align:left;">Deeptadi</th>
+        </tr>
+        {rows}
+    </table>
+    <p style="font-size:9pt; color:#888; margin-top:6px;"><em>Baladi values
+    match Astrosage exactly. Jagradadi follows the classical sign-lord
+    relationship (only an enemy lord drives Susupta). Deeptadi combines sign
+    dignity, combustion (proximity to Sun), planetary war (≤1° proximity to
+    another planet), Shadbala strength and malefic affliction — first match
+    in priority order: Vikala → Khala → Deena → Deepta → Swastha → Mudita
+    → Shakta → Pidita → Shanta. Friendship takes precedence over
+    debilitation; positive sign-dignity states take precedence over Shakta.</em></p>
+    """
+
+
+def _char_dasha_section(d: dict) -> str:
+    """Jaimini Chara Dasha — sign-based MDs from natal lagna + sub-periods."""
+    cd = d.get("char_dasha")
+    if not cd or not cd.get("dashas"):
+        return ""
+
+    summary_rows = ""
+    for entry in cd["dashas"]:
+        summary_rows += (
+            f"<tr><td><strong>{entry['sign_name']}</strong></td>"
+            f"<td>{entry['years']} years</td>"
+            f"<td>{entry['start_date']}</td>"
+            f"<td>{entry['end_date']}</td></tr>"
+        )
+
+    html = f"""
+    <div class="page-break"></div>
+    <h2>Char Dasha (Jaimini Chara Dasha)</h2>
+    <p>Char Dasha is a sign-based (Rashi) dasha system from the Jaimini Sutras,
+    distinct from the Nakshatra-based Vimshottari Dasha. Each Mahadasha's
+    duration is computed by counting from the sign to its lord (forward for
+    odd signs, backward for even signs) and subtracting one. The cycle starts
+    from your Lagna sign and progresses zodiacally if the Lagna is odd, or
+    anti-zodiacally if even. Antardashas within each MD cycle through all
+    twelve signs in the same direction, each lasting MD/12.</p>
+    <table style="page-break-inside: auto;">
+        <tr><th>Sign</th><th>Duration</th><th>Start</th><th>End</th></tr>
+        {summary_rows}
+    </table>"""
+
+    for entry in cd["dashas"]:
+        ad_rows = ""
+        for ad in entry.get("antardashas", []):
+            ad_rows += (
+                f"<tr><td>{ad['sign_name']}</td>"
+                f"<td>{ad['start_date']}</td><td>{ad['end_date']}</td></tr>"
+            )
+        html += f"""
+        <div class="section">
+            <h4 style="color:#555; margin: 12px 0 4px;">{entry['sign_name']} Mahadasha — {entry['years']} years ({entry['start_date']} to {entry['end_date']})</h4>
+            <table style="font-size: 9pt;">
+                <tr><th>Sub-Period (Sign)</th><th>Start</th><th>End</th></tr>
+                {ad_rows}
+            </table>
+        </div>"""
+
+    return html
+
+
 def _yogini_dasha_section(d: dict) -> str:
     """Yogini Dasha — 36-year cycle with 8 yoginis (Astrosage pages 21-22).
 
     Shows the full Yogini Dasha sequence + sub-periods for each major period.
+    The summary table is allowed to fragment across pages so the intro text
+    doesn't get stranded with whitespace before it.
     """
     yd = d.get("yogini_dasha")
     if not yd:
         return ""
 
-    html = '<div class="page-break"></div><h2>Yogini Dasha</h2>'
-    html += f"""<p>The Yogini Dasha is a 36-year cycle based on 8 yoginis. It is particularly useful for
-    timing events within 1-2 year windows. Your starting yogini is <strong>{yd['starting_yogini']}</strong>
-    with <strong>{yd['balance_years']}</strong> years remaining at birth.</p>"""
-
-    # Summary table of major periods
     summary_rows = ""
     for entry in yd["dashas"]:
-        summary_rows += f"<tr><td><strong>{entry['abbr']}</strong> ({entry['yogini']})</td><td>{entry['years']} years</td><td>{entry['start_date']}</td><td>{entry['end_date']}</td></tr>"
+        summary_rows += (
+            f"<tr><td><strong>{entry['abbr']}</strong> ({entry['yogini']})</td>"
+            f"<td>{entry['years']} years</td><td>{entry['start_date']}</td>"
+            f"<td>{entry['end_date']}</td></tr>"
+        )
 
-    html += f"""
-    <h3>Yogini Mahadasha Sequence</h3>
-    <table>
+    html = f"""
+    <div class="page-break"></div>
+    <h2>Yogini Dasha</h2>
+    <p>The Yogini Dasha is a 36-year cycle based on 8 yoginis. It is particularly useful for
+    timing events within 1-2 year windows. Your starting yogini is <strong>{yd['starting_yogini']}</strong>
+    with <strong>{yd['balance_years']}</strong> years remaining at birth.</p>
+    <table style="page-break-inside: auto;">
         <tr><th>Yogini</th><th>Duration</th><th>Start</th><th>End</th></tr>
         {summary_rows}
     </table>"""
 
-    # Sub-periods for each major period
+    # Sub-periods for each major period — these stay together as small cards.
     for entry in yd["dashas"]:
         ad_rows = ""
         for ad in entry.get("antardashas", []):
-            ad_rows += f"<tr><td>{ad['abbr']} ({ad['yogini']})</td><td>{ad['start_date']}</td><td>{ad['end_date']}</td></tr>"
+            ad_rows += (
+                f"<tr><td>{ad['abbr']} ({ad['yogini']})</td>"
+                f"<td>{ad['start_date']}</td><td>{ad['end_date']}</td></tr>"
+            )
 
         html += f"""
         <div class="section">
@@ -1067,28 +1251,26 @@ def _sadesati_section(d: dict) -> str:
 
 
 def _dasha_section(d: dict) -> str:
-    dashas = d["dasha"]["dashas"]
+    """Current Vimshottari Mahadasha narrative.
+
+    The full 120-year Vimshottari table already lives on the at-a-glance page,
+    so this section just expands on the *current* Mahadasha's general meaning.
+    Per-period house-specific predictions are in the separate Mahadasha Phal
+    section that follows.
+    """
     current = d["dasha"]["current_dasha"]
-
-    rows = ""
-    for dasha in dashas:
-        is_current = dasha["planet"] == current["planet"] and dasha["start_date"] == current["start_date"]
-        style = f' style="background: #f3f0ff; font-weight: bold;"' if is_current else ""
-        label = " (Current)" if is_current else ""
-        rows += f'<tr{style}><td>{dasha["planet"]}{label}</td><td>{dasha["years"]}</td><td>{dasha["start_date"]}</td><td>{dasha["end_date"]}</td></tr>'
-
-    # Current dasha prediction
     pred = DASHA_PREDICTIONS.get(current["planet"], "")
 
     return f"""
     <div class="page-break"></div>
-    <h2>Vimshottari Dasha</h2>
-    <p>The Vimshottari Dasha system covers a 120-year cycle of planetary periods based on your birth Nakshatra.</p>
-    <table>
-        <tr><th>Planet</th><th>Years</th><th>Start Date</th><th>End Date</th></tr>
-        {rows}
-    </table>
-    <h3>Current Period: {current['planet']} Mahadasha</h3>
+    <h2>Current Mahadasha: {current['planet']}</h2>
+    <p>The Vimshottari Dasha system covers a 120-year cycle of planetary periods based on your
+    birth Nakshatra. The full sequence is shown on the at-a-glance summary page; this section
+    introduces your <strong>current</strong> Mahadasha lord.</p>
+    <div style="background:#f3f0ff; border-left:4px solid {BRAND}; padding:10px 14px; margin:8px 0;">
+        <strong>Current Period:</strong> {current['planet']} Mahadasha
+        &nbsp;|&nbsp; <strong>Runs:</strong> {current['start_date']} → {current['end_date']}
+    </div>
     <p>{pred}</p>"""
 
 
@@ -1294,6 +1476,51 @@ def _build_divisional_chart_data(d: dict, chart_type: str) -> tuple[dict, dict]:
                 abbr += "*"
             house_planets[house].append(abbr)
 
+    return house_signs, house_planets
+
+
+def _build_jaimini_d1_chart(d: dict, override_lagna_sign: int) -> tuple[dict, dict]:
+    """Build D1 (Rasi) chart house data rotated so `override_lagna_sign` is house 1.
+
+    Used for the Karakamsa Chart — the natal Rasi chart rotated so AK's D9 sign
+    becomes the 1st house.
+    """
+    house_signs = {h: (override_lagna_sign + h - 1) % 12 for h in range(1, 13)}
+    house_planets: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    for name, info in d.get("planets", {}).items():
+        if name not in PLANET_ABBR:
+            continue
+        planet_sign = info["sign"]
+        house = ((planet_sign - override_lagna_sign) % 12) + 1
+        abbr = PLANET_ABBR[name]
+        if info.get("retrograde"):
+            abbr += "*"
+        house_planets[house].append(abbr)
+    return house_signs, house_planets
+
+
+def _build_jaimini_d9_chart(d: dict, override_lagna_sign: int) -> tuple[dict, dict]:
+    """Build D9 (Navamsa) chart house data rotated so `override_lagna_sign` is house 1.
+
+    Used for the Swamsa Chart — the D9 chart rotated so AK's D9 sign becomes
+    the 1st house.
+    """
+    charts = d.get("divisional_charts", {})
+    d9 = charts.get("D9", {})
+    if not d9:
+        return {h: override_lagna_sign for h in range(1, 13)}, {}
+
+    house_signs = {h: (override_lagna_sign + h - 1) % 12 for h in range(1, 13)}
+    house_planets: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    planets_data = d.get("planets", {})
+    for name in PLANET_ABBR:
+        if name in d9:
+            planet_sign = d9[name]
+            house = ((planet_sign - override_lagna_sign) % 12) + 1
+            abbr = PLANET_ABBR[name]
+            if planets_data.get(name, {}).get("retrograde"):
+                abbr += "*"
+            house_planets[house].append(abbr)
     return house_signs, house_planets
 
 
@@ -2261,6 +2488,206 @@ def _varshaphal_section(d: dict) -> str:
     <p style="font-size:9pt; color:#888; margin-top:10px;"><em>Varshaphal is a forecast,
     not a fixed verdict. Read each period's notes alongside your overall natal chart strength.</em></p>
     """
+
+
+def _lal_kitab_calculation_section(d: dict) -> str:
+    """Lal Kitab Calculation page — Astrosage-style summary with birth details,
+    Lal-Kitab-style planetary table (sign = sign of the house occupied), the
+    natal D1 (Lagna) chart, and the full Lal Kitab Dasha table with sub-periods.
+    """
+    nak = d.get("nakshatra", {})
+    pan = d.get("panchanga", {})
+    bt = d.get("birth_time", {})
+    lagna = d.get("lagna", {})
+    moon = d.get("planets", {}).get("Moon", {})
+    dasha0 = d.get("dasha", {}).get("dashas", [{}])[0]
+
+    # Birth details box rows.
+    def _row(k, v):
+        return (
+            f'<td style="padding:2px 6px; font-weight:bold; color:#555; border:none; font-size:8pt;">{k}</td>'
+            f'<td style="padding:2px 6px; border:none; font-size:8pt;">{v}</td>'
+        )
+
+    dasa_balance = (
+        _format_dasa_balance(dasha0.get("planet", "—"), dasha0.get("years", 0))
+        if dasha0 else "—"
+    )
+    sid = bt.get("sidereal_time", "—")
+    ayan_value = f"{d.get('ayanamsa', 0):.4f}°"
+    details_html = f"""
+    <table style="width:100%; border-collapse:collapse; border:1px solid #ddd; margin-bottom:10px;">
+        <tr>{_row("Name", d.get("name", "—"))}{_row("Longitude", bt.get("longitude_dms", "—"))}{_row("Sunrise", d.get("sunrise", "—"))}{_row("Dasa Balance", dasa_balance)}</tr>
+        <tr>{_row("Sex", d.get("gender", "—").title())}{_row("Latitude", bt.get("latitude_dms", "—"))}{_row("Sunset", d.get("sunset", "—"))}{_row("Tithi", pan.get("tithi_name", "—"))}</tr>
+        <tr>{_row("Date", "/".join(reversed(d.get("dob", "").split("-"))))}{_row("Place", d.get("place_name", "—"))}{_row("Yoga", pan.get("yoga_name", "—"))}{_row("Karan", pan.get("karan_name", "—"))}</tr>
+        <tr>{_row("Day", bt.get("day_of_birth", "—"))}{_row("Ayan", ayan_value)}{_row("Lagna", lagna.get("sign_name", "—"))}{_row("Lagna Lord", lagna.get("sign_lord", "—"))}</tr>
+        <tr>{_row("Time of Birth", d.get("tob", "—"))}{_row("Ayan Type", "Lahiri")}{_row("Rashi", moon.get("sign_name", "—"))}{_row("Rasi Lord", moon.get("sign_lord", "—"))}</tr>
+        <tr>{_row("SID", sid)}{_row("", "")}{_row("Nakshatra", f"{nak.get('name', '—')}-{nak.get('pada', '')}")}{_row("Nakshatra Lord", nak.get("lord", "—"))}</tr>
+    </table>"""
+
+    # Planetary table — Lal Kitab style.
+    #   Sign       = sign of the house the planet occupies (1st = Aries, etc.)
+    #   Positions  = "----" (Astrosage convention; degrees not shown here)
+    # Soya / Kismat Jagonewala / Benefic-Malefic columns are omitted because the
+    # classification rules used by Lal Kitab (and Astrosage) depend on aspects,
+    # conjunctions and sign-lord relationships scattered across Pandit Roop
+    # Chand's commentary; coding them from guesswork would mislead the reader.
+    # See uncertainty_log.md for the full investigation.
+    planets_dict = d.get("planets", {})
+
+    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+    planet_rows = ""
+    for name in planet_order:
+        info = planets_dict.get(name)
+        if not info:
+            continue
+        house = info.get("house", 0)
+        try:
+            lk_sign = SIGN_NAMES[(int(house) - 1) % 12]
+        except Exception:
+            lk_sign = "—"
+        retro = " (R)" if info.get("retrograde") else ""
+        planet_rows += (
+            f'<tr>'
+            f'<td style="padding:3px 6px; font-weight:bold; font-size:8pt;">{name}{retro}</td>'
+            f'<td style="padding:3px 6px; font-size:8pt;">{lk_sign}</td>'
+            f'<td style="padding:3px 6px; text-align:center; font-size:8pt; color:#999;">----</td>'
+            f'</tr>'
+        )
+
+    th_style = f'background:{BRAND}; color:white; padding:4px 6px; text-align:left; font-size:8pt;'
+    planet_table_html = f"""
+    <div style="font-size:9pt; font-weight:bold; color:{BRAND}; margin-bottom:2px;">Planetary Degree And Their Positions</div>
+    <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+        <tr>
+            <th style="{th_style}">Planets</th>
+            <th style="{th_style}">Sign</th>
+            <th style="{th_style} text-align:center;">Positions</th>
+        </tr>
+        {planet_rows}
+    </table>
+    <p style="font-size:8pt; color:#888; margin:0 0 10px;"><em>Sign follows the
+    Lal Kitab convention (1st house = Aries, 2nd = Taurus, ..., 12th = Pisces).
+    Positions are intentionally suppressed in the Lal Kitab system, which
+    works on house-based sign assignment rather than longitude. Soya /
+    Kismat Jagonewala / Benefic-Malefic columns are omitted pending a verified
+    rule set from a Lal Kitab commentary.</em></p>"""
+
+    # Lagna chart — Lal Kitab convention: house numbers (1–12) shown in each
+    # house position instead of the natal sign numbers, with planets placed by
+    # the house they occupy in the natal D1 chart.
+    lk_house_labels = {h: h - 1 for h in range(1, 13)}  # _chart_svg adds +1
+    lk_house_planets: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    for name, info in d.get("planets", {}).items():
+        if name not in PLANET_ABBR:
+            continue
+        house = info.get("house")
+        if not house:
+            continue
+        abbr = PLANET_ABBR[name]
+        if info.get("retrograde"):
+            abbr += "*"
+        lk_house_planets[house].append(abbr)
+    lagna_chart_html = f"""
+    <div style="text-align:center; margin-bottom:10px;">
+        <div style="font-size:9pt; font-weight:bold; color:{BRAND};">Lagna Chart</div>
+        {_chart_svg(lk_house_labels, lk_house_planets, "", size=240)}
+    </div>"""
+
+    # Lal Kitab Dasha — Astrosage-style 3-column grid of MD cards with sub-periods.
+    lk = d.get("lal_kitab_dasha", {}).get("dashas", [])
+    cards = ""
+    for entry in lk:
+        sub_rows = ""
+        for sp in entry.get("subperiods", []):
+            sub_rows += (
+                f'<tr>'
+                f'<td style="padding:1px 4px; font-size:7pt;">{sp["planet"][:3]}</td>'
+                f'<td style="padding:1px 4px; font-size:7pt;">{sp["end_date"]}</td>'
+                f'</tr>'
+            )
+        cards += f"""
+        <div style="border:1px solid #ddd; padding:4px 6px; margin:2px; min-width:140px; flex:0 0 30%;">
+            <div style="font-weight:bold; font-size:8pt; color:{BRAND};">{entry["planet"][:3]} {entry["years"]} Year</div>
+            <table style="width:100%; border-collapse:collapse; margin:2px 0;">
+                <tr><td style="padding:1px 4px; font-size:7pt; color:#555;">From</td><td style="padding:1px 4px; font-size:7pt;">{entry["start_date"]}</td></tr>
+                <tr><td style="padding:1px 4px; font-size:7pt; color:#555;">To</td><td style="padding:1px 4px; font-size:7pt;">{entry["end_date"]}</td></tr>
+                {sub_rows}
+            </table>
+        </div>"""
+
+    dasha_html = f"""
+    <div style="font-size:9pt; font-weight:bold; color:{BRAND}; margin:6px 0;">Lal Kitab Dasha</div>
+    <div style="display:flex; flex-wrap:wrap;">
+        {cards}
+    </div>"""
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Lal Kitab Calculation</h2>
+    {details_html}
+    <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <div style="flex:0 0 60%;">{planet_table_html}</div>
+        <div style="flex:1;">{lagna_chart_html}</div>
+    </div>
+    {dasha_html}
+    <p style="font-size:8pt; color:#888; margin-top:10px;"><em>Lal Kitab Dasha runs
+    a fixed 35-year cycle starting at birth — Saturn (6) → Rahu (6) → Ketu (3)
+    → Jupiter (6) → Sun (2) → Moon (1) → Venus (3) → Mars (6) → Mercury (2) —
+    repeating across the lifetime. Each Mahadasha contains three sub-periods
+    of equal length per the classical Lal Kitab lookup. Cycles shown cover
+    approximately the first 105 years from birth.</em></p>
+    """
+
+
+def _lal_kitab_section(d: dict) -> str:
+    """Lal Kitab Predictions — per-planet narrative + remedies based on the
+    planet's house placement in the natal chart. Lal Kitab is a 19th–20th
+    century Indian astrological tradition (originally Urdu/Punjabi) distinct
+    from classical Parashari Vedic astrology, with its own rules and very
+    specific physical remedies.
+    """
+    if not LAL_KITAB_DATA:
+        return ""
+
+    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+    cards = ""
+    for name in planet_order:
+        info = d.get("planets", {}).get(name)
+        if not info:
+            continue
+        house = info.get("house")
+        entry = LAL_KITAB_DATA.get(name, {}).get(house)
+        if not entry:
+            continue
+        prediction = entry.get("prediction", "")
+        remedies = entry.get("remedies", [])
+        remedies_html = "".join(
+            f'<div class="remedy">{r}</div>' for r in remedies
+        )
+        cards += f"""
+        <div class="section">
+            <h3>{name} in your {_ordinal(house)} house</h3>
+            <p>{prediction}</p>
+            <h4 style="margin: 8px 0 4px;">Remedies</h4>
+            {remedies_html}
+        </div>"""
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Lal Kitab Predictions</h2>
+    <p>Lal Kitab is a distinct astrological tradition that originated in the
+    Punjab region in the early 20th century, attributed to Pandit Roop Chand
+    Joshi. It uses simplified rules and offers very specific, physical
+    remedies — donating particular items, wearing certain colours, performing
+    rituals on specific days. The predictions below are based on the house
+    placement of each planet in your natal chart. Read alongside the Vedic
+    interpretations in the Planet Considerations section.</p>
+    {cards}
+    <p style="font-size:9pt; color:#888; margin-top:10px;"><em>Lal Kitab
+    remedies are most effective when followed consistently and with sincere
+    intent. Always consult a qualified Lal Kitab practitioner before adopting
+    any major remedial measure.</em></p>"""
 
 
 def _remedies_section(d: dict) -> str:
