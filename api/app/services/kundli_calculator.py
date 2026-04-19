@@ -883,30 +883,27 @@ def calc_vimshottari_dasha(moon_lon: float, dob: str) -> dict:
 
     birth_date = date.fromisoformat(dob)
     dashas = []
-    current_date = birth_date
 
-    # First dasha (partial)
-    end_date = _add_years(current_date, years_remaining)
-    dashas.append({
-        "planet": lord,
-        "start_date": current_date.isoformat(),
-        "end_date": end_date.isoformat(),
-        "years": round(years_remaining, 2),
-    })
-    current_date = end_date
+    # Accumulate in float days from birth and round to whole days only when
+    # materialising each MD's start/end. Per-step rounding via _add_years
+    # truncates sub-day fractions and accumulates several days of drift over
+    # the 120-year cycle — the float accumulator avoids that.
+    cumulative_days = 0.0
+    durations = [years_remaining] + [
+        float(DASHA_YEARS[DASHA_SEQUENCE[(lord_idx + i) % 9]]) for i in range(1, 9)
+    ]
+    planet_seq = [lord] + [DASHA_SEQUENCE[(lord_idx + i) % 9] for i in range(1, 9)]
 
-    # Subsequent dashas (full)
-    for i in range(1, 9):
-        planet = DASHA_SEQUENCE[(lord_idx + i) % 9]
-        years = DASHA_YEARS[planet]
-        end_date = _add_years(current_date, years)
+    for planet, years in zip(planet_seq, durations):
+        start = birth_date + timedelta(days=int(round(cumulative_days)))
+        cumulative_days += years * _VIMSHOTTARI_DAYS_PER_YEAR
+        end = birth_date + timedelta(days=int(round(cumulative_days)))
         dashas.append({
             "planet": planet,
-            "start_date": current_date.isoformat(),
-            "end_date": end_date.isoformat(),
-            "years": years,
+            "start_date": start.isoformat(),
+            "end_date": end.isoformat(),
+            "years": round(years, 2) if years != int(years) else years,
         })
-        current_date = end_date
 
     # Find current dasha
     today = date.today()
@@ -918,9 +915,12 @@ def calc_vimshottari_dasha(moon_lon: float, dob: str) -> dict:
     return {"dashas": dashas, "current_dasha": current_dasha}
 
 
+_VIMSHOTTARI_DAYS_PER_YEAR = 365.2425  # tropical year — matches Astrosage's dasha math
+
+
 def _add_years(d: date, years: float) -> date:
-    """Add fractional years to a date."""
-    days = years * 365.25
+    """Add fractional years to a date using the tropical year length."""
+    days = years * _VIMSHOTTARI_DAYS_PER_YEAR
     return d + timedelta(days=days)
 
 
@@ -1236,31 +1236,50 @@ def _calc_varga_sign(sign: int, degree: float, chart_type: str) -> int:
 # ── Antardasha (Sub-periods) ─────────────────────────────────────────────────
 
 def calc_antardasha(dashas: list[dict]) -> list[dict]:
-    """Calculate Antardasha (sub-periods) for each Mahadasha."""
+    """Calculate Antardasha (sub-periods) for each Mahadasha.
+
+    Uses the classical Parashara approach (Convention A, also used by Astrosage
+    and Jagannatha Hora): each antardasha runs its FULL proportional duration
+    `md_full × ad_planet_yr / 120` regardless of whether the parent MD is
+    partial. For the first MD (which is partially elapsed at birth) the actual
+    MD start is computed as `birth_date - elapsed_before_birth`, and all
+    antardashas run from there with their full durations. The first antardasha
+    may therefore end before birth — that is expected and matches the way
+    classical software displays Vimshottari sub-periods.
+    """
     result = []
     for dasha in dashas:
         planet = dasha["planet"]
-        md_years = dasha["years"]
-        md_start = date.fromisoformat(dasha["start_date"])
-        lord_idx = DASHA_SEQUENCE.index(planet)
+        md_full_years = DASHA_YEARS[planet]
+        md_partial_years = dasha["years"]
+        md_displayed_start = date.fromisoformat(dasha["start_date"])
 
+        # For the first MD, the actual cycle start is before birth.
+        elapsed_before = max(0.0, md_full_years - md_partial_years)
+        actual_md_start = md_displayed_start - timedelta(days=int(round(elapsed_before * _VIMSHOTTARI_DAYS_PER_YEAR)))
+
+        lord_idx = DASHA_SEQUENCE.index(planet)
         sub_periods = []
-        current = md_start
+        # Accumulate in float days from actual_md_start; round to whole days only
+        # when materialising each displayed date. This avoids the multi-day drift
+        # that occurs if every step is rounded individually.
+        cumulative_days = 0.0
         for i in range(9):
             ad_planet = DASHA_SEQUENCE[(lord_idx + i) % 9]
-            ad_years = (md_years * DASHA_YEARS[ad_planet]) / 120
-            ad_end = _add_years(current, ad_years)
+            ad_years = (md_full_years * DASHA_YEARS[ad_planet]) / 120
+            start = actual_md_start + timedelta(days=int(round(cumulative_days)))
+            cumulative_days += ad_years * _VIMSHOTTARI_DAYS_PER_YEAR
+            end = actual_md_start + timedelta(days=int(round(cumulative_days)))
             sub_periods.append({
                 "planet": ad_planet,
-                "start_date": current.isoformat(),
-                "end_date": ad_end.isoformat(),
+                "start_date": start.isoformat(),
+                "end_date": end.isoformat(),
                 "years": round(ad_years, 2),
             })
-            current = ad_end
 
         result.append({
             "mahadasha": planet,
-            "mahadasha_years": md_years,
+            "mahadasha_years": md_full_years,
             "start_date": dasha["start_date"],
             "end_date": dasha["end_date"],
             "antardashas": sub_periods,
@@ -2736,6 +2755,171 @@ def calc_ashtakavarga(planets: dict, lagna_sign: int) -> dict:
     return {"bindus": bindus, "totals": totals, "grand_total": sum(totals)}
 
 
+# ── Varshaphal (Tajik / Annual Horoscope) ───────────────────────────────────
+
+def calc_solar_return_jd(natal_sun_lon: float, target_year: int) -> float:
+    """Find the Julian Day (UT) when the Sun returns to its natal sidereal
+    longitude in `target_year`. Uses Swiss Ephemeris with binary refinement to
+    minute-level precision.
+    """
+    import swisseph as swe
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    flags = swe.FLG_SIDEREAL
+
+    def sun_lon(jd: float) -> float:
+        pos, _ = swe.calc_ut(jd, swe.SUN, flags)
+        return pos[0] % 360
+
+    # Sun moves ~1°/day. Walk daily through target_year until we cross natal_sun_lon.
+    # diff_signed = (sun_lon - natal_sun_lon + 180) % 360 - 180  → range (-180, 180]
+    jd = swe.julday(target_year, 1, 1, 0)
+    end_jd = swe.julday(target_year + 1, 1, 31, 0)
+    prev_signed = (sun_lon(jd) - natal_sun_lon + 180) % 360 - 180
+    while jd < end_jd:
+        jd += 1
+        cur_signed = (sun_lon(jd) - natal_sun_lon + 180) % 360 - 180
+        # Crossing happens when prev was negative and current became positive (Sun passed natal lon).
+        if prev_signed < 0 and cur_signed >= 0:
+            break
+        prev_signed = cur_signed
+
+    # Binary-refine to ~1 minute precision.
+    lo, hi = jd - 1, jd
+    while (hi - lo) > 1.0 / 1440.0:
+        mid = (lo + hi) / 2.0
+        mid_signed = (sun_lon(mid) - natal_sun_lon + 180) % 360 - 180
+        if mid_signed < 0:
+            lo = mid
+        else:
+            hi = mid
+    return hi
+
+
+def calc_muntha(natal_lagna_sign: int, age_years: int) -> dict:
+    """Muntha advances one sign per completed year of age, starting from the
+    natal Lagna sign at age 0. Returns sign (0–11), house number (1–12) from
+    the natal Lagna and the sign name.
+    """
+    sign = (natal_lagna_sign + age_years) % 12
+    house = (age_years % 12) + 1
+    return {
+        "sign": sign,
+        "sign_name": SIGN_NAMES[sign],
+        "house": house,
+    }
+
+
+def calc_mudda_dasha(annual_moon_lon: float, solar_return_date: date) -> dict:
+    """Compute the Mudda (annual) Dasha sequence — Vimshottari pattern scaled
+    so the full 120-year cycle compresses into a single tropical year.
+
+    Sequence starts from the lord of the Moon's nakshatra at solar return.
+    The first period is partial (the *balance* of the starting lord based on
+    the Moon's position inside its nakshatra), then subsequent periods run
+    their full Mudda durations. Because the first period is partial, the 9-
+    planet cycle is short by exactly the elapsed portion — so the cycle wraps
+    around at the end, with the starting lord resuming for the remainder
+    until the full ~365 days are filled. Result is one complete year of
+    sub-periods with no gap.
+    """
+    nak_size = 360.0 / 27.0
+    nak_num = int(annual_moon_lon / nak_size)
+    fraction_elapsed = (annual_moon_lon % nak_size) / nak_size
+
+    lord = NAKSHATRA_LORDS[nak_num]
+    lord_idx = DASHA_SEQUENCE.index(lord)
+    cycle_days = _VIMSHOTTARI_DAYS_PER_YEAR
+
+    # Full Mudda duration (in days) for each planet — 9 of these sum to cycle_days.
+    full_days = {p: (DASHA_YEARS[p] / 120.0) * cycle_days for p in DASHA_SEQUENCE}
+
+    periods: list[dict] = []
+    cumulative_days = 0.0
+    i = 0
+    while cumulative_days < cycle_days - 0.5:
+        planet = DASHA_SEQUENCE[(lord_idx + i) % 9]
+        if i == 0:
+            # First period: balance of starting lord.
+            period_days = full_days[planet] * (1 - fraction_elapsed)
+        else:
+            period_days = full_days[planet]
+        # Truncate the last period so we never overshoot the year boundary.
+        remaining = cycle_days - cumulative_days
+        period_days = min(period_days, remaining)
+
+        start = solar_return_date + timedelta(days=int(round(cumulative_days)))
+        cumulative_days += period_days
+        end = solar_return_date + timedelta(days=int(round(cumulative_days)))
+        periods.append({
+            "planet": planet,
+            "start_date": start.isoformat(),
+            "end_date": end.isoformat(),
+            "days": int(round(period_days)),
+        })
+        i += 1
+
+    today = date.today()
+    current = next(
+        (p for p in periods if p["start_date"] <= today.isoformat() <= p["end_date"]),
+        periods[0],
+    )
+    return {"periods": periods, "current": current}
+
+
+def calc_varshaphal(
+    natal_sun_lon: float,
+    natal_lagna_sign: int,
+    dob: str,
+    lat: float,
+    lon: float,
+    target_year: int,
+) -> dict:
+    """Build the Varshaphal (annual chart) bundle for a given solar year.
+
+    Includes solar return moment, the annual chart (planets + lagna at solar
+    return cast for the birthplace), Muntha's sign/house, and the Mudda Dasha
+    sequence for the year.
+    """
+    sr_jd = calc_solar_return_jd(natal_sun_lon, target_year)
+
+    # Solar return civil date — UT to local using birth coordinates.
+    from timezonefinder import TimezoneFinder
+    from zoneinfo import ZoneInfo
+    tf = TimezoneFinder()
+    tz_name = tf.timezone_at(lat=lat, lng=lon) or "UTC"
+    tz = ZoneInfo(tz_name)
+
+    import swisseph as swe
+    y, m, d_, h = swe.revjul(sr_jd)
+    sr_dt_utc = datetime(int(y), int(m), int(d_), int(h), int((h - int(h)) * 60))
+    sr_dt_utc = sr_dt_utc.replace(tzinfo=ZoneInfo("UTC"))
+    sr_local = sr_dt_utc.astimezone(tz)
+    solar_return_date = sr_local.date()
+
+    annual = calc_planet_positions(sr_jd, lat, lon)
+    annual_lagna = annual["lagna"]
+    annual_planets = annual["planets"]
+
+    birth_year = int(dob.split("-")[0])
+    age_years = target_year - birth_year
+    muntha = calc_muntha(natal_lagna_sign, age_years)
+    # Muntha's lord (sign lord) — used for general muntha-effect interpretation.
+    muntha["lord"] = SIGN_LORDS[muntha["sign"]]
+
+    mudda = calc_mudda_dasha(annual_planets["Moon"]["longitude"], solar_return_date)
+
+    return {
+        "target_year": target_year,
+        "age_years": age_years,
+        "solar_return_date": solar_return_date.isoformat(),
+        "solar_return_local_time": sr_local.strftime("%H:%M:%S"),
+        "annual_lagna": annual_lagna,
+        "annual_planets": annual_planets,
+        "muntha": muntha,
+        "mudda_dasha": mudda,
+    }
+
+
 # ── Master builder ───────────────────────────────────────────────────────────
 
 def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: float, place_name: str) -> dict:
@@ -2771,6 +2955,38 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     current_year = _today.today().year
     numerology = calc_numerology(name, dob, current_year)
     ashtakavarga = calc_ashtakavarga(planets, lagna["sign"])
+    # Build BOTH the current Varshaphal year and the upcoming one. Whether
+    # `current_year`'s solar return has already happened decides which calendar
+    # year anchors each: if SR for `current_year` is in the past, current
+    # Varshaphal = current_year; if it's still in the future, current
+    # Varshaphal actually started at last year's SR.
+    varshaphal: list[dict] = []
+    try:
+        sr_jd_this = calc_solar_return_jd(planets["Sun"]["longitude"], current_year)
+        import swisseph as _swe
+        _y, _m, _d_, _ = _swe.revjul(sr_jd_this)
+        sr_date_this = date(int(_y), int(_m), int(_d_))
+        today = date.today()
+        if sr_date_this <= today:
+            current_target, upcoming_target = current_year, current_year + 1
+        else:
+            current_target, upcoming_target = current_year - 1, current_year
+        for label, yr in (("current", current_target), ("upcoming", upcoming_target)):
+            try:
+                v = calc_varshaphal(
+                    natal_sun_lon=planets["Sun"]["longitude"],
+                    natal_lagna_sign=lagna["sign"],
+                    dob=dob,
+                    lat=lat,
+                    lon=lon,
+                    target_year=yr,
+                )
+                v["label"] = label
+                varshaphal.append(v)
+            except Exception:
+                pass
+    except Exception:
+        varshaphal = []
 
     # Ayanamsa value
     import swisseph as swe
@@ -2811,4 +3027,5 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "gochar": gochar,
         "numerology": numerology,
         "ashtakavarga": ashtakavarga,
+        "varshaphal": varshaphal,
     }

@@ -14,11 +14,19 @@ from app.services.kundli_data import (
     FAVOURABLE,
     GHATAK,
     LAGNA_DATA,
+    MUNTHA_HOUSE_DATA,
     NAKSHATRA_DATA,
     NAKSHATRA_PADA_DATA,
     PLANET_IN_HOUSE,
     SADESATI_PHASES,
 )
+
+# MUDDA_DASHA_BHAV_DATA is large and authored separately; import lazily so the
+# module still loads if the data file hasn't been regenerated.
+try:
+    from app.services.kundli_data import MUDDA_DASHA_BHAV_DATA
+except ImportError:
+    MUDDA_DASHA_BHAV_DATA = {}
 
 LOGO_URL = "https://vedicjivan-website.s3.ap-south-1.amazonaws.com/images/logo/logo-final.png"
 BRAND = "#7c3aed"
@@ -126,6 +134,7 @@ SECTION_BUILDERS = {
     "graha_drishti":    lambda d: _graha_drishti_section(d),
     "planet_positions": lambda d: _planet_positions(d),
     "numerology":       lambda d: _numerology_section(d),
+    "varshaphal":       lambda d: _varshaphal_section(d),
     "remedies":         lambda d: _remedies_section(d),
 }
 
@@ -158,6 +167,7 @@ _DEFAULT_SECTION_ORDER = [
     "graha_drishti",
     "planet_positions",
     "numerology",
+    "varshaphal",
     "remedies",
 ]
 
@@ -1853,52 +1863,81 @@ def _yogas_section(d: dict) -> str:
     <p style="font-size:9pt; color:#888; margin-top:10px;"><em>Yoga strength depends on the dignity and overall chart strength of the participating planets. Consult an astrologer for detailed timing of yoga results through Dasha periods.</em></p>"""
 
 
+def _kalsarpa_block(doshas: list[dict]) -> str:
+    """Always-on Kalsarpa Dosh subsection — Astrosage-style explanation + result."""
+    kaal = next((x for x in doshas if x.get("type") == "kaal_sarp"), None)
+    if kaal:
+        sev = kaal.get("severity", "full")
+        result_color, result_bg, result_border = (
+            ("#15803d", "#f0fdf4", "#4ade80") if sev == "reverse"
+            else ("#dc2626", "#fff7f7", "#f87171")
+        )
+        result_label = (
+            f"<strong>{kaal['name']}</strong> is present in your horoscope. "
+            f"{kaal['description']}"
+        )
+    else:
+        result_color, result_bg, result_border = "#15803d", "#f0fdf4", "#4ade80"
+        result_label = "Your Horoscope is free from Kalsarpa Yoga."
+
+    return f"""
+    <div style="page-break-inside: avoid;">
+        <h3 style="margin-top:14px;">Kalsarpa Dosh / Yog</h3>
+        <p>As per the current definition, when all planets are situated between Rahu and Ketu in the
+        birth-chart, astrologers call it Kalsarp Dosh. Discussions about this dosh are common among
+        Hindu astrologers in India, and many problems in life are often attributed to it. However, if
+        all other planets are well-placed, Kalsarp Dosh need not be harmful — and may even support
+        the beneficial results of those well-placed planets. Kalsarp is genuinely inauspicious only
+        when the supporting planetary positions are weak. It is therefore not wise to be alarmed by
+        the mere mention of Kalsarp Dosh; the actual influence varies for each person depending on
+        which sign is in which house, what other planets occupy that house, and their dignities.</p>
+        <p style="background:{result_bg}; border:1px solid {result_border}; color:{result_color}; padding:10px 12px; border-radius:6px;">
+            <strong>Result:</strong> {result_label}
+        </p>
+    </div>"""
+
+
 def _doshas_section(d: dict) -> str:
     """Render detected Vedic doshas (excluding Manglik and Sade Sati — those have their own sections)."""
     doshas = d.get("doshas", [])
-    if not doshas:
-        return f"""
-    <div class="page-break"></div>
-    <h2>Doshas — Planetary Afflictions</h2>
-    <p style="background:#f0fdf4; border:1px solid #4ade80; padding:12px; border-radius:6px;">
-        <strong>No major doshas detected</strong> in your birth chart. Your chart is free from the primary classical afflictions.
-    </p>"""
+    other_doshas = [x for x in doshas if x.get("type") != "kaal_sarp"]
 
     _SEVERITY_COLOR = {"full": "#dc2626", "partial": "#b45309", "reverse": "#15803d"}
-    _TYPE_ICON = {
-        "kaal_sarp":   "Kaal Sarp",
-        "pitra":       "Pitra Dosha",
-        "guru_chandal":"Guru Chandal",
-        "grahan":      "Grahan Dosha",
-        "angarak":     "Angarak Dosha",
-        "vish":        "Vish Yoga",
-        "shakat":      "Shakat Yoga",
-    }
 
-    cards = ""
-    for dosha in doshas:
-        severity = dosha.get("severity", "")
-        sev_label = severity.title() if severity else ""
-        sev_color = _SEVERITY_COLOR.get(severity, "#b45309")
-        badge = f'<span style="background:{sev_color}; color:white; font-size:8pt; padding:2px 8px; border-radius:10px;">{sev_label}</span>' if sev_label else ""
-        planets_str = ", ".join(dosha.get("planets", []))
-        house_str = f" &nbsp;|&nbsp; House {dosha['house']}" if dosha.get("house") else ""
-        cards += f"""
-        <div style="border-left: 4px solid #dc2626; background: #fff7f7; padding: 10px 14px; margin: 8px 0; page-break-inside: avoid;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <strong style="color:#dc2626; font-size:11pt;">{dosha['name']}</strong>
-                {badge}
-            </div>
-            <p style="margin:4px 0 2px;">{dosha['description']}</p>
-            <p style="font-size:9pt; color:#888; margin:0;">Planets: <em>{planets_str}</em>{house_str}</p>
-        </div>"""
+    if other_doshas:
+        cards = ""
+        for dosha in other_doshas:
+            severity = dosha.get("severity", "")
+            sev_label = severity.title() if severity else ""
+            sev_color = _SEVERITY_COLOR.get(severity, "#b45309")
+            badge = f'<span style="background:{sev_color}; color:white; font-size:8pt; padding:2px 8px; border-radius:10px;">{sev_label}</span>' if sev_label else ""
+            planets_str = ", ".join(dosha.get("planets", []))
+            house_str = f" &nbsp;|&nbsp; House {dosha['house']}" if dosha.get("house") else ""
+            cards += f"""
+            <div style="border-left: 4px solid #dc2626; background: #fff7f7; padding: 10px 14px; margin: 8px 0; page-break-inside: avoid;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <strong style="color:#dc2626; font-size:11pt;">{dosha['name']}</strong>
+                    {badge}
+                </div>
+                <p style="margin:4px 0 2px;">{dosha['description']}</p>
+                <p style="font-size:9pt; color:#888; margin:0;">Planets: <em>{planets_str}</em>{house_str}</p>
+            </div>"""
+        other_block = f"<h3 style='margin-top:14px;'>Other Doshas Detected</h3>{cards}"
+    else:
+        other_block = (
+            "<h3 style='margin-top:14px;'>Other Doshas</h3>"
+            "<p style='background:#f0fdf4; border:1px solid #4ade80; padding:12px; border-radius:6px;'>"
+            "<strong>No other major doshas detected.</strong> Your chart is free from the remaining classical afflictions."
+            "</p>"
+        )
 
     return f"""
     <div class="page-break"></div>
     <h2>Doshas — Planetary Afflictions</h2>
     <p>Doshas are challenging planetary configurations. A dosha is not a life sentence — its severity
     depends on the overall chart strength, cancellation conditions, and free will. Remedies are available.</p>
-    {cards}
+    {_kalsarpa_block(doshas)}
+    {other_block}
     <p style="font-size:9pt; color:#888; margin-top:10px;"><em>Note: Mangal Dosha and Sade Sati are covered in their dedicated sections below.
     Always consult a qualified astrologer before undertaking remedial measures.</em></p>"""
 
@@ -2100,6 +2139,128 @@ _DONATION: dict[str, str] = {
     "Rahu":    "Coconut, blue flowers, black items — on Saturdays",
     "Ketu":    "Blanket, black sesame, multi-coloured cloth — on Saturdays",
 }
+
+
+def _varshaphal_year_block(v: dict) -> str:
+    """Render one Varshaphal year (current OR upcoming)."""
+    muntha = v["muntha"]
+    muntha_text = MUNTHA_HOUSE_DATA.get(muntha["house"], "")
+    mudda = v["mudda_dasha"]
+    annual_planets = v["annual_planets"]
+    current = mudda["current"]
+    label = v.get("label", "")
+    label_pill = ""
+    if label == "current":
+        label_pill = (
+            f' <span style="background:{BRAND}; color:white; font-size:9pt; padding:2px 10px; '
+            f'border-radius:10px;">Current Year</span>'
+        )
+    elif label == "upcoming":
+        label_pill = (
+            ' <span style="background:#888; color:white; font-size:9pt; padding:2px 10px; '
+            'border-radius:10px;">Upcoming Year</span>'
+        )
+
+    rows_html = ""
+    cards_html = ""
+    for p in mudda["periods"]:
+        is_cur = p["planet"] == current["planet"] and p["start_date"] == current["start_date"]
+        row_style = ' style="background:#f3f0ff; font-weight:bold;"' if is_cur else ""
+        cur_label = " (Current)" if is_cur else ""
+        rows_html += (
+            f'<tr{row_style}>'
+            f'<td>{p["planet"]}{cur_label}</td>'
+            f'<td>{p["start_date"]}</td>'
+            f'<td>{p["end_date"]}</td>'
+            f'<td>{p["days"]}</td>'
+            f'</tr>'
+        )
+
+        planet_info = annual_planets.get(p["planet"])
+        if not planet_info:
+            continue
+        bhav = planet_info["house"]
+        sign_name = planet_info["sign_name"]
+        bhav_text = MUDDA_DASHA_BHAV_DATA.get(p["planet"], {}).get(bhav, "")
+        if not bhav_text:
+            bhav_text = (
+                f"{p['planet']} occupies the {bhav}{_ordinal(bhav)[-2:]} bhav of your annual chart "
+                f"(in {sign_name}). Effects during this period reflect that placement."
+            )
+        highlight = f' style="border-left:4px solid {BRAND}; background:#f9f7ff;"' if is_cur else ""
+        cur_pill = (
+            f' <span style="background:{BRAND}; color:white; font-size:8pt; padding:2px 8px; '
+            f'border-radius:10px;">Current</span>'
+            if is_cur else ""
+        )
+        cards_html += f"""
+        <div style="border-left:3px solid #ddd; background:#fafafa; padding:8px 12px; margin:6px 0; page-break-inside: avoid;"{highlight}>
+            <div style="font-size:10pt; font-weight:bold; color:{BRAND}; margin-bottom:2px;">
+                {p["start_date"]} — {p["end_date"]} &nbsp;·&nbsp; Mudda Dasha: {p["planet"]}{cur_pill}
+            </div>
+            <div style="font-size:9pt; color:#666; margin-bottom:4px;">
+                {p["planet"]} is in Bhav {bhav} ({sign_name}) of the annual chart.
+            </div>
+            <p style="margin:0; font-size:10pt;">{bhav_text}</p>
+        </div>"""
+
+    return f"""
+    <h3 style="margin-top:18px; border-bottom:1px solid {BRAND}; padding-bottom:4px;">
+        Year {v["target_year"]} (Age {v["age_years"]}){label_pill}
+    </h3>
+    <div style="background:#f9f7ff; border:1px solid #e5e0ff; border-radius:6px; padding:8px 12px; margin:6px 0;">
+        <strong>Solar Return:</strong> {v["solar_return_date"]} at {v["solar_return_local_time"]} (local time)
+        &nbsp;|&nbsp; <strong>Annual Lagna:</strong> {v["annual_lagna"]["sign_name"]}
+    </div>
+
+    <h4 style="margin-top:10px;">Muntha — {muntha["sign_name"]} (Bhav {muntha["house"]})</h4>
+    <p>{muntha_text}</p>
+
+    <h4 style="margin-top:14px;">Annual Vimshottari (Mudda Dasha) — Period Sequence</h4>
+    <table style="width:100%; font-size:9pt; border-collapse:collapse; margin:6px 0;">
+        <tr>
+            <th style="background:{BRAND}; color:white; padding:4px 8px; text-align:left;">Lord</th>
+            <th style="background:{BRAND}; color:white; padding:4px 8px; text-align:left;">Start</th>
+            <th style="background:{BRAND}; color:white; padding:4px 8px; text-align:left;">End</th>
+            <th style="background:{BRAND}; color:white; padding:4px 8px; text-align:left;">Days</th>
+        </tr>
+        {rows_html}
+    </table>
+
+    <h4 style="margin-top:12px;">Period-by-Period Predictions</h4>
+    {cards_html}
+    """
+
+
+def _varshaphal_section(d: dict) -> str:
+    """Varshaphal (Annual Horoscope) — current year + upcoming year.
+
+    Tajik / annual astrology. For each of the current and upcoming Varshaphal
+    years, shows the chart cast at the solar return, the Muntha bhav focus,
+    and the Mudda Dasha sequence with per-period interpretations.
+    """
+    bundle = d.get("varshaphal")
+    if not bundle:
+        return ""
+    # Backwards-compat: older chart_data may store a single dict.
+    if isinstance(bundle, dict):
+        bundle = [bundle]
+    if not bundle:
+        return ""
+
+    blocks = "".join(_varshaphal_year_block(v) for v in bundle)
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>Varshaphal — Annual Horoscope</h2>
+    <p>Varshaphal is the Tajik (annual) chart cast at the moment the Sun returns to its natal
+    sidereal longitude each year. It shows the dominant themes for the year ahead and is read
+    alongside the natal chart, not in place of it. Both your current Varshaphal year and the
+    upcoming one are shown below.</p>
+    {blocks}
+    <p style="font-size:9pt; color:#888; margin-top:10px;"><em>Varshaphal is a forecast,
+    not a fixed verdict. Read each period's notes alongside your overall natal chart strength.</em></p>
+    """
 
 
 def _remedies_section(d: dict) -> str:
