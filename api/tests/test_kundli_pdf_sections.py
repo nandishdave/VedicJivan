@@ -38,7 +38,9 @@ def stub_section_builders(monkeypatch):
     stubs = {sid: (lambda d, sid=sid: f"<{sid} />") for sid in _DEFAULT_SECTION_ORDER}
     monkeypatch.setattr(kundli_pdf, "SECTION_BUILDERS", stubs)
     # The cover/footer/css helpers also access chart_data — stub them too.
-    monkeypatch.setattr(kundli_pdf, "_css", lambda: "<css />")
+    # `_css` takes (name, user_timezone) kwargs; absorb anything to avoid
+    # signature drift between this stub and the real renderer.
+    monkeypatch.setattr(kundli_pdf, "_css", lambda **_kw: "<css />")
     monkeypatch.setattr(kundli_pdf, "_cover", lambda d: "<cover />")
     monkeypatch.setattr(kundli_pdf, "_footer", lambda: "<footer />")
     return stubs
@@ -69,15 +71,17 @@ def test_default_order_includes_all_known_sections(stub_section_builders, chart_
     assert "<footer />" in html
 
 
-def test_avkahada_and_ghatak_present_in_default_order(stub_section_builders, chart_data):
-    """Astrosage page-2 alignment: avkahada and ghatak are now top-level sections."""
+def test_summary_grid_renders_before_at_a_glance(stub_section_builders, chart_data):
+    """Page-2 grid (basic_details + avkahada + favourable + ghatak in one block)
+    appears before the dense at-a-glance summary. The standalone avkahada /
+    favourable / ghatak / basic_details sections were folded into summary_grid."""
     html = _build_html(chart_data)
-    assert "<avkahada />" in html
-    assert "<ghatak />" in html
-    # Page-2 layout: basic_details → avkahada → favourable → ghatak
-    assert html.index("<basic_details />") < html.index("<avkahada />")
-    assert html.index("<avkahada />") < html.index("<favourable />")
-    assert html.index("<favourable />") < html.index("<ghatak />")
+    assert "<summary_grid />" in html
+    assert "<at_a_glance />" in html
+    assert html.index("<summary_grid />") < html.index("<at_a_glance />")
+    # Folded sections no longer render as standalone tags
+    for folded in ("avkahada", "favourable", "ghatak", "basic_details"):
+        assert f"<{folded} />" not in html
 
 
 def test_friendship_section_present_before_shadbala(stub_section_builders, chart_data):
@@ -86,6 +90,59 @@ def test_friendship_section_present_before_shadbala(stub_section_builders, chart
     assert "<friendship />" in html
     assert html.index("<divisional />") < html.index("<friendship />")
     assert html.index("<friendship />") < html.index("<shadbala />")
+
+
+# ── New sections introduced in commit 721d233 ──────────────────────────────
+
+
+def test_new_kundli_sections_registered(stub_section_builders, chart_data):
+    """All 6 new sections (at_a_glance, jaimini, char_dasha, varshaphal,
+    lal_kitab_calc, lal_kitab) must be both in the default order and have
+    a SECTION_BUILDERS entry."""
+    new_sections = [
+        "at_a_glance", "jaimini", "char_dasha",
+        "varshaphal", "lal_kitab_calc", "lal_kitab",
+    ]
+    html = _build_html(chart_data)
+    for sid in new_sections:
+        assert sid in _DEFAULT_SECTION_ORDER, f"{sid} missing from default order"
+        assert f"<{sid} />" in html, f"{sid} not rendered"
+
+
+def test_jaimini_renders_before_dasha_sections(stub_section_builders, chart_data):
+    """User-confirmed ordering: Jaimini (Karakas + Karakamsa + Swamsa) sits
+    before the dasha block so dasha context inherits from soul-purpose chart."""
+    html = _build_html(chart_data)
+    assert html.index("<jaimini />") < html.index("<mahadasha_phal />")
+    assert html.index("<jaimini />") < html.index("<antardasha />")
+
+
+def test_char_dasha_renders_after_yogini_dasha(stub_section_builders, chart_data):
+    """Char Dasha (Jaimini sign-based) sits after Yogini in the dasha block."""
+    html = _build_html(chart_data)
+    assert html.index("<yogini_dasha />") < html.index("<char_dasha />")
+
+
+def test_lal_kitab_calc_renders_before_lal_kitab_predictions(stub_section_builders, chart_data):
+    """Computation page (chart + dasha) appears before the predictions narrative."""
+    html = _build_html(chart_data)
+    assert html.index("<lal_kitab_calc />") < html.index("<lal_kitab />")
+
+
+def test_lal_kitab_predictions_render_before_remedies(stub_section_builders, chart_data):
+    """Lal Kitab predictions come before the gemstone/remedies section."""
+    html = _build_html(chart_data)
+    assert html.index("<lal_kitab />") < html.index("<remedies />")
+
+
+def test_at_a_glance_is_in_top_three_sections(stub_section_builders, chart_data):
+    """At-a-glance summary page sits near the top of the report (after the
+    summary_grid 2×2 page-2 block). We check it comes before the heavy
+    narrative sections rather than asserting a strict slot."""
+    html = _build_html(chart_data)
+    assert html.index("<at_a_glance />") < html.index("<planet_consideration />")
+    assert html.index("<at_a_glance />") < html.index("<yogas />")
+    assert html.index("<at_a_glance />") < html.index("<doshas />")
 
 
 def test_disabled_section_excluded(stub_section_builders, chart_data):

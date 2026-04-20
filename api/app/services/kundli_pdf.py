@@ -2525,14 +2525,10 @@ def _lal_kitab_calculation_section(d: dict) -> str:
         <tr>{_row("SID", sid)}{_row("", "")}{_row("Nakshatra", f"{nak.get('name', '—')}-{nak.get('pada', '')}")}{_row("Nakshatra Lord", nak.get("lord", "—"))}</tr>
     </table>"""
 
-    # Planetary table — Lal Kitab style.
-    #   Sign       = sign of the house the planet occupies (1st = Aries, etc.)
-    #   Positions  = "----" (Astrosage convention; degrees not shown here)
-    # Soya / Kismat Jagonewala / Benefic-Malefic columns are omitted because the
-    # classification rules used by Lal Kitab (and Astrosage) depend on aspects,
-    # conjunctions and sign-lord relationships scattered across Pandit Roop
-    # Chand's commentary; coding them from guesswork would mislead the reader.
-    # See uncertainty_log.md for the full investigation.
+    # Planetary table — Lal Kitab style. Sign = sign of the house the planet
+    # occupies (1st house = Aries, ..., 12th = Pisces). Soya / Kismat
+    # Jagonewala / Benefic-Malefic columns are omitted because the rules
+    # require Pandit Roop Chand's commentary; see uncertainty_log.md.
     planets_dict = d.get("planets", {})
 
     planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
@@ -2551,27 +2547,23 @@ def _lal_kitab_calculation_section(d: dict) -> str:
             f'<tr>'
             f'<td style="padding:3px 6px; font-weight:bold; font-size:8pt;">{name}{retro}</td>'
             f'<td style="padding:3px 6px; font-size:8pt;">{lk_sign}</td>'
-            f'<td style="padding:3px 6px; text-align:center; font-size:8pt; color:#999;">----</td>'
             f'</tr>'
         )
 
     th_style = f'background:{BRAND}; color:white; padding:4px 6px; text-align:left; font-size:8pt;'
     planet_table_html = f"""
-    <div style="font-size:9pt; font-weight:bold; color:{BRAND}; margin-bottom:2px;">Planetary Degree And Their Positions</div>
+    <div style="font-size:9pt; font-weight:bold; color:{BRAND}; margin-bottom:2px;">Planetary Positions (Lal Kitab)</div>
     <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
         <tr>
             <th style="{th_style}">Planets</th>
             <th style="{th_style}">Sign</th>
-            <th style="{th_style} text-align:center;">Positions</th>
         </tr>
         {planet_rows}
     </table>
     <p style="font-size:8pt; color:#888; margin:0 0 10px;"><em>Sign follows the
     Lal Kitab convention (1st house = Aries, 2nd = Taurus, ..., 12th = Pisces).
-    Positions are intentionally suppressed in the Lal Kitab system, which
-    works on house-based sign assignment rather than longitude. Soya /
-    Kismat Jagonewala / Benefic-Malefic columns are omitted pending a verified
-    rule set from a Lal Kitab commentary.</em></p>"""
+    Soya / Kismat Jagonewala / Benefic-Malefic columns are omitted pending a
+    verified rule set from a Lal Kitab commentary.</em></p>"""
 
     # Lagna chart — Lal Kitab convention: house numbers (1–12) shown in each
     # house position instead of the natal sign numbers, with planets placed by
