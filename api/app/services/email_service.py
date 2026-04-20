@@ -1,4 +1,7 @@
 from app.config import settings
+from app.infrastructure.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Direct S3 URL — no CloudFront/GitHub restrictive headers, works in all email clients
 LOGO_URL = "https://vedicjivan-website.s3.ap-south-1.amazonaws.com/images/logo/logo-email.jpg"
@@ -28,7 +31,7 @@ def _email_footer() -> str:
 def _send_email(to: str, subject: str, html: str):
     """Send an email via Resend. Returns silently if no API key configured."""
     if not settings.RESEND_API_KEY:
-        print(f"[EMAIL SKIP] No RESEND_API_KEY. Would send to {to}: {subject}")
+        logger.info("Email skip — no RESEND_API_KEY. Would send to=%s subject=%s", to, subject)
         return
 
     import resend
@@ -94,7 +97,7 @@ async def send_admin_booking_notification(
     """Notify admin about a new confirmed booking."""
     admin_email = settings.ADMIN_EMAIL
     if not admin_email:
-        print("[EMAIL SKIP] No ADMIN_EMAIL configured.")
+        logger.info("Email skip — no ADMIN_EMAIL configured")
         return
 
     subject = f"New Booking: {service_title} on {date} at {time_slot}"
@@ -227,7 +230,7 @@ async def send_booking_reminder(
 async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
     """Send Kundli PDF report as email attachment via Resend."""
     if not settings.RESEND_API_KEY:
-        print(f"[EMAIL SKIP] No RESEND_API_KEY. Would send Kundli to {to_email}")
+        logger.info("Kundli email skip — no RESEND_API_KEY. Would send to=%s", to_email)
         return
 
     import base64

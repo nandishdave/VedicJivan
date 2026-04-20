@@ -12,12 +12,15 @@ from app.models.payment import (
     PaymentResponse,
     PaymentStatus,
 )
+from app.infrastructure.logging import get_logger
 from app.services.email_service import (
     send_admin_booking_notification,
     send_booking_confirmation,
 )
 from app.services.calendar_service import create_booking_event
 from app.utils.exceptions import BadRequestError, NotFoundError
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/payments", tags=["Payments"])
 
@@ -147,7 +150,7 @@ async def stripe_webhook(request: Request):
                     booking_id=booking_id,
                 )
             except Exception as e:
-                print(f"[EMAIL ERROR] Customer confirmation: {e}")
+                logger.error("Customer confirmation email failed: %s", e)
 
             try:
                 await send_admin_booking_notification(
@@ -162,7 +165,7 @@ async def stripe_webhook(request: Request):
                     booking_id=booking_id,
                 )
             except Exception as e:
-                print(f"[EMAIL ERROR] Admin notification: {e}")
+                logger.error("Admin notification email failed: %s", e)
 
             try:
                 event_id = create_booking_event({**booking, "booking_id": booking_id})
@@ -172,7 +175,7 @@ async def stripe_webhook(request: Request):
                         {"$set": {"google_event_id": event_id}},
                     )
             except Exception as e:
-                print(f"[CALENDAR ERROR] {e}")
+                logger.error("Calendar event sync failed: %s", e)
 
     elif event["type"] == "checkout.session.expired":
         session = event["data"]["object"]

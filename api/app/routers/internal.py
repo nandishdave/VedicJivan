@@ -3,7 +3,10 @@ from datetime import date, timedelta
 from fastapi import APIRouter, Header, HTTPException
 from app.config import settings
 from app.database import get_db
+from app.infrastructure.logging import get_logger
 from app.services.email_service import send_booking_reminder
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/internal", tags=["internal"])
 
@@ -39,6 +42,6 @@ async def send_reminders(x_internal_secret: str = Header(default="")):
             )
             sent += 1
         except Exception as e:
-            print(f"[REMINDER] Failed for booking {booking['_id']}: {e}")
+            logger.error("Reminder send failed for booking_id=%s: %s", booking["_id"], e)
 
     return {"sent": sent, "date": tomorrow}

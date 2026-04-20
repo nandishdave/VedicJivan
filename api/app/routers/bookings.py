@@ -1,27 +1,49 @@
-from datetime import date, datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+"""Bookings HTTP layer.
 
-from bson import ObjectId
+The router is intentionally thin — it parses requests, picks the right use
+case via dependency injection, and shapes the response. ALL business rules
+(slot validation, conflict detection, reschedule cutoff, ownership checks)
+live in `app/use_cases/bookings.py`.
+
+Domain exceptions raised by use cases are translated to HTTP responses by
+the app-level exception handlers in `app/main.py`.
+"""
+
+from __future__ import annotations
+
 from fastapi import APIRouter, Depends, Query
 
 from app.database import get_db
-from app.dependencies import get_current_user, require_admin
+from app.dependencies import (
+    get_booking_repository,
+    get_current_user,
+    require_admin,
+)
 from app.models.booking import (
-    PENDING_EXPIRY_MINUTES,
     BookingCreate,
-    BookingInDB,
     BookingResponse,
     BookingReschedule,
     BookingStatus,
     BookingStatusUpdate,
 )
-from app.services.settings import get_business_hours
+from app.repositories.booking_repository import BookingRepository
 from app.services.email_service import send_booking_rescheduled
-from app.utils.exceptions import BadRequestError, ForbiddenError, NotFoundError
+from app.use_cases.bookings import (
+    CancelBooking,
+    CreateBooking,
+    GetBooking,
+    GetBookingPublic,
+    ListBookings,
+    RescheduleBooking,
+    ResumeBooking,
+    SetBookingStatus,
+)
+from app.utils.exceptions import BadRequestError
 
 router = APIRouter(prefix="/api/bookings", tags=["Bookings"])
 
-# Service pricing — INR (rupees)
+
+# ── Service pricing (TODO Phase 4: move to MongoDB `services` collection) ──
 SERVICE_PRICES = {
     "call-consultation": {"30": 1999, "45": 2499, "60": 2999},
     "video-consultation": {"30": 2499, "45": 2999, "60": 3999},
@@ -35,7 +57,6 @@ SERVICE_PRICES = {
     "test-payment": {"30": 100},
 }
 
-# Service pricing — EUR (euros, proportional to INR)
 SERVICE_PRICES_EUR = {
     "call-consultation": {"30": 29, "45": 35, "60": 39},
     "video-consultation": {"30": 35, "45": 39, "60": 49},
@@ -68,103 +89,74 @@ def get_price(service_slug: str, duration_minutes: int) -> tuple[int, int]:
     return prices_inr[key], prices_eur[key]
 
 
-def _time_to_minutes(t: str) -> int:
-    h, m = t.split(":")
-    return int(h) * 60 + int(m)
+# Back-compat shims — tests import these names from this module.
+from app.utils.time_helpers import ranges_overlap as _overlaps  # noqa: E402,F401
+from app.utils.time_helpers import time_to_minutes as _time_to_minutes  # noqa: E402,F401
 
 
-def _overlaps(s1: int, e1: int, s2: int, e2: int) -> bool:
-    return s1 < e2 and s2 < e1
+# ── Use-case factories (Depends-friendly) ──
+# Each factory wires the use case with its dependencies so routes can do
+# `Depends(_create_booking_use_case)`. Tests can override via
+# `app.dependency_overrides[_create_booking_use_case] = lambda: FakeUseCase()`.
+
+
+def _create_booking_use_case(
+    repo: BookingRepository = Depends(get_booking_repository),
+) -> CreateBooking:
+    return CreateBooking(repo, get_db(), get_price)
+
+
+def _list_bookings_use_case(
+    repo: BookingRepository = Depends(get_booking_repository),
+) -> ListBookings:
+    return ListBookings(repo)
+
+
+def _get_booking_use_case(
+    repo: BookingRepository = Depends(get_booking_repository),
+) -> GetBooking:
+    return GetBooking(repo)
+
+
+def _get_booking_public_use_case(
+    repo: BookingRepository = Depends(get_booking_repository),
+) -> GetBookingPublic:
+    return GetBookingPublic(repo)
+
+
+def _resume_booking_use_case(
+    repo: BookingRepository = Depends(get_booking_repository),
+) -> ResumeBooking:
+    return ResumeBooking(repo)
+
+
+def _cancel_booking_use_case(
+    repo: BookingRepository = Depends(get_booking_repository),
+) -> CancelBooking:
+    return CancelBooking(repo)
+
+
+def _set_booking_status_use_case(
+    repo: BookingRepository = Depends(get_booking_repository),
+) -> SetBookingStatus:
+    return SetBookingStatus(repo)
+
+
+def _reschedule_booking_use_case(
+    repo: BookingRepository = Depends(get_booking_repository),
+) -> RescheduleBooking:
+    return RescheduleBooking(repo, get_db(), send_booking_rescheduled)
+
+
+# ── Endpoints ──────────────────────────────────────────────────────────────
 
 
 @router.post("", response_model=BookingResponse)
-async def create_booking(data: BookingCreate):
-    db = get_db()
-
-    # Validate price
-    price_inr, price_eur = get_price(data.service_slug, data.duration_minutes)
-
-    is_report = data.duration_minutes == 0
-
-    # Scheduling checks only apply to consultation/session bookings, not reports
-    if not is_report:
-        # Check if date is a holiday
-        holiday = await db.unavailability.find_one({"date": data.date, "is_holiday": True})
-        if holiday:
-            raise BadRequestError("This date is a holiday")
-
-        # Calculate booking time range
-        booking_start = _time_to_minutes(data.time_slot)
-        booking_end = booking_start + max(data.duration_minutes, 30)
-
-        # Check business hours for the day. Date string shape is enforced
-        # by Pydantic regex; calendar validity (rejecting "0000-00-00",
-        # "2024-13-32" etc.) is checked here.
-        bh_settings = await get_business_hours()
-        try:
-            requested_date = date.fromisoformat(data.date)
-        except ValueError:
-            raise BadRequestError(f"Invalid date: {data.date}")
-        day_of_week = requested_date.weekday()
-
-        day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)
-        if not day_config or not day_config.is_open:
-            raise BadRequestError("Bookings are not available on this day")
-
-        bh_open = _time_to_minutes(day_config.open_time)
-        bh_close = _time_to_minutes(day_config.close_time)
-        if booking_start < bh_open or booking_end > bh_close:
-            raise BadRequestError(
-                f"Booking must be within business hours ({day_config.open_time} - {day_config.close_time})"
-            )
-
-        # Check against unavailable periods
-        cursor = db.unavailability.find({"date": data.date, "is_holiday": False})
-        async for block in cursor:
-            if block.get("start_time") and block.get("end_time"):
-                block_start = _time_to_minutes(block["start_time"])
-                block_end = _time_to_minutes(block["end_time"])
-                if _overlaps(booking_start, booking_end, block_start, block_end):
-                    raise BadRequestError("This time slot is unavailable")
-
-        # Check against existing bookings (ignore expired pending bookings)
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
-        existing_cursor = db.bookings.find({
-            "date": data.date,
-            "$or": [
-                {"status": "confirmed"},
-                {"status": "pending", "created_at": {"$gte": cutoff}},
-            ],
-        })
-        async for existing in existing_cursor:
-            ex_start = _time_to_minutes(existing["time_slot"])
-            ex_end = ex_start + existing.get("duration_minutes", 30)
-            if _overlaps(booking_start, booking_end, ex_start, ex_end):
-                raise BadRequestError("This time slot is already booked")
-
-    booking = BookingInDB(
-        user_name=data.user_name,
-        user_email=data.user_email,
-        user_phone=data.user_phone,
-        service_slug=data.service_slug,
-        service_title=data.service_title,
-        date=data.date,
-        time_slot=data.time_slot,
-        duration_minutes=data.duration_minutes,
-        price_inr=price_inr,
-        price_eur=price_eur,
-        notes=data.notes,
-        date_of_birth=data.date_of_birth,
-        time_of_birth=data.time_of_birth,
-        birth_time_unknown=data.birth_time_unknown,
-        place_of_birth=data.place_of_birth,
-        birth_latitude=data.birth_latitude,
-        birth_longitude=data.birth_longitude,
-    )
-
-    result = await db.bookings.insert_one(booking.model_dump())
-
-    doc = await db.bookings.find_one({"_id": result.inserted_id})
+async def create_booking(
+    data: BookingCreate,
+    use_case: CreateBooking = Depends(_create_booking_use_case),
+):
+    doc = await use_case.execute(data)
     return _to_response(doc)
 
 
@@ -173,80 +165,42 @@ async def list_bookings(
     status: BookingStatus | None = None,
     date: str | None = Query(None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
     current_user: dict = Depends(get_current_user),
+    use_case: ListBookings = Depends(_list_bookings_use_case),
 ):
-    db = get_db()
-
-    query = {}
-    if current_user["role"] != "admin":
-        query["user_email"] = current_user["email"]
-    if status:
-        query["status"] = status.value
-    if date:
-        query["date"] = date
-
-    cursor = db.bookings.find(query).sort("created_at", -1).limit(100)
-    results = []
-    async for doc in cursor:
-        results.append(_to_response(doc))
-    return results
+    docs = await use_case.execute(
+        current_user=current_user,
+        status=status,
+        booking_date=date,
+    )
+    return [_to_response(d) for d in docs]
 
 
 @router.get("/{booking_id}/resume", response_model=BookingResponse)
-async def resume_booking(booking_id: str):
-    """Check if a pending booking is still valid for resumption (public)."""
-    db = get_db()
-
-    try:
-        doc = await db.bookings.find_one({"_id": ObjectId(booking_id)})
-    except Exception:
-        raise NotFoundError("Booking not found")
-
-    if not doc:
-        raise NotFoundError("Booking not found")
-
-    if doc["status"] != BookingStatus.PENDING:
-        raise BadRequestError("Booking is no longer pending")
-
-    created_at = doc["created_at"]
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
-    if created_at < cutoff:
-        raise BadRequestError("Booking has expired")
-
+async def resume_booking(
+    booking_id: str,
+    use_case: ResumeBooking = Depends(_resume_booking_use_case),
+):
+    doc = await use_case.execute(booking_id)
     return _to_response(doc)
 
 
 @router.get("/{booking_id}", response_model=BookingResponse)
-async def get_booking(booking_id: str, current_user: dict = Depends(get_current_user)):
-    db = get_db()
-    doc = await db.bookings.find_one({"_id": ObjectId(booking_id)})
-    if not doc:
-        raise NotFoundError("Booking not found")
-
-    if current_user["role"] != "admin" and doc.get("user_email") != current_user["email"]:
-        raise ForbiddenError("Access denied")
-
+async def get_booking(
+    booking_id: str,
+    current_user: dict = Depends(get_current_user),
+    use_case: GetBooking = Depends(_get_booking_use_case),
+):
+    doc = await use_case.execute(booking_id, current_user)
     return _to_response(doc)
 
 
 @router.patch("/{booking_id}/cancel", response_model=BookingResponse)
-async def cancel_booking(booking_id: str, current_user: dict = Depends(get_current_user)):
-    db = get_db()
-    doc = await db.bookings.find_one({"_id": ObjectId(booking_id)})
-    if not doc:
-        raise NotFoundError("Booking not found")
-
-    if current_user["role"] != "admin" and doc.get("user_email") != current_user["email"]:
-        raise ForbiddenError("Access denied")
-
-    if doc["status"] in [BookingStatus.COMPLETED, BookingStatus.CANCELLED]:
-        raise BadRequestError(f"Cannot cancel a {doc['status']} booking")
-
-    await db.bookings.update_one(
-        {"_id": ObjectId(booking_id)},
-        {"$set": {"status": BookingStatus.CANCELLED}},
-    )
-
-    doc["status"] = BookingStatus.CANCELLED
+async def cancel_booking(
+    booking_id: str,
+    current_user: dict = Depends(get_current_user),
+    use_case: CancelBooking = Depends(_cancel_booking_use_case),
+):
+    doc = await use_case.execute(booking_id, current_user)
     return _to_response(doc)
 
 
@@ -255,134 +209,34 @@ async def update_booking_status(
     booking_id: str,
     data: BookingStatusUpdate,
     _admin: dict = Depends(require_admin),
+    use_case: SetBookingStatus = Depends(_set_booking_status_use_case),
 ):
-    db = get_db()
-    doc = await db.bookings.find_one({"_id": ObjectId(booking_id)})
-    if not doc:
-        raise NotFoundError("Booking not found")
-
-    await db.bookings.update_one(
-        {"_id": ObjectId(booking_id)},
-        {"$set": {"status": data.status.value}},
-    )
-
-    doc["status"] = data.status.value
+    doc = await use_case.execute(booking_id, data.status)
     return _to_response(doc)
 
 
 @router.get("/{booking_id}/view", response_model=BookingResponse)
-async def get_booking_public(booking_id: str):
+async def get_booking_public(
+    booking_id: str,
+    use_case: GetBookingPublic = Depends(_get_booking_public_use_case),
+):
     """Public endpoint: returns a confirmed booking by ID (for reschedule page)."""
-    db = get_db()
-    try:
-        doc = await db.bookings.find_one({"_id": ObjectId(booking_id)})
-    except Exception:
-        raise NotFoundError("Booking not found")
-    if not doc:
-        raise NotFoundError("Booking not found")
-    if doc["status"] != BookingStatus.CONFIRMED:
-        raise BadRequestError("Only confirmed bookings can be viewed publicly")
+    doc = await use_case.execute(booking_id)
     return _to_response(doc)
 
 
 @router.patch("/{booking_id}/reschedule", response_model=BookingResponse)
-async def reschedule_booking(booking_id: str, data: BookingReschedule):
-    """Reschedule a confirmed booking to a new date/time (public, booking ID is the auth token)."""
-    db = get_db()
-    try:
-        doc = await db.bookings.find_one({"_id": ObjectId(booking_id)})
-    except Exception:
-        raise NotFoundError("Booking not found")
-    if not doc:
-        raise NotFoundError("Booking not found")
-    if doc["status"] != BookingStatus.CONFIRMED:
-        raise BadRequestError("Only confirmed bookings can be rescheduled")
+async def reschedule_booking(
+    booking_id: str,
+    data: BookingReschedule,
+    use_case: RescheduleBooking = Depends(_reschedule_booking_use_case),
+):
+    """Reschedule a confirmed booking (public — booking ID is the auth token)."""
+    doc = await use_case.execute(booking_id, data)
+    return _to_response(doc)
 
-    # 24-hour cutoff: block reschedule if session is within 24 hours
-    ist = ZoneInfo("Asia/Kolkata")
-    booking_dt = datetime.fromisoformat(
-        f"{doc['date']}T{doc['time_slot']}:00"
-    ).replace(tzinfo=ist)
-    if booking_dt - datetime.now(timezone.utc) < timedelta(hours=24):
-        raise BadRequestError(
-            "Rescheduling is not available within 24 hours of your session"
-        )
 
-    # New date must be in the future. Reject calendar-invalid strings
-    # like "0000-00-00" that pass the Pydantic regex but break date parse.
-    try:
-        new_date = date.fromisoformat(data.date)
-    except ValueError:
-        raise BadRequestError(f"Invalid date: {data.date}")
-    if new_date <= date.today():
-        raise BadRequestError("New date must be in the future")
-
-    # Not a holiday
-    holiday = await db.unavailability.find_one({"date": data.date, "is_holiday": True})
-    if holiday:
-        raise BadRequestError("That date is a holiday")
-
-    # Business hours check
-    bh_settings = await get_business_hours()
-    day_of_week = new_date.weekday()
-    day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)
-    if not day_config or not day_config.is_open:
-        raise BadRequestError("Bookings are not available on that day")
-
-    booking_start = _time_to_minutes(data.time_slot)
-    booking_end = booking_start + max(data.duration_minutes, 30)
-    bh_open = _time_to_minutes(day_config.open_time)
-    bh_close = _time_to_minutes(day_config.close_time)
-    if booking_start < bh_open or booking_end > bh_close:
-        raise BadRequestError(
-            f"Booking must be within business hours ({day_config.open_time} - {day_config.close_time})"
-        )
-
-    # No slot conflicts (exclude this booking itself)
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
-    conflict_cursor = db.bookings.find({
-        "date": data.date,
-        "_id": {"$ne": ObjectId(booking_id)},
-        "$or": [
-            {"status": "confirmed"},
-            {"status": "pending", "created_at": {"$gte": cutoff}},
-        ],
-    })
-    async for existing in conflict_cursor:
-        ex_start = _time_to_minutes(existing["time_slot"])
-        ex_end = ex_start + existing.get("duration_minutes", 30)
-        if _overlaps(booking_start, booking_end, ex_start, ex_end):
-            raise BadRequestError("That time slot is already booked")
-
-    old_date = doc["date"]
-    old_time = doc["time_slot"]
-
-    await db.bookings.update_one(
-        {"_id": ObjectId(booking_id)},
-        {"$set": {
-            "date": data.date,
-            "time_slot": data.time_slot,
-            "duration_minutes": data.duration_minutes,
-            "reminder_sent": False,
-        }},
-    )
-
-    try:
-        await send_booking_rescheduled(
-            to_email=doc["user_email"],
-            user_name=doc["user_name"],
-            service_title=doc["service_title"],
-            old_date=old_date,
-            old_time=old_time,
-            new_date=data.date,
-            new_time=data.time_slot,
-            booking_id=booking_id,
-        )
-    except Exception as e:
-        print(f"[RESCHEDULE EMAIL] Failed for booking {booking_id}: {e}")
-
-    updated = await db.bookings.find_one({"_id": ObjectId(booking_id)})
-    return _to_response(updated)
+# ── Response shaping ───────────────────────────────────────────────────────
 
 
 def _to_response(doc: dict) -> BookingResponse:

@@ -48,17 +48,8 @@ def _generate_all_slots(
     return slots
 
 
-def _time_to_minutes(t: str) -> int:
-    """Convert HH:MM to minutes since midnight."""
-    h, m = t.split(":")
-    return int(h) * 60 + int(m)
-
-
-def _overlaps(start1: str, end1: str, start2: str, end2: str) -> bool:
-    """Check if two time ranges overlap."""
-    s1, e1 = _time_to_minutes(start1), _time_to_minutes(end1)
-    s2, e2 = _time_to_minutes(start2), _time_to_minutes(end2)
-    return s1 < e2 and s2 < e1
+from app.utils.time_helpers import ranges_overlap as _overlaps  # noqa: E402,F401
+from app.utils.time_helpers import time_to_minutes as _time_to_minutes  # noqa: E402,F401
 
 
 def _doc_to_response(doc: dict) -> UnavailabilityResponse:

@@ -4,6 +4,9 @@ import base64
 import json
 
 from app.config import settings
+from app.infrastructure.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def create_booking_event(booking: dict) -> str | None:
@@ -65,5 +68,5 @@ def create_booking_event(booking: dict) -> str | None:
         return created.get("id")
 
     except Exception as e:
-        print(f"[CALENDAR] Failed to create event: {e}")
+        logger.error("Calendar event create failed: %s", e)
         return None

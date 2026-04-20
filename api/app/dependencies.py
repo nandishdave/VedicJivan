@@ -2,6 +2,10 @@ from fastapi import Depends, Header
 
 from app.database import get_db
 from app.models.user import UserRole
+from app.repositories.booking_repository import (
+    BookingRepository,
+    MongoBookingRepository,
+)
 from app.utils.exceptions import ForbiddenError, UnauthorizedError
 from app.utils.security import decode_token
 
@@ -35,3 +39,13 @@ async def require_admin(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != UserRole.ADMIN:
         raise ForbiddenError("Admin access required")
     return current_user
+
+
+# ── Repository factories (clean architecture wiring) ──
+# Use cases depend on the Protocol (BookingRepository); production wires the
+# concrete MongoBookingRepository here. Tests can override these dependencies
+# via FastAPI's `app.dependency_overrides` to substitute in-memory fakes.
+
+
+def get_booking_repository() -> BookingRepository:
+    return MongoBookingRepository(get_db())
