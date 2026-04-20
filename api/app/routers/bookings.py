@@ -97,9 +97,14 @@ async def create_booking(data: BookingCreate):
         booking_start = _time_to_minutes(data.time_slot)
         booking_end = booking_start + max(data.duration_minutes, 30)
 
-        # Check business hours for the day
+        # Check business hours for the day. Date string shape is enforced
+        # by Pydantic regex; calendar validity (rejecting "0000-00-00",
+        # "2024-13-32" etc.) is checked here.
         bh_settings = await get_business_hours()
-        requested_date = date.fromisoformat(data.date)
+        try:
+            requested_date = date.fromisoformat(data.date)
+        except ValueError:
+            raise BadRequestError(f"Invalid date: {data.date}")
         day_of_week = requested_date.weekday()
 
         day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)
@@ -303,8 +308,12 @@ async def reschedule_booking(booking_id: str, data: BookingReschedule):
             "Rescheduling is not available within 24 hours of your session"
         )
 
-    # New date must be in the future
-    new_date = date.fromisoformat(data.date)
+    # New date must be in the future. Reject calendar-invalid strings
+    # like "0000-00-00" that pass the Pydantic regex but break date parse.
+    try:
+        new_date = date.fromisoformat(data.date)
+    except ValueError:
+        raise BadRequestError(f"Invalid date: {data.date}")
     if new_date <= date.today():
         raise BadRequestError("New date must be in the future")
 

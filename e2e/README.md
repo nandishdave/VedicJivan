@@ -39,6 +39,32 @@ npx playwright show-report
 - `smoke.spec.ts` — every public page loads and shows expected copy
 - `kundli-form.spec.ts` — Kundli form renders, validates, and reaches success state with mocked API
 - `admin-login.spec.ts` — login form renders, rejects bad creds, redirects unauthed users
+- `visual.spec.ts` — pixel-diff screenshot regression on a small set of stable pages
+
+## Visual regression
+
+`visual.spec.ts` uses Playwright's `toHaveScreenshot()` to detect unintended
+UI changes. Baselines live in `e2e/__screenshots__/visual.spec.ts/`.
+
+```bash
+# First run on a new machine (or new screen) — generate baselines
+npm run test:e2e -- --update-snapshots
+
+# Subsequent runs — fail on pixel diff > 2%
+npm run test:e2e visual.spec.ts
+
+# Review failure diffs (saved as side-by-side PNGs)
+ls test-results/
+```
+
+**Caveats:**
+- Browsers and OS render fonts differently. Don't run baselines on Mac and
+  expect them to pass on Linux CI — generate per environment, or run all
+  baselines from a single Docker image.
+- Currently kept narrow on purpose: only stable marketing pages and form
+  empty-states. Don't add screenshots for the Kundli PDF report — it's
+  iterating fast and would create constant churn. Use the structural snapshot
+  in `api/tests/test_kundli_pdf_golden.py` instead.
 
 ## Patterns
 

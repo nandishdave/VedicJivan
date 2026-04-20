@@ -15,6 +15,7 @@ from app.models.availability import (
 )
 from app.models.booking import PENDING_EXPIRY_MINUTES
 from app.services.settings import get_business_hours
+from app.utils.exceptions import BadRequestError
 from app.utils.exceptions import BadRequestError, NotFoundError
 
 router = APIRouter(prefix="/api/availability", tags=["Availability"])
@@ -78,9 +79,16 @@ async def get_available_slots(
     """Get available 30-min slots for a date, respecting business hours."""
     db = get_db()
 
+    # The regex on `date_str` only enforces shape, not calendar validity —
+    # values like "0000-00-00" or "2024-13-32" pass the regex but fail
+    # `date.fromisoformat`. Catch and return 422 instead of crashing.
+    try:
+        requested_date = date.fromisoformat(date_str)
+    except ValueError:
+        raise BadRequestError(f"Invalid date: {date_str}")
+
     # Load business hours and determine day-of-week
     bh_settings = await get_business_hours()
-    requested_date = date.fromisoformat(date_str)
     day_of_week = requested_date.weekday()  # 0=Mon, 6=Sun
 
     day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)

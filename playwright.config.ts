@@ -34,6 +34,19 @@ export default defineConfig({
     actionTimeout: 30_000,
   },
 
+  // Visual regression: tolerance per pixel (anti-aliasing across OS / Chromium
+  // versions). The per-test `maxDiffPixelRatio` still applies on top of this.
+  expect: {
+    toHaveScreenshot: {
+      threshold: 0.2,                 // per-pixel colour delta (0–1)
+      maxDiffPixelRatio: 0.02,        // global default — overridden per test
+      animations: "disabled",
+    },
+  },
+
+  // Snapshots live alongside specs in __screenshots__/{spec-name}/{test-name}.png
+  snapshotPathTemplate: "{testDir}/__screenshots__/{testFileName}/{arg}{ext}",
+
   projects: [
     {
       name: "chromium",
