@@ -365,3 +365,61 @@ def test_available_slot_model():
     s = AvailableSlot(start="09:00", end="09:30")
     assert s.start == "09:00"
     assert s.end == "09:30"
+
+
+# ═══════════════════════════════════════
+# BusinessHoursSettings / DayHours validators
+# ═══════════════════════════════════════
+
+
+def test_day_hours_close_must_be_after_open():
+    from app.models.availability import DayHours
+    with pytest.raises(ValidationError, match="close_time must be after open_time"):
+        DayHours(day=0, is_open=True, open_time="18:00", close_time="10:00")
+
+
+def test_day_hours_close_equal_to_open_rejected():
+    from app.models.availability import DayHours
+    with pytest.raises(ValidationError, match="close_time must be after open_time"):
+        DayHours(day=0, is_open=True, open_time="10:00", close_time="10:00")
+
+
+def test_day_hours_validator_skipped_when_closed_day():
+    """When is_open=False the close-after-open rule does not apply."""
+    from app.models.availability import DayHours
+    d = DayHours(day=6, is_open=False, open_time="18:00", close_time="10:00")
+    assert d.is_open is False
+
+
+def test_business_hours_settings_default_has_seven_days():
+    from app.models.availability import BusinessHoursSettings
+    bh = BusinessHoursSettings()
+    assert len(bh.weekly_hours) == 7
+    assert {d.day for d in bh.weekly_hours} == set(range(7))
+
+
+def test_business_hours_settings_invalid_timezone_rejected():
+    from app.models.availability import BusinessHoursSettings
+    with pytest.raises(ValidationError, match="Invalid IANA timezone"):
+        BusinessHoursSettings(timezone="Mars/Olympus")
+
+
+def test_business_hours_settings_weekly_hours_wrong_count():
+    from app.models.availability import BusinessHoursSettings, DayHours
+    with pytest.raises(ValidationError, match="exactly 7 entries"):
+        BusinessHoursSettings(weekly_hours=[DayHours(day=0)])
+
+
+def test_business_hours_settings_weekly_hours_duplicate_day():
+    from app.models.availability import BusinessHoursSettings, DayHours
+    dups = [DayHours(day=0)] * 7  # 7 entries but all day=0
+    with pytest.raises(ValidationError, match="days 0-6 exactly once"):
+        BusinessHoursSettings(weekly_hours=dups)
+
+
+def test_business_hours_settings_weekly_hours_sorted_on_save():
+    """Even if input order is shuffled, output is always sorted by day."""
+    from app.models.availability import BusinessHoursSettings, DayHours
+    shuffled = [DayHours(day=d) for d in [3, 0, 6, 2, 5, 1, 4]]
+    bh = BusinessHoursSettings(weekly_hours=shuffled)
+    assert [d.day for d in bh.weekly_hours] == list(range(7))

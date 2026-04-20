@@ -379,6 +379,88 @@ def test_calc_avasthas_returns_seven_classical_with_three_states_each():
     assert all({"planet", "jagradadi", "baladi", "deeptadi"}.issubset(row) for row in out)
 
 
+def test_calc_avasthas_uses_dignity_for_deeptadi():
+    """Exalted → Deepta; Own Sign → Swastha; Friend Sign → Mudita; Enemy → Deena."""
+    planets = _seven_classical()
+    for name in planets:
+        planets[name]["house"] = 1
+    planets["Sun"]["dignity"] = "Exalted"
+    planets["Mars"]["dignity"] = "Own Sign"
+    planets["Mercury"]["dignity"] = "Friendly Sign"
+    planets["Saturn"]["dignity"] = "Enemy Sign"
+
+    out = {row["planet"]: row["deeptadi"] for row in calc_avasthas(planets)}
+    assert out["Sun"] == "Deepta"
+    assert out["Mars"] == "Swastha"
+    assert out["Mercury"] == "Mudita"
+    assert out["Saturn"] == "Deena"
+
+
+def test_calc_avasthas_combust_planet_is_vikala():
+    """A planet within combustion threshold of Sun → Vikala (highest priority)."""
+    from app.services.kundli_calculator import calc_avasthas
+    planets = _seven_classical()
+    for name in planets:
+        planets[name]["house"] = 1
+        planets[name]["dignity"] = "Friendly Sign"
+    # Force Mercury to be within 14° of Sun (combust)
+    planets["Sun"]["longitude"] = 100.0
+    planets["Mercury"]["longitude"] = 105.0
+    out = {row["planet"]: row["deeptadi"] for row in calc_avasthas(planets)}
+    assert out["Mercury"] == "Vikala"
+
+
+def test_calc_numerology_returns_required_numbers():
+    from app.services.kundli_calculator import calc_numerology
+    out = calc_numerology(name="Nandish Dave", dob_str="1988-11-11", current_year=2026)
+    # Moolank from day 11 → 1+1 = 2
+    assert out["moolank"]["value"] == 2
+    # Bhagyank from 1988-11-11: 1+1 + 1+1 + 1+9+8+8 = 30 → 3
+    assert out["bhagyank"]["value"] == 3
+    # Personal year carries the year through
+    assert out["personal_year"]["year"] == 2026
+    # Name-based numbers populated
+    assert out["namank"] is not None
+    assert "value" in out["namank"]
+    # Each entry exposes lucky day/color/gemstone
+    assert out["moolank"]["lucky_day"]
+    assert out["moolank"]["planet"]
+
+
+def test_calc_numerology_handles_empty_name():
+    from app.services.kundli_calculator import calc_numerology
+    out = calc_numerology(name="", dob_str="1990-01-15", current_year=2026)
+    assert out["namank"] is None
+    assert out["soul_number"] is None
+    assert out["personality_number"] is None
+
+
+def test_calc_numerology_strips_non_alpha_from_name():
+    """Punctuation/spaces in a name don't affect the alphabetic sum."""
+    from app.services.kundli_calculator import calc_numerology
+    a = calc_numerology(name="Nandish Dave", dob_str="1988-11-11", current_year=2026)
+    b = calc_numerology(name="Nandish-Dave!", dob_str="1988-11-11", current_year=2026)
+    assert a["namank"]["value"] == b["namank"]["value"]
+
+
+def test_calc_avasthas_pidita_when_aspected_by_malefic():
+    """A planet aspected by a malefic with no friend-sign / dignity → Pidita."""
+    from app.services.kundli_calculator import calc_avasthas
+    planets = _seven_classical()
+    # Reset all to neutral
+    for name in planets:
+        planets[name]["dignity"] = ""
+        planets[name]["house"] = 1
+    # Force Mercury (in house 1) to be aspected by Saturn (malefic)
+    graha_drishti = {
+        "house_aspected_by": {"1": ["Saturn", "Moon"]},
+        "planet_aspects": {},
+    }
+    out = {row["planet"]: row["deeptadi"] for row in calc_avasthas(planets, graha_drishti=graha_drishti)}
+    # Mercury is in H1 and gets aspected by Saturn → Pidita
+    assert out["Mercury"] == "Pidita"
+
+
 # ── Panchanga karan fix ─────────────────────────────────────────────────────
 
 

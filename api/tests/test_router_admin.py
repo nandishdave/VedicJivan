@@ -162,18 +162,23 @@ async def test_stats_returns_revenue_by_service(client, mock_db, admin_token):
 
 
 async def test_stats_returns_daily_bookings_with_data(client, mock_db, admin_token):
+    # /api/admin/stats returns the trailing 30 days. Use a date inside that
+    # window (today − 5d) so the test stays valid as time advances.
+    from datetime import date, timedelta
+    seed_date = (date.today() - timedelta(days=5)).isoformat()
+
     mock_db.users.count_documents = AsyncMock(return_value=0)
     mock_db.bookings.count_documents = AsyncMock(return_value=0)
     mock_db.payments.count_documents = AsyncMock(return_value=0)
     mock_db.bookings.aggregate = MagicMock(side_effect=[
         MockAggregationCursor([]),  # revenue_by_service
         MockAggregationCursor([
-            {"_id": "2026-02-19", "count": 3},
+            {"_id": seed_date, "count": 3},
         ]),  # daily_bookings
     ])
     mock_db.payments.aggregate = MagicMock(
         return_value=MockAggregationCursor([
-            {"_id": "2026-02-19", "revenue": 5997},
+            {"_id": seed_date, "revenue": 5997},
         ])  # daily_revenue
     )
 
