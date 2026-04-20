@@ -107,11 +107,17 @@ async def stripe_webhook(request: Request):
         session = event["data"]["object"]
         booking_id = session["metadata"]["booking_id"]
 
+        # Stripe SDK v15+ StripeObject doesn't inherit from dict, so `.get()`
+        # raises AttributeError — use bracket access with a try/except.
+        try:
+            pi_id = session["payment_intent"]
+        except (KeyError, AttributeError):
+            pi_id = None
         await db.payments.update_one(
             {"stripe_session_id": session["id"]},
             {
                 "$set": {
-                    "stripe_payment_intent_id": session.get("payment_intent"),
+                    "stripe_payment_intent_id": pi_id,
                     "status": PaymentStatus.CAPTURED,
                 }
             },
@@ -176,12 +182,19 @@ async def stripe_webhook(request: Request):
         )
 
     elif event["type"] == "charge.refunded":
+        # Stripe SDK v15+ returns StripeObject (not dict) — `.get()` raises
+        # AttributeError. Use bracket access with a try/except for safety:
+        # a refund webhook without payment_intent is a no-op.
         charge = event["data"]["object"]
-        payment_intent_id = charge.get("payment_intent")
-        await db.payments.update_one(
-            {"stripe_payment_intent_id": payment_intent_id},
-            {"$set": {"status": PaymentStatus.REFUNDED}},
-        )
+        try:
+            payment_intent_id = charge["payment_intent"]
+        except (KeyError, AttributeError):
+            payment_intent_id = None
+        if payment_intent_id:
+            await db.payments.update_one(
+                {"stripe_payment_intent_id": payment_intent_id},
+                {"$set": {"status": PaymentStatus.REFUNDED}},
+            )
 
     return {"status": "ok"}
 
