@@ -6,6 +6,10 @@ from app.repositories.booking_repository import (
     BookingRepository,
     MongoBookingRepository,
 )
+from app.repositories.payment_repository import (
+    MongoPaymentRepository,
+    PaymentRepository,
+)
 from app.utils.exceptions import ForbiddenError, UnauthorizedError
 from app.utils.security import decode_token
 
@@ -49,3 +53,7 @@ async def require_admin(current_user: dict = Depends(get_current_user)):
 
 def get_booking_repository() -> BookingRepository:
     return MongoBookingRepository(get_db())
+
+
+def get_payment_repository() -> PaymentRepository:
+    return MongoPaymentRepository(get_db())
