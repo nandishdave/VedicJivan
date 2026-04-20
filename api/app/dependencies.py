@@ -14,6 +14,14 @@ from app.repositories.payment_repository import (
     MongoPaymentRepository,
     PaymentRepository,
 )
+from app.repositories.settings_repository import (
+    MongoSettingsRepository,
+    SettingsRepository,
+)
+from app.repositories.unavailability_repository import (
+    MongoUnavailabilityRepository,
+    UnavailabilityRepository,
+)
 from app.utils.exceptions import ForbiddenError, UnauthorizedError
 from app.utils.security import decode_token
 
@@ -65,3 +73,11 @@ def get_payment_repository() -> PaymentRepository:
 
 def get_kundli_repository() -> KundliRepository:
     return MongoKundliRepository(get_db())
+
+
+def get_unavailability_repository() -> UnavailabilityRepository:
+    return MongoUnavailabilityRepository(get_db())
+
+
+def get_settings_repository() -> SettingsRepository:
+    return MongoSettingsRepository(get_db())
