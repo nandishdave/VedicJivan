@@ -1,120 +1,114 @@
 """Public endpoint for free Kundli report generation.
 
-The endpoint returns 202 Accepted as soon as the request is validated and
-rate-limited. Chart calculation, PDF rendering, email delivery and the final
-DB write all run in a FastAPI BackgroundTask after the response is sent. This
-keeps every request well under the 30-second API Gateway HTTP API integration
-timeout, which was being hit because PDF generation alone exceeds 30s on a
-0.25 vCPU Fargate task.
+The endpoint returns 202 Accepted as soon as the request is rate-limited
+and a pending record is inserted. The chart calculation, PDF rendering,
+email delivery and final DB write all run in a FastAPI BackgroundTask
+after the response is sent. This keeps every request well under the
+30-second API Gateway HTTP API integration timeout, which was being hit
+because PDF generation alone exceeds 30s on a 0.25 vCPU Fargate task.
+
+This module is intentionally thin — every business rule (rate limit,
+"what counts as enabled and free", error persistence) lives in
+`app/use_cases/kundli.py`.
 """
 
 from __future__ import annotations
 
+import os
 import traceback
-from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import Response
 
 from app.database import get_db
-from app.models.kundli import KundliInDB, KundliRequest
+from app.dependencies import get_kundli_repository
+from app.models.kundli import KundliRequest
+# These imports are kept at module scope on purpose: tests patch them as
+# `app.routers.kundli.build_chart` / `generate_pdf` / `load_report_sections`,
+# and use cases below resolve them lazily through this module's globals.
+from app.repositories.kundli_repository import (
+    KundliRepository,
+    MongoKundliRepository,
+)
 from app.services.kundli_calculator import build_chart
 from app.services.kundli_pdf import generate_pdf
 from app.services.report_sections import load_report_sections
+from app.use_cases.kundli import (
+    ProcessKundliReport,
+    QueueKundliGeneration,
+    RenderKundliReport,
+)
 
 router = APIRouter(prefix="/api/kundli", tags=["Kundli"])
 
-MAX_PER_EMAIL_PER_DAY = 10
+
+# ── Use-case factories ────────────────────────────────────────────────────
+
+
+def _queue_kundli_use_case(
+    repo: KundliRepository = Depends(get_kundli_repository),
+) -> QueueKundliGeneration:
+    return QueueKundliGeneration(repo)
+
+
+def _render_use_case() -> RenderKundliReport:
+    # Construct fresh each call so mock.patch on the module globals here
+    # (build_chart / generate_pdf / load_report_sections) is honoured.
+    return RenderKundliReport(
+        build_chart=build_chart,
+        generate_pdf=generate_pdf,
+        load_report_sections=load_report_sections,
+    )
+
+
+# ── Background worker ────────────────────────────────────────────────────
 
 
 async def _generate_and_email(record_id: ObjectId, req: KundliRequest) -> None:
-    """Background work: calculate chart, render PDF, email it, mark record done.
+    """Background work: chart -> PDF -> email -> mark record done.
 
-    Runs after the HTTP response has already been returned. Any failure is
-    logged to CloudWatch and persisted on the kundli record so it surfaces in
-    the admin dashboard.
+    Kept as a router-level coroutine because FastAPI BackgroundTasks need a
+    callable here, and tests import this name to exercise the success and
+    failure paths directly. The actual business logic lives in
+    `ProcessKundliReport`.
     """
-    db = get_db()
-    try:
-        # Load admin section toggles (free tier = sections where is_paid=False).
-        sections_models = await load_report_sections()
-        free_sections = [
-            s.model_dump() for s in sections_models
-            if s.enabled and not s.is_paid
-        ]
+    # Deferred import so test patches on `app.services.email_service.send_kundli_report`
+    # (the source location) are applied each call.
+    from app.services.email_service import send_kundli_report
 
-        chart_data = build_chart(
-            name=req.name,
-            gender=req.gender,
-            dob=req.dob,
-            tob=req.tob,
-            lat=req.lat,
-            lon=req.lon,
-            place_name=req.place_name,
-        )
-        # Attach user's browser timezone for the PDF printing date
-        chart_data["user_timezone"] = req.timezone or "Asia/Kolkata"
+    repo = MongoKundliRepository(get_db())
+    processor = ProcessKundliReport(
+        kundli_repo=repo,
+        render_use_case=_render_use_case(),
+        send_email=send_kundli_report,
+    )
+    await processor.execute(record_id, req)
 
-        pdf_bytes = generate_pdf(chart_data, sections=free_sections)
 
-        from app.services.email_service import send_kundli_report
-        await send_kundli_report(req.email, req.name, pdf_bytes)
-
-        await db.kundlis.update_one(
-            {"_id": record_id},
-            {"$set": {"chart_data": chart_data, "status": "generated"}},
-        )
-    except Exception as e:
-        traceback.print_exc()
-        await db.kundlis.update_one(
-            {"_id": record_id},
-            {"$set": {"status": "failed", "error": str(e)[:500]}},
-        )
+# ── Endpoints ────────────────────────────────────────────────────────────
 
 
 @router.post("/generate", status_code=202)
-async def generate_kundli(req: KundliRequest, background_tasks: BackgroundTasks):
+async def generate_kundli(
+    req: KundliRequest,
+    background_tasks: BackgroundTasks,
+    use_case: QueueKundliGeneration = Depends(_queue_kundli_use_case),
+):
     """Queue a Kundli report for generation.
 
     Returns 202 Accepted immediately. The actual chart calculation, PDF
-    rendering and email delivery run as a background task. The user receives
-    the report by email when it's ready (typically under a minute).
+    rendering and email delivery run as a background task. The user
+    receives the report by email when it's ready (typically under a minute).
     """
-    db = get_db()
-
-    # Rate limit: max 10 per email per 24h. Counts both pending and completed
-    # records so a user spamming the form can't queue 100 background tasks.
-    since = datetime.now(timezone.utc) - timedelta(hours=24)
-    count = await db.kundlis.count_documents(
-        {"email": req.email, "created_at": {"$gte": since}}
-    )
-    if count >= MAX_PER_EMAIL_PER_DAY:
-        raise HTTPException(
-            status_code=429,
-            detail="You have reached the maximum number of free reports per day. Please try again tomorrow.",
+    record_id = await use_case.execute(req)
+    background_tasks.add_task(_generate_and_email, record_id, req)
+    return {
+        "message": (
+            "Your Kundli report is being generated and will arrive in your "
+            "email within a minute."
         )
-
-    # Insert a pending record up-front so the rate-limit query above includes
-    # in-flight tasks and so admin can see failed runs in the dashboard.
-    record = KundliInDB(
-        name=req.name,
-        gender=req.gender,
-        dob=req.dob,
-        tob=req.tob,
-        lat=req.lat,
-        lon=req.lon,
-        place_name=req.place_name,
-        email=req.email,
-        chart_data={},
-        status="pending",
-    )
-    insert_result = await db.kundlis.insert_one(record.model_dump())
-
-    # Schedule the heavy work to run after the response is sent.
-    background_tasks.add_task(_generate_and_email, insert_result.inserted_id, req)
-
-    return {"message": "Your Kundli report is being generated and will arrive in your email within a minute."}
+    }
 
 
 @router.get("/preview")
@@ -135,32 +129,29 @@ async def preview_kundli(
     after each deploy to see changes immediately.
 
     **Disabled in production.** Only works when APP_ENV is not "production".
-
-    Example:
-      /api/kundli/preview?name=Nandish+Dave&dob=1988-11-11&tob=12:55&lat=21.7333&lon=70.6167
     """
-    import os
     if os.environ.get("APP_ENV", "").lower() == "production":
         raise HTTPException(status_code=404, detail="Not found")
 
     try:
-        sections_models = await load_report_sections()
-        free_sections = [
-            s.model_dump() for s in sections_models
-            if s.enabled and not s.is_paid
-        ]
-
-        chart_data = build_chart(
-            name=name, gender=gender, dob=dob, tob=tob,
-            lat=lat, lon=lon, place_name=place_name,
+        _, pdf_bytes = await _render_use_case().execute(
+            name=name,
+            gender=gender,
+            dob=dob,
+            tob=tob,
+            lat=lat,
+            lon=lon,
+            place_name=place_name,
+            timezone=timezone,
         )
-        chart_data["user_timezone"] = timezone
-        pdf_bytes = generate_pdf(chart_data, sections=free_sections)
-
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"inline; filename=Kundli_Preview_{name.replace(' ', '_')}.pdf"},
+            headers={
+                "Content-Disposition": (
+                    f"inline; filename=Kundli_Preview_{name.replace(' ', '_')}.pdf"
+                )
+            },
         )
     except Exception as e:
         traceback.print_exc()

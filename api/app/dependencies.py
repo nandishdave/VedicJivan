@@ -6,6 +6,10 @@ from app.repositories.booking_repository import (
     BookingRepository,
     MongoBookingRepository,
 )
+from app.repositories.kundli_repository import (
+    KundliRepository,
+    MongoKundliRepository,
+)
 from app.repositories.payment_repository import (
     MongoPaymentRepository,
     PaymentRepository,
@@ -57,3 +61,7 @@ def get_booking_repository() -> BookingRepository:
 
 def get_payment_repository() -> PaymentRepository:
     return MongoPaymentRepository(get_db())
+
+
+def get_kundli_repository() -> KundliRepository:
+    return MongoKundliRepository(get_db())
