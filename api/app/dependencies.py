@@ -22,6 +22,10 @@ from app.repositories.unavailability_repository import (
     MongoUnavailabilityRepository,
     UnavailabilityRepository,
 )
+from app.repositories.user_repository import (
+    MongoUserRepository,
+    UserRepository,
+)
 from app.utils.exceptions import ForbiddenError, UnauthorizedError
 from app.utils.security import decode_token
 
@@ -81,3 +85,7 @@ def get_unavailability_repository() -> UnavailabilityRepository:
 
 def get_settings_repository() -> SettingsRepository:
     return MongoSettingsRepository(get_db())
+
+
+def get_user_repository() -> UserRepository:
+    return MongoUserRepository(get_db())

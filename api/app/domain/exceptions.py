@@ -25,6 +25,10 @@ class AccessDeniedError(DomainError):
     """The actor is not authorised to perform the action on this resource."""
 
 
+class AuthenticationFailedError(DomainError):
+    """The actor failed to authenticate (bad credentials, invalid/expired token)."""
+
+
 class RateLimitExceededError(DomainError):
     """The actor has exceeded a rate limit."""
 

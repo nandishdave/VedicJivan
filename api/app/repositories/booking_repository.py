@@ -74,6 +74,20 @@ class BookingRepository(Protocol):
         since: datetime,
     ) -> int: ...
 
+    async def count_total(self) -> int: ...
+
+    async def count_for_date(self, booking_date: str) -> int: ...
+
+    async def count_upcoming_confirmed(self, from_date: str) -> int: ...
+
+    async def aggregate_status_counts(self) -> dict[str, int]: ...
+
+    async def aggregate_revenue_by_service(self) -> list[dict]: ...
+
+    async def aggregate_daily_counts(
+        self, start_date: str, end_date: str
+    ) -> dict[str, int]: ...
+
 
 # ── Mongo implementation ────────────────────────────────────────────────────
 
@@ -182,3 +196,48 @@ class MongoBookingRepository:
         return await self._bookings.count_documents(
             {"user_email": email, "created_at": {"$gte": since}}
         )
+
+    async def count_total(self) -> int:
+        return await self._bookings.count_documents({})
+
+    async def count_for_date(self, booking_date: str) -> int:
+        return await self._bookings.count_documents({"date": booking_date})
+
+    async def count_upcoming_confirmed(self, from_date: str) -> int:
+        return await self._bookings.count_documents(
+            {"date": {"$gte": from_date}, "status": "confirmed"}
+        )
+
+    async def aggregate_status_counts(self) -> dict[str, int]:
+        pipeline = [{"$group": {"_id": "$status", "count": {"$sum": 1}}}]
+        result: dict[str, int] = {}
+        async for doc in self._bookings.aggregate(pipeline):
+            result[doc["_id"]] = doc["count"]
+        return result
+
+    async def aggregate_revenue_by_service(self) -> list[dict]:
+        pipeline = [
+            {"$match": {"status": {"$in": ["confirmed", "completed"]}}},
+            {
+                "$group": {
+                    "_id": "$service_title",
+                    "count": {"$sum": 1},
+                    "revenue": {"$sum": "$price_inr"},
+                }
+            },
+            {"$sort": {"revenue": -1}},
+        ]
+        return [doc async for doc in self._bookings.aggregate(pipeline)]
+
+    async def aggregate_daily_counts(
+        self, start_date: str, end_date: str
+    ) -> dict[str, int]:
+        pipeline = [
+            {"$match": {"date": {"$gte": start_date, "$lte": end_date}}},
+            {"$group": {"_id": "$date", "count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}},
+        ]
+        result: dict[str, int] = {}
+        async for doc in self._bookings.aggregate(pipeline):
+            result[doc["_id"]] = doc["count"]
+        return result

@@ -8,6 +8,7 @@ from app.config import settings
 from app.database import close_db, connect_db
 from app.domain.exceptions import (
     AccessDeniedError,
+    AuthenticationFailedError,
     DomainError,
     EntityNotFoundError,
     RateLimitExceededError,
@@ -75,6 +76,15 @@ async def _entity_not_found_handler(_req: Request, exc: EntityNotFoundError):
 @app.exception_handler(AccessDeniedError)
 async def _access_denied_handler(_req: Request, exc: AccessDeniedError):
     return JSONResponse(status_code=403, content={"detail": str(exc)})
+
+
+@app.exception_handler(AuthenticationFailedError)
+async def _authentication_failed_handler(_req: Request, exc: AuthenticationFailedError):
+    return JSONResponse(
+        status_code=401,
+        content={"detail": str(exc)},
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 @app.exception_handler(RateLimitExceededError)

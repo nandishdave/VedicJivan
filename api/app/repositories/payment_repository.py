@@ -8,6 +8,7 @@ module that touches `db.payments.*` is a smell.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Protocol
 
 from app.models.payment import PaymentInDB, PaymentStatus
@@ -32,6 +33,14 @@ class PaymentRepository(Protocol):
     async def mark_refunded(self, payment_intent_id: str) -> int: ...
 
     async def list_recent(self, limit: int = 100) -> list[dict]: ...
+
+    async def count_captured(self) -> int: ...
+
+    async def total_captured_amount(self) -> int: ...
+
+    async def aggregate_daily_captured_amount(
+        self, since: datetime
+    ) -> dict[str, int]: ...
 
 
 # ── Mongo implementation ────────────────────────────────────────────────────
@@ -87,3 +96,44 @@ class MongoPaymentRepository:
     async def list_recent(self, limit: int = 100) -> list[dict]:
         cursor = self._payments.find().sort("created_at", -1).limit(limit)
         return [doc async for doc in cursor]
+
+    async def count_captured(self) -> int:
+        return await self._payments.count_documents({"status": "captured"})
+
+    async def total_captured_amount(self) -> int:
+        # Legacy field name `amount_inr` matches the existing aggregation in
+        # routers/admin.py — keep until the data is migrated to `amount`.
+        pipeline = [
+            {"$match": {"status": "captured"}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount_inr"}}},
+        ]
+        result = await self._payments.aggregate(pipeline).to_list(1)
+        return result[0]["total"] if result else 0
+
+    async def aggregate_daily_captured_amount(
+        self, since: datetime
+    ) -> dict[str, int]:
+        pipeline = [
+            {
+                "$match": {
+                    "status": "captured",
+                    "created_at": {"$gte": since},
+                }
+            },
+            {
+                "$group": {
+                    "_id": {
+                        "$dateToString": {
+                            "format": "%Y-%m-%d",
+                            "date": "$created_at",
+                        }
+                    },
+                    "revenue": {"$sum": "$amount_inr"},
+                }
+            },
+            {"$sort": {"_id": 1}},
+        ]
+        result: dict[str, int] = {}
+        async for doc in self._payments.aggregate(pipeline):
+            result[doc["_id"]] = doc["revenue"]
+        return result
