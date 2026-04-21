@@ -91,7 +91,12 @@ resource "aws_iam_user_policy" "deployer_backend" {
           "ecs:UpdateService",
           "ecs:DescribeServices",
           "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition"
+          "ecs:RegisterTaskDefinition",
+          # RunTask + DescribeTasks are for the one-shot migration task
+          # launched in CI before each deploy (see
+          # .github/workflows/deploy-api.yml → "Run MongoDB index migration").
+          "ecs:RunTask",
+          "ecs:DescribeTasks"
         ]
         Resource = "*"
       },
