@@ -2,11 +2,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import SettingsPage from "@/app/admin/settings/page";
 
-const { mockPush, mockGetToken, mockGetSettings, mockUpdateSettings } = vi.hoisted(() => ({
+const {
+  mockPush,
+  mockGetToken,
+  mockGetSettings,
+  mockUpdateSettings,
+  mockGetReportSections,
+  mockUpdateReportSections,
+} = vi.hoisted(() => ({
   mockPush: vi.fn(),
   mockGetToken: vi.fn(),
   mockGetSettings: vi.fn(),
   mockUpdateSettings: vi.fn(),
+  mockGetReportSections: vi.fn(),
+  mockUpdateReportSections: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -23,6 +32,8 @@ vi.mock("@/lib/api", () => ({
   availabilityApi: {
     getSettings: mockGetSettings,
     updateSettings: mockUpdateSettings,
+    getReportSections: mockGetReportSections,
+    updateReportSections: mockUpdateReportSections,
   },
 }));
 
@@ -57,6 +68,11 @@ describe("SettingsPage", () => {
     vi.clearAllMocks();
     cleanup();
     mockGetSettings.mockResolvedValue(DEFAULT_SETTINGS);
+    // The page loads report sections in parallel with settings on mount and
+    // calls updateReportSections on every save. Tests don't assert on the
+    // section list, so an empty array is enough to keep both flows happy.
+    mockGetReportSections.mockResolvedValue([]);
+    mockUpdateReportSections.mockResolvedValue([]);
   });
 
   it("renders page heading", async () => {
