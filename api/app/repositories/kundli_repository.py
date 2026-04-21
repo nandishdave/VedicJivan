@@ -26,6 +26,8 @@ class KundliRepository(Protocol):
 
     async def count_for_email_since(self, email: str, since: datetime) -> int: ...
 
+    async def ensure_indexes(self) -> None: ...
+
 
 # ── Mongo implementation ────────────────────────────────────────────────────
 
@@ -61,4 +63,10 @@ class MongoKundliRepository:
     async def count_for_email_since(self, email: str, since: datetime) -> int:
         return await self._kundlis.count_documents(
             {"email": email, "created_at": {"$gte": since}}
+        )
+
+    async def ensure_indexes(self) -> None:
+        # {email, created_at desc} — per-email rate-limit count_documents lookup.
+        await self._kundlis.create_index(
+            [("email", 1), ("created_at", -1)]
         )

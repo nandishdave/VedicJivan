@@ -30,6 +30,7 @@ from app.models.booking import BookingStatus
 from app.models.payment import PaymentInDB
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.payment_repository import PaymentRepository
+from app.repositories.processed_event_repository import ProcessedEventRepository
 
 logger = get_logger(__name__)
 
@@ -136,6 +137,7 @@ class ProcessStripeWebhook:
         self,
         payment_repo: PaymentRepository,
         booking_repo: BookingRepository,
+        processed_event_repo: ProcessedEventRepository,
         db: Any,
         webhook_secret: str,
         send_confirmation,
@@ -144,6 +146,7 @@ class ProcessStripeWebhook:
     ) -> None:
         self._payment_repo = payment_repo
         self._booking_repo = booking_repo
+        self._processed_event_repo = processed_event_repo
         self._db = db
         self._webhook_secret = webhook_secret
         self._send_confirmation = send_confirmation
@@ -158,7 +161,20 @@ class ProcessStripeWebhook:
         except stripe.SignatureVerificationError:
             raise InvalidWebhookSignatureError("Invalid webhook signature")
 
+        event_id = event["id"]
         event_type = event["type"]
+
+        # Record-before dedupe: any redelivery of the same event id is a
+        # silent no-op. The repo's atomic insert + DuplicateKeyError catch
+        # is race-safe across two concurrent retries hitting this task.
+        if not await self._processed_event_repo.mark_processed(event_id, event_type):
+            logger.info(
+                "Stripe event %s (%s) already processed — skipping",
+                event_id,
+                event_type,
+            )
+            return
+
         obj = event["data"]["object"]
 
         if event_type == "checkout.session.completed":

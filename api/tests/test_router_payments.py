@@ -25,8 +25,9 @@ SAMPLE_BOOKING = {
 }
 
 
-def _make_stripe_event(event_type: str, data_object: dict) -> dict:
+def _make_stripe_event(event_type: str, data_object: dict, event_id: str | None = None) -> dict:
     return {
+        "id": event_id or f"evt_test_{event_type.replace('.', '_')}",
         "type": event_type,
         "data": {"object": data_object},
     }
@@ -423,6 +424,145 @@ async def test_webhook_rejects_missing_signature_header(client, mock_db):
         headers={"Content-Type": "application/json"},
     )
     assert resp.status_code == 400
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Stripe webhook idempotency
+# ───────────────────────────────────────────────────────────────────────────
+# Stripe redelivers the same event id on network timeout / scheduled retry /
+# manual replay. Without dedupe, every side effect re-fires (duplicate emails,
+# duplicate calendar events, duplicate booking confirmations).
+#
+# The dedupe primitive lives in `ProcessedEventRepository.mark_processed`:
+# an atomic insert keyed by `_id = event["id"]`. The second insert raises
+# `DuplicateKeyError` → returns False → use case skips dispatch.
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def _duplicate_key_error():
+    """Build a Mongo DuplicateKeyError matching what Motor raises on the
+    second insert with the same `_id`."""
+    from pymongo.errors import DuplicateKeyError
+    return DuplicateKeyError("E11000 duplicate key error", {"code": 11000})
+
+
+async def test_webhook_dedupes_repeated_checkout_completed(client, mock_db):
+    """Same `checkout.session.completed` event id sent twice: side effects
+    fire on the first delivery only. Second delivery returns 200 silently."""
+    from tests.conftest import BOOKING_ID
+
+    # Booking lookup must succeed so the email/calendar branch is reached on
+    # the first delivery (otherwise it short-circuits before any side effect).
+    mock_db.bookings.find_one = AsyncMock(return_value={
+        **SAMPLE_BOOKING,
+        "_id": BOOKING_ID,
+    })
+
+    # Second insert raises DuplicateKeyError → mark_processed returns False.
+    mock_db.stripe_events.insert_one = AsyncMock(side_effect=[
+        MagicMock(inserted_id="evt_dup_completed"),
+        _duplicate_key_error(),
+    ])
+
+    payload = json.dumps({
+        "id": "evt_dup_completed",
+        "object": "event",
+        "type": "checkout.session.completed",
+        "data": {"object": {
+            "id": "cs_dup_completed",
+            "payment_intent": "pi_dup_completed",
+            "metadata": {"booking_id": str(BOOKING_ID)},
+        }},
+    }).encode()
+    sig = _sign_stripe_payload(payload, "whsec_test_fake_secret")
+    headers = {"Content-Type": "application/json", "stripe-signature": sig}
+
+    with patch(
+        "app.routers.payments.send_booking_confirmation", new_callable=AsyncMock
+    ) as mock_send_conf, patch(
+        "app.routers.payments.send_admin_booking_notification", new_callable=AsyncMock
+    ) as mock_send_admin, patch(
+        "app.routers.payments.create_booking_event", return_value="gcal_evt_1"
+    ) as mock_calendar:
+        resp1 = await client.post("/api/payments/webhook", content=payload, headers=headers)
+        resp2 = await client.post("/api/payments/webhook", content=payload, headers=headers)
+
+    assert resp1.status_code == 200
+    assert resp2.status_code == 200
+
+    # Two attempts to record the event → only the first inserts.
+    assert mock_db.stripe_events.insert_one.call_count == 2
+
+    # mark_captured fires once on `payments.update_one` against session id.
+    captured_calls = [
+        c for c in mock_db.payments.update_one.call_args_list
+        if c.args and c.args[0] == {"stripe_session_id": "cs_dup_completed"}
+    ]
+    assert len(captured_calls) == 1
+
+    # Side effects fire exactly once each.
+    assert mock_send_conf.call_count == 1
+    assert mock_send_admin.call_count == 1
+    assert mock_calendar.call_count == 1
+
+
+async def test_webhook_dedupes_repeated_session_expired(client, mock_db):
+    """Same `checkout.session.expired` event id sent twice → mark_expired
+    fires once."""
+    mock_db.stripe_events.insert_one = AsyncMock(side_effect=[
+        MagicMock(inserted_id="evt_dup_expired"),
+        _duplicate_key_error(),
+    ])
+
+    payload = json.dumps({
+        "id": "evt_dup_expired",
+        "object": "event",
+        "type": "checkout.session.expired",
+        "data": {"object": {"id": "cs_dup_expired"}},
+    }).encode()
+    sig = _sign_stripe_payload(payload, "whsec_test_fake_secret")
+    headers = {"Content-Type": "application/json", "stripe-signature": sig}
+
+    resp1 = await client.post("/api/payments/webhook", content=payload, headers=headers)
+    resp2 = await client.post("/api/payments/webhook", content=payload, headers=headers)
+
+    assert resp1.status_code == 200
+    assert resp2.status_code == 200
+
+    expired_calls = [
+        c for c in mock_db.payments.update_one.call_args_list
+        if c.args and c.args[0] == {"stripe_session_id": "cs_dup_expired"}
+    ]
+    assert len(expired_calls) == 1
+
+
+async def test_webhook_dedupes_repeated_charge_refunded(client, mock_db):
+    """Same `charge.refunded` event id sent twice → mark_refunded fires once."""
+    mock_db.stripe_events.insert_one = AsyncMock(side_effect=[
+        MagicMock(inserted_id="evt_dup_refunded"),
+        _duplicate_key_error(),
+    ])
+
+    payload = json.dumps({
+        "id": "evt_dup_refunded",
+        "object": "event",
+        "type": "charge.refunded",
+        "data": {"object": {"id": "ch_dup", "payment_intent": "pi_dup_refunded"}},
+    }).encode()
+    sig = _sign_stripe_payload(payload, "whsec_test_fake_secret")
+    headers = {"Content-Type": "application/json", "stripe-signature": sig}
+
+    resp1 = await client.post("/api/payments/webhook", content=payload, headers=headers)
+    resp2 = await client.post("/api/payments/webhook", content=payload, headers=headers)
+
+    assert resp1.status_code == 200
+    assert resp2.status_code == 200
+
+    refunded_calls = [
+        c for c in mock_db.payments.update_one.call_args_list
+        if c.args and c.args[0] == {"stripe_payment_intent_id": "pi_dup_refunded"}
+    ]
+    assert len(refunded_calls) == 1
 
 
 # ═══════════════════════════════════════════════════════════════════════════

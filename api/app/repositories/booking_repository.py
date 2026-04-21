@@ -89,6 +89,8 @@ class BookingRepository(Protocol):
         self, start_date: str, end_date: str
     ) -> dict[str, int]: ...
 
+    async def ensure_indexes(self) -> None: ...
+
 
 # ── Mongo implementation ────────────────────────────────────────────────────
 
@@ -244,3 +246,13 @@ class MongoBookingRepository:
         async for doc in self._bookings.aggregate(pipeline):
             result[doc["_id"]] = doc["count"]
         return result
+
+    async def ensure_indexes(self) -> None:
+        # {date, status} — active-on-date lookups (slot conflicts).
+        await self._bookings.create_index([("date", 1), ("status", 1)])
+        # {user_email, created_at desc} — user's bookings list.
+        await self._bookings.create_index(
+            [("user_email", 1), ("created_at", -1)]
+        )
+        # {status, created_at} — admin status counts + aggregations.
+        await self._bookings.create_index([("status", 1), ("created_at", 1)])

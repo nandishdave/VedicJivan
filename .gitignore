@@ -60,7 +60,7 @@ __pycache__/
 api/.env
 api/.coverage
 nul
-scripts/
+/scripts/
 
 # claude
 .claude/

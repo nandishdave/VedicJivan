@@ -28,6 +28,8 @@ class UnavailabilityRepository(Protocol):
 
     async def delete_by_id(self, block_id: str | ObjectId) -> int: ...
 
+    async def ensure_indexes(self) -> None: ...
+
 
 # ── Mongo implementation ────────────────────────────────────────────────────
 
@@ -79,3 +81,7 @@ class MongoUnavailabilityRepository:
             return 0
         result = await self._coll.delete_one({"_id": oid})
         return result.deleted_count
+
+    async def ensure_indexes(self) -> None:
+        # {date, is_holiday} — slot/holiday lookup on a date.
+        await self._coll.create_index([("date", 1), ("is_holiday", 1)])

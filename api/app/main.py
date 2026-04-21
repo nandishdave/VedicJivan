@@ -42,6 +42,10 @@ async def lifespan(app: FastAPI):
         await repo.seed_if_empty(DEFAULT_SERVICES)
     except Exception:  # noqa: BLE001 — never block startup on seed failure.
         pass
+    # Index creation lives in `scripts/migrate_indexes.py` (run by CI as
+    # an `ecs run-task` step before each deploy). The API process must not
+    # be the one to create indexes — building one against a large collection
+    # blocks reads on a foreground build.
     yield
     await close_db()
 

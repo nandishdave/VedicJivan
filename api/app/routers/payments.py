@@ -16,6 +16,7 @@ from app.database import get_db
 from app.dependencies import (
     get_booking_repository,
     get_payment_repository,
+    get_processed_event_repository,
     require_admin,
 )
 from app.models.payment import (
@@ -24,6 +25,7 @@ from app.models.payment import (
 )
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.payment_repository import PaymentRepository
+from app.repositories.processed_event_repository import ProcessedEventRepository
 from app.services.calendar_service import create_booking_event
 from app.services.email_service import (
     send_admin_booking_notification,
@@ -54,10 +56,14 @@ def _create_checkout_session_use_case(
 def _process_stripe_webhook_use_case(
     payment_repo: PaymentRepository = Depends(get_payment_repository),
     booking_repo: BookingRepository = Depends(get_booking_repository),
+    processed_event_repo: ProcessedEventRepository = Depends(
+        get_processed_event_repository
+    ),
 ) -> ProcessStripeWebhook:
     return ProcessStripeWebhook(
         payment_repo=payment_repo,
         booking_repo=booking_repo,
+        processed_event_repo=processed_event_repo,
         db=get_db(),
         webhook_secret=settings.STRIPE_WEBHOOK_SECRET,
         send_confirmation=send_booking_confirmation,

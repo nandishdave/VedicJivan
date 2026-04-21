@@ -14,6 +14,10 @@ from app.repositories.payment_repository import (
     MongoPaymentRepository,
     PaymentRepository,
 )
+from app.repositories.processed_event_repository import (
+    MongoProcessedEventRepository,
+    ProcessedEventRepository,
+)
 from app.repositories.settings_repository import (
     MongoSettingsRepository,
     SettingsRepository,
@@ -77,6 +81,10 @@ def get_booking_repository() -> BookingRepository:
 
 def get_payment_repository() -> PaymentRepository:
     return MongoPaymentRepository(get_db())
+
+
+def get_processed_event_repository() -> ProcessedEventRepository:
+    return MongoProcessedEventRepository(get_db())
 
 
 def get_kundli_repository() -> KundliRepository:

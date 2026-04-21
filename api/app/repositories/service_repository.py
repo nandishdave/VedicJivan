@@ -22,6 +22,8 @@ class ServiceRepository(Protocol):
 
     async def seed_if_empty(self, defaults: list[Service]) -> int: ...
 
+    async def ensure_indexes(self) -> None: ...
+
 
 # ── Mongo implementation ────────────────────────────────────────────────────
 
@@ -94,3 +96,7 @@ class MongoServiceRepository:
             return 0
         result = await self._coll.insert_many(docs)
         return len(result.inserted_ids)
+
+    async def ensure_indexes(self) -> None:
+        # UNIQUE on slug — natural key, looked up on every booking-create.
+        await self._coll.create_index([("slug", 1)], unique=True)

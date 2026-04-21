@@ -57,16 +57,81 @@ jobs:
             ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
             ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:latest
 
-      - name: Force new ECS deployment
+      - name: Resolve ECS cluster/service names
+        id: ecs
         run: |
           if [[ "${{ steps.env.outputs.env }}" == "prod" ]]; then
-            ECS_CLUSTER="${{ secrets.ECS_CLUSTER }}"
-            ECS_SERVICE="${{ secrets.ECS_SERVICE }}"
+            echo "cluster=${{ secrets.ECS_CLUSTER }}" >> "$GITHUB_OUTPUT"
+            echo "service=${{ secrets.ECS_SERVICE }}" >> "$GITHUB_OUTPUT"
           else
-            ECS_CLUSTER="${{ secrets.TEST_ECS_CLUSTER }}"
-            ECS_SERVICE="${{ secrets.TEST_ECS_SERVICE }}"
+            echo "cluster=${{ secrets.TEST_ECS_CLUSTER }}" >> "$GITHUB_OUTPUT"
+            echo "service=${{ secrets.TEST_ECS_SERVICE }}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Run MongoDB index migration
+        # One-shot ECS task using the freshly-pushed image. Inherits the
+        # service's VPC + security group so Atlas allowlist already covers us.
+        # `aws ecs wait tasks-stopped` blocks until the task exits; non-zero
+        # container exit code fails the job, aborting the deploy before the
+        # service swap happens.
+        run: |
+          CLUSTER="${{ steps.ecs.outputs.cluster }}"
+          SERVICE="${{ steps.ecs.outputs.service }}"
+
+          # Pull the current task-definition + network config from the
+          # running service. Avoids maintaining separate secrets.
+          DESCRIBE=$(aws ecs describe-services \
+            --cluster "$CLUSTER" --services "$SERVICE" \
+            --query 'services[0]' --output json)
+
+          TASK_DEF=$(echo "$DESCRIBE" | jq -r '.taskDefinition')
+          SUBNETS=$(echo "$DESCRIBE" \
+            | jq -r '.networkConfiguration.awsvpcConfiguration.subnets | join(",")')
+          SECURITY_GROUPS=$(echo "$DESCRIBE" \
+            | jq -r '.networkConfiguration.awsvpcConfiguration.securityGroups | join(",")')
+          ASSIGN_PUBLIC_IP=$(echo "$DESCRIBE" \
+            | jq -r '.networkConfiguration.awsvpcConfiguration.assignPublicIp')
+
+          CONTAINER_NAME=$(aws ecs describe-task-definition \
+            --task-definition "$TASK_DEF" \
+            --query 'taskDefinition.containerDefinitions[0].name' --output text)
+
+          OVERRIDES=$(jq -nc \
+            --arg name "$CONTAINER_NAME" \
+            '{containerOverrides:[{name:$name,command:["python","-m","scripts.migrate_indexes"]}]}')
+
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --task-definition "$TASK_DEF" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUPS],assignPublicIp=$ASSIGN_PUBLIC_IP}" \
+            --overrides "$OVERRIDES" \
+            --query 'tasks[0].taskArn' --output text)
+
+          if [[ -z "$TASK_ARN" || "$TASK_ARN" == "None" ]]; then
+            echo "::error::Failed to start migration task"
+            exit 1
+          fi
+
+          echo "Migration task started: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          REASON=$(aws ecs describe-tasks \
+            --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' --output text)
+
+          echo "Migration exit code: $EXIT_CODE (reason: $REASON)"
+          if [[ "$EXIT_CODE" != "0" ]]; then
+            echo "::error::Index migration failed — aborting deploy"
+            exit 1
+          fi
+
+      - name: Force new ECS deployment
+        run: |
           aws ecs update-service \
-            --cluster $ECS_CLUSTER \
-            --service $ECS_SERVICE \
+            --cluster "${{ steps.ecs.outputs.cluster }}" \
+            --service "${{ steps.ecs.outputs.service }}" \
             --force-new-deployment

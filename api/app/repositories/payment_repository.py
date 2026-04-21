@@ -42,6 +42,8 @@ class PaymentRepository(Protocol):
         self, since: datetime
     ) -> dict[str, int]: ...
 
+    async def ensure_indexes(self) -> None: ...
+
 
 # ── Mongo implementation ────────────────────────────────────────────────────
 
@@ -137,3 +139,15 @@ class MongoPaymentRepository:
         async for doc in self._payments.aggregate(pipeline):
             result[doc["_id"]] = doc["revenue"]
         return result
+
+    async def ensure_indexes(self) -> None:
+        # UNIQUE on stripe_session_id — every webhook dispatch keys on it.
+        await self._payments.create_index(
+            [("stripe_session_id", 1)], unique=True
+        )
+        # stripe_payment_intent_id — charge.refunded handler lookup.
+        await self._payments.create_index([("stripe_payment_intent_id", 1)])
+        # {status, created_at desc} — admin recent payments + status counts.
+        await self._payments.create_index(
+            [("status", 1), ("created_at", -1)]
+        )

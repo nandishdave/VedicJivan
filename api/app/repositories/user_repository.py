@@ -19,6 +19,8 @@ class UserRepository(Protocol):
 
     async def count(self) -> int: ...
 
+    async def ensure_indexes(self) -> None: ...
+
 
 # ── Mongo implementation ────────────────────────────────────────────────────
 
@@ -55,3 +57,7 @@ class MongoUserRepository:
 
     async def count(self) -> int:
         return await self._users.count_documents({})
+
+    async def ensure_indexes(self) -> None:
+        # UNIQUE on email — login lookup + duplicate-account prevention.
+        await self._users.create_index([("email", 1)], unique=True)

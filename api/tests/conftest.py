@@ -130,6 +130,7 @@ def _make_mock_collection():
     col.count_documents = AsyncMock(return_value=0)
     col.find = MagicMock(return_value=MockCursor([]))
     col.aggregate = MagicMock(return_value=MockAggregationCursor([]))
+    col.create_index = AsyncMock(return_value="mock_index_name")
     return col
 
 
@@ -145,6 +146,7 @@ def mock_db():
     db.settings = _make_mock_collection()
     db.kundlis = _make_mock_collection()
     db.services = _make_mock_collection()
+    db.stripe_events = _make_mock_collection()
 
     # Wire `services.find_one({"slug": ...})` to the in-code defaults so
     # booking-create tests don't have to mock pricing lookups individually.
