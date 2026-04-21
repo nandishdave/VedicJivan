@@ -9,6 +9,10 @@ export interface Service {
   icon: string;
   image: string;
   category: "consultation" | "report" | "guidance" | "wellness";
+  /** True if this service has no scheduled time slot (a one-shot deliverable
+   * like a Kundli report or matchmaking analysis). The booking wizard skips
+   * the date + time steps when this is set. */
+  isReport?: boolean;
   features: string[];
   process: { step: number; title: string; description: string }[];
   faqs: { question: string; answer: string }[];
@@ -150,6 +154,7 @@ export const services: Service[] = [
   {
     slug: "premium-kundli",
     title: "Premium Kundli Report",
+    isReport: true,
     image: "https://images.unsplash.com/photo-1533294455009-a77b7557d2d1?w=800&q=80",
     shortDescription:
       "Comprehensive 40+ page personalized Kundli report covering all aspects of your life.",
@@ -218,6 +223,7 @@ export const services: Service[] = [
   {
     slug: "numerology-report",
     title: "Numerology Report",
+    isReport: true,
     image: "https://images.unsplash.com/photo-1561148493-89acae53e6a1?w=800&q=80",
     shortDescription:
       "Discover the power of numbers in your life. Detailed numerology analysis based on your name and birth date.",
@@ -352,6 +358,7 @@ export const services: Service[] = [
   {
     slug: "matchmaking",
     title: "Kundli Matching",
+    isReport: true,
     image: "https://images.unsplash.com/photo-1583878545126-2f1ca0142714?w=800&q=80",
     shortDescription:
       "Comprehensive compatibility analysis for marriage. Detailed Guna Milan and Mangal Dosha check.",
