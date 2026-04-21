@@ -22,6 +22,10 @@ from app.repositories.unavailability_repository import (
     MongoUnavailabilityRepository,
     UnavailabilityRepository,
 )
+from app.repositories.service_repository import (
+    MongoServiceRepository,
+    ServiceRepository,
+)
 from app.repositories.user_repository import (
     MongoUserRepository,
     UserRepository,
@@ -89,3 +93,7 @@ def get_settings_repository() -> SettingsRepository:
 
 def get_user_repository() -> UserRepository:
     return MongoUserRepository(get_db())
+
+
+def get_service_repository() -> ServiceRepository:
+    return MongoServiceRepository(get_db())

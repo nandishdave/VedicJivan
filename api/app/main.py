@@ -14,7 +14,18 @@ from app.domain.exceptions import (
     RateLimitExceededError,
 )
 from app.infrastructure.logging import configure_root_logging
-from app.routers import admin, auth, availability, bookings, internal, kundli, payments
+from app.repositories.service_repository import MongoServiceRepository
+from app.routers import (
+    admin,
+    auth,
+    availability,
+    bookings,
+    internal,
+    kundli,
+    payments,
+    services,
+)
+from app.services.default_services import DEFAULT_SERVICES
 
 configure_root_logging()
 
@@ -22,6 +33,15 @@ configure_root_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_db()
+    # Seed the services catalogue from in-code defaults if empty.
+    # Idempotent — boots are cheap once seeded.
+    try:
+        from app.database import get_db
+
+        repo = MongoServiceRepository(get_db())
+        await repo.seed_if_empty(DEFAULT_SERVICES)
+    except Exception:  # noqa: BLE001 — never block startup on seed failure.
+        pass
     yield
     await close_db()
 
@@ -56,6 +76,7 @@ app.include_router(payments.router)
 app.include_router(admin.router)
 app.include_router(internal.router)
 app.include_router(kundli.router)
+app.include_router(services.router)
 
 
 @app.get("/api/health")

@@ -17,6 +17,7 @@ from app.database import get_db
 from app.dependencies import (
     get_booking_repository,
     get_current_user,
+    get_service_repository,
     require_admin,
 )
 from app.models.booking import (
@@ -27,6 +28,7 @@ from app.models.booking import (
     BookingStatusUpdate,
 )
 from app.repositories.booking_repository import BookingRepository
+from app.repositories.service_repository import ServiceRepository
 from app.services.email_service import send_booking_rescheduled
 from app.use_cases.bookings import (
     CancelBooking,
@@ -38,58 +40,21 @@ from app.use_cases.bookings import (
     ResumeBooking,
     SetBookingStatus,
 )
-from app.utils.exceptions import BadRequestError
+from app.use_cases.services import GetServicePrice
 
 router = APIRouter(prefix="/api/bookings", tags=["Bookings"])
 
 
-# ── Service pricing (TODO Phase 4: move to MongoDB `services` collection) ──
-SERVICE_PRICES = {
-    "call-consultation": {"30": 1999, "45": 2499, "60": 2999},
-    "video-consultation": {"30": 2499, "45": 2999, "60": 3999},
-    "premium-kundli": {"0": 4999},
-    "numerology-report": {"0": 1499},
-    "vastu-consultation": {"30": 2499, "45": 2999, "60": 3499},
-    "matchmaking": {"0": 2499},
-    "astrological-consulting": {"30": 2499, "45": 2999, "60": 3499},
-    "personal-growth-coaching": {"30": 3499, "45": 3999, "60": 4999},
-    "therapeutic-healing": {"45": 4499, "60": 4999, "75": 5999},
-    "test-payment": {"30": 100},
-}
-
-SERVICE_PRICES_EUR = {
-    "call-consultation": {"30": 29, "45": 35, "60": 39},
-    "video-consultation": {"30": 35, "45": 39, "60": 49},
-    "premium-kundli": {"0": 59},
-    "numerology-report": {"0": 19},
-    "vastu-consultation": {"30": 35, "45": 39, "60": 45},
-    "matchmaking": {"0": 35},
-    "astrological-consulting": {"30": 35, "45": 39, "60": 45},
-    "personal-growth-coaching": {"30": 45, "45": 52, "60": 59},
-    "therapeutic-healing": {"45": 52, "60": 59, "75": 69},
-    "test-payment": {"30": 1},
-}
-
-
-def get_price(service_slug: str, duration_minutes: int) -> tuple[int, int]:
-    """Return (price_inr, price_eur) for a service/duration."""
-    prices_inr = SERVICE_PRICES.get(service_slug)
-    prices_eur = SERVICE_PRICES_EUR.get(service_slug)
-    if not prices_inr or not prices_eur:
-        raise BadRequestError(f"Unknown service: {service_slug}")
-
-    key = str(duration_minutes)
-    if key not in prices_inr:
-        available = ", ".join(f"{k} min" for k in prices_inr.keys() if k != "0")
-        if "0" in prices_inr:
-            return prices_inr["0"], prices_eur["0"]
-        raise BadRequestError(
-            f"Duration {duration_minutes} min not available for this service. Options: {available}"
-        )
-    return prices_inr[key], prices_eur[key]
-
-
 # Back-compat shims — tests import these names from this module.
+# Pricing now lives in `app.services.default_services` (defaults / seed) and
+# `app.use_cases.services.GetServicePrice` (DB-backed runtime path). The
+# names below are re-exported so the existing pricing unit tests keep
+# working unchanged.
+from app.services.default_services import (  # noqa: E402,F401
+    SERVICE_PRICES,
+    SERVICE_PRICES_EUR,
+    get_price,
+)
 from app.utils.time_helpers import ranges_overlap as _overlaps  # noqa: E402,F401
 from app.utils.time_helpers import time_to_minutes as _time_to_minutes  # noqa: E402,F401
 
@@ -102,8 +67,10 @@ from app.utils.time_helpers import time_to_minutes as _time_to_minutes  # noqa: 
 
 def _create_booking_use_case(
     repo: BookingRepository = Depends(get_booking_repository),
+    service_repo: ServiceRepository = Depends(get_service_repository),
 ) -> CreateBooking:
-    return CreateBooking(repo, get_db(), get_price)
+    pricing = GetServicePrice(service_repo)
+    return CreateBooking(repo, get_db(), pricing.execute)
 
 
 def _list_bookings_use_case(

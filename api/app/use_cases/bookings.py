@@ -80,7 +80,10 @@ class CreateBooking:
         self._pricing = pricing  # callable: (slug, duration) -> (inr, eur)
 
     async def execute(self, data: BookingCreate) -> dict:
-        price_inr, price_eur = self._pricing(data.service_slug, data.duration_minutes)
+        price_inr, price_eur = await self._pricing(
+            service_slug=data.service_slug,
+            duration_minutes=data.duration_minutes,
+        )
 
         # Slot validation (skipped for reports — duration_minutes == 0)
         await validate_slot(

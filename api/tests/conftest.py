@@ -144,6 +144,23 @@ def mock_db():
     db.availability = _make_mock_collection()
     db.settings = _make_mock_collection()
     db.kundlis = _make_mock_collection()
+    db.services = _make_mock_collection()
+
+    # Wire `services.find_one({"slug": ...})` to the in-code defaults so
+    # booking-create tests don't have to mock pricing lookups individually.
+    from app.services.default_services import DEFAULT_SERVICES
+
+    async def _find_service(query):
+        if isinstance(query, dict) and "slug" in query:
+            slug = query["slug"]
+            for s in DEFAULT_SERVICES:
+                if s.slug == slug:
+                    doc = s.model_dump()
+                    doc["_id"] = ObjectId()
+                    return doc
+        return None
+
+    db.services.find_one = AsyncMock(side_effect=_find_service)
 
     with patch("app.database.db", db), patch("app.database.get_db", return_value=db):
         yield db
