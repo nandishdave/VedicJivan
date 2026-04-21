@@ -192,7 +192,11 @@ class ProcessStripeWebhook:
         if not booking:
             return
 
-        # Slot booking — availability collection has no repository yet (TODO Phase 3+)
+        # Slot-booked flag on the legacy `availability` collection. This is a
+        # different collection from `unavailability` (the admin holiday/block
+        # store, which does have a repository). The schema here predates the
+        # clean-architecture pass and is kept for back-compat with the
+        # frontend availability lookup until the slots are unified.
         await self._db.availability.update_one(
             {"date": booking["date"], "slots.start": booking["time_slot"]},
             {"$set": {"slots.$.booked": True}},

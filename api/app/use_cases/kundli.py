@@ -26,10 +26,6 @@ from app.repositories.kundli_repository import KundliRepository
 
 logger = get_logger(__name__)
 
-# Back-compat re-exports for tests that imported the in-module constants.
-DEFAULT_MAX_PER_EMAIL_PER_DAY = settings.MAX_KUNDLI_PER_EMAIL_PER_DAY
-_RATE_LIMIT_WINDOW_HOURS = settings.KUNDLI_RATE_LIMIT_WINDOW_HOURS
-
 
 # ── QueueKundliGeneration ──────────────────────────────────────────────────
 

@@ -9,9 +9,6 @@ from datetime import datetime, timedelta
 
 from app.config import settings
 
-# Back-compat re-export. Canonical source: settings.SLOT_DURATION_MINUTES.
-SLOT_DURATION_MINUTES = settings.SLOT_DURATION_MINUTES
-
 
 def generate_30min_slots(
     open_time: str = "00:00",

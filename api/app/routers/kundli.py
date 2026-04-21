@@ -15,7 +15,6 @@ This module is intentionally thin — every business rule (rate limit,
 from __future__ import annotations
 
 import os
-import traceback
 
 from bson import ObjectId
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
@@ -23,6 +22,7 @@ from fastapi.responses import Response
 
 from app.database import get_db
 from app.dependencies import get_kundli_repository
+from app.infrastructure.logging import get_logger
 from app.models.kundli import KundliRequest
 # These imports are kept at module scope on purpose: tests patch them as
 # `app.routers.kundli.build_chart` / `generate_pdf` / `load_report_sections`,
@@ -39,6 +39,8 @@ from app.use_cases.kundli import (
     QueueKundliGeneration,
     RenderKundliReport,
 )
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/kundli", tags=["Kundli"])
 
@@ -154,5 +156,5 @@ async def preview_kundli(
             },
         )
     except Exception as e:
-        traceback.print_exc()
+        logger.exception("Kundli preview failed")
         raise HTTPException(status_code=500, detail=f"Preview failed: {str(e)[:200]}")
