@@ -1017,121 +1017,8 @@ def _calc_varga_sign(sign: int, degree: float, chart_type: str) -> int:
 
 
 # ── Antardasha (Sub-periods) ─────────────────────────────────────────────────
-
-def calc_antardasha(dashas: list[dict], dob: str | None = None, tob: str | None = None) -> list[dict]:
-    """Calculate Antardasha (sub-periods) for each Mahadasha.
-
-    Uses the classical Parashara approach (Convention A, also used by Astrosage
-    and Jagannatha Hora): each antardasha runs its FULL proportional duration
-    `md_full × ad_planet_yr / 120` regardless of whether the parent MD is
-    partial. For the first MD (which is partially elapsed at birth) the actual
-    MD start is computed as `birth_dt - elapsed_before_birth` (sub-day
-    precision when `tob` is supplied), and all antardashas run from there
-    with their full durations. The first antardasha may therefore end before
-    birth — expected and matches Astrosage/Jagannatha Hora.
-    """
-    # When dob is supplied we can chain ALL MD starts from birth_dt instead
-    # of relying on the displayed start date string (which has lost sub-day
-    # precision). This keeps every AD boundary aligned with birth-time math.
-    birth_dt = _birth_datetime(dob, tob) if dob else None
-
-    result = []
-    cumulative_birth_days = 0.0  # days from birth to current MD's actual start
-    for md_idx, dasha in enumerate(dashas):
-        planet = dasha["planet"]
-        md_full_years = DASHA_YEARS[planet]
-        md_partial_years = dasha["years"]
-
-        # actual_md_start_dt: precise datetime for this MD's actual cycle start.
-        if birth_dt is not None:
-            if md_idx == 0:
-                # First MD started before birth by `elapsed_before` years.
-                elapsed_before = max(0.0, md_full_years - md_partial_years)
-                actual_md_start_dt = birth_dt - timedelta(days=elapsed_before * _VIMSHOTTARI_DAYS_PER_YEAR)
-                cumulative_birth_days = -elapsed_before * _VIMSHOTTARI_DAYS_PER_YEAR
-            else:
-                actual_md_start_dt = birth_dt + timedelta(days=cumulative_birth_days)
-            cumulative_birth_days += md_full_years * _VIMSHOTTARI_DAYS_PER_YEAR
-        else:
-            # Legacy fallback: no birth_dt, use date-only math from displayed start.
-            md_displayed_start = date.fromisoformat(dasha["start_date"])
-            elapsed_before = max(0.0, md_full_years - md_partial_years)
-            actual_md_start_dt = datetime.combine(
-                md_displayed_start - timedelta(days=int(round(elapsed_before * _VIMSHOTTARI_DAYS_PER_YEAR))),
-                time(0),
-            )
-
-        lord_idx = DASHA_SEQUENCE.index(planet)
-        sub_periods = []
-        cumulative_days = 0.0
-        for i in range(9):
-            ad_planet = DASHA_SEQUENCE[(lord_idx + i) % 9]
-            ad_years = (md_full_years * DASHA_YEARS[ad_planet]) / 120
-            start_dt = actual_md_start_dt + timedelta(days=cumulative_days)
-            cumulative_days += ad_years * _VIMSHOTTARI_DAYS_PER_YEAR
-            end_dt = actual_md_start_dt + timedelta(days=cumulative_days)
-            sub_periods.append({
-                "planet": ad_planet,
-                "start_date": start_dt.date().isoformat(),
-                "end_date": end_dt.date().isoformat(),
-                "years": round(ad_years, 2),
-            })
-
-        result.append({
-            "mahadasha": planet,
-            "mahadasha_years": md_full_years,
-            "start_date": dasha["start_date"],
-            "end_date": dasha["end_date"],
-            "antardashas": sub_periods,
-        })
-    return result
-
-
-def calc_pratyantar(antardasha_data: list[dict], current_md_planet: str | None = None) -> list[dict]:
-    """Calculate Pratyantar Dasha (3rd-level sub-sub-periods) for each Antardasha.
-
-    Same proportional formula as Antardasha but one level deeper:
-    PD duration = (AD_years × planet_years) / 120.
-
-    Uses datetime-based accumulation from each AD's start so sub-day precision
-    is preserved across the chain of pratyantars (no per-step day rounding).
-
-    If current_md_planet is provided, only computes Pratyantars for that
-    Mahadasha (keeps the report from bloating to 46+ pages of tables).
-    """
-    result = []
-    for md in antardasha_data:
-        if current_md_planet and md["mahadasha"] != current_md_planet:
-            continue
-        for ad in md["antardashas"]:
-            ad_planet = ad["planet"]
-            ad_years = ad["years"]
-            ad_start_dt = datetime.combine(date.fromisoformat(ad["start_date"]), time(0))
-            lord_idx = DASHA_SEQUENCE.index(ad_planet)
-
-            sub_periods = []
-            cumulative_days = 0.0
-            for i in range(9):
-                pd_planet = DASHA_SEQUENCE[(lord_idx + i) % 9]
-                pd_years = (ad_years * DASHA_YEARS[pd_planet]) / 120
-                pd_start_dt = ad_start_dt + timedelta(days=cumulative_days)
-                cumulative_days += pd_years * _VIMSHOTTARI_DAYS_PER_YEAR
-                pd_end_dt = ad_start_dt + timedelta(days=cumulative_days)
-                sub_periods.append({
-                    "planet": pd_planet,
-                    "start_date": pd_start_dt.date().isoformat(),
-                    "end_date": pd_end_dt.date().isoformat(),
-                    "days": int(round(pd_years * _VIMSHOTTARI_DAYS_PER_YEAR)),
-                })
-
-            result.append({
-                "mahadasha": md["mahadasha"],
-                "antardasha": ad_planet,
-                "start_date": ad["start_date"],
-                "end_date": ad["end_date"],
-                "pratyantars": sub_periods,
-            })
-    return result
+# Moved to .antardasha — re-imported here.
+from .antardasha import calc_antardasha, calc_pratyantar  # noqa: E402,F401
 
 
 # ── Sunrise / Sunset ─────────────────────────────────────────────────────────
@@ -1861,96 +1748,15 @@ from .numerology import (  # noqa: E402,F401
 
 
 # ── Yogini Dasha (36-year cycle, 8 yoginis) ─────────────────────────────────
-
-YOGINI_NAMES = ["Sankata", "Mangala", "Pingala", "Dhanya", "Bhramari", "Bhadrika", "Ulka", "Siddha"]
-YOGINI_YEARS = [8, 1, 2, 3, 4, 5, 6, 7]
-YOGINI_ABBR = ["Sn", "Ma", "Pi", "Dh", "Br", "Ba", "Ul", "Si"]
-# Each yogini's ruling planet (for sub-period calculation and interpretation)
-YOGINI_PLANETS = ["Saturn", "Moon", "Sun", "Jupiter", "Mars", "Venus", "Mercury", "Rahu"]
-
-
-def calc_yogini_dasha(moon_lon: float, dob: str, tob: str | None = None) -> dict:
-    """Calculate Yogini Dasha sequence from birth (Convention A — Astrosage parity).
-
-    Formula: yogini_index = (nakshatra_1indexed + 3) % 8.
-    The first Yogini Mahadasha is partially elapsed at birth — its actual
-    cycle start sits *before* birth. The MD's *displayed* start is clipped
-    to the birth datetime so the user sees only the visible balance window
-    (matches Astrosage). Within each MD, antardashas run their full
-    proportional durations from the actual cycle start; for the first MD,
-    ADs that fully ended before birth are skipped and the AD containing
-    birth is clipped to start at birth.
-
-    `tob` (HH:MM or HH:MM:SS) anchors all date math to the exact birth
-    moment — fall back to midnight if not provided.
-    """
-    nak_size = 360 / 27
-    nak_num = int(moon_lon / nak_size)
-    nak_1indexed = nak_num + 1
-    degree_in_nak = moon_lon - nak_num * nak_size
-    fraction_elapsed = degree_in_nak / nak_size
-
-    start_idx = (nak_1indexed + 3) % 8
-    yogini_years_total = YOGINI_YEARS[start_idx]
-    balance = yogini_years_total * (1 - fraction_elapsed)
-
-    birth_dt = _birth_datetime(dob, tob)
-    elapsed_days_float = fraction_elapsed * yogini_years_total * _VIMSHOTTARI_DAYS_PER_YEAR
-    actual_first_md_start_dt = birth_dt - timedelta(days=elapsed_days_float)
-
-    dashas = []
-    cumulative_days = 0.0
-    idx = start_idx
-    for i in range(24):  # 24 periods ≈ 3 full 36-year cycles, ~108 years
-        years = YOGINI_YEARS[idx]
-        md_start_actual_dt = actual_first_md_start_dt + timedelta(days=cumulative_days)
-        cumulative_days += years * _VIMSHOTTARI_DAYS_PER_YEAR
-        md_end_dt = actual_first_md_start_dt + timedelta(days=cumulative_days)
-        # Clip the first MD's *displayed* start to birth.
-        md_start_display_dt = birth_dt if i == 0 else md_start_actual_dt
-        dashas.append({
-            "yogini": YOGINI_NAMES[idx],
-            "abbr": YOGINI_ABBR[idx],
-            "planet": YOGINI_PLANETS[idx],
-            "years": years,
-            "start_date": md_start_display_dt.date().isoformat(),
-            "end_date": md_end_dt.date().isoformat(),
-            "_actual_start_dt": md_start_actual_dt.isoformat(),
-        })
-        idx = (idx + 1) % 8
-
-    # Antardashas — full proportional durations within each MD, datetime math.
-    for md_idx, dasha_entry in enumerate(dashas):
-        actual_start_dt = datetime.fromisoformat(dasha_entry.pop("_actual_start_dt"))
-        d_years = dasha_entry["years"]
-        d_idx = YOGINI_NAMES.index(dasha_entry["yogini"])
-
-        sub_periods = []
-        sub_cumulative = 0.0
-        for i in range(8):
-            sub_idx = (d_idx + i) % 8
-            sub_years = (d_years * YOGINI_YEARS[sub_idx]) / 36
-            sub_start_dt = actual_start_dt + timedelta(days=sub_cumulative)
-            sub_cumulative += sub_years * _VIMSHOTTARI_DAYS_PER_YEAR
-            sub_end_dt = actual_start_dt + timedelta(days=sub_cumulative)
-            if md_idx == 0:
-                if sub_end_dt <= birth_dt:
-                    continue
-                if sub_start_dt < birth_dt:
-                    sub_start_dt = birth_dt
-            sub_periods.append({
-                "yogini": YOGINI_NAMES[sub_idx],
-                "abbr": YOGINI_ABBR[sub_idx],
-                "start_date": sub_start_dt.date().isoformat(),
-                "end_date": sub_end_dt.date().isoformat(),
-            })
-        dasha_entry["antardashas"] = sub_periods
-
-    return {
-        "starting_yogini": YOGINI_NAMES[start_idx],
-        "balance_years": round(balance, 2),
-        "dashas": dashas,
-    }
+# Moved to .yogini — re-imported here. Constants (YOGINI_NAMES, YOGINI_YEARS,
+# YOGINI_ABBR, YOGINI_PLANETS) are public surface used by tests.
+from .yogini import (  # noqa: E402,F401
+    YOGINI_ABBR,
+    YOGINI_NAMES,
+    YOGINI_PLANETS,
+    YOGINI_YEARS,
+    calc_yogini_dasha,
+)
 
 
 # ── Vedic Graha Drishti + Western Aspects ──────────────────────────────────
@@ -2529,194 +2335,25 @@ def calc_jaimini_karakas(planets: dict, lagna: dict) -> dict:
 
 
 # ── Lal Kitab Dasha ─────────────────────────────────────────────────────────
-# Lal Kitab uses a fixed 9-planet sequence with fixed durations (35-year
-# cycle), starting at birth as a full Saturn MD. Each MD has 3 sub-periods
-# of equal length (MD/3) with sub-period planets per a specific lookup.
-# Reverse-engineered from Astrosage's Lal Kitab section.
-
-LAL_KITAB_DASHA_SEQUENCE = [
-    "Saturn", "Rahu", "Ketu", "Jupiter", "Sun",
-    "Moon", "Venus", "Mars", "Mercury",
-]
-LAL_KITAB_DASHA_YEARS = {
-    "Saturn": 6, "Rahu": 6, "Ketu": 3, "Jupiter": 6, "Sun": 2,
-    "Moon": 1, "Venus": 3, "Mars": 6, "Mercury": 2,
-}
-# Sub-period planets per parent MD — 3 per MD, in order.
-LAL_KITAB_SUBPERIODS = {
-    "Saturn":  ["Rahu", "Mars", "Mercury"],
-    "Rahu":    ["Mars", "Ketu", "Saturn"],
-    "Ketu":    ["Mercury", "Jupiter", "Sun"],
-    "Jupiter": ["Mars", "Sun", "Moon"],
-    "Sun":     ["Sun", "Moon", "Mars"],
-    "Moon":    ["Sun", "Mars", "Venus"],
-    "Venus":   ["Mars", "Sun", "Moon"],
-    "Mars":    ["Mars", "Saturn", "Venus"],
-    "Mercury": ["Moon", "Jupiter", "Sun"],
-}
-
-
-def calc_lal_kitab_dasha(dob: str, tob: str | None = None, n_cycles: int = 3) -> dict:
-    """Compute the Lal Kitab Dasha sequence + sub-periods.
-
-    Each cycle = 35 years. n_cycles default 3 covers ~105 years from birth.
-    Sub-periods within each MD use a fixed lookup table.
-    """
-    birth_dt = _birth_datetime(dob, tob)
-    cumulative_days = 0.0
-    dashas = []
-    for cycle in range(n_cycles):
-        for planet in LAL_KITAB_DASHA_SEQUENCE:
-            md_years = LAL_KITAB_DASHA_YEARS[planet]
-            md_start_dt = birth_dt + timedelta(days=cumulative_days)
-            cumulative_days += md_years * _VIMSHOTTARI_DAYS_PER_YEAR
-            md_end_dt = birth_dt + timedelta(days=cumulative_days)
-
-            # Sub-periods: 3 per MD, each = MD/3 years
-            sub_planets = LAL_KITAB_SUBPERIODS[planet]
-            sub_years = md_years / 3.0
-            sub_periods = []
-            sub_cumulative = 0.0
-            for sp in sub_planets:
-                sp_start_dt = md_start_dt + timedelta(days=sub_cumulative)
-                sub_cumulative += sub_years * _VIMSHOTTARI_DAYS_PER_YEAR
-                sp_end_dt = md_start_dt + timedelta(days=sub_cumulative)
-                sub_periods.append({
-                    "planet": sp,
-                    "start_date": sp_start_dt.date().isoformat(),
-                    "end_date": sp_end_dt.date().isoformat(),
-                })
-
-            dashas.append({
-                "planet": planet,
-                "years": md_years,
-                "start_date": md_start_dt.date().isoformat(),
-                "end_date": md_end_dt.date().isoformat(),
-                "subperiods": sub_periods,
-            })
-
-    return {"dashas": dashas}
+# Moved to .lal_kitab — re-imported here. Constants are public surface.
+from .lal_kitab import (  # noqa: E402,F401
+    LAL_KITAB_DASHA_SEQUENCE,
+    LAL_KITAB_DASHA_YEARS,
+    LAL_KITAB_SUBPERIODS,
+    calc_lal_kitab_dasha,
+)
 
 
 # ── Jaimini Chara Dasha ─────────────────────────────────────────────────────
-# Sign-based dasha system (each MD is a sign, not a planet). 12 signs cycle
-# from the natal lagna sign. Years per MD = K.N. Rao formula based on the
-# count from the sign to its lord in the appropriate direction.
-
-_JAIMINI_SIGN_LORDS = [
-    "Mars",     # Aries
-    "Venus",    # Taurus
-    "Mercury",  # Gemini
-    "Moon",     # Cancer
-    "Sun",      # Leo
-    "Mercury",  # Virgo
-    "Venus",    # Libra
-    "Mars",     # Scorpio (override to Ketu when Ketu is IN Scorpio)
-    "Jupiter",  # Sagittarius
-    "Saturn",   # Capricorn
-    "Saturn",   # Aquarius (override to Rahu when Rahu is IN Aquarius)
-    "Jupiter",  # Pisces
-]
-# Sign type: 0=Cara (movable), 1=Sthira (fixed), 2=Dvisvabhava (dual)
-_JAIMINI_SIGN_TYPES = [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2]
-
-
-def _char_dasha_years(sign_zero_indexed: int, planets: dict) -> int:
-    """K.N. Rao Char Dasha — years for one sign.
-
-    Direction by sign parity (1-indexed):
-      Odd signs  (Ari, Gem, Leo, Lib, Sag, Aqu) → count zodiacally forward
-      Even signs (Tau, Can, Vir, Sco, Cap, Pis) → count anti-zodiacally backward
-
-    Years = inclusive count from sign to its lord, minus 1. The starting sign
-    counts as 1. If the lord sits in the same sign as the dasha sign, the
-    count is taken as 12 by special rule, giving 11 years.
-
-    Lord selection (Jaimini convention):
-      - Scorpio: classical lord is Mars; use Ketu *only when* Ketu itself sits
-        in Scorpio.
-      - Aquarius: classical lord is Saturn; use Rahu *only when* Rahu itself
-        sits in Aquarius.
-      - All other signs use their classical lord.
-    """
-    # Lord selection
-    if sign_zero_indexed == 7:  # Scorpio
-        lord = "Ketu" if planets.get("Ketu", {}).get("sign") == 7 else "Mars"
-    elif sign_zero_indexed == 10:  # Aquarius
-        lord = "Rahu" if planets.get("Rahu", {}).get("sign") == 10 else "Saturn"
-    else:
-        lord = _JAIMINI_SIGN_LORDS[sign_zero_indexed]
-
-    if lord not in planets:
-        return 11
-
-    lord_sign = planets[lord]["sign"]
-    if lord_sign == sign_zero_indexed:
-        # Lord in own sign — count = 12, years = 11.
-        return 11
-
-    is_odd_sign = (sign_zero_indexed + 1) % 2 == 1
-    if is_odd_sign:
-        count_inclusive = (lord_sign - sign_zero_indexed) % 12 + 1
-    else:
-        count_inclusive = (sign_zero_indexed - lord_sign) % 12 + 1
-    return count_inclusive - 1
-
-
-def calc_char_dasha(planets: dict, lagna: dict, dob: str, tob: str | None = None) -> dict:
-    """Compute the Jaimini Chara Dasha sequence + antardashas.
-
-    - Mahadasha sequence: 12 signs starting from the natal lagna sign.
-      Direction: zodiacal (forward) for odd 1-indexed lagna, anti-zodiacal
-      (backward) for even.
-    - Each MD's years = `_char_dasha_years` formula.
-    - Antardashas within each MD: 12 signs in the SAME sequence order as the
-      mahadashas, starting from the NEXT sign after the MD sign and ending
-      with the MD sign itself. Each AD = MD years / 12.
-    """
-    birth_dt = _birth_datetime(dob, tob)
-    lagna_sign = lagna["sign"]
-    lagna_is_odd = (lagna_sign + 1) % 2 == 1
-
-    sequence = []
-    current = lagna_sign
-    for _ in range(12):
-        sequence.append(current)
-        current = (current + 1) % 12 if lagna_is_odd else (current - 1) % 12
-
-    dashas = []
-    cumulative_days = 0.0
-    for i, sign in enumerate(sequence):
-        years = _char_dasha_years(sign, planets)
-        md_start_dt = birth_dt + timedelta(days=cumulative_days)
-        cumulative_days += years * _VIMSHOTTARI_DAYS_PER_YEAR
-        md_end_dt = birth_dt + timedelta(days=cumulative_days)
-
-        ad_periods = []
-        ad_years = years / 12.0
-        sub_cumulative = 0.0
-        for k in range(12):
-            ad_sign = sequence[(i + 1 + k) % 12]
-            ad_start_dt = md_start_dt + timedelta(days=sub_cumulative)
-            sub_cumulative += ad_years * _VIMSHOTTARI_DAYS_PER_YEAR
-            ad_end_dt = md_start_dt + timedelta(days=sub_cumulative)
-            ad_periods.append({
-                "sign": ad_sign,
-                "sign_name": SIGN_NAMES[ad_sign],
-                "start_date": ad_start_dt.date().isoformat(),
-                "end_date": ad_end_dt.date().isoformat(),
-            })
-
-        dashas.append({
-            "sign": sign,
-            "sign_name": SIGN_NAMES[sign],
-            "years": years,
-            "start_date": md_start_dt.date().isoformat(),
-            "end_date": md_end_dt.date().isoformat(),
-            "antardashas": ad_periods,
-        })
-
-    return {"dashas": dashas}
+# Moved to .jaimini_chara — re-imported here. Underscore-prefixed names
+# (_JAIMINI_SIGN_LORDS, _JAIMINI_SIGN_TYPES, _char_dasha_years) are
+# re-imported in case any tests patch them.
+from .jaimini_chara import (  # noqa: E402,F401
+    _JAIMINI_SIGN_LORDS,
+    _JAIMINI_SIGN_TYPES,
+    _char_dasha_years,
+    calc_char_dasha,
+)
 
 
 # ── Varshaphal (Tajik / Annual Horoscope) ───────────────────────────────────
