@@ -5,7 +5,11 @@ from enum import Enum
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
-PENDING_EXPIRY_MINUTES = 15
+# Back-compat re-export. Canonical source: `app.config.settings.PENDING_EXPIRY_MINUTES`.
+# Read at import time — operators tune via env, then restart.
+from app.config import settings as _settings  # noqa: E402
+
+PENDING_EXPIRY_MINUTES = _settings.PENDING_EXPIRY_MINUTES
 
 
 class BookingStatus(str, Enum):

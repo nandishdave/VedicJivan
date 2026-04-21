@@ -20,7 +20,8 @@ from typing import Any, Protocol
 
 from bson import ObjectId
 
-from app.models.booking import PENDING_EXPIRY_MINUTES, BookingInDB, BookingStatus
+from app.config import settings
+from app.models.booking import BookingInDB, BookingStatus
 
 
 class BookingRepository(Protocol):
@@ -175,7 +176,9 @@ class MongoBookingRepository:
     ) -> list[dict]:
         """Bookings on `booking_date` that count for slot-conflict checks:
         confirmed, plus pending bookings still inside the expiry grace window."""
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
+        cutoff = datetime.now(timezone.utc) - timedelta(
+            minutes=settings.PENDING_EXPIRY_MINUTES
+        )
         query: dict[str, Any] = {
             "date": booking_date,
             "$or": [

@@ -4,13 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+from app.config import settings
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.repositories.user_repository import UserRepository
-
-# TODO Phase 5: move to settings.ADMIN_DAILY_SERIES_DAYS / RECENT_BOOKINGS_LIMIT.
-_DAILY_SERIES_DAYS = 30
-_RECENT_BOOKINGS_LIMIT = 10
 
 
 def _today_str() -> str:
@@ -37,7 +34,9 @@ class GetAdminDashboard:
         total_revenue = await self._payments.total_captured_amount()
         status_counts = await self._bookings.aggregate_status_counts()
 
-        recent_docs = await self._bookings.list_for_user(limit=_RECENT_BOOKINGS_LIMIT)
+        recent_docs = await self._bookings.list_for_user(
+            limit=settings.ADMIN_RECENT_BOOKINGS_LIMIT
+        )
         recent = [
             {
                 "id": str(d["_id"]),
@@ -90,7 +89,7 @@ class GetAdminStats:
         ]
 
         today = datetime.now(timezone.utc)
-        days = _DAILY_SERIES_DAYS
+        days = settings.ADMIN_DAILY_SERIES_DAYS
         thirty_days_ago = (today - timedelta(days=days - 1)).strftime("%Y-%m-%d")
         today_str = today.strftime("%Y-%m-%d")
 

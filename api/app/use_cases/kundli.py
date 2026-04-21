@@ -18,6 +18,7 @@ from typing import Any
 
 from bson import ObjectId
 
+from app.config import settings
 from app.domain.exceptions import RateLimitExceededError
 from app.infrastructure.logging import get_logger
 from app.models.kundli import KundliInDB, KundliRequest
@@ -25,11 +26,9 @@ from app.repositories.kundli_repository import KundliRepository
 
 logger = get_logger(__name__)
 
-# TODO Phase 5: move to settings.MAX_KUNDLI_PER_EMAIL_PER_DAY.
-DEFAULT_MAX_PER_EMAIL_PER_DAY = 10
-
-# TODO Phase 5: move to settings.KUNDLI_RATE_LIMIT_WINDOW_HOURS.
-_RATE_LIMIT_WINDOW_HOURS = 24
+# Back-compat re-exports for tests that imported the in-module constants.
+DEFAULT_MAX_PER_EMAIL_PER_DAY = settings.MAX_KUNDLI_PER_EMAIL_PER_DAY
+_RATE_LIMIT_WINDOW_HOURS = settings.KUNDLI_RATE_LIMIT_WINDOW_HOURS
 
 
 # ── QueueKundliGeneration ──────────────────────────────────────────────────
@@ -46,13 +45,19 @@ class QueueKundliGeneration:
     def __init__(
         self,
         kundli_repo: KundliRepository,
-        max_per_email_per_day: int = DEFAULT_MAX_PER_EMAIL_PER_DAY,
+        max_per_email_per_day: int | None = None,
     ) -> None:
         self._repo = kundli_repo
-        self._max_per_email_per_day = max_per_email_per_day
+        self._max_per_email_per_day = (
+            max_per_email_per_day
+            if max_per_email_per_day is not None
+            else settings.MAX_KUNDLI_PER_EMAIL_PER_DAY
+        )
 
     async def execute(self, req: KundliRequest) -> ObjectId:
-        since = datetime.now(timezone.utc) - timedelta(hours=_RATE_LIMIT_WINDOW_HOURS)
+        since = datetime.now(timezone.utc) - timedelta(
+            hours=settings.KUNDLI_RATE_LIMIT_WINDOW_HOURS
+        )
         count = await self._repo.count_for_email_since(req.email, since)
         if count >= self._max_per_email_per_day:
             raise RateLimitExceededError(

@@ -53,16 +53,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS
+# CORS — see `Settings.cors_origins()` for the build rule (FRONTEND_URL +
+# localhost dev ports outside production + EXTRA_CORS_ORIGINS env entries).
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        settings.FRONTEND_URL,
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://vedicjivan.nandishdave.world",
-        "https://vedicjivan-test.nandishdave.world",
-    ],
+    allow_origins=settings.cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

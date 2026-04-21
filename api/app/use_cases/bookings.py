@@ -27,6 +27,7 @@ from zoneinfo import ZoneInfo
 from bson import ObjectId
 from bson.errors import InvalidId
 
+from app.config import settings
 from app.domain.exceptions import (
     AccessDeniedError,
     BookingExpiredError,
@@ -37,7 +38,6 @@ from app.domain.exceptions import (
 )
 from app.infrastructure.logging import get_logger
 from app.models.booking import (
-    PENDING_EXPIRY_MINUTES,
     BookingCreate,
     BookingInDB,
     BookingReschedule,
@@ -47,11 +47,6 @@ from app.repositories.booking_repository import BookingRepository
 from app.services.booking_validator import validate_slot
 
 logger = get_logger(__name__)
-
-# Reschedule cutoff. TODO (Phase 5): move to settings.RESCHEDULE_CUTOFF_HOURS
-_RESCHEDULE_CUTOFF_HOURS = 24
-# Booking timezone for reschedule cutoff. TODO (Phase 5): move to settings.TIMEZONE
-_BOOKING_TIMEZONE = "Asia/Kolkata"
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -198,7 +193,9 @@ class ResumeBooking:
             raise EntityNotFoundError("Booking not found")
         if doc["status"] != BookingStatus.PENDING:
             raise BookingNotConfirmedError("Booking is no longer pending")
-        cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
+        cutoff = datetime.now(timezone.utc) - timedelta(
+            minutes=settings.PENDING_EXPIRY_MINUTES
+        )
         if doc["created_at"] < cutoff:
             raise BookingExpiredError("Booking has expired")
         return doc
@@ -277,14 +274,15 @@ class RescheduleBooking:
         if doc["status"] != BookingStatus.CONFIRMED:
             raise BookingNotConfirmedError("Only confirmed bookings can be rescheduled")
 
-        # 24-hour cutoff against the *existing* booking time
-        ist = ZoneInfo(_BOOKING_TIMEZONE)
+        # Cutoff against the *existing* booking time
+        ist = ZoneInfo(settings.BOOKING_TIMEZONE)
         booking_dt = datetime.fromisoformat(
             f"{doc['date']}T{doc['time_slot']}:00"
         ).replace(tzinfo=ist)
-        if booking_dt - datetime.now(timezone.utc) < timedelta(hours=_RESCHEDULE_CUTOFF_HOURS):
+        cutoff_hours = settings.RESCHEDULE_CUTOFF_HOURS
+        if booking_dt - datetime.now(timezone.utc) < timedelta(hours=cutoff_hours):
             raise BookingTooSoonToRescheduleError(
-                "Rescheduling is not available within 24 hours of your session"
+                f"Rescheduling is not available within {cutoff_hours} hours of your session"
             )
 
         # New date validity + future check
