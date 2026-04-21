@@ -11,7 +11,8 @@ Combinations."
 
 from __future__ import annotations
 
-from ._core import _EXALTATION, _MOOLATRIKONA, _OWN_SIGNS, SIGN_LORDS
+from ._core import SIGN_LORDS
+from .dignity import _EXALTATION, _MOOLATRIKONA, _OWN_SIGNS
 
 
 def calc_yogas(planets: dict, lagna: dict) -> list[dict]:

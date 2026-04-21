@@ -8,7 +8,7 @@ sign-position-based) relationships per BPHS / Raman.
 
 from __future__ import annotations
 
-from ._core import _PLANET_ENEMIES, _PLANET_FRIENDS, _compound_relationships
+from .dignity import _PLANET_ENEMIES, _PLANET_FRIENDS, _compound_relationships
 
 
 _CLASSICAL_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]

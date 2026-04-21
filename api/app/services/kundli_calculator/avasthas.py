@@ -12,7 +12,9 @@ the package `__init__.py` because tests import them directly.
 
 from __future__ import annotations
 
-from ._core import _MIN_SHADBALA, _PLANET_ENEMIES, _PLANET_FRIENDS, SIGN_LORDS
+from ._core import SIGN_LORDS
+from .dignity import _PLANET_ENEMIES, _PLANET_FRIENDS
+from .shadbala import _MIN_SHADBALA
 
 
 _BALADI_NAMES = ["Bala", "Kumar", "Yuva", "Vradha", "Mrat"]
