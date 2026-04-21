@@ -147,6 +147,8 @@ def mock_db():
     db.kundlis = _make_mock_collection()
     db.services = _make_mock_collection()
     db.stripe_events = _make_mock_collection()
+    # `db.command(...)` is used by the readiness probe to ping Mongo.
+    db.command = AsyncMock(return_value={"ok": 1.0})
 
     # Wire `services.find_one({"slug": ...})` to the in-code defaults so
     # booking-create tests don't have to mock pricing lookups individually.

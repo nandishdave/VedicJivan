@@ -64,9 +64,13 @@ resource "aws_ecs_task_definition" "api" {
         }
       }
 
-      # Health check at container level
+      # Container-level health check — uses the readiness endpoint
+      # so a Mongo-disconnected task is marked unhealthy and ECS routes
+      # around it. /api/health/ready returns 503 when Mongo is
+      # unreachable; the legacy /api/health endpoint remains as a
+      # back-compat alias.
       healthCheck = {
-        command     = ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:${var.api_container_port}/api/health')\" || exit 1"]
+        command     = ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:${var.api_container_port}/api/health/ready')\" || exit 1"]
         interval    = 30
         timeout     = 5
         retries     = 3

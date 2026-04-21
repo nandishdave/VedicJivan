@@ -80,7 +80,40 @@ app.include_router(services.router)
 
 @app.get("/api/health")
 async def health():
+    """Back-compat alias for /api/health/live. Kept stable for any
+    external callers (uptime monitors, manual curl). New infra (ECS
+    task health check) should target /api/health/ready instead."""
     return {"status": "ok", "service": "VedicJivan API"}
+
+
+@app.get("/api/health/live")
+async def liveness():
+    """Liveness: process is running. No DB or external-dependency
+    check — failing this means the container should be restarted."""
+    return {"status": "ok"}
+
+
+@app.get("/api/health/ready")
+async def readiness():
+    """Readiness: process is up AND can talk to its hard dependencies
+    (Mongo). Returning 503 tells the load balancer / ECS to stop
+    routing new traffic to this task without restarting it. The task
+    auto-rejoins once the next ping succeeds.
+
+    We DON'T gate readiness on Stripe / Resend / Google Calendar —
+    those are downstream best-effort dependencies, not hot-path
+    requirements. Mongo is the one thing every API call needs."""
+    from fastapi import HTTPException
+
+    from app.database import get_db
+
+    try:
+        # `command("ping")` is the cheapest possible round-trip to Mongo —
+        # no auth check, no collection scan, just "are you there".
+        await get_db().command("ping")
+    except Exception as e:  # noqa: BLE001 — any failure means not-ready.
+        raise HTTPException(status_code=503, detail=f"DB unreachable: {e}")
+    return {"status": "ready"}
 
 
 # ── Domain-exception → HTTP translation ─────────────────────────────────────
