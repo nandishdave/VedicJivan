@@ -1370,53 +1370,8 @@ def calc_pratyantar(antardasha_data: list[dict], current_md_planet: str | None =
 
 
 # ── Sunrise / Sunset ─────────────────────────────────────────────────────────
-
-def _get_local_tz(lat: float, lon: float):
-    """Get ZoneInfo timezone for given coordinates."""
-    from timezonefinder import TimezoneFinder
-    from zoneinfo import ZoneInfo
-    tf = TimezoneFinder()
-    tz_name = tf.timezone_at(lat=lat, lng=lon) or "UTC"
-    return ZoneInfo(tz_name)
-
-
-def calc_sunrise_sunset(jd: float, lat: float, lon: float) -> dict:
-    """Calculate sunrise and sunset times for the birth date (local time).
-
-    Uses the modern pyswisseph rise_trans signature (tjd, body, rsmi, geopos).
-    The previous code passed the legacy 8-argument form which silently raised
-    on pyswisseph 2.10+, leaving sunrise as N/A in production.
-    """
-    import swisseph as swe
-    try:
-        geopos = (lon, lat, 0)  # (longitude, latitude, altitude)
-        sr_ret = swe.rise_trans(jd - 1, swe.SUN, swe.CALC_RISE, geopos)
-        ss_ret = swe.rise_trans(jd - 1, swe.SUN, swe.CALC_SET, geopos)
-        # rise_trans returns (retflag, (jd, ...)) — extract the JD.
-        sr_jd = sr_ret[1][0] if isinstance(sr_ret, tuple) and len(sr_ret) > 1 else sr_ret
-        ss_jd = ss_ret[1][0] if isinstance(ss_ret, tuple) and len(ss_ret) > 1 else ss_ret
-
-        local_tz = _get_local_tz(lat, lon)
-
-        def jd_to_local_hms(j):
-            """Convert Julian Day (UT) to local HH:MM:SS string."""
-            # JD epoch is noon UT on Jan 1, 4713 BC; +0.5 puts midnight UT at integer.
-            # Decompose into date + time fraction → UTC datetime → local.
-            jd_int = int(j + 0.5)
-            frac = (j + 0.5) - jd_int
-            total_seconds = round(frac * 86400)
-            h, rem = divmod(total_seconds, 3600)
-            mi, s = divmod(rem, 60)
-            # Convert JD integer back to a calendar date for the UTC instant.
-            # We don't actually need the exact date here — just the time-of-day —
-            # because rise/set always lands on the requested civil date.
-            utc_dt = datetime(2000, 1, 1, h % 24, mi, s, tzinfo=timezone.utc)
-            local_dt = utc_dt.astimezone(local_tz)
-            return f"{local_dt.hour:02d}:{local_dt.minute:02d}:{local_dt.second:02d}"
-
-        return {"sunrise": jd_to_local_hms(sr_jd), "sunset": jd_to_local_hms(ss_jd)}
-    except Exception:
-        return {"sunrise": "N/A", "sunset": "N/A"}
+# Moved to .sunrise — re-exported here.
+from .sunrise import calc_sunrise_sunset, _get_local_tz  # noqa: E402,F401
 
 
 # ── Yoga Detection ───────────────────────────────────────────────────────────
@@ -2131,153 +2086,13 @@ def calc_gochar(
 
 
 # ── Numerology ────────────────────────────────────────────────────────────────
-
-_CHALDEAN: dict[str, int] = {
-    'A': 1, 'I': 1, 'J': 1, 'Q': 1, 'Y': 1,
-    'B': 2, 'K': 2, 'R': 2,
-    'C': 3, 'G': 3, 'L': 3, 'S': 3,
-    'D': 4, 'M': 4, 'T': 4,
-    'E': 5, 'H': 5, 'N': 5, 'X': 5,
-    'O': 6, 'U': 6, 'V': 6, 'W': 6,
-    'P': 7, 'Z': 7,
-    'F': 8,
-}
-
-_VOWELS = frozenset("AEIOU")
-
-_NUMBER_INFO: dict[int, dict] = {
-    1:  {"planet": "Sun",     "lucky_day": "Sunday",    "lucky_color": "Gold / Orange",    "lucky_gemstone": "Ruby"},
-    2:  {"planet": "Moon",    "lucky_day": "Monday",    "lucky_color": "White / Silver",   "lucky_gemstone": "Pearl"},
-    3:  {"planet": "Jupiter", "lucky_day": "Thursday",  "lucky_color": "Yellow",           "lucky_gemstone": "Yellow Sapphire"},
-    4:  {"planet": "Rahu",    "lucky_day": "Saturday",  "lucky_color": "Dark Blue",        "lucky_gemstone": "Hessonite (Gomed)"},
-    5:  {"planet": "Mercury", "lucky_day": "Wednesday", "lucky_color": "Green",            "lucky_gemstone": "Emerald"},
-    6:  {"planet": "Venus",   "lucky_day": "Friday",    "lucky_color": "White / Pink",     "lucky_gemstone": "Diamond"},
-    7:  {"planet": "Ketu",    "lucky_day": "Tuesday",   "lucky_color": "Brown / Tan",      "lucky_gemstone": "Cat's Eye (Lehsunia)"},
-    8:  {"planet": "Saturn",  "lucky_day": "Saturday",  "lucky_color": "Black / Dark Blue","lucky_gemstone": "Blue Sapphire"},
-    9:  {"planet": "Mars",    "lucky_day": "Tuesday",   "lucky_color": "Red",              "lucky_gemstone": "Red Coral"},
-    11: {"planet": "Sun / Moon (Master)",    "lucky_day": "Sunday",   "lucky_color": "Silver / Gold",  "lucky_gemstone": "Pearl / Ruby"},
-    22: {"planet": "Moon / Saturn (Master)", "lucky_day": "Saturday", "lucky_color": "Dark Blue",      "lucky_gemstone": "Blue Sapphire"},
-    33: {"planet": "Jupiter / Saturn (Master)", "lucky_day": "Thursday", "lucky_color": "Yellow / Black", "lucky_gemstone": "Yellow Sapphire"},
-}
-
-_NUMBER_MEANING: dict[int, str] = {
-    1:  "Leadership, individuality, pioneering spirit, and ambition. You are a natural initiator who thrives when forging your own path.",
-    2:  "Intuition, sensitivity, and cooperation. You excel in partnerships and have a deep emotional intelligence that draws others to you.",
-    3:  "Creativity, self-expression, and optimism. You have a gift for communication and inspiring others with your natural enthusiasm and wisdom.",
-    4:  "Discipline, hard work, and building solid foundations. Life asks you to work systematically — patience and persistence are your greatest tools.",
-    5:  "Freedom, adaptability, and communication. You thrive on variety, travel, and intellectual stimulation — routine stifles your spirit.",
-    6:  "Harmony, responsibility, and nurturing. Home, family, and relationships are your deepest sources of meaning and fulfilment.",
-    7:  "Spirituality, introspection, and analytical depth. You are drawn to the mysteries of life and find truth through solitude and contemplation.",
-    8:  "Power, material success, and karmic perseverance. You are built for achievement — the universe tests you before rewarding you greatly.",
-    9:  "Compassion, completion, and universal service. Your path involves giving back, releasing the past, and serving something larger than yourself.",
-    11: "Master Number — Illumination and inspiration. You carry heightened intuition and a calling toward spiritual leadership and visionary work.",
-    22: "Master Number — The Master Builder. You have the rare ability to turn grand dreams into tangible reality through disciplined effort.",
-    33: "Master Number — The Master Teacher. You are called to selfless service, spiritual guidance, and uplifting humanity through compassion and wisdom.",
-}
-
-_PERSONAL_YEAR_MEANING: dict[int, str] = {
-    1: "A year of fresh starts and new beginnings. Plant seeds now — initiatives launched this year carry long-term momentum.",
-    2: "A year of patience, cooperation, and relationships. Focus on partnerships rather than solo ambition.",
-    3: "A year of creative expression, socialising, and joy. Opportunities come through self-expression and networking.",
-    4: "A year of hard work and building foundations. Discipline and persistence are rewarded — focus on structure.",
-    5: "A year of change, freedom, and unexpected opportunities. Stay adaptable — rigid plans will be disrupted.",
-    6: "A year of home, family, and responsibility. Nurturing relationships and fulfilling obligations brings deep satisfaction.",
-    7: "A year of reflection, spirituality, and inner growth. Step back from the external world — answers come from within.",
-    8: "A year of achievement, ambition, and abundance. Material efforts are rewarded — step into your power.",
-    9: "A year of completion, release, and humanitarianism. Let go of what no longer serves you — endings open new cycles.",
-}
-
-
-def _reduce_chaldean(n: int) -> int:
-    """Reduce to single digit, preserving master numbers 11, 22, 33."""
-    while n > 9:
-        if n in (11, 22, 33):
-            break
-        n = sum(int(d) for d in str(n))
-    return n
-
-
-def _sum_digits(n: int) -> int:
-    return sum(int(d) for d in str(n))
-
-
-def _numerology_entry(value: int, label: str, extra: dict | None = None) -> dict:
-    info = _NUMBER_INFO.get(value, _NUMBER_INFO.get(((value - 1) % 9) + 1, _NUMBER_INFO[1]))
-    entry = {
-        "value": value,
-        "planet": info["planet"],
-        "label": label,
-        "meaning": _NUMBER_MEANING.get(value, ""),
-        "lucky_day": info["lucky_day"],
-        "lucky_color": info["lucky_color"],
-        "lucky_gemstone": info["lucky_gemstone"],
-    }
-    if extra:
-        entry.update(extra)
-    return entry
-
-
-def calc_numerology(name: str, dob_str: str, current_year: int) -> dict:
-    """
-    Calculate Chaldean numerology numbers from name and date of birth.
-
-    Args:
-        name: Full name (spaces/punctuation ignored; only alpha characters used).
-        dob_str: Date of birth as 'YYYY-MM-DD'.
-        current_year: Year to use for Personal Year calculation.
-    """
-    from datetime import date as _date
-    dob = _date.fromisoformat(dob_str)
-
-    # ── Moolank (Birth Number) ──────────────────────────────────────────────
-    moolank_raw = _sum_digits(dob.day)
-    moolank = _reduce_chaldean(moolank_raw)
-
-    # ── Bhagyank (Destiny / Life Path) ──────────────────────────────────────
-    bhagyank_raw = _sum_digits(dob.day) + _sum_digits(dob.month) + _sum_digits(dob.year)
-    bhagyank = _reduce_chaldean(bhagyank_raw)
-
-    # ── Personal Year ───────────────────────────────────────────────────────
-    py_raw = _sum_digits(dob.day) + _sum_digits(dob.month) + _sum_digits(current_year)
-    personal_year_val = _reduce_chaldean(py_raw)
-
-    result: dict = {
-        "moolank":     _numerology_entry(moolank, "Birth Number (Moolank)"),
-        "bhagyank":    _numerology_entry(bhagyank, "Destiny Number (Bhagyank)"),
-        "personal_year": {
-            **_numerology_entry(personal_year_val, f"Personal Year {current_year}"),
-            "year": current_year,
-            "meaning": _PERSONAL_YEAR_MEANING.get(personal_year_val, ""),
-        },
-    }
-
-    # ── Name-based numbers (optional — only if name provided) ──────────────
-    alpha = [c.upper() for c in name if c.isalpha()] if name else []
-
-    if alpha:
-        # Namank (all letters)
-        namank_raw = sum(_CHALDEAN.get(c, 0) for c in alpha)
-        namank = _reduce_chaldean(namank_raw)
-
-        # Soul Number (vowels)
-        soul_raw = sum(_CHALDEAN.get(c, 0) for c in alpha if c in _VOWELS)
-        soul = _reduce_chaldean(soul_raw) if soul_raw else None
-
-        # Personality Number (consonants)
-        pers_raw = sum(_CHALDEAN.get(c, 0) for c in alpha if c not in _VOWELS)
-        personality = _reduce_chaldean(pers_raw) if pers_raw else None
-
-        result["namank"] = _numerology_entry(namank, "Name Number (Namank)")
-        if soul is not None:
-            result["soul_number"] = _numerology_entry(soul, "Soul Number")
-        if personality is not None:
-            result["personality_number"] = _numerology_entry(personality, "Personality Number")
-    else:
-        result["namank"] = None
-        result["soul_number"] = None
-        result["personality_number"] = None
-
-    return result
+# Moved to .numerology — re-exported here to preserve the legacy module surface.
+from .numerology import (  # noqa: E402,F401
+    calc_numerology,
+    _numerology_entry,
+    _reduce_chaldean,
+    _sum_digits,
+)
 
 
 # ── Yogini Dasha (36-year cycle, 8 yoginis) ─────────────────────────────────
@@ -2373,111 +2188,13 @@ def calc_yogini_dasha(moon_lon: float, dob: str, tob: str | None = None) -> dict
     }
 
 
-# ── Vedic Graha Drishti (classical planetary aspects) ──────────────────────
-# Every planet has a full (100%) aspect on the 7th house from itself.
-# Mars, Jupiter, Saturn, Rahu and Ketu have additional special aspects.
-
-# Offsets are (n-1) because Vedic counting is inclusive: "7th from H1" = H7,
-# so offset = 6.  Formula: target = ((house - 1 + offset) % 12) + 1.
-_SPECIAL_ASPECT_OFFSETS = {
-    "Mars":    [3, 7],      # 4th and 8th from self
-    "Jupiter": [4, 8],      # 5th and 9th from self
-    "Saturn":  [2, 9],      # 3rd and 10th from self
-    "Rahu":    [4, 8],      # Jupiter-like (Parashari tradition)
-    "Ketu":    [4, 8],      # Jupiter-like (Parashari tradition)
-}
-
-
-def calc_graha_drishti(planets: dict, lagna: dict) -> dict:
-    """Compute Vedic graha drishti (planetary aspects) for the birth chart.
-
-    Returns two views:
-      planet_aspects : {planet_name: [list of house numbers 1-12 the planet aspects]}
-      house_aspected_by : {house_num: [list of planet names aspecting that house]}
-    """
-    lagna_sign = lagna["sign"]
-    planet_aspects: dict[str, list[int]] = {}
-    house_aspected_by: dict[str, list[str]] = {str(h): [] for h in range(1, 13)}
-
-    for name, info in planets.items():
-        planet_house = info.get("house")
-        if planet_house is None:
-            continue
-
-        # Every planet aspects the 7th house from itself (offset = 6)
-        aspected_offsets = [6]
-        # Add special aspects
-        if name in _SPECIAL_ASPECT_OFFSETS:
-            aspected_offsets.extend(_SPECIAL_ASPECT_OFFSETS[name])
-
-        resolved = []
-        for offset in aspected_offsets:
-            target = ((planet_house - 1 + offset) % 12) + 1
-            resolved.append(target)
-            house_aspected_by[str(target)].append(name)
-
-        planet_aspects[name] = sorted(resolved)
-
-    return {
-        "planet_aspects": planet_aspects,
-        "house_aspected_by": house_aspected_by,
-    }
-
-
-# ── Western Planetary Aspects ───────────────────────────────────────────────
-# Angular relationships between planets using Western (Ptolemaic + minor) aspects.
-# Each aspect is defined by its exact angle and a maximum orb tolerance.
-
-WESTERN_ASPECTS = [
-    {"name": "Conjunction", "abbr": "CONJ", "angle": 0,   "orb": 15, "weight": 10},
-    {"name": "Opposition",  "abbr": "OPPN", "angle": 180, "orb": 15, "weight": 10},
-    {"name": "Trine",       "abbr": "TRIN", "angle": 120, "orb": 6,  "weight": 3},
-    {"name": "Square",      "abbr": "SQUR", "angle": 90,  "orb": 6,  "weight": 3},
-    {"name": "Sextile",     "abbr": "SEXT", "angle": 60,  "orb": 6,  "weight": 3},
-    {"name": "Nonile",      "abbr": "NONL", "angle": 40,  "orb": 1,  "weight": 1},
-    {"name": "Quintile",    "abbr": "QUIN", "angle": 72,  "orb": 1,  "weight": 1},
-    {"name": "Semi-Square", "abbr": "SSQU", "angle": 45,  "orb": 1,  "weight": 1},
-    {"name": "Sesquiquadrate", "abbr": "SQQD", "angle": 135, "orb": 1, "weight": 1},
-    {"name": "Quincunx",    "abbr": "QCUN", "angle": 150, "orb": 1,  "weight": 1},
-]
-
-_ALL_ASPECT_PLANETS = [
-    "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn",
-    "Rahu", "Ketu", "Uranus", "Neptune", "Pluto",
-]
-
-
-def calc_western_aspects(planets: dict) -> dict:
-    """Compute Western-style angular aspects between all planet pairs.
-
-    Returns a dict with:
-      planets : ordered list of planet names included (only those present in chart).
-      matrix  : dict-of-dicts keyed by (from, to) with value:
-                  {"abbr": "CONJ", "orb": 1.23} or None if no aspect within orb.
-    """
-    active = [p for p in _ALL_ASPECT_PLANETS if p in planets]
-    matrix: dict[str, dict[str, dict | None]] = {}
-
-    for p in active:
-        matrix[p] = {}
-        p_lon = planets[p]["longitude"]
-        for q in active:
-            if q == p:
-                matrix[p][q] = None
-                continue
-            q_lon = planets[q]["longitude"]
-            diff = abs(p_lon - q_lon) % 360
-            if diff > 180:
-                diff = 360 - diff
-            best = None
-            for asp in WESTERN_ASPECTS:
-                orb = abs(diff - asp["angle"])
-                if orb <= asp["orb"]:
-                    if best is None or orb < best["orb"]:
-                        best = {"abbr": asp["abbr"], "orb": round(orb, 2), "weight": asp["weight"]}
-            matrix[p][q] = best
-
-    return {"planets": active, "matrix": matrix}
+# ── Vedic Graha Drishti + Western Aspects ──────────────────────────────────
+# Moved to .aspects — re-exported here.
+from .aspects import (  # noqa: E402,F401
+    WESTERN_ASPECTS,
+    calc_graha_drishti,
+    calc_western_aspects,
+)
 
 
 # ── Friendship Tables (Naisargika + Tatkalika + Panchadha) ─────────────────
