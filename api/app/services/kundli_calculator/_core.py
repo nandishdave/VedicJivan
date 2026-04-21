@@ -806,276 +806,41 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
 
 
 # ── Nakshatra ────────────────────────────────────────────────────────────────
-
-def calc_nakshatra(moon_lon: float) -> dict:
-    """Calculate birth Nakshatra and Pada from Moon's sidereal longitude."""
-    nak_size = 360 / 27  # 13°20' each
-    pada_size = nak_size / 4
-    nak_num = int(moon_lon / nak_size)  # 0–26
-    pada = int((moon_lon % nak_size) / pada_size) + 1  # 1–4
-    return {
-        "num": nak_num,
-        "name": NAKSHATRA_NAMES[nak_num],
-        "lord": NAKSHATRA_LORDS[nak_num],
-        "pada": pada,
-        "degree_in_nak": round(moon_lon % nak_size, 4),
-    }
+# Moved to .nakshatra — re-imported here so the legacy module surface is preserved.
+from .nakshatra import calc_nakshatra  # noqa: E402,F401
 
 
 # ── Panchanga (Tithi, Yoga, Karan) ──────────────────────────────────────────
-
-def calc_panchanga(jd: float) -> dict:
-    """Calculate Tithi, Yoga, and Karan."""
-    import swisseph as swe
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
-    flags = swe.FLG_SIDEREAL
-
-    sun, _ = swe.calc_ut(jd, swe.SUN, flags)
-    moon, _ = swe.calc_ut(jd, swe.MOON, flags)
-    sun_lon, moon_lon = sun[0] % 360, moon[0] % 360
-
-    # Tithi: each 12° difference = 1 tithi (30 tithis per lunar month)
-    diff = (moon_lon - sun_lon) % 360
-    tithi_num = int(diff / 12) + 1  # 1–30
-    tithi_name = TITHI_NAMES[min((tithi_num - 1) % 15, 14)]
-    paksha = "Shukla" if tithi_num <= 15 else "Krishna"
-
-    # Yoga: (Sun lon + Moon lon) / (360/27)
-    yoga_lon = (sun_lon + moon_lon) % 360
-    yoga_num = int(yoga_lon / (360 / 27))
-    yoga_name = YOGA_NAMES[yoga_num % 27]
-
-    # Karan: half-tithi (each 6° diff). There are 60 half-tithis in a lunar month,
-    # 4 of which are fixed (Kimstughna at HT1, Shakuni/Chatushpada/Naga at HT58–60)
-    # and the remaining 56 cycle through the 7 movable karanas (Bava … Vishti).
-    half_tithi = int(diff / 6)  # 0–59
-    if half_tithi == 0:
-        karan_name = "Kimstughna"
-    elif half_tithi == 57:
-        karan_name = "Shakuni"
-    elif half_tithi == 58:
-        karan_name = "Chatushpada"
-    elif half_tithi == 59:
-        karan_name = "Naga"
-    else:
-        karan_name = _MOVABLE_KARANAS[(half_tithi - 1) % 7]
-
-    return {
-        "tithi_num": tithi_num,
-        "tithi_name": tithi_name,
-        "paksha": paksha,
-        "yoga_name": yoga_name,
-        "karan_name": karan_name,
-    }
+# Moved to .panchanga — re-imported here.
+from .panchanga import calc_panchanga  # noqa: E402,F401
 
 
 # ── Vimshottari Dasha ────────────────────────────────────────────────────────
-
-def calc_vimshottari_dasha(moon_lon: float, dob: str, tob: str | None = None) -> dict:
-    """Calculate full Vimshottari Dasha sequence from birth.
-
-    `tob` (HH:MM or HH:MM:SS) anchors all date math to the exact birth
-    moment, eliminating the ~1-2 day drift that midnight-anchored arithmetic
-    introduces over multi-year cycles. If omitted, falls back to midnight.
-    """
-    nak_size = 360 / 27
-    nak_num = int(moon_lon / nak_size)
-    fraction_elapsed = (moon_lon % nak_size) / nak_size
-
-    lord = NAKSHATRA_LORDS[nak_num]
-    lord_idx = DASHA_SEQUENCE.index(lord)
-    years_remaining = DASHA_YEARS[lord] * (1 - fraction_elapsed)
-
-    birth_dt = _birth_datetime(dob, tob)
-    dashas = []
-
-    # Accumulate in float days from birth datetime; convert each MD's start/end
-    # moment to its containing calendar date for display. Using datetime keeps
-    # sub-day precision throughout, so the displayed date is the calendar day
-    # that actually contains the boundary moment.
-    cumulative_days = 0.0
-    durations = [years_remaining] + [
-        float(DASHA_YEARS[DASHA_SEQUENCE[(lord_idx + i) % 9]]) for i in range(1, 9)
-    ]
-    planet_seq = [lord] + [DASHA_SEQUENCE[(lord_idx + i) % 9] for i in range(1, 9)]
-
-    for planet, years in zip(planet_seq, durations):
-        start_dt = birth_dt + timedelta(days=cumulative_days)
-        cumulative_days += years * _VIMSHOTTARI_DAYS_PER_YEAR
-        end_dt = birth_dt + timedelta(days=cumulative_days)
-        dashas.append({
-            "planet": planet,
-            "start_date": start_dt.date().isoformat(),
-            "end_date": end_dt.date().isoformat(),
-            "years": round(years, 2) if years != int(years) else years,
-        })
-
-    # Find current dasha
-    today = date.today()
-    current_dasha = next(
-        (d for d in dashas if date.fromisoformat(d["start_date"]) <= today <= date.fromisoformat(d["end_date"])),
-        dashas[0],
-    )
-
-    return {"dashas": dashas, "current_dasha": current_dasha}
-
-
-_VIMSHOTTARI_DAYS_PER_YEAR = 365.2425  # tropical year — matches Astrosage's dasha math
-
-
-def _add_years(d: date, years: float) -> date:
-    """Add fractional years to a date using the tropical year length."""
-    days = years * _VIMSHOTTARI_DAYS_PER_YEAR
-    return d + timedelta(days=days)
-
-
-def _birth_datetime(dob: str, tob: str | None) -> datetime:
-    """Build a birth datetime from date + optional time-of-birth string.
-
-    Threading the exact birth time through dasha math avoids the ~1-2 day
-    drift that midnight-anchored arithmetic introduces over multi-year cycles.
-    """
-    if tob:
-        # Accept "HH:MM" or "HH:MM:SS"
-        time_part = tob if len(tob) > 5 else f"{tob}:00"
-        return datetime.fromisoformat(f"{dob}T{time_part}")
-    return datetime.fromisoformat(f"{dob}T00:00:00")
+# Moved to .vimshottari — re-imported here. Includes _add_years +
+# _birth_datetime helpers (used by sadesati and other dasha sections) and
+# _VIMSHOTTARI_DAYS_PER_YEAR (re-exported via __init__.py for tests).
+from .vimshottari import (  # noqa: E402,F401
+    _VIMSHOTTARI_DAYS_PER_YEAR,
+    _add_years,
+    _birth_datetime,
+    calc_vimshottari_dasha,
+)
 
 
 # ── Manglik Dosha ────────────────────────────────────────────────────────────
-
-def calc_manglik(planets: dict, lagna_sign: int) -> dict:
-    """
-    Manglik = Mars in houses 1, 2, 4, 7, 8, or 12 from Lagna or Moon.
-    Mars in 2nd is included per Parashara tradition.
-    Uses Whole Sign houses for both Lagna and Moon.
-    """
-    MANGLIK_HOUSES = {1, 2, 4, 7, 8, 12}
-    mars_sign = planets["Mars"]["sign"]
-    moon_sign = planets["Moon"]["sign"]
-    mars_house_lagna = ((mars_sign - lagna_sign) % 12) + 1
-    mars_house_from_moon = ((mars_sign - moon_sign) % 12) + 1
-
-    from_lagna = mars_house_lagna in MANGLIK_HOUSES
-    from_moon = mars_house_from_moon in MANGLIK_HOUSES
-    is_manglik = from_lagna or from_moon
-
-    return {
-        "is_manglik": is_manglik,
-        "from_lagna": from_lagna,
-        "from_moon": from_moon,
-        "mars_house_lagna": mars_house_lagna,
-        "mars_house_moon": mars_house_from_moon,
-    }
+# Moved to .manglik — re-imported here.
+from .manglik import calc_manglik  # noqa: E402,F401
 
 
 # ── Sade Sati ────────────────────────────────────────────────────────────────
-
-def _compute_saturn_transits(start_year: int, end_year: int) -> list[tuple[int, date]]:
-    """Sidereal Saturn ingress dates between two years using Swiss Ephemeris.
-
-    Walks 14-day steps detecting sign changes, then binary-refines each
-    candidate to the exact ingress day. Includes retrograde re-entries —
-    callers can collapse those with `_collapse_retrograde_transits`.
-    """
-    import swisseph as swe
-    from datetime import timedelta
-
-    swe.set_sid_mode(swe.SIDM_LAHIRI)
-    flags = swe.FLG_SIDEREAL
-
-    def saturn_sign(d: date) -> int:
-        jd = swe.julday(d.year, d.month, d.day, 12.0)
-        pos, _ = swe.calc_ut(jd, swe.SATURN, flags)
-        return int(pos[0] % 360 / 30)
-
-    cursor = date(start_year, 1, 1)
-    end = date(end_year, 12, 31)
-    current_sign = saturn_sign(cursor)
-    transits: list[tuple[int, date]] = [(current_sign, cursor)]
-
-    while cursor < end:
-        nxt = min(cursor + timedelta(days=14), end)
-        nxt_sign = saturn_sign(nxt)
-        if nxt_sign != current_sign:
-            lo, hi = cursor, nxt
-            while (hi - lo).days > 1:
-                mid = lo + timedelta(days=(hi - lo).days // 2)
-                if saturn_sign(mid) == current_sign:
-                    lo = mid
-                else:
-                    hi = mid
-            transits.append((nxt_sign, hi))
-            current_sign = nxt_sign
-        cursor = nxt
-
-    return transits
-
-
-def _collapse_retrograde_transits(transits: list[tuple[int, date]]) -> list[tuple[int, date]]:
-    """Collapse retrograde back-and-forth into a single final ingress per sign.
-
-    A typical retrograde pattern is A → previous_sign → A again within a few
-    months. Keep only the LAST ingress into A — that's the "permanent" entry.
-    """
-    if not transits:
-        return []
-    result: list[tuple[int, date]] = [transits[0]]
-    for sign, d in transits[1:]:
-        if len(result) >= 2 and result[-2][0] == sign and (d - result[-1][1]).days < 365:
-            result.pop()
-            result[-1] = (sign, d)
-        else:
-            result.append((sign, d))
-    return result
-
-
-def calc_sadesati(moon_sign: int, dob: str | None = None) -> list[dict]:
-    """
-    Calculate Saturn's Sade Sati periods.
-
-    Sade Sati = Saturn transiting the 12th, 1st, and 2nd houses from the
-    Moon sign (~7.5 years total per cycle, recurring every ~30 years).
-    When `dob` is supplied, periods that ended before birth are dropped and
-    the search window covers ~100 years from the birth year, so all three
-    Sade Satis a person can experience in a normal lifespan are returned.
-    """
-    birth_date = date.fromisoformat(dob) if dob else None
-    if birth_date:
-        start_year = birth_date.year
-        end_year = birth_date.year + 100
-    else:
-        start_year = date.today().year - 30
-        end_year = date.today().year + 70
-
-    transits = _collapse_retrograde_transits(
-        _compute_saturn_transits(start_year, end_year)
-    )
-
-    sadesati_signs = {
-        (moon_sign - 1) % 12: "Rising",
-        moon_sign: "Peak",
-        (moon_sign + 1) % 12: "Setting",
-    }
-
-    periods = []
-    for i, (sign, entry) in enumerate(transits):
-        if sign not in sadesati_signs:
-            continue
-        if i + 1 < len(transits):
-            exit_date = transits[i + 1][1]
-        else:
-            exit_date = _add_years(entry, 2.46)
-        if birth_date and exit_date < birth_date:
-            continue
-        periods.append({
-            "phase": sadesati_signs[sign],
-            "rashi": SIGN_NAMES[sign],
-            "start_date": entry.isoformat(),
-            "end_date": exit_date.isoformat(),
-        })
-
-    return sorted(periods, key=lambda p: p["start_date"])
+# Moved to .sadesati — re-imported here. _compute_saturn_transits and
+# _collapse_retrograde_transits are kept on the legacy surface in case any
+# tests patch them directly.
+from .sadesati import (  # noqa: E402,F401
+    _collapse_retrograde_transits,
+    _compute_saturn_transits,
+    calc_sadesati,
+)
 
 
 # ── Divisional Charts (Vargas) ────────────────────────────────────────────────
