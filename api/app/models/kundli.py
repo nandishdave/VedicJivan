@@ -33,3 +33,8 @@ class KundliInDB(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status: Literal["pending", "generated", "failed"] = "pending"
     error: str | None = None
+    # Mongo TTL field. Set on `pending` insert (expires_at = now + 24h) so
+    # records that never finish processing (SQS dropped, Lambda crashed,
+    # whole worker offline for a day) auto-clean. Unset by mark_generated /
+    # mark_failed so completed records persist forever.
+    expires_at: datetime | None = None

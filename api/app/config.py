@@ -73,6 +73,17 @@ class Settings(BaseSettings):
     # Limit of recent bookings on /api/admin/dashboard.
     ADMIN_RECENT_BOOKINGS_LIMIT: int = Field(default=10, ge=1, le=100)
 
+    # ── AWS / async kundli pipeline ──
+    # SQS queue URL the API enqueues kundli generation jobs to. Empty in
+    # local/dev — SqsMessageQueue raises if used without a value, so callers
+    # must inject a fake queue in tests.
+    KUNDLI_QUEUE_URL: str = ""
+    # AWS region for the SQS client. Matches the rest of our infra.
+    AWS_REGION: str = "ap-south-1"
+    # Renderer backend for kundli PDFs. "weasyprint" is the local default
+    # (no Chromium needed); the Lambda worker sets "playwright" via env var.
+    PDF_RENDERER: str = "weasyprint"
+
     @field_validator("EXTRA_CORS_ORIGINS")
     @classmethod
     def _strip_origins(cls, v: str) -> str:

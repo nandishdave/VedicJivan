@@ -1,6 +1,8 @@
 from fastapi import Depends, Header
 
+from app.config import settings
 from app.database import get_db
+from app.infrastructure.queue import MessageQueue, SqsMessageQueue
 from app.models.user import UserRole
 from app.repositories.booking_repository import (
     BookingRepository,
@@ -105,3 +107,21 @@ def get_user_repository() -> UserRepository:
 
 def get_service_repository() -> ServiceRepository:
     return MongoServiceRepository(get_db())
+
+
+# ── Message queue factory ──
+# Singleton — boto3 client construction is non-trivial (config loading,
+# credential resolution) and the client itself is thread-safe. Tests
+# substitute a FakeMessageQueue via `app.dependency_overrides`.
+
+_kundli_queue_singleton: MessageQueue | None = None
+
+
+def get_message_queue() -> MessageQueue:
+    global _kundli_queue_singleton
+    if _kundli_queue_singleton is None:
+        _kundli_queue_singleton = SqsMessageQueue(
+            queue_url=settings.KUNDLI_QUEUE_URL,
+            region=settings.AWS_REGION,
+        )
+    return _kundli_queue_singleton

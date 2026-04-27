@@ -52,6 +52,9 @@ async def test_kundlis_ensure_indexes(mock_db):
     await MongoKundliRepository(mock_db).ensure_indexes()
     specs = _index_specs(mock_db.kundlis.create_index)
     assert ([("email", 1), ("created_at", -1)], {}) in specs
+    # TTL on expires_at — orphan-pending cleanup. expireAfterSeconds=0
+    # means "delete when now > field value" (the field IS the expiry time).
+    assert ([("expires_at", 1)], {"expireAfterSeconds": 0}) in specs
 
 
 async def test_unavailability_ensure_indexes(mock_db):

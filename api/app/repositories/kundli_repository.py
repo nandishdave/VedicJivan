@@ -47,16 +47,24 @@ class MongoKundliRepository:
     async def mark_generated(
         self, record_id: ObjectId, *, chart_data: dict
     ) -> int:
+        # `$unset: expires_at` so the TTL index doesn't reap successful records.
         result = await self._kundlis.update_one(
             {"_id": record_id},
-            {"$set": {"chart_data": chart_data, "status": "generated"}},
+            {
+                "$set": {"chart_data": chart_data, "status": "generated"},
+                "$unset": {"expires_at": ""},
+            },
         )
         return result.modified_count
 
     async def mark_failed(self, record_id: ObjectId, *, error: str) -> int:
+        # Failed records also persist (admin needs them visible) — same $unset.
         result = await self._kundlis.update_one(
             {"_id": record_id},
-            {"$set": {"status": "failed", "error": error[:500]}},
+            {
+                "$set": {"status": "failed", "error": error[:500]},
+                "$unset": {"expires_at": ""},
+            },
         )
         return result.modified_count
 
@@ -69,4 +77,12 @@ class MongoKundliRepository:
         # {email, created_at desc} — per-email rate-limit count_documents lookup.
         await self._kundlis.create_index(
             [("email", 1), ("created_at", -1)]
+        )
+        # TTL on `expires_at`. Mongo treats the indexed field's value as the
+        # absolute expiry time when expireAfterSeconds=0, deleting the doc
+        # once now > expires_at. Docs without the field are skipped — the
+        # `$unset` in mark_generated / mark_failed disables expiry on
+        # successful runs.
+        await self._kundlis.create_index(
+            [("expires_at", 1)], expireAfterSeconds=0
         )

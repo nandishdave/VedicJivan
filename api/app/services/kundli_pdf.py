@@ -129,8 +129,8 @@ def generate_pdf(chart_data: dict, sections: list[dict] | None = None) -> bytes:
     to the pre-toggle behaviour.
     """
     html = _build_html(chart_data, sections)
-    from weasyprint import HTML
-    return HTML(string=html).write_pdf()
+    from app.services.kundli_pdf_renderer import get_renderer
+    return get_renderer().render(html)
 
 
 # ── HTML builder ─────────────────────────────────────────────────────────────

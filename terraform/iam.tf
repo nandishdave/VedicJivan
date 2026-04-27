@@ -82,7 +82,10 @@ resource "aws_iam_user_policy" "deployer_backend" {
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload"
         ]
-        Resource = aws_ecr_repository.api.arn
+        Resource = [
+          aws_ecr_repository.api.arn,
+          aws_ecr_repository.kundli_worker.arn,
+        ]
       },
       {
         Sid    = "ECSUpdateService"
@@ -99,6 +102,17 @@ resource "aws_iam_user_policy" "deployer_backend" {
           "ecs:DescribeTasks"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "LambdaUpdateKundliWorker"
+        Effect = "Allow"
+        # Push a new image and roll the function in CI.
+        Action = [
+          "lambda:UpdateFunctionCode",
+          "lambda:PublishVersion",
+          "lambda:GetFunction",
+        ]
+        Resource = aws_lambda_function.kundli_worker.arn
       },
       {
         Sid    = "PassRoleForECS"
@@ -180,4 +194,23 @@ resource "aws_iam_role" "ecs_task" {
   })
 
   tags = local.common_tags
+}
+
+# Allow the API container to enqueue kundli generation jobs.
+# Producer-side only — the worker (Lambda) has its own role with
+# receive/delete permissions on the same queue.
+resource "aws_iam_role_policy" "ecs_task_sqs" {
+  name = "${local.name_prefix}-ecs-task-sqs"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["sqs:SendMessage", "sqs:GetQueueAttributes"]
+        Resource = aws_sqs_queue.kundli.arn
+      }
+    ]
+  })
 }

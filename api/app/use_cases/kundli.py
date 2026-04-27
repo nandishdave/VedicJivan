@@ -61,6 +61,10 @@ class QueueKundliGeneration:
                 "Please try again tomorrow."
             )
 
+        # 24h TTL window. Mongo's TTL background runs every ~60s; if SQS
+        # never delivered the message or the worker crashed, this orphan
+        # gets reaped automatically — no admin cleanup ritual.
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
         record = KundliInDB(
             name=req.name,
             gender=req.gender,
@@ -72,6 +76,7 @@ class QueueKundliGeneration:
             email=req.email,
             chart_data={},
             status="pending",
+            expires_at=expires_at,
         )
         return await self._repo.insert_pending(record)
 

@@ -1,11 +1,13 @@
 """Public endpoint for free Kundli report generation.
 
-The endpoint returns 202 Accepted as soon as the request is rate-limited
-and a pending record is inserted. The chart calculation, PDF rendering,
-email delivery and final DB write all run in a FastAPI BackgroundTask
-after the response is sent. This keeps every request well under the
-30-second API Gateway HTTP API integration timeout, which was being hit
-because PDF generation alone exceeds 30s on a 0.25 vCPU Fargate task.
+The endpoint inserts a `pending` record + enqueues an SQS message for the
+out-of-process Lambda worker to pick up, then returns 202 Accepted. The
+Lambda runs the chart calculation, PDF rendering, and email delivery,
+and writes the final state back to the same record.
+
+This pattern replaced the original FastAPI BackgroundTask approach
+because PDF generation on Playwright takes ~10-30 s per render and was
+starving the API event loop on a 0.25 vCPU Fargate task.
 
 This module is intentionally thin — every business rule (rate limit,
 "what counts as enabled and free", error persistence) lives in
@@ -16,26 +18,22 @@ from __future__ import annotations
 
 import os
 
-from bson import ObjectId
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 
-from app.database import get_db
-from app.dependencies import get_kundli_repository
+from app.dependencies import get_kundli_repository, get_message_queue
 from app.infrastructure.logging import get_logger
+from app.infrastructure.queue import MessageQueue
 from app.models.kundli import KundliRequest
 # These imports are kept at module scope on purpose: tests patch them as
 # `app.routers.kundli.build_chart` / `generate_pdf` / `load_report_sections`,
-# and use cases below resolve them lazily through this module's globals.
-from app.repositories.kundli_repository import (
-    KundliRepository,
-    MongoKundliRepository,
-)
+# and the render use case below resolves them lazily through this module's
+# globals.
+from app.repositories.kundli_repository import KundliRepository
 from app.services.kundli_calculator import build_chart
 from app.services.kundli_pdf import generate_pdf
 from app.services.report_sections import load_report_sections
 from app.use_cases.kundli import (
-    ProcessKundliReport,
     QueueKundliGeneration,
     RenderKundliReport,
 )
@@ -64,47 +62,39 @@ def _render_use_case() -> RenderKundliReport:
     )
 
 
-# ── Background worker ────────────────────────────────────────────────────
-
-
-async def _generate_and_email(record_id: ObjectId, req: KundliRequest) -> None:
-    """Background work: chart -> PDF -> email -> mark record done.
-
-    Kept as a router-level coroutine because FastAPI BackgroundTasks need a
-    callable here, and tests import this name to exercise the success and
-    failure paths directly. The actual business logic lives in
-    `ProcessKundliReport`.
-    """
-    # Deferred import so test patches on `app.services.email_service.send_kundli_report`
-    # (the source location) are applied each call.
-    from app.services.email_service import send_kundli_report
-
-    repo = MongoKundliRepository(get_db())
-    processor = ProcessKundliReport(
-        kundli_repo=repo,
-        render_use_case=_render_use_case(),
-        send_email=send_kundli_report,
-    )
-    await processor.execute(record_id, req)
-
-
 # ── Endpoints ────────────────────────────────────────────────────────────
 
 
 @router.post("/generate", status_code=202)
 async def generate_kundli(
     req: KundliRequest,
-    background_tasks: BackgroundTasks,
     use_case: QueueKundliGeneration = Depends(_queue_kundli_use_case),
+    queue: MessageQueue = Depends(get_message_queue),
 ):
     """Queue a Kundli report for generation.
 
-    Returns 202 Accepted immediately. The actual chart calculation, PDF
-    rendering and email delivery run as a background task. The user
-    receives the report by email when it's ready (typically under a minute).
+    Inserts a `pending` row + enqueues to SQS, then returns 202. The
+    Lambda worker picks up the message, renders the PDF, and emails it.
+    The user receives the report by email when it's ready (typically
+    under a minute).
     """
     record_id = await use_case.execute(req)
-    background_tasks.add_task(_generate_and_email, record_id, req)
+
+    # If SQS enqueue fails, the pending row stays in Mongo — its TTL
+    # (set inside QueueKundliGeneration) reaps it within 24 h. We
+    # surface a 500 to the caller so they know to retry rather than
+    # silently dropping the request.
+    try:
+        await queue.send({"record_id": str(record_id), **req.model_dump()})
+    except Exception:
+        logger.exception(
+            "Failed to enqueue kundli generation for record_id=%s", record_id
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="Could not queue your kundli report. Please try again.",
+        )
+
     return {
         "message": (
             "Your Kundli report is being generated and will arrive in your "

@@ -45,6 +45,10 @@ resource "aws_ecs_task_definition" "api" {
         { name = "JWT_ALGORITHM", value = "HS256" },
         { name = "ACCESS_TOKEN_EXPIRE_MINUTES", value = "15" },
         { name = "REFRESH_TOKEN_EXPIRE_DAYS", value = "7" },
+        # Producer-side SQS config — the API enqueues kundli generation
+        # jobs onto this queue. The Lambda worker consumes from it.
+        { name = "KUNDLI_QUEUE_URL", value = aws_sqs_queue.kundli.url },
+        { name = "AWS_REGION", value = var.aws_region },
       ]
 
       # Sensitive values from SSM Parameter Store (free tier)

@@ -57,6 +57,35 @@ jobs:
             ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
             ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:latest
 
+      - name: Resolve kundli worker image tags
+        id: lambda-tags
+        env:
+          ECR_REPO: ${{ steps.env.outputs.env == 'prod' && secrets.ECR_REPOSITORY || secrets.TEST_ECR_REPOSITORY }}
+        run: |
+          # Derive the worker repo from the API repo: vedicjivan(-test)-api
+          # → vedicjivan(-test)-kundli-worker. Saves us a separate secret.
+          LAMBDA_REPO="${ECR_REPO%-api}-kundli-worker"
+          REGISTRY="${{ steps.ecr-login.outputs.registry }}"
+          echo "lambda_repo=$LAMBDA_REPO" >> "$GITHUB_OUTPUT"
+          echo "lambda_uri=${REGISTRY}/${LAMBDA_REPO}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "lambda_uri_latest=${REGISTRY}/${LAMBDA_REPO}:latest" >> "$GITHUB_OUTPUT"
+          echo "lambda_function=${LAMBDA_REPO}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Lambda worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          file: ./api/Dockerfile.lambda
+          push: true
+          provenance: false
+          sbom: false
+          # Lambda only supports a single architecture per function; we
+          # match the function's `architectures` setting (default x86_64).
+          platforms: linux/amd64
+          tags: |
+            ${{ steps.lambda-tags.outputs.lambda_uri }}
+            ${{ steps.lambda-tags.outputs.lambda_uri_latest }}
+
       - name: Resolve ECS cluster/service names
         id: ecs
         run: |
@@ -128,6 +157,19 @@ jobs:
             echo "::error::Index migration failed — aborting deploy"
             exit 1
           fi
+
+      - name: Update kundli worker Lambda
+        # Roll the Lambda to the freshly-pushed image. Lambda handles
+        # traffic shifting on its own (concurrent old + new for a few
+        # seconds, then all traffic on the new version) — no extra wait
+        # needed. `update-function-code` is a no-op if the image-uri /
+        # tag combination is unchanged, so it's safe to run on every CI.
+        run: |
+          aws lambda update-function-code \
+            --function-name "${{ steps.lambda-tags.outputs.lambda_function }}" \
+            --image-uri "${{ steps.lambda-tags.outputs.lambda_uri }}" \
+            --publish \
+            >/dev/null
 
       - name: Force new ECS deployment
         run: |
