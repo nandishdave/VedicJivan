@@ -106,13 +106,17 @@ resource "aws_iam_user_policy" "deployer_backend" {
       {
         Sid    = "LambdaUpdateKundliWorker"
         Effect = "Allow"
-        # Push a new image and roll the function in CI.
+        # Push a new image and roll the function in CI. ARN is hardcoded
+        # (not aws_lambda_function.kundli_worker.arn) to avoid a chicken-
+        # and-egg cycle: the IAM policy must exist before CI can push
+        # the first image, and the Lambda function can't exist before
+        # there's an image. Hardcoded ARN breaks the cycle.
         Action = [
           "lambda:UpdateFunctionCode",
           "lambda:PublishVersion",
           "lambda:GetFunction",
         ]
-        Resource = aws_lambda_function.kundli_worker.arn
+        Resource = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.name_prefix}-kundli-worker"
       },
       {
         Sid    = "PassRoleForECS"
