@@ -24,6 +24,12 @@ export default defineConfig({
 
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "https://vedicjivan-test.nandishdave.world",
+    // Staging sits behind CloudFront HTTP Basic Auth. Supply credentials via
+    // E2E_BASIC_USER / E2E_BASIC_PASS env vars so they never live in the repo.
+    httpCredentials:
+      process.env.E2E_BASIC_USER && process.env.E2E_BASIC_PASS
+        ? { username: process.env.E2E_BASIC_USER, password: process.env.E2E_BASIC_PASS }
+        : undefined,
     // Capture artifacts on failure — invaluable for debugging flaky CI.
     trace: "on-first-retry",
     screenshot: "only-on-failure",
