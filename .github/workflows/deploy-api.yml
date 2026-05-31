@@ -7,6 +7,13 @@ on:
       - 'api/**'
       - '.github/workflows/deploy-api.yml'
 
+# Action authors still ship Node 20 runtimes for checkout/setup-node/aws-creds/
+# docker actions, so bumping their majors alone doesn't clear the deprecation
+# warning. Opt into Node 24 now, ahead of the 2026-06-16 forced switch and the
+# 2026-09-16 Node 20 removal.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
