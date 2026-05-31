@@ -1,62 +1,119 @@
-from datetime import date, datetime, timedelta, timezone
+"""Availability HTTP layer.
 
-from bson import ObjectId
+Thin: parses requests, picks a use case via Depends(), shapes responses.
+Slot generation, holiday/block validation, business-hours and report-section
+state all live in `app/use_cases/availability.py`.
+"""
+
+from __future__ import annotations
+
 from fastapi import APIRouter, Depends, Query
 
-from app.database import get_db
-from app.dependencies import require_admin
+from app.dependencies import (
+    get_booking_repository,
+    get_settings_repository,
+    get_unavailability_repository,
+    require_admin,
+)
 from app.models.availability import (
     AvailableSlot,
     BusinessHoursResponse,
     BusinessHoursSettings,
+    ReportSection,
     UnavailabilityCreate,
     UnavailabilityResponse,
 )
-from app.models.booking import PENDING_EXPIRY_MINUTES
-from app.services.settings import get_business_hours
-from app.utils.exceptions import BadRequestError, NotFoundError
+from app.repositories.booking_repository import BookingRepository
+from app.repositories.settings_repository import SettingsRepository
+from app.repositories.unavailability_repository import UnavailabilityRepository
+from app.use_cases.availability import (
+    AddUnavailability,
+    GetAvailableSlots,
+    GetBusinessHours,
+    GetReportSections,
+    ListHolidaysInRange,
+    ListUnavailabilityForDate,
+    ListUnavailabilityForRange,
+    RemoveUnavailability,
+    UpdateBusinessHours,
+    UpdateReportSections,
+)
 
 router = APIRouter(prefix="/api/availability", tags=["Availability"])
 
-SLOT_DURATION_MINUTES = 30
+
+# Back-compat shims — tests import these names from this module.
+from app.services.slot_generator import generate_30min_slots as _generate_all_slots  # noqa: E402,F401
+from app.utils.time_helpers import ranges_overlap as _overlaps  # noqa: E402,F401
+from app.utils.time_helpers import time_to_minutes as _time_to_minutes  # noqa: E402,F401
 
 
-def _generate_all_slots(
-    open_time: str = "00:00",
-    close_time: str = "24:00",
-) -> list[dict]:
-    """Generate 30-minute slots between open_time and close_time."""
-    slots = []
-    oh, om = map(int, open_time.split(":"))
-    current = datetime(2000, 1, 1, oh, om)
-
-    ch, cm = map(int, close_time.split(":"))
-    end = datetime(2000, 1, 2, 0, 0) if (ch == 24 and cm == 0) else datetime(2000, 1, 1, ch, cm)
-
-    delta = timedelta(minutes=SLOT_DURATION_MINUTES)
-
-    while current + delta <= end:
-        slot_end = current + delta
-        slots.append({
-            "start": current.strftime("%H:%M"),
-            "end": slot_end.strftime("%H:%M"),
-        })
-        current = slot_end
-
-    return slots
+# ── Use-case factories ────────────────────────────────────────────────────
 
 
-def _time_to_minutes(t: str) -> int:
-    """Convert HH:MM to minutes since midnight."""
-    h, m = t.split(":")
-    return int(h) * 60 + int(m)
+def _get_available_slots_use_case(
+    unavail_repo: UnavailabilityRepository = Depends(get_unavailability_repository),
+    booking_repo: BookingRepository = Depends(get_booking_repository),
+    settings_repo: SettingsRepository = Depends(get_settings_repository),
+) -> GetAvailableSlots:
+    return GetAvailableSlots(unavail_repo, booking_repo, settings_repo)
 
 
-def _overlaps(start1: str, end1: str, start2: str, end2: str) -> bool:
-    """Check if two time ranges overlap."""
-    s1, e1 = _time_to_minutes(start1), _time_to_minutes(end1)
-    s2, e2 = _time_to_minutes(start2), _time_to_minutes(end2)
-    return s1 < e2 and s2 < e1
+def _list_unavailability_use_case(
+    repo: UnavailabilityRepository = Depends(get_unavailability_repository),
+) -> ListUnavailabilityForDate:
+    return ListUnavailabilityForDate(repo)
+
+
+def _list_unavailability_range_use_case(
+    repo: UnavailabilityRepository = Depends(get_unavailability_repository),
+) -> ListUnavailabilityForRange:
+    return ListUnavailabilityForRange(repo)
+
+
+def _list_holidays_use_case(
+    repo: UnavailabilityRepository = Depends(get_unavailability_repository),
+) -> ListHolidaysInRange:
+    return ListHolidaysInRange(repo)
+
+
+def _add_unavailability_use_case(
+    repo: UnavailabilityRepository = Depends(get_unavailability_repository),
+) -> AddUnavailability:
+    return AddUnavailability(repo)
+
+
+def _remove_unavailability_use_case(
+    repo: UnavailabilityRepository = Depends(get_unavailability_repository),
+) -> RemoveUnavailability:
+    return RemoveUnavailability(repo)
+
+
+def _get_business_hours_use_case(
+    repo: SettingsRepository = Depends(get_settings_repository),
+) -> GetBusinessHours:
+    return GetBusinessHours(repo)
+
+
+def _update_business_hours_use_case(
+    repo: SettingsRepository = Depends(get_settings_repository),
+) -> UpdateBusinessHours:
+    return UpdateBusinessHours(repo)
+
+
+def _get_report_sections_use_case(
+    repo: SettingsRepository = Depends(get_settings_repository),
+) -> GetReportSections:
+    return GetReportSections(repo)
+
+
+def _update_report_sections_use_case(
+    repo: SettingsRepository = Depends(get_settings_repository),
+) -> UpdateReportSections:
+    return UpdateReportSections(repo)
+
+
+# ── Response shaping ─────────────────────────────────────────────────────
 
 
 def _doc_to_response(doc: dict) -> UnavailabilityResponse:
@@ -70,167 +127,53 @@ def _doc_to_response(doc: dict) -> UnavailabilityResponse:
     )
 
 
+# ── Endpoints ────────────────────────────────────────────────────────────
+
+
 @router.get("/slots", response_model=list[AvailableSlot])
 async def get_available_slots(
     date_str: str = Query(..., alias="date", pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    use_case: GetAvailableSlots = Depends(_get_available_slots_use_case),
 ):
     """Get available 30-min slots for a date, respecting business hours."""
-    db = get_db()
-
-    # Load business hours and determine day-of-week
-    bh_settings = await get_business_hours()
-    requested_date = date.fromisoformat(date_str)
-    day_of_week = requested_date.weekday()  # 0=Mon, 6=Sun
-
-    day_config = next((d for d in bh_settings.weekly_hours if d.day == day_of_week), None)
-    if not day_config or not day_config.is_open:
-        return []
-
-    # Check if entire day is a holiday
-    holiday = await db.unavailability.find_one({"date": date_str, "is_holiday": True})
-    if holiday:
-        return []
-
-    # Get unavailable periods for the date
-    cursor = db.unavailability.find({"date": date_str, "is_holiday": False})
-    unavailable = []
-    async for doc in cursor:
-        if doc.get("start_time") and doc.get("end_time"):
-            unavailable.append((doc["start_time"], doc["end_time"]))
-
-    # Get confirmed + recent pending bookings for the date
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_EXPIRY_MINUTES)
-    booking_cursor = db.bookings.find({
-        "date": date_str,
-        "$or": [
-            {"status": "confirmed"},
-            {"status": "pending", "created_at": {"$gte": cutoff}},
-        ],
-    })
-    booked = []
-    async for b in booking_cursor:
-        start_min = _time_to_minutes(b["time_slot"])
-        end_min = start_min + b.get("duration_minutes", 30)
-        hours, mins = divmod(end_min, 60)
-        booked.append((b["time_slot"], f"{hours:02d}:{mins:02d}"))
-
-    # Generate slots only within business hours and filter
-    all_slots = _generate_all_slots(day_config.open_time, day_config.close_time)
-
-    # If requested date is today, calculate current time to filter past slots
-    now = datetime.now()
-    is_today = requested_date == now.date()
-    now_minutes = now.hour * 60 + now.minute if is_today else 0
-
-    available = []
-
-    for slot in all_slots:
-        # Skip slots that have already started if date is today
-        if is_today and _time_to_minutes(slot["start"]) <= now_minutes:
-            continue
-
-        blocked = False
-
-        for u_start, u_end in unavailable:
-            if _overlaps(slot["start"], slot["end"], u_start, u_end):
-                blocked = True
-                break
-
-        if not blocked:
-            for b_start, b_end in booked:
-                if _overlaps(slot["start"], slot["end"], b_start, b_end):
-                    blocked = True
-                    break
-
-        if not blocked:
-            available.append(AvailableSlot(start=slot["start"], end=slot["end"]))
-
-    return available
+    return await use_case.execute(date_str)
 
 
 @router.get("/unavailable", response_model=list[UnavailabilityResponse])
 async def get_unavailability(
     date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    use_case: ListUnavailabilityForDate = Depends(_list_unavailability_use_case),
 ):
-    """Get unavailable periods for a specific date."""
-    db = get_db()
-    cursor = db.unavailability.find({"date": date}).sort("start_time", 1)
-    results = []
-    async for doc in cursor:
-        results.append(_doc_to_response(doc))
-    return results
+    docs = await use_case.execute(date)
+    return [_doc_to_response(d) for d in docs]
 
 
 @router.get("/unavailable/range", response_model=list[UnavailabilityResponse])
 async def get_unavailability_range(
     start: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
     end: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    use_case: ListUnavailabilityForRange = Depends(_list_unavailability_range_use_case),
 ):
-    """Get unavailable periods for a date range."""
-    db = get_db()
-    cursor = db.unavailability.find(
-        {"date": {"$gte": start, "$lte": end}}
-    ).sort("date", 1)
-    results = []
-    async for doc in cursor:
-        results.append(_doc_to_response(doc))
-    return results
+    docs = await use_case.execute(start, end)
+    return [_doc_to_response(d) for d in docs]
 
 
 @router.get("/holidays", response_model=list[str])
 async def get_holidays(
     start: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
     end: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    use_case: ListHolidaysInRange = Depends(_list_holidays_use_case),
 ):
-    """Get holiday dates in a range (for calendar view)."""
-    db = get_db()
-    cursor = db.unavailability.find(
-        {"date": {"$gte": start, "$lte": end}, "is_holiday": True}
-    )
-    holidays = []
-    async for doc in cursor:
-        holidays.append(doc["date"])
-    return holidays
+    return await use_case.execute(start, end)
 
 
 @router.post("/unavailable", response_model=UnavailabilityResponse)
 async def add_unavailability(
     data: UnavailabilityCreate,
     _admin: dict = Depends(require_admin),
+    use_case: AddUnavailability = Depends(_add_unavailability_use_case),
 ):
-    """Block a time period or mark a full day as holiday."""
-    db = get_db()
-
-    if data.is_holiday:
-        # Full-day holiday — remove any existing entry for this date and add holiday
-        existing = await db.unavailability.find_one(
-            {"date": data.date, "is_holiday": True}
-        )
-        if existing:
-            raise BadRequestError(f"{data.date} is already marked as a holiday")
-
-        doc = {
-            "date": data.date,
-            "is_holiday": True,
-            "reason": data.reason,
-        }
-    else:
-        if not data.start_time or not data.end_time:
-            raise BadRequestError("start_time and end_time are required for time blocks")
-
-        if _time_to_minutes(data.start_time) >= _time_to_minutes(data.end_time):
-            raise BadRequestError("start_time must be before end_time")
-
-        doc = {
-            "date": data.date,
-            "start_time": data.start_time,
-            "end_time": data.end_time,
-            "is_holiday": False,
-            "reason": data.reason,
-        }
-
-    result = await db.unavailability.insert_one(doc)
-    doc["_id"] = result.inserted_id
+    doc = await use_case.execute(data)
     return _doc_to_response(doc)
 
 
@@ -238,12 +181,9 @@ async def add_unavailability(
 async def remove_unavailability(
     block_id: str,
     _admin: dict = Depends(require_admin),
+    use_case: RemoveUnavailability = Depends(_remove_unavailability_use_case),
 ):
-    """Remove an unavailable period (make it available again)."""
-    db = get_db()
-    result = await db.unavailability.delete_one({"_id": ObjectId(block_id)})
-    if result.deleted_count == 0:
-        raise NotFoundError("Unavailability block not found")
+    await use_case.execute(block_id)
     return {"message": "Removed"}
 
 
@@ -251,9 +191,10 @@ async def remove_unavailability(
 
 
 @router.get("/settings", response_model=BusinessHoursResponse)
-async def get_business_hours_settings():
-    """Get business hours configuration (public)."""
-    settings = await get_business_hours()
+async def get_business_hours_settings(
+    use_case: GetBusinessHours = Depends(_get_business_hours_use_case),
+):
+    settings = await use_case.execute()
     return BusinessHoursResponse(
         timezone=settings.timezone,
         weekly_hours=settings.weekly_hours,
@@ -264,16 +205,29 @@ async def get_business_hours_settings():
 async def update_business_hours_settings(
     data: BusinessHoursSettings,
     _admin: dict = Depends(require_admin),
+    use_case: UpdateBusinessHours = Depends(_update_business_hours_use_case),
 ):
-    """Update business hours configuration (admin only)."""
-    db = get_db()
-    doc = {
-        "_id": "business_hours",
-        "timezone": data.timezone,
-        "weekly_hours": [dh.model_dump() for dh in data.weekly_hours],
-    }
-    await db.settings.replace_one({"_id": "business_hours"}, doc, upsert=True)
+    saved = await use_case.execute(data)
     return BusinessHoursResponse(
-        timezone=data.timezone,
-        weekly_hours=data.weekly_hours,
+        timezone=saved.timezone,
+        weekly_hours=saved.weekly_hours,
     )
+
+
+# ── Report Sections Settings ──
+
+
+@router.get("/settings/report-sections", response_model=list[ReportSection])
+async def get_report_sections(
+    use_case: GetReportSections = Depends(_get_report_sections_use_case),
+):
+    return await use_case.execute()
+
+
+@router.put("/settings/report-sections", response_model=list[ReportSection])
+async def update_report_sections(
+    sections: list[ReportSection],
+    _admin: dict = Depends(require_admin),
+    use_case: UpdateReportSections = Depends(_update_report_sections_use_case),
+):
+    return await use_case.execute(sections)

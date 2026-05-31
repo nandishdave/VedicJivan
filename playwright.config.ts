@@ -1,0 +1,73 @@
+import { defineConfig, devices } from "@playwright/test";
+
+/**
+ * Playwright config for VedicJivan E2E tests.
+ *
+ * Default target is the staging deployment so a developer can run `npm run
+ * test:e2e` and immediately get useful signal on the deployed system.
+ * Override with E2E_BASE_URL=http://localhost:3000 to test a local dev server.
+ *
+ * In CI, `webServer` block can be uncommented to spin up `next start` on the
+ * production-built app and run E2E against it before deploy.
+ */
+export default defineConfig({
+  testDir: "./e2e",
+  // Each test file runs in parallel by default; specs within a file are serial.
+  fullyParallel: true,
+  // Don't allow .only() to slip into CI runs.
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  // Single worker locally for clearer output; CI benefits from more.
+  workers: process.env.CI ? 4 : 2,
+  // HTML report viewable with `npx playwright show-report`.
+  reporter: process.env.CI ? "github" : [["html", { open: "never" }], ["list"]],
+
+  use: {
+    baseURL: process.env.E2E_BASE_URL ?? "https://vedicjivan-test.nandishdave.world",
+    // Staging sits behind CloudFront HTTP Basic Auth. Supply credentials via
+    // E2E_BASIC_USER / E2E_BASIC_PASS env vars so they never live in the repo.
+    httpCredentials:
+      process.env.E2E_BASIC_USER && process.env.E2E_BASIC_PASS
+        ? { username: process.env.E2E_BASIC_USER, password: process.env.E2E_BASIC_PASS }
+        : undefined,
+    // Capture artifacts on failure — invaluable for debugging flaky CI.
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    // Realistic viewport.
+    viewport: { width: 1280, height: 800 },
+    // 30s default per action — staging can be slow to cold-start.
+    actionTimeout: 30_000,
+  },
+
+  // Visual regression: tolerance per pixel (anti-aliasing across OS / Chromium
+  // versions). The per-test `maxDiffPixelRatio` still applies on top of this.
+  expect: {
+    toHaveScreenshot: {
+      threshold: 0.2,                 // per-pixel colour delta (0–1)
+      maxDiffPixelRatio: 0.02,        // global default — overridden per test
+      animations: "disabled",
+    },
+  },
+
+  // Snapshots live alongside specs in __screenshots__/{spec-name}/{test-name}.png
+  snapshotPathTemplate: "{testDir}/__screenshots__/{testFileName}/{arg}{ext}",
+
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Add Firefox / WebKit / mobile viewports here as needed:
+    // { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    // { name: "mobile-chrome", use: { ...devices["Pixel 5"] } },
+  ],
+
+  // Uncomment to auto-start a local dev server for tests (slow start-up):
+  // webServer: {
+  //   command: "npm run dev",
+  //   url: "http://localhost:3000",
+  //   reuseExistingServer: !process.env.CI,
+  //   timeout: 120_000,
+  // },
+});

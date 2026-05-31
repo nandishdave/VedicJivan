@@ -1,0 +1,70 @@
+# Lambda container image for the kundli PDF worker.
+#
+# Built FROM the AWS Lambda Python runtime base — gives us the
+# Lambda Runtime API on PORT 8080 + the bootstrap so we don't have
+# to write our own. Image lands ~1.5-2 GB compressed (Chromium is
+# ~700 MB on disk), well under Lambda's 10 GB ceiling.
+#
+# Renderer: Playwright + Chromium. ~700 MB - 1.5 GB RAM per render,
+# which is why the Lambda is sized at 2048 MB memory.
+
+FROM public.ecr.aws/lambda/python:3.12
+
+# System libs:
+#   * Chromium: alsa-lib, atk, cups-libs, gtk3, libXcomposite/Xcursor/Xdamage
+#     /Xext/Xi/Xrandr/XScrnSaver/Xtst, libdrm, libxkbcommon, libgbm, mesa-libgbm,
+#     nss, pango, xorg-x11-fonts-* — without these chromium dies on launch
+#     with "error while loading shared libraries".
+#   * WeasyPrint: pango + cairo (already in chromium deps), plus libffi for
+#     cffi. Kept so PDF_RENDERER=weasyprint works as a Lambda fallback if
+#     Playwright misbehaves.
+RUN dnf install -y \
+        alsa-lib \
+        atk \
+        at-spi2-atk \
+        at-spi2-core \
+        cups-libs \
+        cairo \
+        dbus-libs \
+        gcc \
+        gcc-c++ \
+        gtk3 \
+        libdrm \
+        libffi-devel \
+        libgbm \
+        libxkbcommon \
+        libXcomposite \
+        libXcursor \
+        libXdamage \
+        libXext \
+        libXi \
+        libXrandr \
+        libXScrnSaver \
+        libXtst \
+        make \
+        mesa-libgbm \
+        nss \
+        pango \
+        xorg-x11-fonts-100dpi \
+        xorg-x11-fonts-75dpi \
+        xorg-x11-fonts-cyrillic \
+        xorg-x11-fonts-misc \
+        xorg-x11-fonts-Type1 \
+    && dnf clean all
+
+# Copy + install Python deps first so the layer caches across code-only changes.
+COPY requirements.txt ${LAMBDA_TASK_ROOT}/
+RUN pip install --no-cache-dir -r ${LAMBDA_TASK_ROOT}/requirements.txt
+
+# Playwright pulls Chromium into ~/.cache/ms-playwright by default. On
+# Lambda, $HOME is /tmp (writable but transient between invocations,
+# not part of the image), so we override the path to bake the browser
+# into the image itself.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
+RUN python -m playwright install chromium
+
+# Copy the application package.
+COPY app/ ${LAMBDA_TASK_ROOT}/app/
+
+# AWS Lambda: <module>.<function> — the runtime imports this and calls it.
+CMD ["app.workers.kundli_lambda.handler"]

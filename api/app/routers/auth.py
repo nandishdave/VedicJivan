@@ -1,97 +1,93 @@
-from bson import ObjectId
+"""Auth HTTP layer — thin Depends-driven router."""
+
+from __future__ import annotations
+
 from fastapi import APIRouter, Depends
 
-from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import (
+    get_current_user,
+    get_user_repository,
+)
 from app.models.user import (
     TokenRefresh,
     TokenResponse,
     UserCreate,
-    UserInDB,
     UserLogin,
     UserResponse,
 )
-from app.utils.exceptions import BadRequestError, UnauthorizedError
-from app.utils.security import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    hash_password,
-    verify_password,
+from app.repositories.user_repository import UserRepository
+from app.use_cases.auth import (
+    GetMyProfile,
+    LoginUser,
+    RefreshTokens,
+    RegisterUser,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
 
+# ── Use-case factories ────────────────────────────────────────────────────
+
+
+def _register_use_case(
+    repo: UserRepository = Depends(get_user_repository),
+) -> RegisterUser:
+    return RegisterUser(repo)
+
+
+def _login_use_case(
+    repo: UserRepository = Depends(get_user_repository),
+) -> LoginUser:
+    return LoginUser(repo)
+
+
+def _refresh_use_case(
+    repo: UserRepository = Depends(get_user_repository),
+) -> RefreshTokens:
+    return RefreshTokens(repo)
+
+
+def _profile_use_case(
+    repo: UserRepository = Depends(get_user_repository),
+) -> GetMyProfile:
+    return GetMyProfile(repo)
+
+
+# ── Endpoints ────────────────────────────────────────────────────────────
+
+
 @router.post("/register", response_model=TokenResponse)
-async def register(data: UserCreate):
-    db = get_db()
-
-    existing = await db.users.find_one({"email": data.email})
-    if existing:
-        raise BadRequestError("Email already registered")
-
-    user = UserInDB(
-        name=data.name,
-        email=data.email,
-        password_hash=hash_password(data.password),
-        phone=data.phone,
+async def register(
+    data: UserCreate,
+    use_case: RegisterUser = Depends(_register_use_case),
+):
+    access, refresh = await use_case.execute(
+        name=data.name, email=data.email, password=data.password, phone=data.phone
     )
-
-    result = await db.users.insert_one(user.model_dump())
-    user_id = str(result.inserted_id)
-
-    return TokenResponse(
-        access_token=create_access_token({"sub": user_id}),
-        refresh_token=create_refresh_token({"sub": user_id}),
-    )
+    return TokenResponse(access_token=access, refresh_token=refresh)
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(data: UserLogin):
-    db = get_db()
-
-    user = await db.users.find_one({"email": data.email})
-    if not user or not verify_password(data.password, user["password_hash"]):
-        raise UnauthorizedError("Invalid email or password")
-
-    user_id = str(user["_id"])
-
-    return TokenResponse(
-        access_token=create_access_token({"sub": user_id}),
-        refresh_token=create_refresh_token({"sub": user_id}),
-    )
+async def login(
+    data: UserLogin,
+    use_case: LoginUser = Depends(_login_use_case),
+):
+    access, refresh = await use_case.execute(email=data.email, password=data.password)
+    return TokenResponse(access_token=access, refresh_token=refresh)
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(data: TokenRefresh):
-    payload = decode_token(data.refresh_token)
-    if not payload or payload.get("type") != "refresh":
-        raise UnauthorizedError("Invalid refresh token")
-
-    db = get_db()
-    user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
-    if not user:
-        raise UnauthorizedError("User not found")
-
-    user_id = str(user["_id"])
-
-    return TokenResponse(
-        access_token=create_access_token({"sub": user_id}),
-        refresh_token=create_refresh_token({"sub": user_id}),
-    )
+async def refresh_token(
+    data: TokenRefresh,
+    use_case: RefreshTokens = Depends(_refresh_use_case),
+):
+    access, refresh = await use_case.execute(refresh_token=data.refresh_token)
+    return TokenResponse(access_token=access, refresh_token=refresh)
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(current_user: dict = Depends(get_current_user)):
-    db = get_db()
-    user = await db.users.find_one({"_id": ObjectId(current_user["id"])})
-
-    return UserResponse(
-        id=str(user["_id"]),
-        name=user["name"],
-        email=user["email"],
-        phone=user.get("phone", ""),
-        role=user["role"],
-        created_at=user["created_at"],
-    )
+async def get_me(
+    current_user: dict = Depends(get_current_user),
+    use_case: GetMyProfile = Depends(_profile_use_case),
+):
+    return await use_case.execute(user_id=current_user["id"])

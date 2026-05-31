@@ -151,3 +151,54 @@ resource "aws_cloudwatch_metric_alarm" "apigw_high_latency" {
 
   tags = local.common_tags
 }
+
+# 6. Kundli SQS — Any message landed in the DLQ.
+# Means a message failed 3 redrives — render bug, missing secret,
+# Resend down, etc. Surface for human triage.
+resource "aws_cloudwatch_metric_alarm" "kundli_dlq_messages" {
+  alarm_name          = "${local.name_prefix}-kundli-dlq-messages"
+  alarm_description   = "CRITICAL: ${local.env} kundli message in DLQ (failed 3 retries)"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "ApproximateNumberOfMessagesVisible"
+  namespace           = "AWS/SQS"
+  period              = 60
+  statistic           = "Maximum"
+  threshold           = 0
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    QueueName = aws_sqs_queue.kundli_dlq.name
+  }
+
+  alarm_actions = [aws_sns_topic.alarms.arn]
+  ok_actions    = [aws_sns_topic.alarms.arn]
+
+  tags = local.common_tags
+}
+
+# 7. Kundli SQS — Oldest message age > 10 min on the main queue.
+# Catches Lambda being throttled / stuck / scaled to zero. A healthy
+# pipeline drains in seconds; anything > 10 min means something is
+# wrong (Lambda concurrency limit hit, IAM revoked, etc.).
+resource "aws_cloudwatch_metric_alarm" "kundli_queue_age" {
+  alarm_name          = "${local.name_prefix}-kundli-queue-age"
+  alarm_description   = "WARNING: ${local.env} kundli queue oldest message > 10 min — Lambda likely stuck"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "ApproximateAgeOfOldestMessage"
+  namespace           = "AWS/SQS"
+  period              = 300
+  statistic           = "Maximum"
+  threshold           = 600
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    QueueName = aws_sqs_queue.kundli.name
+  }
+
+  alarm_actions = [aws_sns_topic.alarms.arn]
+  ok_actions    = [aws_sns_topic.alarms.arn]
+
+  tags = local.common_tags
+}

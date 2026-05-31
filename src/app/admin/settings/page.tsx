@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Settings, Globe } from "lucide-react";
+import { ArrowLeft, Settings, Globe, FileText, Lock, Unlock } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { availabilityApi, type DayHours } from "@/lib/api";
+import { availabilityApi, type DayHours, type ReportSection } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
 const DAY_LABELS = [
@@ -39,8 +39,11 @@ export default function SettingsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingReportSections, setSavingReportSections] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [reportSectionsMessage, setReportSectionsMessage] = useState("");
+  const [reportSectionsError, setReportSectionsError] = useState("");
   const [timezone, setTimezone] = useState("Asia/Kolkata");
   const [weeklyHours, setWeeklyHours] = useState<DayHours[]>(
     Array.from({ length: 7 }, (_, i) => ({
@@ -50,18 +53,21 @@ export default function SettingsPage() {
       close_time: "18:00",
     }))
   );
+  const [reportSections, setReportSections] = useState<ReportSection[]>([]);
 
   useEffect(() => {
-    availabilityApi
-      .getSettings()
-      .then((data) => {
-        setTimezone(data.timezone);
-        setWeeklyHours(data.weekly_hours);
-      })
-      .catch(() => {
-        /* use defaults */
-      })
-      .finally(() => setLoading(false));
+    Promise.all([
+      availabilityApi.getSettings().catch(() => null),
+      availabilityApi.getReportSections().catch(() => null),
+    ]).then(([hoursData, sectionsData]) => {
+      if (hoursData) {
+        setTimezone(hoursData.timezone);
+        setWeeklyHours(hoursData.weekly_hours);
+      }
+      if (sectionsData) {
+        setReportSections(sectionsData);
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -85,6 +91,28 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveReportSections = async () => {
+    const token = getToken();
+    if (!token) { router.push("/admin/login"); return; }
+    setSavingReportSections(true);
+    setReportSectionsMessage("");
+    setReportSectionsError("");
+    try {
+      await availabilityApi.updateReportSections(reportSections, token);
+      setReportSectionsMessage("Report sections updated successfully!");
+    } catch (err) {
+      setReportSectionsError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSavingReportSections(false);
+    }
+  };
+
+  const updateSection = (id: string, updates: Partial<ReportSection>) => {
+    setReportSections((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+    );
   };
 
   const updateDay = (dayIndex: number, updates: Partial<DayHours>) => {
@@ -248,6 +276,98 @@ export default function SettingsPage() {
         <Button onClick={handleSave} disabled={saving}>
           {saving ? "Saving..." : "Save Settings"}
         </Button>
+
+        {/* ── Report Sections ── */}
+        <div className="mt-[var(--space-xl)]">
+          <div className="mb-[var(--space-md)] flex items-center gap-[var(--space-sm)]">
+            <FileText className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+            <h1 className="font-heading text-[var(--text-xl)] font-bold">
+              Report Sections
+            </h1>
+          </div>
+          <p className="mb-[var(--space-md)] text-[var(--text-sm)] text-gray-500 dark:text-gray-400">
+            Control which sections appear in the Kundli report and whether they require payment.
+            Any new section added in the future will also appear here.
+          </p>
+
+          {reportSectionsMessage && (
+            <div className="mb-[var(--space-sm)] rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-[var(--space-sm)] text-[var(--text-sm)] text-green-700 dark:text-green-400">
+              {reportSectionsMessage}
+            </div>
+          )}
+          {reportSectionsError && (
+            <div className="mb-[var(--space-sm)] rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-[var(--space-sm)] text-[var(--text-sm)] text-red-700 dark:text-red-400">
+              {reportSectionsError}
+            </div>
+          )}
+
+          <div className="mb-[var(--space-md)] rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-dark-surface-card overflow-hidden">
+            {/* Table header */}
+            <div className="grid grid-cols-[1fr_auto_auto] gap-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-dark-surface px-[var(--space-md)] py-[var(--space-xs)]">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Section</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 text-center">Access</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 text-center">Enabled</span>
+            </div>
+
+            {reportSections.map((section, idx) => (
+              <div
+                key={section.id}
+                className={`grid grid-cols-[1fr_auto_auto] items-center gap-4 px-[var(--space-md)] py-[var(--space-sm)] ${
+                  idx < reportSections.length - 1
+                    ? "border-b border-gray-100 dark:border-gray-700"
+                    : ""
+                } ${!section.enabled ? "opacity-50" : ""}`}
+              >
+                {/* Section info */}
+                <div>
+                  <p className="text-[var(--text-sm)] font-medium text-gray-900 dark:text-gray-100">
+                    {section.label}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {section.description}
+                  </p>
+                </div>
+
+                {/* Free / Paid toggle */}
+                <button
+                  type="button"
+                  onClick={() => updateSection(section.id, { is_paid: !section.is_paid })}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
+                    section.is_paid
+                      ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700"
+                      : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700"
+                  }`}
+                >
+                  {section.is_paid ? (
+                    <><Lock className="h-3 w-3" /> Paid</>
+                  ) : (
+                    <><Unlock className="h-3 w-3" /> Free</>
+                  )}
+                </button>
+
+                {/* Enabled toggle */}
+                <button
+                  type="button"
+                  onClick={() => updateSection(section.id, { enabled: !section.enabled })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    section.enabled ? "bg-primary-600" : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                  aria-label={`Toggle ${section.label}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      section.enabled ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <Button onClick={handleSaveReportSections} disabled={savingReportSections}>
+            {savingReportSections ? "Saving..." : "Save Report Sections"}
+          </Button>
+        </div>
       </Container>
     </section>
   );

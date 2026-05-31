@@ -89,3 +89,56 @@ class BusinessHoursResponse(BaseModel):
 
     timezone: str
     weekly_hours: list[DayHours]
+
+
+class ReportSection(BaseModel):
+    """A single configurable section in the Kundli report."""
+
+    id: str
+    label: str
+    description: str
+    is_paid: bool = True
+    enabled: bool = True
+    order: int
+
+
+DEFAULT_REPORT_SECTIONS: list[ReportSection] = [
+    ReportSection(id="at_a_glance",     label="At-a-Glance Summary",    description="Dense single-page snapshot: header band, D1+D9 charts, Panchang, Avakhada, planet positions, Vimshottari Dasha.", is_paid=False, enabled=True, order=1),
+    ReportSection(id="summary_grid",    label="Summary Grid",           description="Compact 2×2 grid: Basic Details, Avkahada Chakra, Favourable Points, Ghatak.",             is_paid=False, enabled=True, order=2),
+    ReportSection(id="birth_chart",     label="Birth Chart",            description="North Indian Rashi Chakra SVG + full planet positions table.",                                is_paid=False, enabled=True, order=2),
+    ReportSection(id="basic_details",   label="Basic Details",          description="Birth particulars, coordinates, time conversions, panchanga and luminary timings.",           is_paid=False, enabled=True, order=2),
+    ReportSection(id="avkahada",        label="Avkahada Chakra",        description="Traditional Vedic chart attributes: varna, vasya, yoni, gana, nadi, paya, tatva.",            is_paid=False, enabled=True, order=3),
+    ReportSection(id="favourable",      label="Favourable Points",      description="Lucky planets, days, numbers, colours, gemstones for the Lagna.",                              is_paid=False, enabled=True, order=4),
+    ReportSection(id="ghatak",          label="Ghatak (Malefics)",      description="Inauspicious planets, days, nakshatras, tithis to avoid for the Lagna.",                       is_paid=False, enabled=True, order=5),
+    ReportSection(id="planet_consideration", label="Planet Considerations", description="Per-planet narrative: sign, house, lordship, aspects given/received, interpretation + remedies.", is_paid=False, enabled=True, order=6),
+    ReportSection(id="ascendant",       label="Ascendant",              description="Lagna explanation and your ascendant's character traits.",                                     is_paid=False, enabled=True, order=7),
+    ReportSection(id="nakshatra",       label="Nakshatra",              description="Lunar mansion details, ruling deity, symbol, and pada interpretation.",                        is_paid=False, enabled=True, order=8),
+    ReportSection(id="character_life",  label="Character & Life",       description="Personality traits, life patterns, and natural disposition.",                                  is_paid=False, enabled=True, order=9),
+    ReportSection(id="yogas",           label="Yogas",                  description="Classical planetary combinations present in the chart.",                                       is_paid=False, enabled=True, order=10),
+    ReportSection(id="doshas",          label="Doshas & Afflictions",   description="Kaal Sarp, Pitra, Guru Chandal, Mangal Dosha etc. + remedies.",                                is_paid=False, enabled=True, order=11),
+    ReportSection(id="bhava_analysis",  label="Bhava (House) Analysis", description="House-by-house analysis of all 12 bhavas.",                                                    is_paid=False, enabled=True, order=12),
+    ReportSection(id="manglik",         label="Mangal Dosha",           description="Manglik dosha check from Lagna and Moon, with severity and cancellations.",                    is_paid=False, enabled=True, order=13),
+    ReportSection(id="sadesati",        label="Sade Sati",              description="Saturn's 7.5-year transit cycle through Moon's sign and adjacent signs.",                      is_paid=False, enabled=True, order=14),
+    ReportSection(id="gochar",          label="Gochar (Transits)",      description="Current planetary transits over the natal chart.",                                             is_paid=False, enabled=True, order=15),
+    ReportSection(id="dasha",           label="Mahadasha (intro only)", description="Standalone current-Mahadasha intro. Off by default — Mahadasha Phal already covers this and adds chart-specific house interpretations.", is_paid=False, enabled=False, order=16),
+    ReportSection(id="mahadasha_phal", label="Mahadasha Phal",         description="House-specific interpretation for each Mahadasha period based on the lord's placement.",         is_paid=False, enabled=True, order=17),
+    ReportSection(id="antardasha",      label="Antardasha",             description="Sub-periods within the current Mahadasha.",                                                    is_paid=False, enabled=True, order=18),
+    ReportSection(id="pratyantar",      label="Pratyantar Dasha",       description="Sub-sub-periods (3rd level) within each Antardasha.",                                          is_paid=False, enabled=True, order=19),
+    ReportSection(id="jaimini",         label="Jaimini System",         description="Karakamsa & Swamsa charts plus Chara/Sthira Karak table (soul-purpose readings).",            is_paid=False, enabled=True, order=20),
+    ReportSection(id="yogini_dasha",   label="Yogini Dasha",          description="36-year Yogini Dasha cycle (8 yoginis) — excellent for 1-2 year event timing.",                 is_paid=False, enabled=True, order=21),
+    ReportSection(id="char_dasha",      label="Char Dasha (Jaimini)",   description="Sign-based Mahadasha sequence from natal lagna with sign sub-periods. K.N. Rao formula.",   is_paid=False, enabled=True, order=22),
+    ReportSection(id="divisional",      label="Divisional Charts",      description="All 18 divisional charts (D2–D60) with SVG diagrams and planet positions.",                    is_paid=False, enabled=True, order=23),
+    ReportSection(id="shodashvarga",   label="Shodashvarga Table",     description="Compact grid showing each planet's sign across all divisional charts at a glance.",             is_paid=False, enabled=True, order=24),
+    ReportSection(id="friendship",      label="Friendship Table",       description="Permanent (Naisargika), Temporary (Tatkalika) and Compound (Panchadha) friendship matrices.", is_paid=False, enabled=True, order=25),
+    ReportSection(id="shadbala",        label="Planetary Strength",     description="Shadbala — which planets are strong or weak and why.",                                         is_paid=False, enabled=True, order=26),
+    ReportSection(id="western_aspects", label="Planetary Aspects (Western)", description="Western-style angular aspects (conjunction, opposition, trine, square, sextile, minor).", is_paid=False, enabled=True, order=27),
+    ReportSection(id="graha_drishti",  label="Graha Drishti (Vedic Aspects)",description="Classical Vedic planetary aspects: 7th for all, plus Mars 4/8, Jupiter 5/9, Saturn 3/10, Rahu/Ketu 5/9.", is_paid=False, enabled=True, order=28),
+    ReportSection(id="planet_positions",label="Planet Positions",       description="Complete planet ephemeris table with degrees, sign, nakshatra, dignity.",                      is_paid=False, enabled=True, order=29),
+    ReportSection(id="numerology",      label="Numerology",             description="Moolank, Bhagyank, Namank and personal year analysis (Chaldean + Vedic).",                     is_paid=False, enabled=True, order=30),
+    ReportSection(id="varshaphal",      label="Varshaphal (Annual)",    description="Tajik annual chart at solar return, Muntha bhava focus, and Mudda Dasha period predictions.", is_paid=False, enabled=True, order=31),
+    ReportSection(id="lal_kitab_calc",  label="Lal Kitab Calculation",  description="Lal Kitab birth details, planetary table (house-based sign), Lagna chart, and Lal Kitab Dasha with sub-periods.", is_paid=False, enabled=True, order=32),
+    ReportSection(id="lal_kitab",       label="Lal Kitab Predictions",  description="Per-planet narrative + Lal Kitab remedies based on house placement.",                            is_paid=False, enabled=True, order=33),
+    ReportSection(id="remedies",        label="Gemstone & Remedies",    description="Gemstone recommendations and personalised remedial measures.",                                 is_paid=False, enabled=True, order=34),
+    # Reserved for the v2 paid narrative tier — disabled in free PDF until Phase 4 ships.
+    ReportSection(id="predictions",     label="Life Area Predictions",  description="AI-generated combined-reading narrative across 15 life areas (v2 paid tier).",                 is_paid=True,  enabled=False, order=99),
+]

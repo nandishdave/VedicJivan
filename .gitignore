@@ -8,6 +8,11 @@
 
 # testing
 /coverage
+# Playwright artifacts
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
 
 # next.js
 /.next/
@@ -55,7 +60,7 @@ __pycache__/
 api/.env
 api/.coverage
 nul
-scripts/
+/scripts/
 
 # claude
 .claude/

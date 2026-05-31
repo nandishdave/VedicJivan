@@ -1,7 +1,41 @@
 from fastapi import Depends, Header
 
+from app.config import settings
 from app.database import get_db
+from app.infrastructure.queue import MessageQueue, SqsMessageQueue
 from app.models.user import UserRole
+from app.repositories.booking_repository import (
+    BookingRepository,
+    MongoBookingRepository,
+)
+from app.repositories.kundli_repository import (
+    KundliRepository,
+    MongoKundliRepository,
+)
+from app.repositories.payment_repository import (
+    MongoPaymentRepository,
+    PaymentRepository,
+)
+from app.repositories.processed_event_repository import (
+    MongoProcessedEventRepository,
+    ProcessedEventRepository,
+)
+from app.repositories.settings_repository import (
+    MongoSettingsRepository,
+    SettingsRepository,
+)
+from app.repositories.unavailability_repository import (
+    MongoUnavailabilityRepository,
+    UnavailabilityRepository,
+)
+from app.repositories.service_repository import (
+    MongoServiceRepository,
+    ServiceRepository,
+)
+from app.repositories.user_repository import (
+    MongoUserRepository,
+    UserRepository,
+)
 from app.utils.exceptions import ForbiddenError, UnauthorizedError
 from app.utils.security import decode_token
 
@@ -35,3 +69,59 @@ async def require_admin(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != UserRole.ADMIN:
         raise ForbiddenError("Admin access required")
     return current_user
+
+
+# ── Repository factories (clean architecture wiring) ──
+# Use cases depend on the Protocol (BookingRepository); production wires the
+# concrete MongoBookingRepository here. Tests can override these dependencies
+# via FastAPI's `app.dependency_overrides` to substitute in-memory fakes.
+
+
+def get_booking_repository() -> BookingRepository:
+    return MongoBookingRepository(get_db())
+
+
+def get_payment_repository() -> PaymentRepository:
+    return MongoPaymentRepository(get_db())
+
+
+def get_processed_event_repository() -> ProcessedEventRepository:
+    return MongoProcessedEventRepository(get_db())
+
+
+def get_kundli_repository() -> KundliRepository:
+    return MongoKundliRepository(get_db())
+
+
+def get_unavailability_repository() -> UnavailabilityRepository:
+    return MongoUnavailabilityRepository(get_db())
+
+
+def get_settings_repository() -> SettingsRepository:
+    return MongoSettingsRepository(get_db())
+
+
+def get_user_repository() -> UserRepository:
+    return MongoUserRepository(get_db())
+
+
+def get_service_repository() -> ServiceRepository:
+    return MongoServiceRepository(get_db())
+
+
+# ── Message queue factory ──
+# Singleton — boto3 client construction is non-trivial (config loading,
+# credential resolution) and the client itself is thread-safe. Tests
+# substitute a FakeMessageQueue via `app.dependency_overrides`.
+
+_kundli_queue_singleton: MessageQueue | None = None
+
+
+def get_message_queue() -> MessageQueue:
+    global _kundli_queue_singleton
+    if _kundli_queue_singleton is None:
+        _kundli_queue_singleton = SqsMessageQueue(
+            queue_url=settings.KUNDLI_QUEUE_URL,
+            region=settings.AWS_REGION,
+        )
+    return _kundli_queue_singleton

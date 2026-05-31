@@ -16,7 +16,9 @@ import { TimeSlotPicker } from "./TimeSlotPicker";
 import { DateOfBirthPicker } from "./DateOfBirthPicker";
 import { TimeOfBirthPicker } from "./TimeOfBirthPicker";
 import { PlaceOfBirthAutocomplete } from "./PlaceOfBirthAutocomplete";
-import { bookingsApi, paymentsApi, type Booking } from "@/lib/api";
+import { useBookingForm } from "./hooks/useBookingForm";
+import { usePaymentFlow } from "./hooks/usePaymentFlow";
+import { useResumableBooking } from "./hooks/useResumableBooking";
 import type { Service } from "@/data/services";
 
 interface BookingWizardProps {
@@ -32,122 +34,43 @@ function parseDurationMinutes(duration: string | null): number {
   return match ? parseInt(match[1], 10) : 0;
 }
 
-// Reports don't need scheduling
-const REPORT_SERVICES = ["premium-kundli", "numerology-report", "matchmaking"];
+// Legacy slug list — kept as a fallback while existing service entries
+// migrate to the new `isReport` flag on the Service interface.
+const LEGACY_REPORT_SLUGS = ["premium-kundli", "numerology-report", "matchmaking"];
 
-const USER_DETAILS_KEY = "vedicjivan_user_details";
-
-/** Load previously saved user details from localStorage (excludes booking-specific notes). */
-function loadSavedUserDetails() {
-  try {
-    const stored = localStorage.getItem(USER_DETAILS_KEY);
-    if (!stored) return null;
-    return JSON.parse(stored);
-  } catch {
-    return null;
-  }
-}
-
-/** Save personal details so they pre-fill on future bookings. */
-function saveUserDetails(formData: Record<string, unknown>) {
-  const { notes, ...details } = formData;
-  void notes; // notes are booking-specific, not saved
-  localStorage.setItem(USER_DETAILS_KEY, JSON.stringify(details));
+function isReportService(service: Service): boolean {
+  return service.isReport === true || LEGACY_REPORT_SLUGS.includes(service.slug);
 }
 
 export function BookingWizard({ service }: BookingWizardProps) {
-  const isReport = REPORT_SERVICES.includes(service.slug);
+  const isReport = isReportService(service);
+  const storageKey = `vedicjivan_pending_booking_${service.slug}`;
+  const fixedDuration = parseDurationMinutes(service.duration);
 
   const [step, setStep] = useState<Step>(isReport ? "details" : "date");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
   const [selectedDuration, setSelectedDuration] = useState(0);
-  const [formData, setFormData] = useState(() => {
-    const saved = loadSavedUserDetails();
-    return {
-      name: saved?.name ?? "",
-      email: saved?.email ?? "",
-      phone: saved?.phone ?? "",
-      notes: "", // always blank — booking-specific
-      dateOfBirth: saved?.dateOfBirth ?? "",
-      birthTimeHour: saved?.birthTimeHour ?? "12",
-      birthTimeMinute: saved?.birthTimeMinute ?? "00",
-      birthTimePeriod: (saved?.birthTimePeriod ?? "AM") as "AM" | "PM",
-      birthTimeUnknown: saved?.birthTimeUnknown ?? false,
-      placeOfBirth: saved?.placeOfBirth ?? "",
-      birthLatitude: saved?.birthLatitude ?? 0,
-      birthLongitude: saved?.birthLongitude ?? 0,
-    };
-  });
-  const [bookingId, setBookingId] = useState("");
-  const [price, setPrice] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [resumeBooking, setResumeBooking] = useState<Booking | null>(null);
-  const [showResumePrompt, setShowResumePrompt] = useState(false);
-  const [checkingResume, setCheckingResume] = useState(true);
   const wizardRef = useRef<HTMLDivElement>(null);
 
-  const storageKey = `vedicjivan_pending_booking_${service.slug}`;
+  const form = useBookingForm();
+  const payment = usePaymentFlow();
+  const resume = useResumableBooking(storageKey);
 
-  // Check for a pending booking in localStorage on mount
+  // Apply restored partial progress from localStorage (date/time selections
+  // saved before the booking record was created).
   useEffect(() => {
-    const checkPendingBooking = async () => {
-      try {
-        const stored = localStorage.getItem(storageKey);
-        if (!stored) {
-          setCheckingResume(false);
-          return;
-        }
-
-        const record = JSON.parse(stored);
-
-        if (record.bookingId) {
-          // Full booking exists — check 15-min expiry
-          const elapsed = Date.now() - new Date(record.createdAt).getTime();
-          if (elapsed > 15 * 60 * 1000) {
-            localStorage.removeItem(storageKey);
-            setCheckingResume(false);
-            return;
-          }
-
-          // Server-side validation
-          const booking = await bookingsApi.resume(record.bookingId);
-          setResumeBooking(booking);
-          setShowResumePrompt(true);
-        } else {
-          // Partial progress — check 2-hour expiry
-          const savedAt = record.savedAt ? new Date(record.savedAt).getTime() : 0;
-          if (savedAt && Date.now() - savedAt > 2 * 60 * 60 * 1000) {
-            localStorage.removeItem(storageKey);
-            setCheckingResume(false);
-            return;
-          }
-          // Restore selections
-          if (record.date) setSelectedDate(record.date);
-          if (record.timeSlot) setSelectedSlot(record.timeSlot);
-          if (record.duration) setSelectedDuration(record.duration);
-
-          // Jump to the furthest step
-          if (record.timeSlot) {
-            setStep("details");
-          } else if (record.date) {
-            setStep("time");
-          }
-        }
-      } catch {
-        localStorage.removeItem(storageKey);
-      } finally {
-        setCheckingResume(false);
-      }
-    };
-
-    checkPendingBooking();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Fixed duration from the service definition (e.g. "30 min" → 30)
-  const fixedDuration = parseDurationMinutes(service.duration);
+    if (!resume.partialProgress) return;
+    const { date, timeSlot, duration } = resume.partialProgress;
+    if (date) setSelectedDate(date);
+    if (timeSlot) setSelectedSlot(timeSlot);
+    if (duration) setSelectedDuration(duration);
+    if (timeSlot) {
+      setStep("details");
+    } else if (date) {
+      setStep("time");
+    }
+  }, [resume.partialProgress]);
 
   const steps: { key: Step; label: string; icon: React.ReactNode }[] = isReport
     ? [
@@ -158,7 +81,6 @@ export function BookingWizard({ service }: BookingWizardProps) {
     : [
         { key: "date", label: "Date", icon: <Calendar className="h-4 w-4" /> },
         { key: "time", label: "Time", icon: <Clock className="h-4 w-4" /> },
-        // Skip the duration step — service already defines a fixed duration
         { key: "details", label: "Details", icon: <User className="h-4 w-4" /> },
         { key: "review", label: "Review", icon: <CheckCircle2 className="h-4 w-4" /> },
         { key: "payment", label: "Payment", icon: <CreditCard className="h-4 w-4" /> },
@@ -174,9 +96,8 @@ export function BookingWizard({ service }: BookingWizardProps) {
   }, [step]);
 
   const handleNext = () => {
-    // Persist personal details when leaving the details step
     if (step === "details") {
-      saveUserDetails(formData);
+      form.persistDetails();
     }
     if (currentStepIndex < steps.length - 1) {
       setStep(steps[currentStepIndex + 1].key);
@@ -190,99 +111,60 @@ export function BookingWizard({ service }: BookingWizardProps) {
   };
 
   const handleResumeBooking = () => {
-    if (!resumeBooking) return;
-    setBookingId(resumeBooking.id);
-    setPrice(resumeBooking.price_inr);
-    setSelectedDate(resumeBooking.date);
-    setSelectedSlot(resumeBooking.time_slot);
-    setSelectedDuration(resumeBooking.duration_minutes);
-    setFormData((prev) => ({
+    if (!resume.resumeBooking) return;
+    const b = resume.resumeBooking;
+    payment.setBookingId(b.id);
+    payment.setPrice(b.price_inr);
+    payment.setPriceEur(b.price_eur ?? 0);
+    setSelectedDate(b.date);
+    setSelectedSlot(b.time_slot);
+    setSelectedDuration(b.duration_minutes);
+    form.setFormData((prev) => ({
       ...prev,
-      name: resumeBooking.user_name,
-      email: resumeBooking.user_email,
-      phone: resumeBooking.user_phone,
+      name: b.user_name,
+      email: b.user_email,
+      phone: b.user_phone,
     }));
-    setShowResumePrompt(false);
+    resume.acceptResume();
     setStep("payment");
   };
 
-  const handleStartFresh = () => {
-    localStorage.removeItem(storageKey);
-    setShowResumePrompt(false);
-    setResumeBooking(null);
-  };
-
   const handleCreateBooking = async () => {
-    // If booking was already created (user came back from payment), skip to payment
-    if (bookingId) {
+    // If booking was already created (user came back from payment), skip ahead.
+    if (payment.bookingId) {
       setStep("payment");
       return;
     }
 
-    setLoading(true);
-    setError("");
-
-    try {
-      const booking = await bookingsApi.create({
+    const id = await payment.createBooking(
+      {
         service_slug: service.slug,
         service_title: service.title,
         date: isReport ? new Date().toISOString().split("T")[0] : selectedDate,
         time_slot: isReport ? "00:00" : selectedSlot,
         duration_minutes: isReport ? 0 : selectedDuration,
-        user_name: formData.name,
-        user_email: formData.email,
-        user_phone: formData.phone,
-        notes: formData.notes,
-        date_of_birth: formData.dateOfBirth,
-        time_of_birth: formData.birthTimeUnknown
+        user_name: form.formData.name,
+        user_email: form.formData.email,
+        user_phone: form.formData.phone,
+        notes: form.formData.notes,
+        date_of_birth: form.formData.dateOfBirth,
+        time_of_birth: form.formData.birthTimeUnknown
           ? null
-          : `${formData.birthTimeHour}:${formData.birthTimeMinute} ${formData.birthTimePeriod}`,
-        birth_time_unknown: formData.birthTimeUnknown,
-        place_of_birth: formData.placeOfBirth,
-        birth_latitude: formData.birthLatitude,
-        birth_longitude: formData.birthLongitude,
-      });
+          : `${form.formData.birthTimeHour}:${form.formData.birthTimeMinute} ${form.formData.birthTimePeriod}`,
+        birth_time_unknown: form.formData.birthTimeUnknown,
+        place_of_birth: form.formData.placeOfBirth,
+        birth_latitude: form.formData.birthLatitude,
+        birth_longitude: form.formData.birthLongitude,
+      },
+      storageKey,
+      service.slug,
+      service.title,
+    );
 
-      setBookingId(booking.id);
-      setPrice(booking.price_inr);
-
-      // Save to localStorage so user can resume if they leave
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({
-          bookingId: booking.id,
-          createdAt: new Date().toISOString(),
-          serviceSlug: service.slug,
-          serviceTitle: service.title,
-        })
-      );
-
-      setStep("payment");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create booking");
-    } finally {
-      setLoading(false);
-    }
+    if (id) setStep("payment");
   };
 
-  const handlePayment = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const { checkout_url } = await paymentsApi.createCheckoutSession({
-        booking_id: bookingId,
-      });
-
-      // Redirect to Stripe Checkout
-      window.location.href = checkout_url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create payment session");
-      setLoading(false);
-    }
-  };
-
-  if (checkingResume) {
+  if (resume.checking) {
     return (
       <div className="mx-auto max-w-2xl text-center py-8 text-gray-500 dark:text-gray-400">
         Loading...
@@ -298,10 +180,10 @@ export function BookingWizard({ service }: BookingWizardProps) {
         </div>
         <h2 className="font-heading text-2xl font-bold text-vedic-dark dark:text-gray-100">Booking Confirmed!</h2>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          Thank you, {formData.name}. Your {service.title} has been booked successfully.
+          Thank you, {form.formData.name}. Your {service.title} has been booked successfully.
         </p>
         <div className="mt-4 rounded-lg bg-gray-50 dark:bg-dark-surface-raised p-4 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-          <p><strong>Booking ID:</strong> <span className="font-mono text-xs">{bookingId}</span></p>
+          <p><strong>Booking ID:</strong> <span className="font-mono text-xs">{payment.bookingId}</span></p>
           {!isReport && (
             <>
               <p><strong>Date:</strong> {selectedDate}</p>
@@ -309,10 +191,10 @@ export function BookingWizard({ service }: BookingWizardProps) {
               <p><strong>Duration:</strong> {selectedDuration} minutes</p>
             </>
           )}
-          <p><strong>Amount Paid:</strong> {"\u20B9"}{price}</p>
+          <p><strong>Amount Paid:</strong> {payment.currency === "EUR" ? `\u20AC${payment.priceEur}` : `\u20B9${payment.price}`}</p>
         </div>
         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-          A confirmation email with meeting details has been sent to {formData.email}.
+          A confirmation email with meeting details has been sent to {form.formData.email}.
         </p>
         <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
           Please save your Booking ID for reference.
@@ -348,30 +230,31 @@ export function BookingWizard({ service }: BookingWizardProps) {
         ))}
       </div>
 
-      {showResumePrompt && resumeBooking && (
+      {resume.showResumePrompt && resume.resumeBooking && (
         <div className="mb-6 rounded-xl border-2 border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 p-5">
           <h3 className="font-heading text-lg font-bold text-amber-800 dark:text-amber-300">
             Resume Your Booking?
           </h3>
           <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
-            You have a pending {resumeBooking.service_title} booking
-            {resumeBooking.duration_minutes > 0 && ` for ${resumeBooking.date} at ${resumeBooking.time_slot}`}.
-            Would you like to continue to payment?
+            You have a pending {resume.resumeBooking.service_title} booking
+            {resume.resumeBooking.duration_minutes > 0 &&
+              ` for ${resume.resumeBooking.date} at ${resume.resumeBooking.time_slot}`}
+            . Would you like to continue to payment?
           </p>
           <div className="mt-4 flex gap-3">
             <Button variant="primary" onClick={handleResumeBooking}>
               Resume & Pay
             </Button>
-            <Button variant="ghost" onClick={handleStartFresh}>
+            <Button variant="ghost" onClick={resume.startFresh}>
               Start Fresh
             </Button>
           </div>
         </div>
       )}
 
-      {error && (
+      {payment.error && (
         <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-400">
-          {error}
+          {payment.error}
         </div>
       )}
 
@@ -403,18 +286,19 @@ export function BookingWizard({ service }: BookingWizardProps) {
               onSlotSelect={(slot) => {
                 setSelectedSlot(slot);
                 setSelectedDuration(fixedDuration);
-                // Save partial progress
-                localStorage.setItem(
-                  storageKey,
-                  JSON.stringify({
-                    serviceSlug: service.slug,
-                    serviceTitle: service.title,
-                    date: selectedDate,
-                    timeSlot: slot,
-                    duration: fixedDuration,
-                    savedAt: new Date().toISOString(),
-                  })
-                );
+                if (typeof window !== "undefined") {
+                  localStorage.setItem(
+                    storageKey,
+                    JSON.stringify({
+                      serviceSlug: service.slug,
+                      serviceTitle: service.title,
+                      date: selectedDate,
+                      timeSlot: slot,
+                      duration: fixedDuration,
+                      savedAt: new Date().toISOString(),
+                    }),
+                  );
+                }
               }}
             />
           </div>
@@ -428,8 +312,8 @@ export function BookingWizard({ service }: BookingWizardProps) {
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name *</label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={form.formData.name}
+                  onChange={(e) => form.setFormData({ ...form.formData, name: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
                   placeholder="Enter your full name"
                 />
@@ -438,8 +322,8 @@ export function BookingWizard({ service }: BookingWizardProps) {
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Email *</label>
                 <input
                   type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  value={form.formData.email}
+                  onChange={(e) => form.setFormData({ ...form.formData, email: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
                   placeholder="you@example.com"
                 />
@@ -448,8 +332,8 @@ export function BookingWizard({ service }: BookingWizardProps) {
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Phone *</label>
                 <input
                   type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  value={form.formData.phone}
+                  onChange={(e) => form.setFormData({ ...form.formData, phone: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
                   placeholder="+91 98765 43210"
                 />
@@ -457,8 +341,8 @@ export function BookingWizard({ service }: BookingWizardProps) {
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes *</label>
                 <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  value={form.formData.notes}
+                  onChange={(e) => form.setFormData({ ...form.formData, notes: e.target.value })}
                   rows={3}
                   className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-surface-card dark:text-gray-200"
                   placeholder="Please describe what you'd like to discuss or need help with"
@@ -468,8 +352,8 @@ export function BookingWizard({ service }: BookingWizardProps) {
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Date of Birth *</label>
                 <DateOfBirthPicker
-                  selectedDate={formData.dateOfBirth}
-                  onDateSelect={(date) => setFormData({ ...formData, dateOfBirth: date })}
+                  selectedDate={form.formData.dateOfBirth}
+                  onDateSelect={(date) => form.setFormData({ ...form.formData, dateOfBirth: date })}
                 />
               </div>
 
@@ -477,25 +361,25 @@ export function BookingWizard({ service }: BookingWizardProps) {
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Time of Birth</label>
                 <TimeOfBirthPicker
                   value={
-                    formData.birthTimeUnknown
+                    form.formData.birthTimeUnknown
                       ? null
                       : {
-                          hour: formData.birthTimeHour,
-                          minute: formData.birthTimeMinute,
-                          period: formData.birthTimePeriod,
+                          hour: form.formData.birthTimeHour,
+                          minute: form.formData.birthTimeMinute,
+                          period: form.formData.birthTimePeriod,
                         }
                   }
-                  isUnknown={formData.birthTimeUnknown}
+                  isUnknown={form.formData.birthTimeUnknown}
                   onTimeChange={(time) =>
-                    setFormData({
-                      ...formData,
+                    form.setFormData({
+                      ...form.formData,
                       birthTimeHour: time.hour,
                       birthTimeMinute: time.minute,
                       birthTimePeriod: time.period,
                     })
                   }
                   onUnknownChange={(unknown) =>
-                    setFormData({ ...formData, birthTimeUnknown: unknown })
+                    form.setFormData({ ...form.formData, birthTimeUnknown: unknown })
                   }
                 />
               </div>
@@ -503,10 +387,10 @@ export function BookingWizard({ service }: BookingWizardProps) {
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Place of Birth *</label>
                 <PlaceOfBirthAutocomplete
-                  value={formData.placeOfBirth}
+                  value={form.formData.placeOfBirth}
                   onPlaceSelect={(place) =>
-                    setFormData({
-                      ...formData,
+                    form.setFormData({
+                      ...form.formData,
                       placeOfBirth: place.name,
                       birthLatitude: place.latitude,
                       birthLongitude: place.longitude,
@@ -544,42 +428,44 @@ export function BookingWizard({ service }: BookingWizardProps) {
               )}
               <div className="flex justify-between text-sm dark:text-gray-300">
                 <span className="text-gray-500 dark:text-gray-400">Name</span>
-                <span className="font-medium">{formData.name}</span>
+                <span className="font-medium">{form.formData.name}</span>
               </div>
               <div className="flex justify-between text-sm dark:text-gray-300">
                 <span className="text-gray-500 dark:text-gray-400">Email</span>
-                <span className="font-medium">{formData.email}</span>
+                <span className="font-medium">{form.formData.email}</span>
               </div>
               <div className="flex justify-between text-sm dark:text-gray-300">
                 <span className="text-gray-500 dark:text-gray-400">Phone</span>
-                <span className="font-medium">{formData.phone}</span>
+                <span className="font-medium">{form.formData.phone}</span>
               </div>
-              {formData.notes && (
+              {form.formData.notes && (
                 <div className="flex justify-between text-sm dark:text-gray-300">
                   <span className="text-gray-500 dark:text-gray-400">Notes</span>
-                  <span className="font-medium max-w-[60%] text-right">{formData.notes}</span>
+                  <span className="font-medium max-w-[60%] text-right">{form.formData.notes}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm dark:text-gray-300">
                 <span className="text-gray-500 dark:text-gray-400">Date of Birth</span>
-                <span className="font-medium">{formData.dateOfBirth}</span>
+                <span className="font-medium">{form.formData.dateOfBirth}</span>
               </div>
               <div className="flex justify-between text-sm dark:text-gray-300">
                 <span className="text-gray-500 dark:text-gray-400">Time of Birth</span>
                 <span className="font-medium">
-                  {formData.birthTimeUnknown
+                  {form.formData.birthTimeUnknown
                     ? "Unknown"
-                    : `${formData.birthTimeHour}:${formData.birthTimeMinute} ${formData.birthTimePeriod}`}
+                    : `${form.formData.birthTimeHour}:${form.formData.birthTimeMinute} ${form.formData.birthTimePeriod}`}
                 </span>
               </div>
               <div className="flex justify-between text-sm dark:text-gray-300">
                 <span className="text-gray-500 dark:text-gray-400">Place of Birth</span>
-                <span className="font-medium max-w-[60%] text-right">{formData.placeOfBirth}</span>
+                <span className="font-medium max-w-[60%] text-right">{form.formData.placeOfBirth}</span>
               </div>
               <hr className="border-gray-200 dark:border-gray-600" />
               <div className="flex justify-between text-base font-bold dark:text-gray-100">
                 <span>Price</span>
-                <span className="text-primary-600 dark:text-primary-400">{service.priceINR}</span>
+                <span className="text-primary-600 dark:text-primary-400">
+                  {payment.currency === "EUR" ? service.priceEUR : service.priceINR}
+                </span>
               </div>
             </div>
           </div>
@@ -589,19 +475,45 @@ export function BookingWizard({ service }: BookingWizardProps) {
           <div className="text-center py-8">
             <CreditCard className="mx-auto mb-4 h-12 w-12 text-primary-600 dark:text-primary-400" />
             <h3 className="mb-2 font-heading text-xl font-bold dark:text-gray-100">Complete Payment</h3>
+
+            {/* Currency toggle */}
+            <div className="mb-5 inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-dark-surface p-1">
+              <button
+                type="button"
+                onClick={() => payment.setCurrency("INR")}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${payment.currency === "INR" ? "bg-primary-600 text-white shadow" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
+              >
+                🇮🇳 ₹ INR
+              </button>
+              <button
+                type="button"
+                onClick={() => payment.setCurrency("EUR")}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${payment.currency === "EUR" ? "bg-primary-600 text-white shadow" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
+              >
+                🌍 € EUR
+              </button>
+            </div>
+
             <p className="mb-6 text-gray-600 dark:text-gray-400">
-              Amount: <strong className="text-primary-600 dark:text-primary-400">{"\u20B9"}{price}</strong>
+              Amount:{" "}
+              <strong className="text-primary-600 dark:text-primary-400">
+                {payment.currency === "EUR" ? `\u20AC${payment.priceEur}` : `\u20B9${payment.price}`}
+              </strong>
             </p>
             <Button
               variant="gold"
               size="lg"
-              onClick={handlePayment}
-              disabled={loading}
+              onClick={payment.startCheckout}
+              disabled={payment.loading}
             >
-              {loading ? "Processing..." : `Pay \u20B9${price}`}
+              {payment.loading
+                ? "Processing..."
+                : payment.currency === "EUR"
+                  ? `Pay \u20AC${payment.priceEur}`
+                  : `Pay \u20B9${payment.price}`}
             </Button>
             <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-              Secured by Stripe. Supports Cards, UPI, Netbanking & more.
+              Secured by Stripe. Supports Cards & major payment methods.
             </p>
             <button
               type="button"
@@ -631,9 +543,9 @@ export function BookingWizard({ service }: BookingWizardProps) {
             <Button
               variant="primary"
               onClick={handleCreateBooking}
-              disabled={loading}
+              disabled={payment.loading}
             >
-              {loading ? "Creating..." : "Proceed to Payment"}
+              {payment.loading ? "Creating..." : "Proceed to Payment"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
@@ -643,13 +555,7 @@ export function BookingWizard({ service }: BookingWizardProps) {
               disabled={
                 (step === "date" && !selectedDate) ||
                 (step === "time" && !selectedSlot) ||
-                (step === "details" &&
-                  (!formData.name ||
-                    !formData.email ||
-                    !formData.phone ||
-                    !formData.notes ||
-                    !formData.dateOfBirth ||
-                    !formData.placeOfBirth))
+                (step === "details" && !form.isComplete)
               }
             >
               Next

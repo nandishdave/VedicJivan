@@ -1,0 +1,23 @@
+name: Booking Reminders
+
+on:
+  schedule:
+    # Run every hour (UTC)
+    - cron: "0 * * * *"
+  workflow_dispatch: # Allow manual trigger for testing
+
+jobs:
+  send-reminders:
+    name: Send 24h Reminder Emails
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reminder endpoint (prod)
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST https://api.vedicjivan.nandishdave.world/api/internal/send-reminders \
+            -H "X-Internal-Secret: ${{ secrets.INTERNAL_SECRET }}")
+          echo "Response code: $response"
+          if [ "$response" != "200" ]; then
+            echo "ERROR: Reminder endpoint returned $response"
+            exit 1
+          fi

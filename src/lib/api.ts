@@ -94,6 +94,15 @@ export interface BusinessHoursSettings {
   weekly_hours: DayHours[];
 }
 
+export interface ReportSection {
+  id: string;
+  label: string;
+  description: string;
+  is_paid: boolean;
+  enabled: boolean;
+  order: number;
+}
+
 export const availabilityApi = {
   getSlots: (date: string) =>
     apiRequest<AvailableSlot[]>(`/api/availability/slots?date=${date}`),
@@ -140,6 +149,16 @@ export const availabilityApi = {
       body: data,
       token,
     }),
+
+  getReportSections: () =>
+    apiRequest<ReportSection[]>("/api/availability/settings/report-sections"),
+
+  updateReportSections: (sections: ReportSection[], token: string) =>
+    apiRequest<ReportSection[]>("/api/availability/settings/report-sections", {
+      method: "PUT",
+      body: sections,
+      token,
+    }),
 };
 
 // ── Bookings ──
@@ -154,6 +173,7 @@ export interface Booking {
   time_slot: string;
   duration_minutes: number;
   price_inr: number;
+  price_eur: number;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   payment_id: string | null;
   notes: string;
@@ -209,11 +229,20 @@ export const bookingsApi = {
 
   resume: (id: string) =>
     apiRequest<Booking>(`/api/bookings/${id}/resume`),
+
+  view: (id: string) =>
+    apiRequest<Booking>(`/api/bookings/${id}/view`),
+
+  reschedule: (id: string, data: { date: string; time_slot: string; duration_minutes: number }) =>
+    apiRequest<Booking>(`/api/bookings/${id}/reschedule`, {
+      method: "PATCH",
+      body: data,
+    }),
 };
 
 // ── Payments ──
 export const paymentsApi = {
-  createCheckoutSession: (data: { booking_id: string }) =>
+  createCheckoutSession: (data: { booking_id: string; currency?: string }) =>
     apiRequest<{ checkout_url: string }>("/api/payments/create-checkout-session", {
       method: "POST",
       body: data,
@@ -281,4 +310,23 @@ export const adminApi = {
       daily_bookings: { date: string; bookings: number }[];
       daily_revenue: { date: string; revenue: number }[];
     }>("/api/admin/stats", { token }),
+};
+
+// ── Kundli ──
+export const kundliApi = {
+  generate: (data: {
+    name: string;
+    gender: string;
+    dob: string;
+    tob: string;
+    lat: number;
+    lon: number;
+    place_name: string;
+    email: string;
+    timezone?: string;
+  }) =>
+    apiRequest<{ message: string }>("/api/kundli/generate", {
+      method: "POST",
+      body: data,
+    }),
 };

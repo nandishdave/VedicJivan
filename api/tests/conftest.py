@@ -1,7 +1,9 @@
 """Shared test fixtures for the VedicJivan API test suite."""
 
 import os
+from collections import deque
 from datetime import datetime, timezone
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -130,6 +132,7 @@ def _make_mock_collection():
     col.count_documents = AsyncMock(return_value=0)
     col.find = MagicMock(return_value=MockCursor([]))
     col.aggregate = MagicMock(return_value=MockAggregationCursor([]))
+    col.create_index = AsyncMock(return_value="mock_index_name")
     return col
 
 
@@ -143,9 +146,58 @@ def mock_db():
     db.unavailability = _make_mock_collection()
     db.availability = _make_mock_collection()
     db.settings = _make_mock_collection()
+    db.kundlis = _make_mock_collection()
+    db.services = _make_mock_collection()
+    db.stripe_events = _make_mock_collection()
+    # `db.command(...)` is used by the readiness probe to ping Mongo.
+    db.command = AsyncMock(return_value={"ok": 1.0})
+
+    # Wire `services.find_one({"slug": ...})` to the in-code defaults so
+    # booking-create tests don't have to mock pricing lookups individually.
+    from app.services.default_services import DEFAULT_SERVICES
+
+    async def _find_service(query):
+        if isinstance(query, dict) and "slug" in query:
+            slug = query["slug"]
+            for s in DEFAULT_SERVICES:
+                if s.slug == slug:
+                    doc = s.model_dump()
+                    doc["_id"] = ObjectId()
+                    return doc
+        return None
+
+    db.services.find_one = AsyncMock(side_effect=_find_service)
 
     with patch("app.database.db", db), patch("app.database.get_db", return_value=db):
         yield db
+
+
+# ── Fake message queue ──
+
+
+class FakeMessageQueue:
+    """In-memory MessageQueue stand-in for router tests.
+
+    Stores every payload + auto-generates a MessageId. Set `raise_on_send`
+    to simulate a transient SQS failure (network error, throttling).
+    """
+
+    def __init__(self) -> None:
+        self.sent: deque[dict[str, Any]] = deque()
+        self.raise_on_send: Exception | None = None
+        self._counter = 0
+
+    async def send(self, payload: dict[str, Any]) -> str:
+        if self.raise_on_send is not None:
+            raise self.raise_on_send
+        self.sent.append(payload)
+        self._counter += 1
+        return f"fake-msg-{self._counter}"
+
+
+@pytest.fixture
+def fake_queue():
+    return FakeMessageQueue()
 
 
 # ── Auth tokens ──

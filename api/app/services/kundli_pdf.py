@@ -1,0 +1,308 @@
+"""
+Kundli PDF generator using WeasyPrint.
+
+This module is now a thin orchestration facade. The 60+ section
+builders + chart helpers live in `pdf_sections.py`. The four names
+that tests directly monkeypatch (`SECTION_BUILDERS`, `_css`, `_cover`,
+`_footer`) MUST stay here — `monkeypatch.setattr(kundli_pdf, "<name>",
+stub)` only affects subsequent lookups in `kundli_pdf`'s namespace.
+`_build_html` is also kept here so its `_css(...)` and
+`SECTION_BUILDERS[...]` lookups resolve through the patched names.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+
+# ── Public constants (back-imported by pdf_sections) ────────────────────────
+
+LOGO_URL = "https://vedicjivan-website.s3.ap-south-1.amazonaws.com/images/logo/logo-final.png"
+BRAND = "#7c3aed"
+
+SIGN_ABBR = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"]
+SIGN_NAMES = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]
+SIGN_LORDS = [
+    "Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury",
+    "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter",
+]
+PLANET_ABBR = {
+    "Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
+    "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke",
+    "Uranus": "Ur", "Neptune": "Ne", "Pluto": "Pl",
+}
+
+# North Indian chart house text positions (x, y) in a 300×300 SVG
+# Houses go COUNTER-CLOCKWISE from top center (standard North Indian layout)
+_HOUSE_TEXT_POS = {
+    1:  (150, 68),    # top center
+    2:  (75, 25),     # top left
+    3:  (30, 68),     # left upper
+    4:  (75, 150),    # left center
+    5:  (30, 232),    # left lower
+    6:  (75, 275),    # bottom left
+    7:  (150, 232),   # bottom center
+    8:  (225, 275),   # bottom right
+    9:  (270, 232),   # right lower
+    10: (225, 150),   # right center
+    11: (270, 68),    # right upper
+    12: (225, 25),    # top right
+}
+
+CHART_DESCRIPTIONS = {
+    "D1": ("Rasi Chart (Lagna)", "The Rasi or Lagna chart is the main birth chart showing the positions of all planets in the zodiac signs at the time of birth. This is the foundation of all Vedic astrology analysis."),
+    "D2": ("Hora Chart", "The Hora chart divides each sign into two halves and is primarily used for analyzing wealth and financial matters. Planets in Sun's Hora (Leo) indicate wealth through effort, while Moon's Hora (Cancer) indicates wealth through inheritance or luck."),
+    "D3": ("Drekkana Chart", "The Drekkana chart divides each sign into three equal parts and is used for analyzing siblings, courage, and communication."),
+    "D4": ("Chaturthamsha Chart", "The Chaturthamsha divides each sign into four parts and is used for analyzing property, home, fixed assets, and luck."),
+    "D6": ("Shashtiamsha (Health)", "The six-fold division is used for analyzing health, disease, enemies, and obstacles."),
+    "D7": ("Saptamsha Chart", "The Saptamsha divides each sign into seven parts and is used for analyzing children, progeny, and creative potential."),
+    "D8": ("Ashtamsha Chart", "The Ashtamsha divides each sign into eight parts and relates to longevity, sudden events, and hidden matters."),
+    "D9": ("Navamsa Chart", "The Navamsa is the most important divisional chart after the Rasi chart. It divides each sign into nine parts and is primarily used for marriage analysis, spouse characteristics, and the overall strength of planets."),
+    "D10": ("Dasamsa Chart", "The Dasamsa chart divides each sign into ten parts and is specifically used for career and professional analysis. It reveals the nature of one's profession, career achievements, and public reputation."),
+    "D11": ("Ekadamsha (Rudramsa)", "The Ekadamsha divides each sign into eleven parts and is used for analyzing gains from networks, friends, and large groups."),
+    "D12": ("Dwadasamsa Chart", "The Dwadasamsa divides each sign into twelve parts and is used for analyzing parents, lineage, and ancestral karma."),
+    "D16": ("Shodashamsha Chart", "The Shodashamsha divides each sign into sixteen parts and relates to vehicles, travel, conveyances, and comforts."),
+    "D20": ("Vimsamsha Chart", "The Vimsamsha divides each sign into twenty parts and is used for analyzing spiritual practices, religious inclinations, and deity alignment."),
+    "D24": ("Chaturvimsamsha Chart", "The Chaturvimsamsha divides each sign into twenty-four parts and relates to education, learning, and academic achievements."),
+    "D27": ("Saptavimsamsha (Bhamsa)", "The Saptavimsamsha divides each sign into twenty-seven parts and is used for assessing overall strength and weaknesses."),
+    "D30": ("Trimsamsha Chart", "The Trimsamsha uses unequal divisions and relates to misfortune, karmic burdens, and moral character."),
+    "D40": ("Khavedamsha Chart", "The Khavedamsha divides each sign into forty parts and relates to auspicious/inauspicious results and overall well-being."),
+    "D45": ("Akshvedamsha Chart", "The Akshvedamsha divides each sign into forty-five parts and is used for assessing general well-being and paternal legacy."),
+    "D60": ("Shastiamsa Chart", "The Shastiamsa is the most subtle divisional chart, dividing each sign into sixty parts. Classical texts consider it the final arbiter of planetary strength."),
+}
+
+
+# ── Section builders pulled from the sister module ──────────────────────────
+# Imported AFTER the constants above so pdf_sections can back-import them.
+
+from .pdf_sections import (  # noqa: E402,F401
+    _antardasha_section,
+    _ascendant_section,
+    _at_a_glance,
+    _avkahada_chakra,
+    _basic_details,
+    _birth_chart_page,
+    _bhava_analysis,
+    _char_dasha_section,
+    _character_life,
+    _dasha_section,
+    _divisional_charts_section,
+    _doshas_section,
+    _favourable_section,
+    _friendship_section,
+    _ghatak_section,
+    _gochar_section,
+    _graha_drishti_section,
+    _jaimini_section,
+    _lal_kitab_calculation_section,
+    _lal_kitab_section,
+    _mahadasha_phal_section,
+    _manglik_section,
+    _nakshatra_section,
+    _numerology_section,
+    _planet_consideration_section,
+    _planet_positions,
+    _pratyantar_section,
+    _remedies_section,
+    _sadesati_section,
+    _shadbala_section,
+    _shodashvarga_table_section,
+    _summary_grid,
+    _varshaphal_section,
+    _western_aspects_section,
+    _yogas_section,
+    _yogini_dasha_section,
+)
+
+
+# ── Public entry point ──────────────────────────────────────────────────────
+
+def generate_pdf(chart_data: dict, sections: list[dict] | None = None) -> bytes:
+    """Generate a Kundli report PDF from chart_data dict. Returns raw PDF bytes.
+
+    sections: optional ordered list of `{id, enabled, ...}` dicts (from the
+    admin report-section toggles in MongoDB). If None, the default order
+    matching DEFAULT_REPORT_SECTIONS is used and the output is byte-identical
+    to the pre-toggle behaviour.
+    """
+    html = _build_html(chart_data, sections)
+    from app.services.kundli_pdf_renderer import get_renderer
+    return get_renderer().render(html)
+
+
+# ── HTML builder ─────────────────────────────────────────────────────────────
+
+# Section ID → builder. Each builder takes the chart_data dict and returns an
+# HTML string. Cover, footer, and CSS are not toggleable — they always render.
+SECTION_BUILDERS = {
+    "birth_chart":      lambda d: _birth_chart_page(d),
+    "summary_grid":     lambda d: _summary_grid(d),
+    "basic_details":    lambda d: _basic_details(d),
+    "avkahada":         lambda d: _avkahada_chakra(d),
+    "at_a_glance":      lambda d: _at_a_glance(d),
+    "favourable":       lambda d: _favourable_section(d),
+    "ghatak":           lambda d: _ghatak_section(d),
+    "planet_consideration": lambda d: _planet_consideration_section(d),
+    "ascendant":        lambda d: _ascendant_section(d),
+    "nakshatra":        lambda d: _nakshatra_section(d),
+    "character_life":   lambda d: _character_life(d),
+    "yogas":            lambda d: _yogas_section(d),
+    "doshas":           lambda d: _doshas_section(d),
+    "bhava_analysis":   lambda d: _bhava_analysis(d),
+    "manglik":          lambda d: _manglik_section(d),
+    "sadesati":         lambda d: _sadesati_section(d),
+    "gochar":           lambda d: _gochar_section(d),
+    "dasha":            lambda d: _dasha_section(d),
+    "mahadasha_phal":   lambda d: _mahadasha_phal_section(d),
+    "antardasha":       lambda d: _antardasha_section(d),
+    "pratyantar":       lambda d: _pratyantar_section(d),
+    "jaimini":          lambda d: _jaimini_section(d),
+    "yogini_dasha":     lambda d: _yogini_dasha_section(d),
+    "char_dasha":       lambda d: _char_dasha_section(d),
+    "divisional":       lambda d: _divisional_charts_section(d),
+    "shodashvarga":     lambda d: _shodashvarga_table_section(d),
+    "friendship":       lambda d: _friendship_section(d),
+    "shadbala":         lambda d: _shadbala_section(d),
+    "western_aspects":  lambda d: _western_aspects_section(d),
+    "graha_drishti":    lambda d: _graha_drishti_section(d),
+    "planet_positions": lambda d: _planet_positions(d),
+    "numerology":       lambda d: _numerology_section(d),
+    "varshaphal":       lambda d: _varshaphal_section(d),
+    "lal_kitab_calc":   lambda d: _lal_kitab_calculation_section(d),
+    "lal_kitab":        lambda d: _lal_kitab_section(d),
+    "remedies":         lambda d: _remedies_section(d),
+}
+
+# Default order — Astrosage page-2 layout (basic details → avkahada →
+# favourable → ghatak) followed by the rest of the report.
+_DEFAULT_SECTION_ORDER = [
+    "summary_grid",
+    "at_a_glance",
+    "birth_chart",
+    "planet_consideration",
+    "ascendant",
+    "nakshatra",
+    "character_life",
+    "yogas",
+    "doshas",
+    "bhava_analysis",
+    "manglik",
+    "sadesati",
+    "gochar",
+    "jaimini",
+    "mahadasha_phal",
+    "antardasha",
+    "pratyantar",
+    "yogini_dasha",
+    "char_dasha",
+    "divisional",
+    "shodashvarga",
+    "friendship",
+    "shadbala",
+    "western_aspects",
+    "graha_drishti",
+    "planet_positions",
+    "numerology",
+    "varshaphal",
+    "lal_kitab_calc",
+    "lal_kitab",
+    "remedies",
+]
+
+
+def _build_html(d: dict, sections: list[dict] | None = None) -> str:
+    """Build the full HTML document for the Kundli report.
+
+    If `sections` is None, render the default ordered list (byte-identical to
+    pre-toggle output). Otherwise iterate the provided list, skipping any
+    section where `enabled` is falsy or whose id has no registered builder.
+    """
+    if sections is None:
+        body_section_ids = _DEFAULT_SECTION_ORDER
+    else:
+        # Use _DEFAULT_SECTION_ORDER for ordering (source of truth for layout),
+        # and the sections list only for enabled/disabled filtering. This prevents
+        # stale MongoDB order values from scrambling the report layout.
+        enabled_ids = {
+            s["id"] for s in sections
+            if s.get("enabled", True) and s.get("id") in SECTION_BUILDERS
+        }
+        body_section_ids = [sid for sid in _DEFAULT_SECTION_ORDER if sid in enabled_ids]
+
+    parts = [_css(name=d.get("name", ""), user_timezone=d.get("user_timezone", "Asia/Kolkata")), _cover(d)]
+    for sid in body_section_ids:
+        builder = SECTION_BUILDERS.get(sid)
+        if builder is not None:
+            parts.append(builder(d))
+    parts.append(_footer())
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Kundli Report - {d['name']}</title></head>
+<body>{''.join(parts)}</body>
+</html>"""
+
+
+def _css(name: str = "", user_timezone: str = "Asia/Kolkata") -> str:
+    from zoneinfo import ZoneInfo
+    try:
+        local_tz = ZoneInfo(user_timezone)
+    except Exception:
+        local_tz = ZoneInfo("Asia/Kolkata")
+    generated = datetime.now(local_tz).strftime("%d/%m/%Y %I:%M:%S %p")
+    return f"""<style>
+    @page {{ size: A4; margin: 20mm 15mm 25mm 15mm;
+        @top-left {{ content: "{name}"; font-size: 8pt; color: #555; font-weight: bold; }}
+        @top-right {{ content: "Get free chart (kundli) at https://vedicjivan.nandishdave.world"; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
+        @bottom-center {{ content: "https://vedicjivan.nandishdave.world, E-mail: vedic.jivan33@gmail.com, Phone: +91 98242 92212, Printing Date: {generated}" "\A" "Page No. " counter(page); white-space: pre-wrap; text-align: center; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
+    }}
+    @page :first {{ @top-left {{ content: none; }} @top-right {{ content: none; }} }}
+    body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; font-size: 11pt; }}
+    h1 {{ color: {BRAND}; text-align: center; font-size: 22pt; margin: 0 0 5px; }}
+    h2 {{ color: {BRAND}; font-size: 16pt; border-bottom: 2px solid {BRAND}; padding-bottom: 4px; margin-top: 30px; page-break-after: avoid; }}
+    h3 {{ color: #555; font-size: 13pt; margin-top: 18px; page-break-after: avoid; }}
+    table {{ width: 100%; border-collapse: collapse; margin: 10px 0 15px; }}
+    th {{ background: {BRAND}; color: white; padding: 8px 10px; text-align: left; font-size: 10pt; }}
+    td {{ padding: 7px 10px; border-bottom: 1px solid #e5e5e5; font-size: 10pt; }}
+    tr:nth-child(even) {{ background: #f9f7ff; }}
+    .cover {{ text-align: center; padding: 220px 0 60px; page-break-after: always; }}
+    .cover img {{ height: 80px; margin-bottom: 30px; }}
+    .cover .name {{ font-size: 28pt; color: {BRAND}; font-weight: bold; margin: 10px 0; }}
+    .cover .sub {{ font-size: 12pt; color: #666; margin: 5px 0; }}
+    .section {{ page-break-inside: avoid; }}
+    .chart-block {{ page-break-inside: avoid; }}
+    table {{ page-break-inside: avoid; }}
+    .two-col {{ display: flex; gap: 20px; }}
+    .two-col > div {{ flex: 1; }}
+    .remedy {{ background: #f3f0ff; border-left: 3px solid {BRAND}; padding: 8px 12px; margin: 5px 0; font-size: 10pt; }}
+    .manglik-yes {{ background: #fef2f2; border: 1px solid #f87171; padding: 12px; border-radius: 6px; }}
+    .manglik-no {{ background: #f0fdf4; border: 1px solid #4ade80; padding: 12px; border-radius: 6px; }}
+    .phase-card {{ background: #f9f7ff; border-left: 4px solid {BRAND}; padding: 10px 14px; margin: 8px 0; }}
+    .footer {{ text-align: center; color: #999; font-size: 9pt; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; }}
+    .page-break {{ page-break-before: always; }}
+    p {{ margin: 6px 0; }}
+    </style>"""
+
+
+def _cover(d: dict) -> str:
+    return f"""
+    <div class="cover">
+        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 200px; margin-bottom: 15px;" />
+        <div style="font-size: 18pt; color: #888; font-style: italic; margin-bottom: 40px;">Transform Your Life Through Vedic Wisdom</div>
+
+        <hr style="border: none; border-top: 3px solid {BRAND}; width: 70%; margin: 30px auto;" />
+        <div style="margin-top: 25px; font-size: 24pt; color: #15803d; font-weight: bold;">Worth ₹999 — FREE</div>
+        <div style="font-size: 14pt; color: #999; margin-top: 10px;">Comprehensive Vedic Astrology Report &nbsp;|&nbsp; 25+ Sections</div>
+    </div>"""
+
+
+def _footer() -> str:
+    return f"""
+    <div class="footer">
+        <p>This report has been generated based on Vedic astrology calculations using Lahiri Ayanamsa.</p>
+        <p>For personalised guidance, book a consultation at <strong style="color:{BRAND};">vedicjivan.nandishdave.world</strong></p>
+        <p>&copy; {datetime.now().year} VedicJivan. All rights reserved.</p>
+    </div>"""

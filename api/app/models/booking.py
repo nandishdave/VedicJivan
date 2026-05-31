@@ -5,9 +5,6 @@ from enum import Enum
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
-PENDING_EXPIRY_MINUTES = 15
-
-
 class BookingStatus(str, Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
@@ -64,6 +61,7 @@ class BookingResponse(BaseModel):
     time_slot: str
     duration_minutes: int
     price_inr: int
+    price_eur: int = 0
     status: BookingStatus
     payment_id: str | None = None
     notes: str
@@ -82,6 +80,12 @@ class BookingStatusUpdate(BaseModel):
     status: BookingStatus
 
 
+class BookingReschedule(BaseModel):
+    date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    time_slot: str = Field(..., pattern=r"^\d{2}:\d{2}$")
+    duration_minutes: int = Field(..., ge=0, le=120)
+
+
 class BookingInDB(BaseModel):
     user_id: str | None = None
     user_name: str
@@ -93,8 +97,11 @@ class BookingInDB(BaseModel):
     time_slot: str
     duration_minutes: int
     price_inr: int
+    price_eur: int = 0
     status: BookingStatus = BookingStatus.PENDING
     payment_id: str | None = None
+    reminder_sent: bool = False
+    google_event_id: str | None = None
     notes: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

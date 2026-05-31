@@ -1,0 +1,106 @@
+"""AWS Lambda handler — processes one or more kundli generation jobs from SQS.
+
+Triggered by an EventSourceMapping on the kundli SQS queue. Each invocation
+receives an `event` shaped like:
+
+    {
+      "Records": [
+        {
+          "messageId": "...",
+          "body": "{\"record_id\": \"...\", \"name\": \"...\", ...}",
+          ...
+        }
+      ]
+    }
+
+We deserialize each record body, reconstruct (`ObjectId`, `KundliRequest`),
+and run `ProcessKundliReport.execute()` — the same use case the in-process
+BackgroundTask used to call. Failures per-message are reported via
+`batchItemFailures` so SQS only redrives the bad ones.
+
+Cold-start optimization:
+  Module-level singletons (Mongo client, ProcessKundliReport, browser via
+  the renderer factory) are reused across warm invocations. The first
+  invocation pays the launch cost; subsequent ones reuse everything.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+from typing import Any
+
+from bson import ObjectId
+from motor.motor_asyncio import AsyncIOMotorClient
+
+from app.config import settings
+from app.infrastructure.logging import configure_root_logging, get_logger
+from app.models.kundli import KundliRequest
+from app.repositories.kundli_repository import MongoKundliRepository
+from app.services.email_service import send_kundli_report
+from app.services.kundli_calculator import build_chart
+from app.services.kundli_pdf import generate_pdf
+from app.services.report_sections import load_report_sections
+from app.use_cases.kundli import ProcessKundliReport, RenderKundliReport
+
+configure_root_logging()
+logger = get_logger(__name__)
+
+
+# ── Cold-start singletons ────────────────────────────────────────────────────
+
+_mongo_client: AsyncIOMotorClient | None = None
+_processor: ProcessKundliReport | None = None
+
+
+def _get_processor() -> ProcessKundliReport:
+    """Build the use case once per Lambda execution environment."""
+    global _mongo_client, _processor
+    if _processor is None:
+        _mongo_client = AsyncIOMotorClient(settings.MONGODB_URI)
+        db = _mongo_client.get_default_database()
+        repo = MongoKundliRepository(db)
+        render = RenderKundliReport(
+            build_chart=build_chart,
+            generate_pdf=generate_pdf,
+            load_report_sections=load_report_sections,
+        )
+        _processor = ProcessKundliReport(
+            kundli_repo=repo,
+            render_use_case=render,
+            send_email=send_kundli_report,
+        )
+    return _processor
+
+
+# ── Lambda entry point ───────────────────────────────────────────────────────
+
+
+async def _process_record(record: dict[str, Any]) -> None:
+    body = json.loads(record["body"])
+    record_id = ObjectId(body.pop("record_id"))
+    req = KundliRequest(**body)
+    await _get_processor().execute(record_id, req)
+
+
+def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """SQS-triggered Lambda entry point.
+
+    Returns `{"batchItemFailures": [{"itemIdentifier": "..."}, ...]}` so
+    AWS only redrives the failed messages from a partial-success batch.
+    Lambda auto-deletes successfully-processed messages from the queue.
+    """
+    failures: list[dict[str, str]] = []
+    records = event.get("Records", [])
+    logger.info("Received %d SQS record(s)", len(records))
+
+    for record in records:
+        message_id = record.get("messageId", "<unknown>")
+        try:
+            asyncio.run(_process_record(record))
+            logger.info("Processed message %s", message_id)
+        except Exception:
+            logger.exception("Failed to process message %s", message_id)
+            failures.append({"itemIdentifier": message_id})
+
+    return {"batchItemFailures": failures}

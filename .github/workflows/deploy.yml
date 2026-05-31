@@ -4,13 +4,19 @@ on:
   push:
     branches: [main, staging]
 
+# Action authors still ship Node 20 runtimes, so the action major bumps alone
+# don't clear the deprecation warning. Opt into Node 24 now, ahead of the
+# 2026-06-16 forced switch and the 2026-09-16 Node 20 removal.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Determine environment
         id: env
@@ -24,7 +30,7 @@ jobs:
           fi
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -42,7 +48,7 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ steps.env.outputs.api_url }}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id: ${{ steps.env.outputs.env == 'prod' && secrets.AWS_ACCESS_KEY_ID || secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ steps.env.outputs.env == 'prod' && secrets.AWS_SECRET_ACCESS_KEY || secrets.TEST_AWS_SECRET_ACCESS_KEY }}

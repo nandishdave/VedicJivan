@@ -7,13 +7,20 @@ on:
       - 'api/**'
       - '.github/workflows/deploy-api.yml'
 
+# Action authors still ship Node 20 runtimes for checkout/setup-node/aws-creds/
+# docker actions, so bumping their majors alone doesn't clear the deprecation
+# warning. Opt into Node 24 now, ahead of the 2026-06-16 forced switch and the
+# 2026-09-16 Node 20 removal.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Determine environment
         id: env
@@ -25,7 +32,7 @@ jobs:
           fi
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id: ${{ steps.env.outputs.env == 'prod' && secrets.AWS_ACCESS_KEY_ID || secrets.TEST_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ steps.env.outputs.env == 'prod' && secrets.AWS_SECRET_ACCESS_KEY || secrets.TEST_AWS_SECRET_ACCESS_KEY }}
@@ -57,16 +64,123 @@ jobs:
             ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:${{ github.sha }}
             ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPO }}:latest
 
-      - name: Force new ECS deployment
+      - name: Resolve kundli worker image tags
+        id: lambda-tags
+        env:
+          ECR_REPO: ${{ steps.env.outputs.env == 'prod' && secrets.ECR_REPOSITORY || secrets.TEST_ECR_REPOSITORY }}
+        run: |
+          # Derive the worker repo from the API repo: vedicjivan(-test)-api
+          # → vedicjivan(-test)-kundli-worker. Saves us a separate secret.
+          LAMBDA_REPO="${ECR_REPO%-api}-kundli-worker"
+          REGISTRY="${{ steps.ecr-login.outputs.registry }}"
+          echo "lambda_repo=$LAMBDA_REPO" >> "$GITHUB_OUTPUT"
+          echo "lambda_uri=${REGISTRY}/${LAMBDA_REPO}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "lambda_uri_latest=${REGISTRY}/${LAMBDA_REPO}:latest" >> "$GITHUB_OUTPUT"
+          echo "lambda_function=${LAMBDA_REPO}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Lambda worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          file: ./api/Dockerfile.lambda
+          push: true
+          provenance: false
+          sbom: false
+          # Lambda only supports a single architecture per function; we
+          # match the function's `architectures` setting (default x86_64).
+          platforms: linux/amd64
+          tags: |
+            ${{ steps.lambda-tags.outputs.lambda_uri }}
+            ${{ steps.lambda-tags.outputs.lambda_uri_latest }}
+
+      - name: Resolve ECS cluster/service names
+        id: ecs
         run: |
           if [[ "${{ steps.env.outputs.env }}" == "prod" ]]; then
-            ECS_CLUSTER="${{ secrets.ECS_CLUSTER }}"
-            ECS_SERVICE="${{ secrets.ECS_SERVICE }}"
+            echo "cluster=${{ secrets.ECS_CLUSTER }}" >> "$GITHUB_OUTPUT"
+            echo "service=${{ secrets.ECS_SERVICE }}" >> "$GITHUB_OUTPUT"
           else
-            ECS_CLUSTER="${{ secrets.TEST_ECS_CLUSTER }}"
-            ECS_SERVICE="${{ secrets.TEST_ECS_SERVICE }}"
+            echo "cluster=${{ secrets.TEST_ECS_CLUSTER }}" >> "$GITHUB_OUTPUT"
+            echo "service=${{ secrets.TEST_ECS_SERVICE }}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Run MongoDB index migration
+        # One-shot ECS task using the freshly-pushed image. Inherits the
+        # service's VPC + security group so Atlas allowlist already covers us.
+        # `aws ecs wait tasks-stopped` blocks until the task exits; non-zero
+        # container exit code fails the job, aborting the deploy before the
+        # service swap happens.
+        run: |
+          CLUSTER="${{ steps.ecs.outputs.cluster }}"
+          SERVICE="${{ steps.ecs.outputs.service }}"
+
+          # Pull the current task-definition + network config from the
+          # running service. Avoids maintaining separate secrets.
+          DESCRIBE=$(aws ecs describe-services \
+            --cluster "$CLUSTER" --services "$SERVICE" \
+            --query 'services[0]' --output json)
+
+          TASK_DEF=$(echo "$DESCRIBE" | jq -r '.taskDefinition')
+          SUBNETS=$(echo "$DESCRIBE" \
+            | jq -r '.networkConfiguration.awsvpcConfiguration.subnets | join(",")')
+          SECURITY_GROUPS=$(echo "$DESCRIBE" \
+            | jq -r '.networkConfiguration.awsvpcConfiguration.securityGroups | join(",")')
+          ASSIGN_PUBLIC_IP=$(echo "$DESCRIBE" \
+            | jq -r '.networkConfiguration.awsvpcConfiguration.assignPublicIp')
+
+          CONTAINER_NAME=$(aws ecs describe-task-definition \
+            --task-definition "$TASK_DEF" \
+            --query 'taskDefinition.containerDefinitions[0].name' --output text)
+
+          OVERRIDES=$(jq -nc \
+            --arg name "$CONTAINER_NAME" \
+            '{containerOverrides:[{name:$name,command:["python","-m","scripts.migrate_indexes"]}]}')
+
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --task-definition "$TASK_DEF" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUPS],assignPublicIp=$ASSIGN_PUBLIC_IP}" \
+            --overrides "$OVERRIDES" \
+            --query 'tasks[0].taskArn' --output text)
+
+          if [[ -z "$TASK_ARN" || "$TASK_ARN" == "None" ]]; then
+            echo "::error::Failed to start migration task"
+            exit 1
+          fi
+
+          echo "Migration task started: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          REASON=$(aws ecs describe-tasks \
+            --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query 'tasks[0].stoppedReason' --output text)
+
+          echo "Migration exit code: $EXIT_CODE (reason: $REASON)"
+          if [[ "$EXIT_CODE" != "0" ]]; then
+            echo "::error::Index migration failed — aborting deploy"
+            exit 1
+          fi
+
+      - name: Update kundli worker Lambda
+        # Roll the Lambda to the freshly-pushed image. Lambda handles
+        # traffic shifting on its own (concurrent old + new for a few
+        # seconds, then all traffic on the new version) — no extra wait
+        # needed. `update-function-code` is a no-op if the image-uri /
+        # tag combination is unchanged, so it's safe to run on every CI.
+        run: |
+          aws lambda update-function-code \
+            --function-name "${{ steps.lambda-tags.outputs.lambda_function }}" \
+            --image-uri "${{ steps.lambda-tags.outputs.lambda_uri }}" \
+            --publish \
+            >/dev/null
+
+      - name: Force new ECS deployment
+        run: |
           aws ecs update-service \
-            --cluster $ECS_CLUSTER \
-            --service $ECS_SERVICE \
+            --cluster "${{ steps.ecs.outputs.cluster }}" \
+            --service "${{ steps.ecs.outputs.service }}" \
             --force-new-deployment

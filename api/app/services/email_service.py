@@ -1,4 +1,7 @@
 from app.config import settings
+from app.infrastructure.logging import get_logger
+
+logger = get_logger(__name__)
 
 # Direct S3 URL — no CloudFront/GitHub restrictive headers, works in all email clients
 LOGO_URL = "https://vedicjivan-website.s3.ap-south-1.amazonaws.com/images/logo/logo-email.jpg"
@@ -28,7 +31,7 @@ def _email_footer() -> str:
 def _send_email(to: str, subject: str, html: str):
     """Send an email via Resend. Returns silently if no API key configured."""
     if not settings.RESEND_API_KEY:
-        print(f"[EMAIL SKIP] No RESEND_API_KEY. Would send to {to}: {subject}")
+        logger.info("Email skip — no RESEND_API_KEY. Would send to=%s subject=%s", to, subject)
         return
 
     import resend
@@ -70,6 +73,9 @@ async def send_booking_confirmation(
             <p style="margin: 0; font-size: 14px;">A Zoom meeting link will be shared with you before your scheduled session. Please check your email closer to the appointment date.</p>
         </div>
         <p>If you have any questions, please reach out via WhatsApp or email.</p>
+        <div style="text-align: center; margin: 24px 0;">
+            <a href="{settings.FRONTEND_URL}/reschedule/?id={booking_id}" style="color: #7c3aed; font-size: 13px; text-decoration: underline;">Need to reschedule?</a>
+        </div>
         <p style="color: #666; font-size: 14px;">Thank you for choosing VedicJivan!</p>
         {_email_footer()}
     </div>
@@ -91,7 +97,7 @@ async def send_admin_booking_notification(
     """Notify admin about a new confirmed booking."""
     admin_email = settings.ADMIN_EMAIL
     if not admin_email:
-        print("[EMAIL SKIP] No ADMIN_EMAIL configured.")
+        logger.info("Email skip — no ADMIN_EMAIL configured")
         return
 
     subject = f"New Booking: {service_title} on {date} at {time_slot}"
@@ -147,3 +153,135 @@ async def send_booking_cancellation(
     </div>
     """
     _send_email(to_email, subject, html)
+
+
+async def send_booking_rescheduled(
+    to_email: str,
+    user_name: str,
+    service_title: str,
+    old_date: str,
+    old_time: str,
+    new_date: str,
+    new_time: str,
+    booking_id: str,
+):
+    subject = f"Booking Rescheduled - {service_title} | VedicJivan"
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        {_email_header()}
+        <h2 style="color: #7c3aed; text-align: center; margin: 0 0 8px;">Booking Rescheduled</h2>
+        <p style="text-align: center; color: #666; margin: 0 0 24px;">Your session has been moved to a new time</p>
+        <p>Dear {user_name},</p>
+        <p>Your <strong>{service_title}</strong> session has been successfully rescheduled.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr><td colspan="2" style="padding: 8px; background: #f9fafb; font-weight: bold; color: #555; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Previous</td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #999; width: 40%;">Date</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee; color: #999; text-decoration: line-through;">{old_date}</td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #999;">Time</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee; color: #999; text-decoration: line-through;">{old_time}</td></tr>
+            <tr><td colspan="2" style="padding: 8px; background: #f3f0ff; font-weight: bold; color: #7c3aed; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">New</td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Date</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold;">{new_date}</td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Time</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold;">{new_time}</td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Booking ID</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-family: monospace; font-size: 12px; color: #888;">{booking_id}</td></tr>
+        </table>
+        <p style="color: #666; font-size: 14px;">A Zoom meeting link will be shared with you before your new session time.</p>
+        <p style="text-align: center; margin: 16px 0; font-size: 13px; color: #888;">
+            <a href="{settings.FRONTEND_URL}/reschedule/?id={booking_id}" style="color: #7c3aed; font-size: 13px; text-decoration: underline;">Need to reschedule again?</a>
+        </p>
+        {_email_footer()}
+    </div>
+    """
+    _send_email(to_email, subject, html)
+
+
+async def send_booking_reminder(
+    to_email: str,
+    user_name: str,
+    service_title: str,
+    date: str,
+    time_slot: str,
+    duration_minutes: int,
+    booking_id: str,
+):
+    subject = f"Reminder: Your {service_title} session is tomorrow | VedicJivan"
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        {_email_header()}
+        <h2 style="color: #7c3aed; text-align: center; margin: 0 0 8px;">Your Session is Tomorrow!</h2>
+        <p style="text-align: center; color: #666; margin: 0 0 24px;">Just a friendly reminder about your upcoming session</p>
+        <p>Dear {user_name},</p>
+        <p>This is a reminder that your session is scheduled for <strong>tomorrow</strong>. Here are the details:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Service</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee;">{service_title}</td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Date</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee;"><strong>{date}</strong></td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Time</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee;"><strong>{time_slot}</strong></td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Duration</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee;">{duration_minutes} minutes</td></tr>
+            <tr><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-weight: bold; color: #555;">Booking ID</td><td style="padding: 10px 8px; border-bottom: 1px solid #eee; font-family: monospace; font-size: 12px; color: #888;">{booking_id}</td></tr>
+        </table>
+        <div style="background: #f3f0ff; border-left: 4px solid #7c3aed; padding: 16px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0 0 8px; font-weight: bold; color: #7c3aed;">Prepare for Your Session</p>
+            <p style="margin: 0; font-size: 14px;">A Zoom meeting link will be shared with you shortly. Please ensure you are in a quiet space and have a stable internet connection.</p>
+        </div>
+        <p style="color: #666; font-size: 14px;">If you need to cancel or have questions, please contact us as soon as possible.</p>
+        {_email_footer()}
+    </div>
+    """
+    _send_email(to_email, subject, html)
+
+
+async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
+    """Send Kundli PDF report as email attachment via Resend."""
+    if not settings.RESEND_API_KEY:
+        logger.info("Kundli email skip — no RESEND_API_KEY. Would send to=%s", to_email)
+        return
+
+    import base64
+
+    import resend
+
+    resend.api_key = settings.RESEND_API_KEY
+
+    subject = "Your Free Kundli Report | VedicJivan"
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+        {_email_header()}
+        <h2 style="color: #7c3aed; text-align: center; margin: 0 0 8px;">Your Kundli Report is Ready!</h2>
+        <p style="text-align: center; color: #666; margin: 0 0 24px;">Your personalised Vedic birth chart</p>
+        <p>Dear {user_name},</p>
+        <p>Thank you for using VedicJivan's free Kundli generator. Your personalised Vedic birth chart report is attached to this email as a PDF.</p>
+        <p>Your report includes:</p>
+        <ul style="color: #555; line-height: 1.8;">
+            <li>Birth chart details &amp; planetary positions</li>
+            <li>Ascendant &amp; Nakshatra analysis</li>
+            <li>Character, career &amp; life predictions</li>
+            <li>Manglik Dosha analysis</li>
+            <li>Sade Sati report</li>
+            <li>Vimshottari Dasha periods</li>
+            <li>Planetary effects &amp; remedies</li>
+        </ul>
+        <div style="background: #f3f0ff; border-left: 4px solid #7c3aed; padding: 16px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 0 0 8px; font-weight: bold; color: #7c3aed;">Want deeper insights?</p>
+            <p style="margin: 0; font-size: 14px;">Book a personalised consultation with our Vedic astrology expert for detailed guidance tailored to your life questions.</p>
+        </div>
+        <div style="text-align: center; margin: 24px 0;">
+            <a href="{settings.FRONTEND_URL}/services/" style="background: #7c3aed; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Book a Consultation</a>
+        </div>
+        {_email_footer()}
+    </div>
+    """
+
+    import asyncio
+
+    await asyncio.to_thread(
+        resend.Emails.send,
+        {
+            "from": settings.EMAIL_FROM,
+            "to": to_email,
+            "subject": subject,
+            "html": html,
+            "attachments": [
+                {
+                    "filename": f"Kundli_Report_{user_name.replace(' ', '_')}.pdf",
+                    "content": base64.b64encode(pdf_bytes).decode("utf-8"),
+                }
+            ],
+        },
+    )

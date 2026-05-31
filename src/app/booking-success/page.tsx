@@ -51,9 +51,10 @@ function BookingSuccessContent() {
     };
   }, [checkStatus]);
 
-  // Clear localStorage pending booking for all services
+  // Clear localStorage pending booking — Stripe only redirects here after
+  // successful payment, so clear regardless of webhook confirmation status
   useEffect(() => {
-    if (status === "confirmed") {
+    if (status === "confirmed" || status === "pending") {
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith("vedicjivan_pending_booking_")) {
           try {
@@ -159,7 +160,15 @@ function BookingSuccessContent() {
         <p className="mt-3 text-center text-xs text-gray-400 dark:text-gray-500">
           Please save your Booking ID for reference.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
+        <div className="mt-8 flex flex-wrap justify-center gap-4">
+          {bookingId && booking && booking.duration_minutes > 0 && (
+            <Link
+              href={`/reschedule/?id=${bookingId}`}
+              className="rounded-lg border border-primary-300 dark:border-primary-700 px-6 py-2.5 text-sm font-medium text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20"
+            >
+              Reschedule
+            </Link>
+          )}
           <Link
             href="/services"
             className="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-700"

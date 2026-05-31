@@ -45,6 +45,10 @@ resource "aws_ecs_task_definition" "api" {
         { name = "JWT_ALGORITHM", value = "HS256" },
         { name = "ACCESS_TOKEN_EXPIRE_MINUTES", value = "15" },
         { name = "REFRESH_TOKEN_EXPIRE_DAYS", value = "7" },
+        # Producer-side SQS config — the API enqueues kundli generation
+        # jobs onto this queue. The Lambda worker consumes from it.
+        { name = "KUNDLI_QUEUE_URL", value = aws_sqs_queue.kundli.url },
+        { name = "AWS_REGION", value = var.aws_region },
       ]
 
       # Sensitive values from SSM Parameter Store (free tier)
@@ -64,9 +68,13 @@ resource "aws_ecs_task_definition" "api" {
         }
       }
 
-      # Health check at container level
+      # Container-level health check — uses the readiness endpoint
+      # so a Mongo-disconnected task is marked unhealthy and ECS routes
+      # around it. /api/health/ready returns 503 when Mongo is
+      # unreachable; the legacy /api/health endpoint remains as a
+      # back-compat alias.
       healthCheck = {
-        command     = ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:${var.api_container_port}/api/health')\" || exit 1"]
+        command     = ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:${var.api_container_port}/api/health/ready')\" || exit 1"]
         interval    = 30
         timeout     = 5
         retries     = 3
