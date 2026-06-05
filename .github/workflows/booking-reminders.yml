@@ -7,31 +7,19 @@ on:
   workflow_dispatch: # Allow manual trigger for testing
 
 jobs:
+  # Shared maintenance gate — skips the reminder run while prod is in
+  # maintenance (ECS scaled to 0). One source of truth for "is the app live";
+  # any future scheduled job reuses this same guard. See _app-live-guard.yml.
+  guard:
+    uses: ./.github/workflows/_app-live-guard.yml
+
   send-reminders:
     name: Send 24h Reminder Emails
+    needs: guard
+    if: needs.guard.outputs.live == 'true'
     runs-on: ubuntu-latest
     steps:
-      # Maintenance-aware guard: the CloudFront maintenance function returns 503
-      # for the whole site while `maintenance_mode = true` (prod.tfvars). When
-      # the app is in maintenance the API is down by design (ECS scaled to 0),
-      # so there are no reminders to send — skip quietly instead of failing.
-      # A non-503 means the app is live, so we proceed; a genuine API failure
-      # while live will still surface as an error below.
-      - name: Skip if app is in maintenance
-        id: maint
-        run: |
-          site_code=$(curl -s -o /dev/null -w "%{http_code}" \
-            https://vedicjivan.nandishdave.world/)
-          echo "Site status: $site_code"
-          if [ "$site_code" = "503" ]; then
-            echo "App is in maintenance mode — skipping reminder run."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Trigger reminder endpoint (prod)
-        if: steps.maint.outputs.skip != 'true'
         run: |
           response=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST https://api.vedicjivan.nandishdave.world/api/internal/send-reminders \

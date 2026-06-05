@@ -1,8 +1,9 @@
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from app.config import settings
 from app.database import get_db
+from app.dependencies import block_during_maintenance
 from app.infrastructure.logging import get_logger
 from app.services.email_service import send_booking_reminder
 
@@ -11,7 +12,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/internal", tags=["internal"])
 
 
-@router.post("/send-reminders")
+@router.post("/send-reminders", dependencies=[Depends(block_during_maintenance)])
 async def send_reminders(x_internal_secret: str = Header(default="")):
     """Send 24h reminder emails for tomorrow's confirmed bookings."""
     if not settings.INTERNAL_SECRET or x_internal_secret != settings.INTERNAL_SECRET:

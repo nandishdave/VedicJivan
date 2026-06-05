@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     # ── Internal endpoints (booking reminders, etc.) ──
     INTERNAL_SECRET: str = ""
 
+    # Soft maintenance switch for "only-when-live" internal/scheduled jobs.
+    # When True, internal endpoints gated by `block_during_maintenance`
+    # return 503 so scheduled callers skip cleanly. This is a SEPARATE,
+    # defense-in-depth layer from the infra `maintenance_mode` (which scales
+    # ECS to 0 and serves the CloudFront 503 page). Use this to pause jobs
+    # while the app stays UP (e.g. during a data migration); the CI guard
+    # `_app-live-guard.yml` handles the hard scaled-to-zero case.
+    MAINTENANCE_MODE: bool = False
+
     # ── Google Calendar (admin only) ──
     GOOGLE_CALENDAR_CREDENTIALS: str = ""  # base64-encoded service account JSON
     GOOGLE_CALENDAR_ID: str = ""
