@@ -1,4 +1,4 @@
-from fastapi import Depends, Header
+from fastapi import Depends, Header, HTTPException
 
 from app.config import settings
 from app.database import get_db
@@ -69,6 +69,22 @@ async def require_admin(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != UserRole.ADMIN:
         raise ForbiddenError("Admin access required")
     return current_user
+
+
+def block_during_maintenance() -> None:
+    """Reject "only-when-live" internal/scheduled work while soft maintenance
+    is on. Returns 503 so scheduled callers (e.g. the booking-reminders cron)
+    treat it as "skip", not a hard failure.
+
+    Attach to any internal/scheduled endpoint that should pause in maintenance:
+        @router.post("/foo", dependencies=[Depends(block_during_maintenance)])
+
+    Complements the infra-level maintenance (ECS scaled to 0 + CloudFront 503),
+    which the CI guard `_app-live-guard.yml` catches. This flag covers the case
+    where the app stays UP but jobs should still pause.
+    """
+    if settings.MAINTENANCE_MODE:
+        raise HTTPException(status_code=503, detail="Service in maintenance")
 
 
 # ── Repository factories (clean architecture wiring) ──

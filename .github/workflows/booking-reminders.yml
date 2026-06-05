@@ -7,8 +7,16 @@ on:
   workflow_dispatch: # Allow manual trigger for testing
 
 jobs:
+  # Shared maintenance gate — skips the reminder run while prod is in
+  # maintenance (ECS scaled to 0). One source of truth for "is the app live";
+  # any future scheduled job reuses this same guard. See _app-live-guard.yml.
+  guard:
+    uses: ./.github/workflows/_app-live-guard.yml
+
   send-reminders:
     name: Send 24h Reminder Emails
+    needs: guard
+    if: needs.guard.outputs.live == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Trigger reminder endpoint (prod)

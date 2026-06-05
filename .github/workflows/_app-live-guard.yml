@@ -1,0 +1,61 @@
+name: App Live Guard
+
+# Reusable maintenance gate for scheduled / "only-when-live" jobs.
+#
+# Single source of truth for "is the production app live or in maintenance".
+# While `maintenance_mode = true` (terraform/prod.tfvars) the CloudFront
+# maintenance function returns 503 for the whole site and ECS is scaled to 0,
+# so the API is intentionally down. Any job that only makes sense when the app
+# is live should call this and skip itself when `live == 'false'`.
+#
+# Usage from a caller workflow:
+#   jobs:
+#     guard:
+#       uses: ./.github/workflows/_app-live-guard.yml
+#     do-work:
+#       needs: guard
+#       if: needs.guard.outputs.live == 'true'
+#       runs-on: ubuntu-latest
+#       steps: ...
+#
+# This catches HARD maintenance (ECS scaled to zero) which a backend flag can't,
+# because there's no running API to ask. The backend MAINTENANCE_MODE flag is a
+# separate, complementary defense-in-depth layer for SOFT pauses (app up, jobs
+# paused) — see api/app/dependencies.py:block_during_maintenance.
+
+on:
+  workflow_call:
+    inputs:
+      url:
+        description: "URL to probe for the maintenance signal (defaults to prod site root)."
+        required: false
+        type: string
+        default: "https://vedicjivan.nandishdave.world/"
+    outputs:
+      live:
+        description: "'true' if the app is live, 'false' if in maintenance (503)."
+        value: ${{ jobs.check.outputs.live }}
+
+jobs:
+  check:
+    name: Check app live status
+    runs-on: ubuntu-latest
+    outputs:
+      live: ${{ steps.probe.outputs.live }}
+    steps:
+      - name: Probe maintenance signal
+        id: probe
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" "${{ inputs.url }}")
+          echo "Site status: $code"
+          # 503 is returned by the CloudFront maintenance function. Treat ONLY
+          # an explicit 503 as "in maintenance" — any other code (200, or even a
+          # transient 5xx from a real outage) is treated as live so genuine
+          # failures still surface downstream instead of being silently skipped.
+          if [ "$code" = "503" ]; then
+            echo "App is in maintenance mode."
+            echo "live=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "App is live."
+            echo "live=true" >> "$GITHUB_OUTPUT"
+          fi

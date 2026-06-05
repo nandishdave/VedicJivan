@@ -106,3 +106,35 @@ async def test_send_reminders_response_includes_date(client, mock_db):
         )
 
     assert resp.json()["date"] == TOMORROW
+
+
+async def test_send_reminders_blocked_in_maintenance(client, mock_db):
+    """Soft maintenance: endpoint returns 503 so the cron skips, not 200.
+    Gate runs before the secret check, so even a valid secret gets 503."""
+    mock_db.bookings.find = MagicMock(return_value=MockAggregationCursor([]))
+
+    with patch("app.config.settings.INTERNAL_SECRET", "test-secret-123"), patch(
+        "app.config.settings.MAINTENANCE_MODE", True
+    ):
+        resp = await client.post(
+            "/api/internal/send-reminders",
+            headers={"X-Internal-Secret": "test-secret-123"},
+        )
+
+    assert resp.status_code == 503
+
+
+async def test_send_reminders_runs_when_maintenance_off(client, mock_db):
+    """Sanity: with MAINTENANCE_MODE explicitly False the endpoint works."""
+    mock_db.bookings.find = MagicMock(return_value=MockAggregationCursor([]))
+
+    with patch("app.config.settings.INTERNAL_SECRET", "test-secret-123"), patch(
+        "app.config.settings.MAINTENANCE_MODE", False
+    ):
+        resp = await client.post(
+            "/api/internal/send-reminders",
+            headers={"X-Internal-Secret": "test-secret-123"},
+        )
+
+    assert resp.status_code == 200
+    assert resp.json()["sent"] == 0
