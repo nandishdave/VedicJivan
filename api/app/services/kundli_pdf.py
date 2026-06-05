@@ -268,10 +268,7 @@ def _css(name: str = "", user_timezone: str = "Asia/Kolkata") -> str:
     th {{ background: {BRAND}; color: white; padding: 4px 8px; text-align: left; font-size: 9.5pt; }}
     td {{ padding: 4px 8px; border-bottom: 1px solid #e5e5e5; font-size: 9.5pt; }}
     tr:nth-child(even) {{ background: #f9f7ff; }}
-    .cover {{ text-align: center; padding: 220px 0 60px; page-break-after: always; }}
-    .cover img {{ height: 80px; margin-bottom: 30px; }}
-    .cover .name {{ font-size: 28pt; color: {BRAND}; font-weight: bold; margin: 10px 0; }}
-    .cover .sub {{ font-size: 12pt; color: #666; margin: 5px 0; }}
+    .cover {{ text-align: center; padding: 30px 0 40px; page-break-after: always; }}
     /* Density: let sections flow across pages to fill whitespace; keep only
        small atomic blocks (charts) and individual table rows unbroken. */
     .chart-block {{ page-break-inside: avoid; }}
@@ -295,14 +292,60 @@ def _css(name: str = "", user_timezone: str = "Asia/Kolkata") -> str:
 
 
 def _cover(d: dict) -> str:
+    """Chart-forward cover (Astrosage-style): the person's D1 Lagna chart
+    front-and-centre with their key birth details, so page 1 reads as a
+    premium personalised report rather than a marketing flyer."""
+    # Reuse the same North-Indian chart builder the body uses, so the cover
+    # chart always matches the in-report D1.
+    from app.services.pdf_sections import _build_d1_chart_data, _chart_svg
+
+    house_signs, house_planets = _build_d1_chart_data(d)
+    d1_svg = _chart_svg(house_signs, house_planets, "", size=300)
+
+    name = d.get("name", "")
+    dob_fmt = "/".join(reversed(d["dob"].split("-"))) if d.get("dob") else "—"
+    tob = d.get("tob", "—")
+    place = d.get("place_name", "—")
+    gender = d.get("gender", "—").title()
+    lagna = d["lagna"]["sign_name"]
+    lagna_lord = d["lagna"]["sign_lord"]
+    rasi = d["planets"]["Moon"]["sign_name"]
+    nak = d["nakshatra"]
+
+    def _meta(label: str, value: str) -> str:
+        return (
+            f'<div style="display:flex; justify-content:space-between; gap:14px; '
+            f'padding:5px 0; border-bottom:1px solid #ece8fb;">'
+            f'<span style="color:#777; font-size:11pt;">{label}</span>'
+            f'<span style="color:#333; font-weight:600; font-size:11pt;">{value}</span></div>'
+        )
+
     return f"""
     <div class="cover">
-        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 200px; margin-bottom: 15px;" />
-        <div style="font-size: 18pt; color: #888; font-style: italic; margin-bottom: 40px;">Transform Your Life Through Vedic Wisdom</div>
+        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 70px; margin-bottom: 4px;" />
+        <div style="font-size: 11pt; color: #999; font-style: italic; margin-bottom: 6px;">Connect the Divine Within</div>
+        <div style="font-size: 26pt; color: {BRAND}; font-weight: bold; margin: 6px 0 2px;">Vedic Birth Chart &amp; Life Report</div>
+        <div style="font-size: 20pt; color: #333; font-weight: 600; margin-bottom: 14px;">{name}</div>
 
-        <hr style="border: none; border-top: 3px solid {BRAND}; width: 70%; margin: 30px auto;" />
-        <div style="margin-top: 25px; font-size: 24pt; color: #15803d; font-weight: bold;">Worth ₹999 — FREE</div>
-        <div style="font-size: 14pt; color: #999; margin-top: 10px;">Comprehensive Vedic Astrology Report &nbsp;|&nbsp; 25+ Sections</div>
+        <div style="width: 320px; margin: 0 auto;">{d1_svg}</div>
+        <div style="font-size: 12pt; font-weight: bold; color: {BRAND}; opacity: 0.75; margin: 2px 0 16px;">Lagna Chart (D1)</div>
+
+        <div style="width: 380px; margin: 0 auto; text-align: left;">
+            {_meta("Date of Birth", dob_fmt)}
+            {_meta("Time of Birth", tob)}
+            {_meta("Place of Birth", place)}
+            {_meta("Gender", gender)}
+            {_meta("Ascendant (Lagna)", f"{lagna} ({lagna_lord})")}
+            {_meta("Moon Sign (Rasi)", rasi)}
+            {_meta("Nakshatra", f"{nak['name']} — Pada {nak['pada']}")}
+        </div>
+
+        <div style="margin-top: 22px;">
+            <span style="display:inline-block; background:#f0fdf4; color:#15803d; border:1px solid #86efac;
+                border-radius:20px; padding:6px 18px; font-size:12pt; font-weight:bold;">
+                Comprehensive Report &nbsp;·&nbsp; Worth ₹999 — FREE
+            </span>
+        </div>
     </div>"""
 
 
