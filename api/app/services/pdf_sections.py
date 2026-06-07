@@ -502,7 +502,8 @@ def _planet_consideration_section(d: dict) -> str:
         interp = PLANET_IN_HOUSE.get(name, {}).get(house, {})
         benefic = interp.get("benefic", "")
         malefic = interp.get("malefic", "")
-        remedies = interp.get("remedies", [])
+        # Per-planet remedies are consolidated in the Remedies section, not
+        # repeated here (and again in Planet Positions).
 
         interp_html = ""
         if benefic:
@@ -510,18 +511,11 @@ def _planet_consideration_section(d: dict) -> str:
         if malefic:
             interp_html += f"<p>{malefic}</p>"
 
-        remedies_html = ""
-        if remedies:
-            remedies_html = '<h4 style="margin: 8px 0 4px;">Remedies</h4>'
-            for r in remedies:
-                remedies_html += f'<div class="remedy">{r}</div>'
-
         html += f"""
         <div class="section">
             <h3>{name} Consideration</h3>
             <p style="color:#555;">{summary}</p>
             {interp_html}
-            {remedies_html}
         </div>"""
 
     return html
@@ -1201,31 +1195,19 @@ def _planet_positions(d: dict) -> str:
         retro_str = " (Retrograde)" if info["retrograde"] else ""
         benefic = house_data.get("benefic", "")
         malefic = house_data.get("malefic", "")
-        remedies = house_data.get("remedies", [])
+        # Remedies consolidated in the Remedies section (not repeated here).
 
         if dignity in _BENEFIC_DIGNITIES:
             interp_html = f"<p>{benefic}</p>"
         elif dignity in _MALEFIC_DIGNITIES:
             interp_html = f"<p>{malefic}</p>"
-            if remedies:
-                interp_html += '<h4 style="margin: 8px 0 4px;">Recommended Remedies</h4>'
-                for r in remedies:
-                    interp_html += f'<div class="remedy">{r}</div>'
-            remedies = []
         else:
             interp_html = f"<p><strong>If well-placed:</strong> {benefic}</p><p><strong>If ill-placed:</strong> {malefic}</p>"
-
-        remedies_html = ""
-        if remedies:
-            remedies_html = '<h4 style="margin: 8px 0 4px;">Remedies</h4>'
-            for r in remedies:
-                remedies_html += f'<div class="remedy">{r}</div>'
 
         html += f"""
         <div class="section">
             <h3>{name} in {info['sign_name']}{dignity_badge} — {_ordinal(house)} House{retro_str}</h3>
             {interp_html}
-            {remedies_html}
         </div>"""
 
     return html
@@ -2578,11 +2560,41 @@ def _remedies_section(d: dict) -> str:
         through mantra, worship, and charity can improve their results in your life.</p>
         {weak_rows}"""
 
+    # Per-planet remedies by house placement (consolidated here from
+    # PLANET_IN_HOUSE so they appear ONCE in the report rather than being
+    # repeated inline in Planet Considerations / Planet Positions).
+    planet_rem_rows = ""
+    for name, info in d["planets"].items():
+        house = info.get("house")
+        rem = PLANET_IN_HOUSE.get(name, {}).get(house, {}).get("remedies", []) if house else []
+        if not rem:
+            continue
+        items = "".join(f'<div class="remedy">{r}</div>' for r in rem)
+        planet_rem_rows += (
+            f'<div style="page-break-inside:avoid; margin:6px 0;">'
+            f'<div style="font-weight:bold; color:{BRAND}; font-size:10pt;">{name} '
+            f'<span style="color:#888; font-weight:normal;">— {_ordinal(house)} house</span></div>'
+            f'{items}</div>'
+        )
+    planet_rem_section = ""
+    if planet_rem_rows:
+        planet_rem_section = f"""
+        <h3>Planetary Remedies (by house placement)</h3>
+        <p>Targeted remedies for each planet based on the house it occupies in your chart.</p>
+        {planet_rem_rows}"""
+
+    # Manglik remedies live in the Manglik section (dosha-specific + only shown
+    # when Manglik is present); the dosha calc carries no remedy data, so dosha
+    # remedies are not consolidated here. Gemstone + weak-planet + current-dasha
+    # + per-planet (by house) remedies are all gathered below.
+
     return f"""
     <div class="page-break"></div>
-    <h2>Gemstone &amp; Remedy Recommendations</h2>
+    <h2>Remedies — Gemstones &amp; Planetary</h2>
     <p>Vedic remedies work by strengthening beneficial planets and mitigating the effects of afflicted or weak ones.
-    <strong>Always wear gemstones only after consulting a qualified Jyotishi</strong> — an incorrect gemstone can cause harm.</p>
+    All classical remedies for your chart are gathered here in one place. <strong>Always wear gemstones only after
+    consulting a qualified Jyotishi</strong> — an incorrect gemstone can cause harm. (Lal Kitab has its own distinct
+    remedies, shown in the Lal Kitab section; Manglik remedies appear with the Mangal Dosha analysis.)</p>
 
     <h3>Recommended Gemstones</h3>
     <p>Based on your Lagna and trinal house lords, the following gemstones are considered universally beneficial for your chart:</p>
@@ -2593,5 +2605,6 @@ def _remedies_section(d: dict) -> str:
     {caution_html}
     {weak_section}
     {dasha_remedy}
+    {planet_rem_section}
     <p style="font-size:9pt; color:#888; margin-top:12px;"><em>Remedies in Vedic astrology are tools for self-improvement, not guarantees of outcome.
     The best remedy is right action (Karma), charity (Dana), and spiritual practice (Sadhana).</em></p>"""
