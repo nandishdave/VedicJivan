@@ -935,6 +935,37 @@ def _kp_section(d: dict) -> str:
     <table style='font-size:9pt;'>
         <tr><th>Planet</th><th>Degree</th><th>Sign</th><th>Nakshatra</th><th>Nak Lord</th><th>Sub Lord</th><th>Sub-Sub</th></tr>
         {planet_rows}
+    </table>
+    {_kp_cusp_aspects_table(kp)}"""
+
+
+def _kp_cusp_aspects_table(kp: dict) -> str:
+    """Aspects On KP Cusp (Astrosage p53): planet × 12-cusp matrix of
+    Western-style angular aspects (abbr + orb), '—' where none within orb."""
+    ca = kp.get("cusp_aspects")
+    if not ca or not ca.get("planets"):
+        return ""
+    abbr = {"Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
+            "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke"}
+    th = "padding:3px 4px; background:#f3f0ff; text-align:center; font-size:8pt;"
+    headers = "".join(f'<th style="{th}">{i}</th>' for i in range(1, 13))
+    rows = ""
+    for p in ca["planets"]:
+        cells = ""
+        for cell in ca["matrix"][p]:
+            if cell:
+                cells += (f'<td style="text-align:center; font-size:7.5pt; padding:2px;">'
+                          f'{cell["abbr"]}<br><span style="color:#999;">{cell["orb"]}</span></td>')
+            else:
+                cells += '<td style="text-align:center; color:#ccc; padding:2px;">—</td>'
+        rows += (f'<tr><td style="font-weight:bold; padding:2px 4px;">{abbr.get(p, p)}</td>{cells}</tr>')
+    return f"""
+    <h3>Aspects on KP Cusp</h3>
+    <p style='font-size:9pt; color:#666;'>Western-style angular aspects (Conjunction, Sextile, Square, Trine,
+    Opposition + minor) each planet casts onto the 12 house cusps, with orb in degrees.</p>
+    <table style='font-size:8pt;'>
+        <tr><th style="{th}">Planet</th>{headers}</tr>
+        {rows}
     </table>"""
 
 
