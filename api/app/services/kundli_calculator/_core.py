@@ -495,6 +495,13 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     current_year = _today.today().year
     numerology = calc_numerology(name, dob, current_year)
     ashtakavarga = calc_ashtakavarga(planets, lagna["sign"])
+    # KP (Krishnamurti Paddhati) sub-lords + Placidus cusps (its own ayanamsa).
+    from .kp import calc_kp, placidus_cusps
+    try:
+        kp_cusps = placidus_cusps(jd, lat, lon)
+    except Exception:
+        kp_cusps = None
+    kp = calc_kp(planets, kp_cusps, lagna["longitude"], moon_lon)
     jaimini = calc_jaimini_karakas(planets, lagna)
     jaimini["avasthas"] = calc_avasthas(planets, graha_drishti=graha_drishti, shadbala=shadbala)
     char_dasha = calc_char_dasha(planets, lagna, dob, tob=tob)
@@ -571,6 +578,7 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
         "gochar": gochar,
         "numerology": numerology,
         "ashtakavarga": ashtakavarga,
+        "kp": kp,
         "jaimini": jaimini,
         "char_dasha": char_dasha,
         "lal_kitab_dasha": lal_kitab_dasha,

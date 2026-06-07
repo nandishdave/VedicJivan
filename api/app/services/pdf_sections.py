@@ -870,6 +870,80 @@ def _shodashvarga_table_section(d: dict) -> str:
     <p style='font-size:8pt; color:#999;'>{', '.join(f'{k}={v}' for k, v in zip(SIGN_ABBR, SIGN_NAMES))}</p>"""
 
 
+def _kp_section(d: dict) -> str:
+    """KP System / Nakshatra Nadi — Ruling Planet box, Cuspal Position table,
+    and per-planet sub-lord table. Uses Krishnamurti ayanamsa + Placidus cusps
+    (verified 12/12 sub-lords vs Astrosage for the reference chart)."""
+    kp = d.get("kp")
+    if not kp:
+        return ""
+
+    abbr = {"Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
+            "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke"}
+
+    def _deg(v):
+        d_ = int(v); m = int((v - d_) * 60); s = int(round(((v - d_) * 60 - m) * 60))
+        if s == 60:
+            s = 0; m += 1
+        return f"{d_:02d}°{m:02d}'{s:02d}\""
+
+    # Ruling planets (Lagna + Moon)
+    ruling_rows = ""
+    for who in ("Lagna", "Moon"):
+        r = kp["ruling"][who]
+        ruling_rows += (
+            f"<tr><td style='font-weight:bold;'>{who}</td><td>{r['sign']}</td>"
+            f"<td>{r['nak_lord']}</td><td>{r['sub_lord']}</td></tr>"
+        )
+
+    # Cuspal positions
+    cusp_rows = ""
+    for c in kp["cusps"]:
+        cusp_rows += (
+            f"<tr><td style='text-align:center;'>{c['house']}</td>"
+            f"<td>{_deg(c['degree'])}</td><td>{c['sign']}</td>"
+            f"<td>{c['nakshatra']}</td><td>{c['nak_lord']}</td>"
+            f"<td>{c['sub_lord']}</td><td>{c['sub_sub_lord']}</td></tr>"
+        )
+
+    # Planetary sub-lords
+    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus",
+                    "Saturn", "Rahu", "Ketu"]
+    planet_rows = ""
+    for name in planet_order:
+        p = kp["planets"].get(name)
+        if not p:
+            continue
+        planet_rows += (
+            f"<tr><td style='font-weight:bold;'>{name}</td>"
+            f"<td>{_deg(p['degree'])}</td><td>{p['sign']}</td>"
+            f"<td>{p['nakshatra']}</td><td>{p['nak_lord']}</td>"
+            f"<td>{p['sub_lord']}</td><td>{p['sub_sub_lord']}</td></tr>"
+        )
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>KP System / Nakshatra Nadi</h2>
+    <p style='font-size:10pt; color:#666;'>Krishnamurti Paddhati refines each placement with a
+    <strong>sub-lord</strong>: each nakshatra is split into nine unequal parts in Vimshottari-dasha
+    proportion. Computed with the KP (Krishnamurti) ayanamsa and Placidus house cusps, per KP tradition.</p>
+    <h3>Ruling Planets</h3>
+    <table style='font-size:9.5pt;'>
+        <tr><th>Body</th><th>Sign (Rasi)</th><th>Nakshatra Lord</th><th>Sub Lord</th></tr>
+        {ruling_rows}
+    </table>
+    <h3>Cuspal Positions</h3>
+    <table style='font-size:9pt;'>
+        <tr><th>Cusp</th><th>Degree</th><th>Sign</th><th>Nakshatra</th><th>Nak Lord</th><th>Sub Lord</th><th>Sub-Sub</th></tr>
+        {cusp_rows}
+    </table>
+    <h3>Planetary Sub-Lords</h3>
+    <table style='font-size:9pt;'>
+        <tr><th>Planet</th><th>Degree</th><th>Sign</th><th>Nakshatra</th><th>Nak Lord</th><th>Sub Lord</th><th>Sub-Sub</th></tr>
+        {planet_rows}
+    </table>"""
+
+
 def _friendship_section(d: dict) -> str:
     """Astrosage-style Friendship Tables — Permanent, Temporary, Compound."""
     fr = d.get("friendships")
