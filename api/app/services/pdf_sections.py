@@ -794,6 +794,9 @@ def _yogini_dasha_section(d: dict) -> str:
         {summary_rows}
     </table>"""
 
+    # Sub-period tables are narrow (3 cols); lay them two-per-row to halve the
+    # page span. Each cell is atomic; rows break between pairs.
+    cells = []
     for entry in yd["dashas"]:
         ad_rows = ""
         for ad in entry.get("antardashas", []):
@@ -801,15 +804,16 @@ def _yogini_dasha_section(d: dict) -> str:
                 f"<tr><td>{ad['abbr']} ({ad['yogini']})</td>"
                 f"<td>{ad['start_date']}</td><td>{ad['end_date']}</td></tr>"
             )
-
-        html += f"""
-        <div class="section">
-            <h4 style="color:#555; margin: 12px 0 4px;">{entry['abbr']} — {entry['yogini']} ({entry['start_date']} to {entry['end_date']})</h4>
-            <table style="font-size: 9pt;">
-                <tr><th>Sub-Period</th><th>Start</th><th>End</th></tr>
-                {ad_rows}
-            </table>
-        </div>"""
+        cells.append(
+            f'<div style="width:48%; box-sizing:border-box;">'
+            f'<h4 style="color:#555; margin:8px 0 3px; font-size:10pt;">{entry["abbr"]} — {entry["yogini"]}</h4>'
+            f'<div style="font-size:8pt; color:#888; margin-bottom:2px;">{entry["start_date"]} to {entry["end_date"]}</div>'
+            f'<table style="font-size:8pt;"><tr><th>Sub-Period</th><th>Start</th><th>End</th></tr>{ad_rows}</table>'
+            f'</div>'
+        )
+    for k in range(0, len(cells), 2):
+        pair = "".join(cells[k:k + 2])
+        html += f'<div style="display:flex; flex-wrap:nowrap; justify-content:space-between; page-break-inside:avoid;">{pair}</div>'
 
     return html
 
@@ -864,6 +868,80 @@ def _shodashvarga_table_section(d: dict) -> str:
         {rows}
     </table>
     <p style='font-size:8pt; color:#999;'>{', '.join(f'{k}={v}' for k, v in zip(SIGN_ABBR, SIGN_NAMES))}</p>"""
+
+
+def _kp_section(d: dict) -> str:
+    """KP System / Nakshatra Nadi — Ruling Planet box, Cuspal Position table,
+    and per-planet sub-lord table. Uses Krishnamurti ayanamsa + Placidus cusps
+    (verified 12/12 sub-lords vs Astrosage for the reference chart)."""
+    kp = d.get("kp")
+    if not kp:
+        return ""
+
+    abbr = {"Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
+            "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke"}
+
+    def _deg(v):
+        d_ = int(v); m = int((v - d_) * 60); s = int(round(((v - d_) * 60 - m) * 60))
+        if s == 60:
+            s = 0; m += 1
+        return f"{d_:02d}°{m:02d}'{s:02d}\""
+
+    # Ruling planets (Lagna + Moon)
+    ruling_rows = ""
+    for who in ("Lagna", "Moon"):
+        r = kp["ruling"][who]
+        ruling_rows += (
+            f"<tr><td style='font-weight:bold;'>{who}</td><td>{r['sign']}</td>"
+            f"<td>{r['nak_lord']}</td><td>{r['sub_lord']}</td></tr>"
+        )
+
+    # Cuspal positions
+    cusp_rows = ""
+    for c in kp["cusps"]:
+        cusp_rows += (
+            f"<tr><td style='text-align:center;'>{c['house']}</td>"
+            f"<td>{_deg(c['degree'])}</td><td>{c['sign']}</td>"
+            f"<td>{c['nakshatra']}</td><td>{c['nak_lord']}</td>"
+            f"<td>{c['sub_lord']}</td><td>{c['sub_sub_lord']}</td></tr>"
+        )
+
+    # Planetary sub-lords
+    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus",
+                    "Saturn", "Rahu", "Ketu"]
+    planet_rows = ""
+    for name in planet_order:
+        p = kp["planets"].get(name)
+        if not p:
+            continue
+        planet_rows += (
+            f"<tr><td style='font-weight:bold;'>{name}</td>"
+            f"<td>{_deg(p['degree'])}</td><td>{p['sign']}</td>"
+            f"<td>{p['nakshatra']}</td><td>{p['nak_lord']}</td>"
+            f"<td>{p['sub_lord']}</td><td>{p['sub_sub_lord']}</td></tr>"
+        )
+
+    return f"""
+    <div class="page-break"></div>
+    <h2>KP System / Nakshatra Nadi</h2>
+    <p style='font-size:10pt; color:#666;'>Krishnamurti Paddhati refines each placement with a
+    <strong>sub-lord</strong>: each nakshatra is split into nine unequal parts in Vimshottari-dasha
+    proportion. Computed with the KP (Krishnamurti) ayanamsa and Placidus house cusps, per KP tradition.</p>
+    <h3>Ruling Planets</h3>
+    <table style='font-size:9.5pt;'>
+        <tr><th>Body</th><th>Sign (Rasi)</th><th>Nakshatra Lord</th><th>Sub Lord</th></tr>
+        {ruling_rows}
+    </table>
+    <h3>Cuspal Positions</h3>
+    <table style='font-size:9pt;'>
+        <tr><th>Cusp</th><th>Degree</th><th>Sign</th><th>Nakshatra</th><th>Nak Lord</th><th>Sub Lord</th><th>Sub-Sub</th></tr>
+        {cusp_rows}
+    </table>
+    <h3>Planetary Sub-Lords</h3>
+    <table style='font-size:9pt;'>
+        <tr><th>Planet</th><th>Degree</th><th>Sign</th><th>Nakshatra</th><th>Nak Lord</th><th>Sub Lord</th><th>Sub-Sub</th></tr>
+        {planet_rows}
+    </table>"""
 
 
 def _friendship_section(d: dict) -> str:
@@ -1613,6 +1691,9 @@ def _divisional_charts_section(d: dict) -> str:
         return ""
 
     html = '<div class="page-break"></div><h2>Divisional Charts</h2>'
+    # Two-column grid: each cell is a compact chart + short caption, so ~4
+    # charts fit per page (was ~2). Each cell stays atomic (no mid-chart break).
+    cells = ""
     for chart_type in (
         "D9", "D10", "D2", "D3", "D4", "D6", "D7", "D8",
         "D11", "D12", "D16", "D20", "D24", "D27", "D30",
@@ -1622,18 +1703,29 @@ def _divisional_charts_section(d: dict) -> str:
             continue
         title, description = CHART_DESCRIPTIONS.get(chart_type, (chart_type, ""))
         house_signs, house_planets = _build_divisional_chart_data(d, chart_type)
-        chart_svg = _chart_svg(house_signs, house_planets, chart_type)
+        chart_svg = _chart_svg(house_signs, house_planets, "", size=210)
 
         lagna_sign = charts[chart_type].get("Lagna", 0)
         lagna_name = SIGN_NAMES[lagna_sign]
 
-        html += f"""
-        <div class="chart-block">
-            <h3>{title} ({chart_type}) — {lagna_name} Ascendant</h3>
-            <p style="font-size:10pt; color:#666;">{description}</p>
+        cells += f"""
+        <div class="dvg-cell chart-block" style="width:48%; box-sizing:border-box; padding:2px 4px 8px;">
+            <div style="font-weight:bold; color:{BRAND}; font-size:10.5pt;">{title} ({chart_type})</div>
+            <div style="font-size:8.5pt; color:#888; margin-bottom:2px;">{lagna_name} Ascendant</div>
             {chart_svg}
+            <p style="font-size:8pt; color:#777; margin:2px 0 0;">{description}</p>
         </div>"""
 
+    # NOTE: a flex container can't page-break internally in WeasyPrint, so a
+    # single flex wrapper would jump wholesale to the next page and orphan the
+    # heading. Group cells into rows of 2 — each row is an atomic flex block
+    # that flows and breaks between rows, filling pages from the heading down.
+    cell_list = [c for c in cells.split('<div class="dvg-cell') if c.strip()]
+    rows_html = ""
+    for k in range(0, len(cell_list), 2):
+        pair = "".join('<div class="dvg-cell' + c for c in cell_list[k:k + 2])
+        rows_html += f'<div style="display:flex; flex-wrap:nowrap; justify-content:space-between; page-break-inside:avoid;">{pair}</div>'
+    html += rows_html
     return html
 
 
@@ -1648,30 +1740,39 @@ def _antardasha_section(d: dict) -> str:
 
     current_dasha = d["dasha"]["current_dasha"]
 
+    # Build a compact 2-up cell per Mahadasha (the AD tables are narrow), then
+    # flow them two-per-row. The current-MD interpretation card is appended
+    # full-width after the grid so it stays readable.
+    cells = []
+    current_pred_html = ""
     for md in antardasha_list:
         is_current_md = (md["mahadasha"] == current_dasha["planet"] and md["start_date"] == current_dasha["start_date"])
-        md_label = " (Current Mahadasha)" if is_current_md else ""
-        highlight_style = ' style="background: #f3f0ff;"' if is_current_md else ""
+        md_label = " (Current)" if is_current_md else ""
+        head_bg = "background:#f3f0ff;" if is_current_md else ""
 
         rows = ""
         for ad in md["antardashas"]:
             rows += f"<tr><td>{ad['planet']}</td><td>{ad['years']}</td><td>{ad['start_date']}</td><td>{ad['end_date']}</td></tr>"
 
-        html += f"""
-        <div class="section">
-            <h3{highlight_style}>{md['mahadasha']} Mahadasha — {md['mahadasha_years']} years{md_label}</h3>
-            <p><strong>Period:</strong> {md['start_date']} to {md['end_date']}</p>
-            <table>
-                <tr><th>Antardasha Planet</th><th>Years</th><th>Start Date</th><th>End Date</th></tr>
-                {rows}
-            </table>
-        </div>"""
+        cells.append(
+            f'<div style="width:48%; box-sizing:border-box;">'
+            f'<h4 style="{head_bg} color:#555; margin:8px 0 2px; font-size:10pt; padding:2px 4px;">'
+            f'{md["mahadasha"]} — {md["mahadasha_years"]}y{md_label}</h4>'
+            f'<div style="font-size:8pt; color:#888; margin-bottom:2px;">{md["start_date"]} to {md["end_date"]}</div>'
+            f'<table style="font-size:8pt;"><tr><th>Planet</th><th>Yrs</th><th>Start</th><th>End</th></tr>{rows}</table>'
+            f'</div>'
+        )
 
         if is_current_md:
             pred = DASHA_PREDICTIONS.get(md["mahadasha"], "")
             if pred:
-                html += f'<div class="phase-card"><h3>Current {md["mahadasha"]} Mahadasha Interpretation</h3><p>{pred}</p></div>'
+                current_pred_html = f'<div class="phase-card"><h3>Current {md["mahadasha"]} Mahadasha Interpretation</h3><p>{pred}</p></div>'
 
+    for k in range(0, len(cells), 2):
+        pair = "".join(cells[k:k + 2])
+        html += f'<div style="display:flex; flex-wrap:nowrap; justify-content:space-between; page-break-inside:avoid;">{pair}</div>'
+
+    html += current_pred_html
     return html
 
 
