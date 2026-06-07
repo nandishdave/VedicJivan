@@ -254,48 +254,98 @@ def _css(name: str = "", user_timezone: str = "Asia/Kolkata") -> str:
         local_tz = ZoneInfo("Asia/Kolkata")
     generated = datetime.now(local_tz).strftime("%d/%m/%Y %I:%M:%S %p")
     return f"""<style>
-    @page {{ size: A4; margin: 20mm 15mm 25mm 15mm;
+    @page {{ size: A4; margin: 13mm 12mm 16mm 12mm;
         @top-left {{ content: "{name}"; font-size: 8pt; color: #555; font-weight: bold; }}
         @top-right {{ content: "Get free chart (kundli) at https://vedicjivan.nandishdave.world"; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
         @bottom-center {{ content: "https://vedicjivan.nandishdave.world, E-mail: vedic.jivan33@gmail.com, Phone: +91 98242 92212, Printing Date: {generated}" "\A" "Page No. " counter(page); white-space: pre-wrap; text-align: center; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
     }}
     @page :first {{ @top-left {{ content: none; }} @top-right {{ content: none; }} }}
-    body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.6; font-size: 11pt; }}
-    h1 {{ color: {BRAND}; text-align: center; font-size: 22pt; margin: 0 0 5px; }}
-    h2 {{ color: {BRAND}; font-size: 16pt; border-bottom: 2px solid {BRAND}; padding-bottom: 4px; margin-top: 30px; page-break-after: avoid; }}
-    h3 {{ color: #555; font-size: 13pt; margin-top: 18px; page-break-after: avoid; }}
-    table {{ width: 100%; border-collapse: collapse; margin: 10px 0 15px; }}
-    th {{ background: {BRAND}; color: white; padding: 8px 10px; text-align: left; font-size: 10pt; }}
-    td {{ padding: 7px 10px; border-bottom: 1px solid #e5e5e5; font-size: 10pt; }}
+    body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.35; font-size: 10pt; }}
+    h1 {{ color: {BRAND}; text-align: center; font-size: 20pt; margin: 0 0 4px; }}
+    h2 {{ color: {BRAND}; font-size: 14pt; border-bottom: 2px solid {BRAND}; padding-bottom: 3px; margin: 16px 0 8px; page-break-after: avoid; }}
+    h3 {{ color: #555; font-size: 12pt; margin: 10px 0 4px; page-break-after: avoid; }}
+    table {{ width: 100%; border-collapse: collapse; margin: 6px 0 10px; }}
+    th {{ background: {BRAND}; color: white; padding: 4px 8px; text-align: left; font-size: 9.5pt; }}
+    td {{ padding: 4px 8px; border-bottom: 1px solid #e5e5e5; font-size: 9.5pt; }}
     tr:nth-child(even) {{ background: #f9f7ff; }}
-    .cover {{ text-align: center; padding: 220px 0 60px; page-break-after: always; }}
-    .cover img {{ height: 80px; margin-bottom: 30px; }}
-    .cover .name {{ font-size: 28pt; color: {BRAND}; font-weight: bold; margin: 10px 0; }}
-    .cover .sub {{ font-size: 12pt; color: #666; margin: 5px 0; }}
-    .section {{ page-break-inside: avoid; }}
+    .cover {{ text-align: center; padding: 30px 0 40px; page-break-after: always; }}
+    /* Density: let sections flow across pages to fill whitespace; keep only
+       small atomic blocks (charts) and individual table rows unbroken. */
     .chart-block {{ page-break-inside: avoid; }}
-    table {{ page-break-inside: avoid; }}
-    .two-col {{ display: flex; gap: 20px; }}
+    tr {{ page-break-inside: avoid; }}
+    .two-col {{ display: flex; gap: 16px; }}
     .two-col > div {{ flex: 1; }}
-    .remedy {{ background: #f3f0ff; border-left: 3px solid {BRAND}; padding: 8px 12px; margin: 5px 0; font-size: 10pt; }}
-    .manglik-yes {{ background: #fef2f2; border: 1px solid #f87171; padding: 12px; border-radius: 6px; }}
-    .manglik-no {{ background: #f0fdf4; border: 1px solid #4ade80; padding: 12px; border-radius: 6px; }}
-    .phase-card {{ background: #f9f7ff; border-left: 4px solid {BRAND}; padding: 10px 14px; margin: 8px 0; }}
-    .footer {{ text-align: center; color: #999; font-size: 9pt; margin-top: 40px; border-top: 1px solid #eee; padding-top: 10px; }}
-    .page-break {{ page-break-before: always; }}
-    p {{ margin: 6px 0; }}
+    .remedy {{ background: #f3f0ff; border-left: 3px solid {BRAND}; padding: 6px 10px; margin: 4px 0; font-size: 9.5pt; }}
+    .manglik-yes {{ background: #fef2f2; border: 1px solid #f87171; padding: 9px; border-radius: 6px; }}
+    .manglik-no {{ background: #f0fdf4; border: 1px solid #4ade80; padding: 9px; border-radius: 6px; }}
+    .phase-card {{ background: #f9f7ff; border-left: 4px solid {BRAND}; padding: 8px 12px; margin: 6px 0; }}
+    .footer {{ text-align: center; color: #999; font-size: 9pt; margin-top: 24px; border-top: 1px solid #eee; padding-top: 8px; }}
+    /* Density: section separators flow continuously to fill each page instead
+       of forcing a fresh page per section. `.page-break` is now a SOFT spacer
+       (the report has ~43 of these). To make a specific section start on a new
+       page, change that one div's class to `force-break`. Headings still carry
+       `page-break-after: avoid` so a heading never orphans at a page bottom. */
+    .page-break {{ height: 6px; }}
+    .force-break {{ page-break-before: always; }}
+    p {{ margin: 4px 0; }}
     </style>"""
 
 
 def _cover(d: dict) -> str:
+    """Chart-forward cover (Astrosage-style): the person's D1 Lagna chart
+    front-and-centre with their key birth details, so page 1 reads as a
+    premium personalised report rather than a marketing flyer."""
+    # Reuse the same North-Indian chart builder the body uses, so the cover
+    # chart always matches the in-report D1.
+    from app.services.pdf_sections import _build_d1_chart_data, _chart_svg
+
+    house_signs, house_planets = _build_d1_chart_data(d)
+    d1_svg = _chart_svg(house_signs, house_planets, "", size=300)
+
+    name = d.get("name", "")
+    dob_fmt = "/".join(reversed(d["dob"].split("-"))) if d.get("dob") else "—"
+    tob = d.get("tob", "—")
+    place = d.get("place_name", "—")
+    gender = d.get("gender", "—").title()
+    lagna = d["lagna"]["sign_name"]
+    lagna_lord = d["lagna"]["sign_lord"]
+    rasi = d["planets"]["Moon"]["sign_name"]
+    nak = d["nakshatra"]
+
+    def _meta(label: str, value: str) -> str:
+        return (
+            f'<div style="display:flex; justify-content:space-between; gap:14px; '
+            f'padding:5px 0; border-bottom:1px solid #ece8fb;">'
+            f'<span style="color:#777; font-size:11pt;">{label}</span>'
+            f'<span style="color:#333; font-weight:600; font-size:11pt;">{value}</span></div>'
+        )
+
     return f"""
     <div class="cover">
-        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 200px; margin-bottom: 15px;" />
-        <div style="font-size: 18pt; color: #888; font-style: italic; margin-bottom: 40px;">Transform Your Life Through Vedic Wisdom</div>
+        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 70px; margin-bottom: 4px;" />
+        <div style="font-size: 11pt; color: #999; font-style: italic; margin-bottom: 6px;">Connect the Divine Within</div>
+        <div style="font-size: 26pt; color: {BRAND}; font-weight: bold; margin: 6px 0 2px;">Vedic Birth Chart &amp; Life Report</div>
+        <div style="font-size: 20pt; color: #333; font-weight: 600; margin-bottom: 14px;">{name}</div>
 
-        <hr style="border: none; border-top: 3px solid {BRAND}; width: 70%; margin: 30px auto;" />
-        <div style="margin-top: 25px; font-size: 24pt; color: #15803d; font-weight: bold;">Worth ₹999 — FREE</div>
-        <div style="font-size: 14pt; color: #999; margin-top: 10px;">Comprehensive Vedic Astrology Report &nbsp;|&nbsp; 25+ Sections</div>
+        <div style="width: 320px; margin: 0 auto;">{d1_svg}</div>
+        <div style="font-size: 12pt; font-weight: bold; color: {BRAND}; opacity: 0.75; margin: 2px 0 16px;">Lagna Chart (D1)</div>
+
+        <div style="width: 380px; margin: 0 auto; text-align: left;">
+            {_meta("Date of Birth", dob_fmt)}
+            {_meta("Time of Birth", tob)}
+            {_meta("Place of Birth", place)}
+            {_meta("Gender", gender)}
+            {_meta("Ascendant (Lagna)", f"{lagna} ({lagna_lord})")}
+            {_meta("Moon Sign (Rasi)", rasi)}
+            {_meta("Nakshatra", f"{nak['name']} — Pada {nak['pada']}")}
+        </div>
+
+        <div style="margin-top: 22px;">
+            <span style="display:inline-block; background:#f0fdf4; color:#15803d; border:1px solid #86efac;
+                border-radius:20px; padding:6px 18px; font-size:12pt; font-weight:bold;">
+                Comprehensive Report &nbsp;·&nbsp; Worth ₹999 — FREE
+            </span>
+        </div>
     </div>"""
 
 

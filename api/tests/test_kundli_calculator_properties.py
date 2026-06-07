@@ -225,6 +225,33 @@ def test_ashtakavarga_grand_total_invariant(planets, lagna):
     assert sum(out["totals"]) == 337
 
 
+@given(planets=planet_chart(), lagna=sign_index)
+@settings(max_examples=100, deadline=None)
+def test_ashtakavarga_prasthar_matrix_consistent(planets, lagna):
+    """Property: the Prastharashtakavarga detail matrix is consistent with the
+    Bhinnashtakavarga totals — each planet's 8 contributor rows column-sum to
+    that planet's `bindus`, and every cell is 0 or 1."""
+    from app.services.kundli_calculator.ashtakavarga import (
+        CONTRIBUTORS,
+        EXPECTED_PLANET_TOTALS,
+    )
+
+    classical = {n: planets[n] for n in ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]}
+    out = calc_ashtakavarga(classical, lagna)
+
+    for planet, expected_total in EXPECTED_PLANET_TOTALS.items():
+        rows = out["prasthar"][planet]
+        assert set(rows.keys()) == set(CONTRIBUTORS)
+        # every cell is a single bindu (0 or 1)
+        for contributor in CONTRIBUTORS:
+            assert all(v in (0, 1) for v in rows[contributor])
+        # column sums == the planet's Bhinnashtakavarga row
+        col_sums = [sum(rows[c][s] for c in CONTRIBUTORS) for s in range(12)]
+        assert col_sums == out["bindus"][planet]
+        # whole matrix sums to the fixed classical per-planet total
+        assert sum(sum(rows[c]) for c in CONTRIBUTORS) == expected_total
+
+
 # ── Avastha helpers ────────────────────────────────────────────────────────
 
 

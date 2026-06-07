@@ -1431,7 +1431,73 @@ def _ashtakavarga_table(d: dict, section_title: str, col_th: str) -> str:
                 {body}
             </table>
         </div>
+        {_sarva_chart(d, av)}
+        {_prasthar_tables(d, av, section_title, col_th)}
     """
+
+
+def _sarva_chart(d: dict, av: dict) -> str:
+    """Sarvashtakavarga chart — the 12 sign-totals laid out in a North-Indian
+    chart oriented to the lagna (Astrosage's 'Ashtakvarga Chart')."""
+    lagna_sign = d["lagna"]["sign"]
+    house_signs = {h: (lagna_sign + h - 1) % 12 for h in range(1, 13)}
+    # Put each house's Sarva total (for the sign occupying that house) as the
+    # chart "planet" text. av["totals"] is indexed by absolute sign (0=Aries).
+    house_planets = {h: [str(av["totals"][house_signs[h]])] for h in range(1, 13)}
+    svg = _chart_svg(house_signs, house_planets, "Sarvashtakavarga Chart", size=260)
+    return f'<div class="chart-block" style="text-align:center; margin-top:10px;">{svg}</div>'
+
+
+def _prasthar_tables(d: dict, av: dict, section_title: str, col_th: str) -> str:
+    """Prastharashtakavarga — for each planet, the 8 contributors × 12 signs
+    bindu matrix (Astrosage page 55). `prasthar[planet][contributor][sign]`."""
+    prasthar = av.get("prasthar")
+    if not prasthar:
+        return ""
+
+    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+    contributors = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Lagna"]
+    abbr = {"Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
+            "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Lagna": "La"}
+    sign_headers = "".join(f'<th style="{col_th} text-align:center;">{i}</th>' for i in range(1, 13))
+
+    blocks = []
+    for planet in planet_order:
+        rows = ""
+        for contributor in contributors:
+            cells = "".join(
+                f'<td style="padding:1px 3px; border-bottom:1px solid #eee; text-align:center; '
+                f'{"color:#bbb;" if v == 0 else "font-weight:600;"}">{v}</td>'
+                for v in prasthar[planet][contributor]
+            )
+            rows += (
+                f'<tr><td style="padding:1px 3px; font-weight:bold; border-bottom:1px solid #eee;">'
+                f'{abbr[contributor]}</td>{cells}</tr>'
+            )
+        # total row for this planet
+        col_totals = [sum(prasthar[planet][c][s] for c in contributors) for s in range(12)]
+        total_cells = "".join(
+            f'<td style="padding:2px 3px; border-top:2px solid {BRAND}; text-align:center; font-weight:bold;">{t}</td>'
+            for t in col_totals
+        )
+        rows += (
+            f'<tr style="background:#f3f0ff;"><td style="padding:2px 3px; border-top:2px solid {BRAND}; '
+            f'font-weight:bold; color:{BRAND};">Total</td>{total_cells}</tr>'
+        )
+        blocks.append(
+            f'<div style="page-break-inside: avoid; margin-top:8px;">'
+            f'<div style="font-weight:bold; color:{BRAND}; font-size:9.5pt; margin:6px 0 2px;">{planet}</div>'
+            f'<table style="width:100%; font-size:7.5pt; border-collapse:collapse; margin:0;">'
+            f'<tr><th style="{col_th}">Contrib</th>{sign_headers}</tr>{rows}</table></div>'
+        )
+
+    return (
+        f'<div style="margin-top:12px;">'
+        f'<div style="{section_title}">Prastharashtakavarga (contributor detail per sign)</div>'
+        f'<div style="font-size:8.5pt; color:#777; margin-bottom:4px;">Each row shows which contributor '
+        f'(Su Mo Ma Me Ju Ve Sa, plus La = Lagna) grants a bindu to the planet in each of the 12 signs.</div>'
+        f'{"".join(blocks)}</div>'
+    )
 
 
 def _birth_chart_page(d: dict) -> str:
