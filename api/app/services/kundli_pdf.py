@@ -34,6 +34,8 @@ PLANET_ABBR = {
     "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke",
     "Uranus": "Ur", "Neptune": "Ne", "Pluto": "Pl",
 }
+# Canonical display order for the nine classical bodies (Sun→Ketu).
+PLANET_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
 
 # North Indian chart house text positions (x, y) in a 300×300 SVG
 # Houses go COUNTER-CLOCKWISE from top center (standard North Indian layout)

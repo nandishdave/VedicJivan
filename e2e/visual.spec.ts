@@ -44,11 +44,17 @@ test.describe("Visual regression", () => {
     });
   });
 
-  test("services landing page", async ({ page }) => {
+  test("services landing page (hero)", async ({ page }) => {
     await page.goto("/services/");
     await page.waitForLoadState("networkidle");
+    // Viewport-only by design. A fullPage shot is unreliable here: the cards use
+    // AnimateOnScroll (framer-motion + IntersectionObserver, initial opacity:0),
+    // which never settle deterministically during a long fullPage capture and
+    // flake even with scroll-reveal + tolerance. The hero is above the fold and
+    // stable. (Card-level visual coverage would need a reduced-motion hook in
+    // AnimateOnScroll + a redeploy — deferred.)
     await expect(page).toHaveScreenshot("services-landing.png", {
-      fullPage: true,
+      fullPage: false,
       animations: "disabled",
       maxDiffPixelRatio: 0.01,
     });
@@ -57,7 +63,15 @@ test.describe("Visual regression", () => {
   test("kundli form empty state", async ({ page }) => {
     await page.goto("/kundli/");
     await page.waitForLoadState("networkidle");
-    // The form itself is the focal element; full-page would include footer
+    // The date picker defaults to the *current* month and greys out future
+    // days, so a naive screenshot drifts daily and rolls over monthly. A clock
+    // pin can't fix this — the calendar's `new Date()` runs server-side (SSR/
+    // SSG), which page.clock can't touch. Instead, drive the picker to a fixed
+    // *past* month (Jan 2000): a real client re-render, every day selectable
+    // (no future-grey), and a historically-fixed grid → deterministic forever.
+    await page.locator('select:has-text("2000")').selectOption("2000");
+    await page.locator('select:has-text("January")').selectOption({ label: "January" });
+    // The form is the focal element; full-page would include the footer
     // (which contains social links / dynamic copy).
     const form = page.locator("form").first();
     await expect(form).toHaveScreenshot("kundli-form-empty.png", {

@@ -55,6 +55,7 @@ from app.services.kundli_pdf import (  # noqa: E402
     CHART_DESCRIPTIONS,
     LOGO_URL,
     PLANET_ABBR,
+    PLANET_ORDER,
     SIGN_ABBR,
     SIGN_LORDS,
     SIGN_NAMES,
@@ -463,7 +464,7 @@ def _planet_consideration_section(d: dict) -> str:
     html = '<div class="page-break"></div><h2>Planet Considerations</h2>'
     html += "<p>Each planet's placement by sign, house, lordship, and aspects — with interpretation based on classical Vedic texts.</p>"
 
-    ordered_planets = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+    ordered_planets = PLANET_ORDER
 
     for name in ordered_planets:
         if name not in d["planets"]:
@@ -830,7 +831,7 @@ def _shodashvarga_table_section(d: dict) -> str:
         for v in present_vargas
     )
 
-    planet_names = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+    planet_names = PLANET_ORDER
 
     rows = ""
     for name in planet_names:
@@ -872,9 +873,6 @@ def _kp_section(d: dict) -> str:
     if not kp:
         return ""
 
-    abbr = {"Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
-            "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke"}
-
     def _deg(v):
         d_ = int(v); m = int((v - d_) * 60); s = int(round(((v - d_) * 60 - m) * 60))
         if s == 60:
@@ -901,8 +899,7 @@ def _kp_section(d: dict) -> str:
         )
 
     # Planetary sub-lords
-    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus",
-                    "Saturn", "Rahu", "Ketu"]
+    planet_order = PLANET_ORDER
     planet_rows = ""
     for name in planet_order:
         p = kp["planets"].get(name)
@@ -945,8 +942,6 @@ def _kp_cusp_aspects_table(kp: dict) -> str:
     ca = kp.get("cusp_aspects")
     if not ca or not ca.get("planets"):
         return ""
-    abbr = {"Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
-            "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke"}
     th = "padding:3px 4px; background:#f3f0ff; text-align:center; font-size:8pt;"
     headers = "".join(f'<th style="{th}">{i}</th>' for i in range(1, 13))
     rows = ""
@@ -958,7 +953,7 @@ def _kp_cusp_aspects_table(kp: dict) -> str:
                           f'{cell["abbr"]}<br><span style="color:#999;">{cell["orb"]}</span></td>')
             else:
                 cells += '<td style="text-align:center; color:#ccc; padding:2px;">—</td>'
-        rows += (f'<tr><td style="font-weight:bold; padding:2px 4px;">{abbr.get(p, p)}</td>{cells}</tr>')
+        rows += (f'<tr><td style="font-weight:bold; padding:2px 4px;">{PLANET_ABBR.get(p, p[:2])}</td>{cells}</tr>')
     return f"""
     <h3>Aspects on KP Cusp</h3>
     <p style='font-size:9pt; color:#666;'>Western-style angular aspects (Conjunction, Sextile, Square, Trine,
@@ -1548,8 +1543,6 @@ def _prasthar_tables(d: dict, av: dict, section_title: str, col_th: str) -> str:
 
     planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
     contributors = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Lagna"]
-    abbr = {"Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me",
-            "Jupiter": "Ju", "Venus": "Ve", "Saturn": "Sa", "Lagna": "La"}
     sign_headers = "".join(f'<th style="{col_th} text-align:center;">{i}</th>' for i in range(1, 13))
 
     blocks = []
@@ -1563,7 +1556,7 @@ def _prasthar_tables(d: dict, av: dict, section_title: str, col_th: str) -> str:
             )
             rows += (
                 f'<tr><td style="padding:1px 3px; font-weight:bold; border-bottom:1px solid #eee;">'
-                f'{abbr[contributor]}</td>{cells}</tr>'
+                f'{PLANET_ABBR.get(contributor, contributor[:2])}</td>{cells}</tr>'
             )
         # total row for this planet
         col_totals = [sum(prasthar[planet][c][s] for c in contributors) for s in range(12)]
@@ -1927,7 +1920,7 @@ def _shadbala_section(d: dict) -> str:
     extended_table = _shadbala_table(
         shadbala, extended,
         "Extended Strength — adapted Shadbala framework applied to Rahu, Ketu, and outer planets. "
-        "Exaltations and dignities follow contemporary Jyotish research (not classical texts). "
+        "Exaltations and dignities use a modern (non-classical) convention — see the note below the table. "
         "Temporal lord components (Thribhaga, Hora, Vara, Abda, Masa) are not applicable and shown as 0."
     )
 
@@ -1944,7 +1937,14 @@ def _shadbala_section(d: dict) -> str:
     <p style="font-size:10pt;color:#555;">This section applies an adapted Shadbala framework to the
     lunar nodes and outer planets — a modern extension unique to this report. It provides comparative
     strength analysis across all planetary bodies in your chart.</p>
-    {extended_table}"""
+    {extended_table}
+    <p style="background:#fef9ec; border:1px solid #fbbf24; padding:10px 12px; border-radius:6px;
+    font-size:9.5pt; color:#92400e; margin-top:10px; page-break-inside:avoid;">
+    <strong>⚠ Note on non-classical figures.</strong> Classical Shadbala (BPHS Ch. 27–29) is defined
+    for the seven traditional planets only. Rahu &amp; Ketu here follow a widely-used modern Jyotish
+    convention. <strong>Uranus, Neptune and Pluto have no basis in classical texts</strong> — their
+    exaltations, dignities and directional strengths are a contemporary extrapolation included for
+    comparative interest only, and should not be read as canonical Vedic strength.</p>"""
 
 
 def _yogas_section(d: dict) -> str:
@@ -2084,7 +2084,7 @@ def _gochar_section(d: dict) -> str:
     computed_date = gochar.get("computed_for_date", "")
 
     transit_rows = ""
-    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+    planet_order = PLANET_ORDER
     for planet in planet_order:
         if planet not in transits:
             continue
@@ -2365,7 +2365,7 @@ def _lal_kitab_calculation_section(d: dict) -> str:
 
     planets_dict = d.get("planets", {})
 
-    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+    planet_order = PLANET_ORDER
     planet_rows = ""
     for name in planet_order:
         info = planets_dict.get(name)
@@ -2467,7 +2467,7 @@ def _lal_kitab_section(d: dict) -> str:
     if not LAL_KITAB_DATA:
         return ""
 
-    planet_order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+    planet_order = PLANET_ORDER
     cards = ""
     for name in planet_order:
         info = d.get("planets", {}).get(name)

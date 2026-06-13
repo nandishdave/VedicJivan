@@ -77,6 +77,24 @@ _ALL_ASPECT_PLANETS = [
 ]
 
 
+def best_western_aspect(lon_a: float, lon_b: float) -> dict | None:
+    """Tightest Western aspect between two longitudes, or None if none within orb.
+
+    Folds the separation to 0–180° and returns the closest-orb match from
+    ``WESTERN_ASPECTS`` as ``{"abbr", "orb", "weight"}``. Shared by the
+    planet-planet matrix here and the KP cusp-aspect grid in ``kp.py``.
+    """
+    diff = abs(lon_a - lon_b) % 360
+    if diff > 180:
+        diff = 360 - diff
+    best = None
+    for asp in WESTERN_ASPECTS:
+        orb = abs(diff - asp["angle"])
+        if orb <= asp["orb"] and (best is None or orb < best["orb"]):
+            best = {"abbr": asp["abbr"], "orb": round(orb, 2), "weight": asp["weight"]}
+    return best
+
+
 def calc_western_aspects(planets: dict) -> dict:
     """Compute Western-style angular aspects between all planet pairs.
 
@@ -96,15 +114,6 @@ def calc_western_aspects(planets: dict) -> dict:
                 matrix[p][q] = None
                 continue
             q_lon = planets[q]["longitude"]
-            diff = abs(p_lon - q_lon) % 360
-            if diff > 180:
-                diff = 360 - diff
-            best = None
-            for asp in WESTERN_ASPECTS:
-                orb = abs(diff - asp["angle"])
-                if orb <= asp["orb"]:
-                    if best is None or orb < best["orb"]:
-                        best = {"abbr": asp["abbr"], "orb": round(orb, 2), "weight": asp["weight"]}
-            matrix[p][q] = best
+            matrix[p][q] = best_western_aspect(p_lon, q_lon)
 
     return {"planets": active, "matrix": matrix}

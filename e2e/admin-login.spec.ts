@@ -30,7 +30,10 @@ test.describe("Admin login", () => {
     await page.goto("/admin/login/");
     await page.fill("input[type='email']", "wrong@example.com");
     await page.fill("input[type='password']", "wrongpass");
-    await page.click("button[type='submit']");
+    // The submit control is a styled <Button> with no literal type="submit"
+    // attribute (it relies on the HTML default inside a <form>), so a
+    // `button[type='submit']` selector never matches. Target it by role/name.
+    await page.getByRole("button", { name: /Sign[ -]?in/i }).click();
 
     await expect(
       page.getByText(/invalid|incorrect|wrong|failed/i),

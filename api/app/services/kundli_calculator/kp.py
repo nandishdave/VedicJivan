@@ -174,23 +174,12 @@ def _kp_cusp_aspects(planets: dict, house_cusps: list[float]) -> dict:
     Returns {"planets": [...], "matrix": {planet: [cell_or_None x12]}} where a
     cell is {"abbr": "CONJ", "orb": 1.23} for the tightest aspect within orb.
     """
-    from .aspects import WESTERN_ASPECTS
+    from .aspects import best_western_aspect
 
     order = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
     active = [p for p in order if p in planets and planets[p].get("longitude") is not None]
     matrix: dict[str, list[dict | None]] = {}
     for p in active:
         p_lon = planets[p]["longitude"]
-        row: list[dict | None] = []
-        for cusp_lon in house_cusps:
-            diff = abs(p_lon - cusp_lon) % 360
-            if diff > 180:
-                diff = 360 - diff
-            best = None
-            for asp in WESTERN_ASPECTS:
-                orb = abs(diff - asp["angle"])
-                if orb <= asp["orb"] and (best is None or orb < best["orb"]):
-                    best = {"abbr": asp["abbr"], "orb": round(orb, 2)}
-            row.append(best)
-        matrix[p] = row
+        matrix[p] = [best_western_aspect(p_lon, cusp_lon) for cusp_lon in house_cusps]
     return {"planets": active, "matrix": matrix}
