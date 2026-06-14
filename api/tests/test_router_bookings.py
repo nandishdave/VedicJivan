@@ -433,8 +433,20 @@ async def test_view_booking_not_found(client, mock_db):
 # target must also be in the future.
 from datetime import date as _date, timedelta as _td
 
-_FUTURE_BOOKING_DATE = (_date.today() + _td(days=14)).isoformat()
-_FUTURE_RESCHEDULE_DATE = (_date.today() + _td(days=21)).isoformat()
+
+def _future_open_date(days: int) -> str:
+    """A date ``days`` ahead, rolled forward off Sunday — the only day closed in
+    the default business hours. Without this, these booking tests are flaky by
+    weekday: when the target lands on a Sunday the request is rejected with
+    'not available on this day' before the slot/time checks the test intends."""
+    d = _date.today() + _td(days=days)
+    while d.weekday() == 6:  # 6 = Sunday
+        d += _td(days=1)
+    return d.isoformat()
+
+
+_FUTURE_BOOKING_DATE = _future_open_date(14)
+_FUTURE_RESCHEDULE_DATE = _future_open_date(21)
 
 _RESCHEDULE_DATA = {
     "date": _FUTURE_RESCHEDULE_DATE,
