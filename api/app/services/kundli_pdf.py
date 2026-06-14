@@ -266,7 +266,7 @@ def _css(name: str = "", user_timezone: str = "Asia/Kolkata") -> str:
     return f"""<style>
     @page {{ size: A4; margin: 13mm 12mm 16mm 12mm;
         @top-center {{ content: element(pageheader); width: 100%; }}
-        @bottom-center {{ content: "https://vedicjivan.nandishdave.world, E-mail: vedic.jivan33@gmail.com, Phone: +91 98242 92212, Printing Date: {generated}" "\A" "Page No. " counter(page); white-space: pre-wrap; text-align: center; font-size: 8pt; color: {BRAND}; font-weight: bold; border-top: 0.75pt solid #c9c9c9; box-sizing: border-box; padding: 4pt 12mm 0; margin: 0 -12mm; }}
+        @bottom-center {{ content: "https://vedicjivan.nandishdave.world, E-mail: vedic.jivan33@gmail.com, Phone: +91 98242 92212, Printing Date: {generated}" "\\A" "Page No. " counter(page); white-space: pre-wrap; text-align: center; font-size: 8pt; color: {BRAND}; font-weight: bold; border-top: 0.75pt solid #c9c9c9; box-sizing: border-box; padding: 4pt 12mm 0; margin: 0 -12mm; }}
     }}
     @page :first {{ @top-center {{ content: none; }} @bottom-center {{ content: none; border-top: none; }} }}
     /* Running header element (pulled from flow into @top-center on every page

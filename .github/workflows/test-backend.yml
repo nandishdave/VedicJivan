@@ -56,6 +56,8 @@ jobs:
         run: pip install -r requirements-test.txt
 
       # Tests use a mocked MongoDB (see tests/conftest.py), so no DB service is
-      # needed. The schemathesis module self-skips when no live API is reachable.
+      # needed. test_api_schemathesis.py is excluded: it fetches /openapi.json
+      # from a LIVE API at import time (collection-time error when none is
+      # running), so it is a separate live-only suite (run via docker compose).
       - name: Run tests
-        run: pytest -q
+        run: pytest -q --ignore=tests/test_api_schemathesis.py
