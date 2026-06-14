@@ -237,15 +237,12 @@ def _build_html(d: dict, sections: list[dict] | None = None) -> str:
         }
         body_section_ids = [sid for sid in _DEFAULT_SECTION_ORDER if sid in enabled_ids]
 
-    import html as _html
     _name = d.get("name", "")
-    run_header = (
-        '<div class="run-header">'
-        f'<span class="rh-name">{_html.escape(_name)}</span>'
-        '<span class="rh-url">Get free chart (kundli) at https://vedicjivan.nandishdave.world</span>'
-        '</div>'
-    )
-    parts = [_css(name=_name, user_timezone=d.get("user_timezone", "Asia/Kolkata")), run_header, _cover(d)]
+    parts = [
+        _css(name=_name, user_timezone=d.get("user_timezone", "Asia/Kolkata")),
+        _running_header(_name),
+        _cover(d),
+    ]
     for sid in body_section_ids:
         builder = SECTION_BUILDERS.get(sid)
         if builder is not None:
@@ -309,6 +306,19 @@ def _css(name: str = "", user_timezone: str = "Asia/Kolkata") -> str:
     .force-break {{ page-break-before: always; }}
     p {{ margin: 4px 0; }}
     </style>"""
+
+
+def _running_header(name: str) -> str:
+    """Full-width running header (name left, URL right) pulled into @top-center
+    on pages 2+. Kept as a SINGLE element so its underline is one continuous,
+    full-bleed line (margin-box borders left a gap in the middle)."""
+    import html as _html
+    return (
+        '<div class="run-header">'
+        f'<span class="rh-name">{_html.escape(name)}</span>'
+        '<span class="rh-url">Get free chart (kundli) at https://vedicjivan.nandishdave.world</span>'
+        '</div>'
+    )
 
 
 def _cover(d: dict) -> str:
