@@ -237,7 +237,15 @@ def _build_html(d: dict, sections: list[dict] | None = None) -> str:
         }
         body_section_ids = [sid for sid in _DEFAULT_SECTION_ORDER if sid in enabled_ids]
 
-    parts = [_css(name=d.get("name", ""), user_timezone=d.get("user_timezone", "Asia/Kolkata")), _cover(d)]
+    import html as _html
+    _name = d.get("name", "")
+    run_header = (
+        '<div class="run-header">'
+        f'<span class="rh-name">{_html.escape(_name)}</span>'
+        '<span class="rh-url">Get free chart (kundli) at https://vedicjivan.nandishdave.world</span>'
+        '</div>'
+    )
+    parts = [_css(name=_name, user_timezone=d.get("user_timezone", "Asia/Kolkata")), run_header, _cover(d)]
     for sid in body_section_ids:
         builder = SECTION_BUILDERS.get(sid)
         if builder is not None:
@@ -260,11 +268,18 @@ def _css(name: str = "", user_timezone: str = "Asia/Kolkata") -> str:
     generated = datetime.now(local_tz).strftime("%d/%m/%Y %I:%M:%S %p")
     return f"""<style>
     @page {{ size: A4; margin: 13mm 12mm 16mm 12mm;
-        @top-left {{ content: "{name}"; font-size: 8pt; color: #555; font-weight: bold; }}
-        @top-right {{ content: "Get free chart (kundli) at https://vedicjivan.nandishdave.world"; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
-        @bottom-center {{ content: "https://vedicjivan.nandishdave.world, E-mail: vedic.jivan33@gmail.com, Phone: +91 98242 92212, Printing Date: {generated}" "\A" "Page No. " counter(page); white-space: pre-wrap; text-align: center; font-size: 8pt; color: {BRAND}; font-weight: bold; }}
+        @top-center {{ content: element(pageheader); width: 100%; }}
+        @bottom-center {{ content: "https://vedicjivan.nandishdave.world, E-mail: vedic.jivan33@gmail.com, Phone: +91 98242 92212, Printing Date: {generated}" "\A" "Page No. " counter(page); white-space: pre-wrap; text-align: center; font-size: 8pt; color: {BRAND}; font-weight: bold; border-top: 0.75pt solid #c9c9c9; box-sizing: border-box; padding: 4pt 12mm 0; margin: 0 -12mm; }}
     }}
-    @page :first {{ @top-left {{ content: none; }} @top-right {{ content: none; }} }}
+    @page :first {{ @top-center {{ content: none; }} @bottom-center {{ content: none; border-top: none; }} }}
+    /* Running header element (pulled from flow into @top-center on every page
+       except :first) — a single full-width row so the underline is continuous. */
+    .run-header {{ position: running(pageheader); display: flex; justify-content: space-between;
+        align-items: flex-end; box-sizing: border-box; width: calc(100% + 24mm); margin-left: -12mm;
+        padding: 0 12mm 3pt; font-size: 8pt; font-weight: bold;
+        border-bottom: 0.75pt solid #c9c9c9; }}
+    .run-header .rh-name {{ color: #555; }}
+    .run-header .rh-url {{ color: {BRAND}; }}
     body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; line-height: 1.35; font-size: 10pt; }}
     h1 {{ color: {BRAND}; text-align: center; font-size: 20pt; margin: 0 0 4px; }}
     h2 {{ color: {BRAND}; font-size: 14pt; border-bottom: 2px solid {BRAND}; padding-bottom: 3px; margin: 16px 0 8px; page-break-after: avoid; }}
@@ -297,58 +312,29 @@ def _css(name: str = "", user_timezone: str = "Asia/Kolkata") -> str:
 
 
 def _cover(d: dict) -> str:
-    """Chart-forward cover (Astrosage-style): the person's D1 Lagna chart
-    front-and-centre with their key birth details, so page 1 reads as a
-    premium personalised report rather than a marketing flyer."""
-    # Reuse the same North-Indian chart builder the body uses, so the cover
-    # chart always matches the in-report D1.
-    from app.services.pdf_sections import _build_d1_chart_data, _chart_svg
-
-    house_signs, house_planets = _build_d1_chart_data(d)
-    d1_svg = _chart_svg(house_signs, house_planets, "", size=300)
-
-    name = d.get("name", "")
-    dob_fmt = "/".join(reversed(d["dob"].split("-"))) if d.get("dob") else "—"
-    tob = d.get("tob", "—")
-    place = d.get("place_name", "—")
-    gender = d.get("gender", "—").title()
-    lagna = d["lagna"]["sign_name"]
-    lagna_lord = d["lagna"]["sign_lord"]
-    rasi = d["planets"]["Moon"]["sign_name"]
-    nak = d["nakshatra"]
-
-    def _meta(label: str, value: str) -> str:
-        return (
-            f'<div style="display:flex; justify-content:space-between; gap:14px; '
-            f'padding:5px 0; border-bottom:1px solid #ece8fb;">'
-            f'<span style="color:#777; font-size:11pt;">{label}</span>'
-            f'<span style="color:#333; font-weight:600; font-size:11pt;">{value}</span></div>'
-        )
-
+    """Logo-only title page: just the brand logo, as large as possible and
+    centred on the page. All birth data and charts live inside the report
+    (the D1/D9 charts on the at-a-glance page, full birth details in the
+    overview section), so page 1 is a clean brand cover."""
+    # Flex-centre vertically within the A4 content box (~268mm ≈ 1013px tall);
+    # min-height kept just under that so it never spills onto a 2nd page.
     return f"""
-    <div class="cover">
-        <img src="{LOGO_URL}" alt="VedicJivan" style="height: 70px; margin-bottom: 4px;" />
-        <div style="font-size: 11pt; color: #999; font-style: italic; margin-bottom: 6px;">Connect the Divine Within</div>
-        <div style="font-size: 26pt; color: {BRAND}; font-weight: bold; margin: 6px 0 2px;">Vedic Birth Chart &amp; Life Report</div>
-        <div style="font-size: 20pt; color: #333; font-weight: 600; margin-bottom: 14px;">{name}</div>
-
-        <div style="width: 320px; margin: 0 auto;">{d1_svg}</div>
-        <div style="font-size: 12pt; font-weight: bold; color: {BRAND}; opacity: 0.75; margin: 2px 0 16px;">Lagna Chart (D1)</div>
-
-        <div style="width: 380px; margin: 0 auto; text-align: left;">
-            {_meta("Date of Birth", dob_fmt)}
-            {_meta("Time of Birth", tob)}
-            {_meta("Place of Birth", place)}
-            {_meta("Gender", gender)}
-            {_meta("Ascendant (Lagna)", f"{lagna} ({lagna_lord})")}
-            {_meta("Moon Sign (Rasi)", rasi)}
-            {_meta("Nakshatra", f"{nak['name']} — Pada {nak['pada']}")}
-        </div>
-
-        <div style="margin-top: 22px;">
-            <span style="display:inline-block; background:#f0fdf4; color:#15803d; border:1px solid #86efac;
-                border-radius:20px; padding:6px 18px; font-size:12pt; font-weight:bold;">
-                Comprehensive Report &nbsp;·&nbsp; Worth ₹999 — FREE
+    <div class="cover" style="padding:0; display:flex; flex-direction:column;
+         align-items:center; justify-content:center; min-height:990px;">
+        <img src="{LOGO_URL}" alt="VedicJivan" style="width:92%; max-width:660px;" />
+        <div style="margin-top:46px;">
+            <span style="display:inline-block; background:#f0fdf4; border:1px solid #86efac;
+                border-radius:24px; padding:11px 30px;">
+                <svg width="544" height="30" viewBox="0 0 362 20" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">
+                    <defs>
+                        <linearGradient id="vjbadge" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="262" y2="0">
+                            <stop offset="0" stop-color="{BRAND}"/>
+                            <stop offset="1" stop-color="#d4a017"/>
+                        </linearGradient>
+                    </defs>
+                    <text x="0" y="15" font-family="'Segoe UI', Tahoma, sans-serif" font-size="13" font-weight="bold"><tspan fill="url(#vjbadge)">Comprehensive Report &#160;·&#160; Worth </tspan><tspan fill="url(#vjbadge)">&#8377;999</tspan><tspan fill="url(#vjbadge)"> &#8212; </tspan><tspan fill="#15803d">FREE</tspan></text>
+                    <line x1="240" y1="10.5" x2="275" y2="10.5" stroke="#6b7280" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
             </span>
         </div>
     </div>"""
