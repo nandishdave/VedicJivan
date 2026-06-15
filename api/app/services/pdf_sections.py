@@ -199,13 +199,46 @@ def _svg_logo() -> str:
 
 # ── Section builders + chart helpers ────────────────────────────────────────
 
+def _app_promo_banner() -> str:
+    """In-report promotion for VedicJivan's paid consultations — fills the
+    otherwise-empty lower half of the overview page (Astrosage runs an ad
+    banner in the same spot) and converts free-report readers. Clickable link
+    to the services/booking page."""
+    return f"""
+    <a href="https://vedicjivan.nandishdave.world/services" style="display:block; text-decoration:none;">
+    <div style="margin-top:12px; border-radius:12px; overflow:hidden;
+                background:{BRAND}; background-image:linear-gradient(135deg,{BRAND},#9333ea);
+                text-align:center; padding:15px 26px;">
+        <div style="font-size:10pt; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#f5d97a; margin-bottom:5px;">
+            VedicJivan Consultations
+        </div>
+        <div style="font-size:16pt; font-weight:bold; color:#ffffff; line-height:1.2;">
+            Want deeper guidance on <span style="color:#f5d97a;">your</span> chart?
+        </div>
+        <div style="font-size:10.5pt; color:#ece8fb; margin:8px auto 12px; max-width:470px; line-height:1.4;">
+            Book a 1-on-1 consultation with our Vedic experts for personalised predictions,
+            favourable timings and remedies tailored to your kundli.
+        </div>
+        <span style="display:inline-block; background:#f5d97a; color:#4c1d95; font-weight:bold;
+                     font-size:12.5pt; padding:9px 30px; border-radius:24px;">
+            Book a Consultation &nbsp;&#8594;
+        </span>
+        <div style="font-size:9.5pt; color:#ece8fb; margin-top:11px;">
+            vedicjivan.nandishdave.world &nbsp;&middot;&nbsp; +91 98242 92212 &nbsp;&middot;&nbsp; vedic.jivan33@gmail.com
+        </div>
+    </div>
+    </a>"""
+
+
 def _summary_grid(d: dict) -> str:
     """Astrosage-style page 2 — all 4 info blocks in a compact 2×2 grid."""
 
     def _mini_table(rows: list[tuple[str, str]]) -> str:
-        html = '<table style="font-size: 8pt; width: 100%; margin: 0;">'
+        # Page-2-only sizing: larger font + roomier rows so the four overview
+        # tables fill the page rather than leaving a gap at the bottom.
+        html = '<table style="font-size: 9pt; width: 100%; margin: 0;">'
         for label, value in rows:
-            html += f'<tr><td style="padding: 2px 4px; font-weight: bold; color: #555; width: 45%; font-size: 8pt;">{label}</td><td style="padding: 2px 4px; font-size: 8pt;">{value}</td></tr>'
+            html += f'<tr><td style="padding: 3px 6px; font-weight: bold; color: #555; width: 45%; font-size: 9pt;">{label}</td><td style="padding: 3px 6px; font-size: 9pt;">{value}</td></tr>'
         html += '</table>'
         return html
 
@@ -301,22 +334,23 @@ def _summary_grid(d: dict) -> str:
     <div class="page-break"></div>
     <div style="display: flex; flex-wrap: wrap; gap: 10px;">
         <div style="flex: 1; min-width: 45%;">
-            <h3 style="font-size: 11pt; margin: 0 0 4px; color: {BRAND};">Basic Details</h3>
+            <h3 style="font-size: 12.5pt; margin: 0 0 5px; color: {BRAND};">Basic Details</h3>
             {_mini_table(basic_rows)}
         </div>
         <div style="flex: 1; min-width: 45%;">
-            <h3 style="font-size: 11pt; margin: 0 0 4px; color: {BRAND};">Avkahada Chakra</h3>
+            <h3 style="font-size: 12.5pt; margin: 0 0 5px; color: {BRAND};">Avkahada Chakra</h3>
             {_mini_table(avk_rows)}
         </div>
         <div style="flex: 1; min-width: 45%;">
-            <h3 style="font-size: 11pt; margin: 0 0 4px; color: {BRAND};">Favourable Points</h3>
+            <h3 style="font-size: 12.5pt; margin: 0 0 5px; color: {BRAND};">Favourable Points</h3>
             {_mini_table(fav_rows)}
         </div>
         <div style="flex: 1; min-width: 45%;">
-            <h3 style="font-size: 11pt; margin: 0 0 4px; color: {BRAND};">Ghatak (Malefics)</h3>
+            <h3 style="font-size: 12.5pt; margin: 0 0 5px; color: {BRAND};">Ghatak (Malefics)</h3>
             {_mini_table(ghat_rows)}
         </div>
-    </div>"""
+    </div>
+    {_app_promo_banner()}"""
 
 
 def _basic_details(d: dict) -> str:
@@ -1438,9 +1472,9 @@ def _at_a_glance(d: dict) -> str:
     return f"""
     <div class="page-break"></div>
     <div>
-        <div style="background:#f9f7ff; border:1px solid #e5e0ff; border-radius:6px; padding:6px 10px; margin-bottom:6px;">
-            <div style="font-size:13pt; color:{BRAND}; font-weight:bold;">{d['name']} — Birth Chart at a Glance</div>
-            <div style="font-size:8pt; color:#555; margin-top:2px; line-height:1.35;">
+        <div style="background:#f9f7ff; border:1px solid #e5e0ff; border-radius:6px; padding:8px 12px; margin-bottom:8px;">
+            <div style="font-size:14pt; color:{BRAND}; font-weight:bold;">{d['name']} — Birth Chart at a Glance</div>
+            <div style="font-size:9pt; color:#555; margin-top:3px; line-height:1.4;">
                 <strong>DOB:</strong> {dob_fmt}
                 &nbsp;|&nbsp; <strong>Time:</strong> {d['tob']}
                 &nbsp;|&nbsp; <strong>Place:</strong> {d['place_name']}

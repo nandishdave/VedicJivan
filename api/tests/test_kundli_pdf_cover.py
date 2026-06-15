@@ -11,6 +11,7 @@ the change shipping unnoticed:
 """
 from app.services import kundli_pdf
 from app.services.kundli_pdf import _cover, _css, _running_header
+from app.services.pdf_sections import _app_promo_banner
 
 # The logo-only cover ignores birth fields, but pass a realistic dict so the
 # guard still holds if the cover ever starts reading them again.
@@ -61,6 +62,15 @@ def test_first_page_has_no_header_or_footer():
     first_block = css[css.index("@page :first"):css.index("@page :first") + 220]
     # Both the header (@top-center) and footer (@bottom-center) are blanked.
     assert first_block.count("content: none") >= 2
+
+
+def test_overview_page_has_consultation_promo_banner():
+    # The overview page (page 2) carries a clickable VedicJivan consultation
+    # promo in the space Astrosage uses for ads — guard against it being dropped.
+    banner = _app_promo_banner()
+    assert "Book a Consultation" in banner
+    assert 'href="https://vedicjivan.nandishdave.world/services"' in banner  # clickable CTA
+    assert "Consultations" in banner
 
 
 def test_running_header_has_name_left_url_right_and_escapes_name():
