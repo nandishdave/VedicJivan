@@ -206,9 +206,9 @@ def _app_promo_banner() -> str:
     to the services/booking page."""
     return f"""
     <a href="https://vedicjivan.nandishdave.world/services" style="display:block; text-decoration:none;">
-    <div style="margin-top:12px; border-radius:12px; overflow:hidden;
+    <div style="margin-top:12px; border-radius:12px; overflow:hidden; page-break-inside:avoid;
                 background:{BRAND}; background-image:linear-gradient(135deg,{BRAND},#9333ea);
-                text-align:center; padding:15px 26px;">
+                text-align:center; padding:18px 26px;">
         <div style="font-size:10pt; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#f5d97a; margin-bottom:5px;">
             VedicJivan Consultations
         </div>
@@ -223,9 +223,6 @@ def _app_promo_banner() -> str:
                      font-size:12.5pt; padding:9px 30px; border-radius:24px;">
             Book a Consultation &nbsp;&#8594;
         </span>
-        <div style="font-size:9.5pt; color:#ece8fb; margin-top:11px;">
-            vedicjivan.nandishdave.world &nbsp;&middot;&nbsp; +91 98242 92212 &nbsp;&middot;&nbsp; vedic.jivan33@gmail.com
-        </div>
     </div>
     </a>"""
 
