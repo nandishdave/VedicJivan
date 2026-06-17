@@ -205,7 +205,7 @@ def _app_promo_banner() -> str:
     banner in the same spot) and converts free-report readers. Clickable link
     to the services/booking page."""
     return f"""
-    <a href="https://vedicjivan.nandishdave.world/services" style="display:block; text-decoration:none;">
+    <a href="https://vedicjivan.nandishdave.world/services" target="_blank" rel="noopener noreferrer" style="display:block; text-decoration:none;">
     <div style="margin-top:12px; border-radius:12px; overflow:hidden; page-break-inside:avoid;
                 background:{BRAND}; background-image:linear-gradient(135deg,{BRAND},#9333ea);
                 text-align:center; padding:18px 26px;">
