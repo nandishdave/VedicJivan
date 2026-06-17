@@ -1395,6 +1395,7 @@ def _at_a_glance(d: dict) -> str:
     nak = d["nakshatra"]
     moon = d["planets"]["Moon"]
     current = d["dasha"]["current_dasha"]
+    pan = d.get("panchanga", {})
 
     d1_signs, d1_planets = _build_d1_chart_data(d)
     d9_signs, d9_planets = _build_divisional_chart_data(d, "D9")
@@ -1471,15 +1472,18 @@ def _at_a_glance(d: dict) -> str:
     <div>
         <div style="background:#f9f7ff; border:1px solid #e5e0ff; border-radius:6px; padding:8px 12px; margin-bottom:8px;">
             <div style="font-size:14pt; color:{BRAND}; font-weight:bold;">{d['name']} — Birth Chart at a Glance</div>
-            <div style="font-size:9pt; color:#555; margin-top:3px; line-height:1.4;">
+            <div style="font-size:9pt; color:#555; margin-top:3px; line-height:1.5;">
                 <strong>DOB:</strong> {dob_fmt}
                 &nbsp;|&nbsp; <strong>Time:</strong> {d['tob']}
                 &nbsp;|&nbsp; <strong>Place:</strong> {d['place_name']}
-                &nbsp;|&nbsp; <strong>Gender:</strong> {d['gender'].title()}
                 <br/>
                 <strong>Lagna:</strong> {d['lagna']['sign_name']} ({d['lagna']['sign_lord']})
                 &nbsp;|&nbsp; <strong>Rasi:</strong> {moon['sign_name']} ({moon['sign_lord']})
                 &nbsp;|&nbsp; <strong>Nakshatra:</strong> {nak['name']} — Pada {nak['pada']} ({nak['lord']})
+                <br/>
+                <strong>Gender:</strong> {d['gender'].title()}
+                &nbsp;|&nbsp; <strong>Yoga:</strong> {pan.get('yoga_name', '—')}
+                &nbsp;|&nbsp; <strong>Tithi:</strong> {pan.get('tithi_name', '—')}
             </div>
         </div>
 
