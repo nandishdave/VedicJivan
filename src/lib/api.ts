@@ -330,3 +330,59 @@ export const kundliApi = {
       body: data,
     }),
 };
+
+// ── Muhurta (Auspicious Birth-Time) ──
+export type MuhurtaVerdict = "good" | "moderate" | "challenging";
+
+export interface MuhurtaAspect {
+  label: string;
+  group: string;
+  score: number;
+  verdict: MuhurtaVerdict;
+}
+
+export interface MuhurtaWindow {
+  rank: number;
+  lagna_sign: number;
+  lagna_name: string;
+  lagna_lord: string;
+  lord_retrograde: boolean;
+  window: { start: string; end: string; mid: string };
+  overall: number;
+  rank_score: number;
+  panchanga: { nakshatra: string; tithi: string; yoga: string; paksha: string };
+  aspects: Record<string, MuhurtaAspect>;
+}
+
+export interface MuhurtaPlanet {
+  planet: string;
+  sign: string;
+  sign_num: number;
+  degree: number;
+  degree_dms: string;
+  retrograde: boolean;
+  motion: string;
+}
+
+export interface MuhurtaResult {
+  date: string;
+  place_name: string;
+  lat: number;
+  lon: number;
+  priorities: string[];
+  planet_positions: MuhurtaPlanet[];
+  positions_time: string;
+  aspects_config: { key: string; label: string; group: string }[];
+  windows: MuhurtaWindow[];
+}
+
+export const muhurtaApi = {
+  analyzeBirth: (data: {
+    date: string;
+    lat: number;
+    lon: number;
+    place_name: string;
+    priorities?: string[] | null;
+  }) =>
+    apiRequest<MuhurtaResult>("/api/muhurta/birth", { method: "POST", body: data }),
+};
