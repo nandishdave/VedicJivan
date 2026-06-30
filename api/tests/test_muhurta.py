@@ -66,8 +66,8 @@ def test_house_lord_dominates_karaka():
     weak_lord = make_chart(overrides={"Sun": {"dignity": "Debilitated", "house": 6}})
     lord_swing = _aspect_score(strong_lord, [5], ["Jupiter"]) - _aspect_score(weak_lord, [5], ["Jupiter"])
 
-    strong_kar = make_chart(ratios={"Jupiter": 2.5})
-    weak_kar = make_chart(ratios={"Jupiter": 0.1})
+    strong_kar = make_chart(overrides={"Jupiter": {"dignity": "Exalted"}})
+    weak_kar = make_chart(overrides={"Jupiter": {"dignity": "Debilitated"}})
     kar_swing = _aspect_score(strong_kar, [5], ["Jupiter"]) - _aspect_score(weak_kar, [5], ["Jupiter"])
 
     assert lord_swing > 0 and kar_swing > 0
@@ -75,12 +75,8 @@ def test_house_lord_dominates_karaka():
 
 
 def test_overall_score_rewards_strong_lagna_lord():
-    weak = make_chart(lagna_sign=0, ratios={"Mars": 0.2})  # Aries lord Mars weak
-    strong = make_chart(
-        lagna_sign=0,
-        ratios={"Mars": 2.0},
-        overrides={"Mars": {"dignity": "Exalted", "house": 1}},
-    )
+    weak = make_chart(lagna_sign=0, overrides={"Mars": {"dignity": "Debilitated", "house": 6}})
+    strong = make_chart(lagna_sign=0, overrides={"Mars": {"dignity": "Exalted", "house": 1}})
     assert _overall_score(strong) > _overall_score(weak)
 
 

@@ -21,40 +21,30 @@ from app.services.kundli_calculator._core import (
 )
 from app.services.kundli_calculator.aspects import calc_graha_drishti
 from app.services.kundli_calculator.ashtakavarga import calc_ashtakavarga
-from app.services.kundli_calculator.divisional import calc_divisional_charts
 from app.services.kundli_calculator.nakshatra import calc_nakshatra
 from app.services.kundli_calculator.panchanga import calc_panchanga
-from app.services.kundli_calculator.shadbala import calc_shadbala
-from app.services.kundli_calculator.sunrise import calc_sunrise_sunset
 
 
-def build_muhurta_chart(*, dob: str, tob: str, lat: float, lon: float, sun_sunset: dict | None = None) -> dict:
+def build_muhurta_chart(*, dob: str, tob: str, lat: float, lon: float) -> dict:
     """Lighter chart for muhurta scoring — only what a strength scan needs.
 
-    Computes positions + Whole-Sign houses, Ashtakavarga, Shadbala (which itself
-    uses the D2/D3/D7/D9/D12/D30 vargas), graha-drishti and panchanga. Skips the
-    dashas, KP, Jaimini, yogas/doshas, gochar, varshaphal and numerology that the
-    full Kundli report needs but birth-muhurta ranking does not — several times
-    faster than the full ``build_chart``.
+    Computes positions + Whole-Sign houses, Ashtakavarga, graha-drishti and
+    panchanga. Deliberately does NOT compute Shadbala/divisional charts: planetary
+    strength here uses dignity + placement + Ashtakavarga instead, because running
+    full Shadbala 12x per request overran the 0.25-vCPU Fargate task's 30s gateway
+    timeout. The per-aspect grid (house + house-lord driven) is essentially
+    unchanged; only the overall ranking proxy differs.
     """
     jd = get_julian_day(dob, tob, lat, lon)
     pos = calc_planet_positions(jd, lat, lon)
     planets, lagna = pos["planets"], pos["lagna"]
-    # Sunrise/sunset is a date+place property (same for every window), so the
-    # caller can compute it once and pass it in to avoid 12x rise_trans.
-    if sun_sunset is None:
-        sun_sunset = calc_sunrise_sunset(jd, lat, lon)
-    divisional = calc_divisional_charts(planets, lagna)
     return {
         "lagna": lagna,
         "planets": planets,
         "nakshatra": calc_nakshatra(planets["Moon"]["longitude"]),
         "panchanga": calc_panchanga(jd),
         "graha_drishti": calc_graha_drishti(planets, lagna),
-        "shadbala": calc_shadbala(planets, lagna, jd, dob, tob, divisional, sun_sunset=sun_sunset),
         "ashtakavarga": calc_ashtakavarga(planets, lagna["sign"]),
-        "sunrise": sun_sunset["sunrise"],
-        "sunset": sun_sunset["sunset"],
     }
 
 # ── Life aspects → (label, group, houses[primary first], karaka planets) ──────
@@ -231,14 +221,16 @@ def _house_strength(chart: dict, house: int) -> float:
 
 
 def _karaka_strength(chart: dict, karakas: list[str]) -> float:
-    """0–100 from Shadbala ratio (preferred) or dignity fallback."""
+    """0–100 from the karaka's dignity (+ a small retrograde penalty)."""
     vals: list[float] = []
-    sb = chart.get("shadbala", {})
     for k in karakas:
-        if k in sb and "ratio" in sb[k]:
-            vals.append(max(0.0, min(100.0, 50 + (sb[k]["ratio"] - 1.0) * 40)))
-        elif k in chart["planets"]:
-            vals.append(max(0.0, min(100.0, 50 + _DIGNITY_PTS.get(chart["planets"][k]["dignity"], 0))))
+        p = chart["planets"].get(k)
+        if not p:
+            continue
+        s = 50 + _DIGNITY_PTS.get(p["dignity"], 0)
+        if p.get("retrograde") and k not in ("Rahu", "Ketu"):
+            s -= 5
+        vals.append(max(0.0, min(100.0, s)))
     return sum(vals) / len(vals) if vals else 50.0
 
 
@@ -262,22 +254,21 @@ def _verdict(score: float) -> str:
 
 
 def _overall_score(chart: dict) -> float:
-    """Overall Lagna strength — driven by Lagna-lord Shadbala + Lagna Ashtakavarga."""
+    """Overall Lagna strength — Lagna-lord dignity + placement + Lagna Ashtakavarga."""
     lagna = chart["lagna"]
     lord = lagna["sign_lord"]
     score = 50.0
-    sb = chart.get("shadbala", {})
-    if lord in sb and "ratio" in sb[lord]:
-        score += (sb[lord]["ratio"] - 1.0) * 30
     lp = chart["planets"].get(lord)
     if lp:
-        score += _DIGNITY_PTS.get(lp["dignity"], 0) * 0.5
+        score += _DIGNITY_PTS.get(lp["dignity"], 0) * 0.9
         if lp["house"] in _TRIKONA:
-            score += 8
+            score += 10
         elif lp["house"] in _KENDRA:
-            score += 5
+            score += 7
         elif lp["house"] in _DUSTHANA:
-            score -= 12
+            score -= 14
+        if lp.get("retrograde") and lord not in ("Rahu", "Ketu"):
+            score -= 4
     score += (chart["ashtakavarga"]["totals"][lagna["sign"]] - _AVG_SAV) * 1.2
     for pname, pdata in chart["planets"].items():
         if pname not in _CLASSICAL:
@@ -307,13 +298,11 @@ def analyze_birth_muhurta(
     overall Lagna strength.
     """
     windows = _lagna_windows(dob, lat, lon)
-    # Compute sunrise/sunset once for the whole day and reuse across windows.
-    day_sun = calc_sunrise_sunset(get_julian_day(dob, "12:00", lat, lon), lat, lon)
     results: list[dict] = []
     for w in windows:
         mid = (w["start_min"] + w["end_min"]) // 2
         tob = _fmt(mid)
-        chart = chart_fn(dob=dob, tob=tob, lat=lat, lon=lon, sun_sunset=day_sun)
+        chart = chart_fn(dob=dob, tob=tob, lat=lat, lon=lon)
         aspects = {
             key: {
                 "label": label, "group": group,
