@@ -22,8 +22,8 @@ from datetime import date as _date, timedelta
 
 from app.services.kundli_calculator._core import get_julian_day
 from app.services.kundli_calculator.chart_strength import (
-    optimistic_upper_bound,
-    structural_strength,
+    unshakable_score,
+    unshakable_upper_bound,
 )
 from app.services.kundli_calculator.sunrise import calc_sunrise_sunset
 
@@ -40,7 +40,11 @@ def _record(dob: str, tob: str, chart: dict, scored: dict) -> dict:
         "time": tob,
         "lagna": chart["lagna"]["sign_name"],
         "score": scored["score"],
-        "components": scored["components"],
+        "layers": scored["layers"],
+        "ayurdaya": scored["ayurdaya"],
+        "balarishta": scored["balarishta"],
+        "yogas": [y["name"] for y in scored["yogas"]],
+        "atmakaraka": scored["atmakaraka"],
     }
 
 
@@ -75,7 +79,7 @@ def find_unshakable(
                     dob=dob, tob=tob, lat=lat, lon=lon,
                     sun_sunset=day_sun, with_shadbala=False,
                 )
-                bound = optimistic_upper_bound(cheap)
+                bound = unshakable_upper_bound(cheap)
                 if bound < bar:
                     skipped += 1
                     if best_skipped is None or bound > best_skipped["bound"]:
@@ -84,7 +88,7 @@ def find_unshakable(
 
             chart = build_muhurta_chart(dob=dob, tob=tob, lat=lat, lon=lon, sun_sunset=day_sun)
             full_evals += 1
-            scored = structural_strength(chart)
+            scored = unshakable_score(chart)
             rec = _record(dob, tob, chart, scored)
             if scored["score"] >= bar:
                 candidates.append(rec)
@@ -118,7 +122,7 @@ def find_unshakable(
             )
             full_evals += 1
             result["full_evals"] = full_evals
-            scored = structural_strength(chart)
+            scored = unshakable_score(chart)
             rec = _record(best_skipped["dob"], best_skipped["tob"], chart, scored)
             if fb is None or rec["score"] > fb["score"]:
                 fb = rec

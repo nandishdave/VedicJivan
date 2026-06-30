@@ -7,6 +7,8 @@ These lock *behaviour* (a stronger chart scores higher; the score stays in
 from app.services.kundli_calculator.chart_strength import (
     WEIGHTS,
     structural_strength,
+    unshakable_score,
+    unshakable_upper_bound,
 )
 from app.services.kundli_calculator._core import SIGN_LORDS, SIGN_NAMES
 from app.services.muhurta import analyze_birth_muhurta, build_muhurta_chart
@@ -87,3 +89,20 @@ def test_real_chart_smoke():
     assert 0.0 <= out["score"] <= 100.0
     assert all(0.0 <= v <= 100.0 for v in out["components"].values())
     assert res["highlight_lagna"]  # sanity: the engine still highlights
+
+
+def test_unshakable_composite_and_admissible_bound():
+    """The composite is well-shaped, and the cheap upper bound is >= the true
+    full-chart score (the funnel's safety guarantee, checked on a real chart)."""
+    args = dict(dob="2026-06-20", tob="03:01", lat=21.7333, lon=70.6167)
+    full = build_muhurta_chart(**args)
+    cheap = build_muhurta_chart(**args, with_shadbala=False)
+
+    out = unshakable_score(full)
+    assert 0.0 <= out["score"] <= 100.0
+    assert set(out["layers"]) == {"structural", "yoga", "longevity", "fame"}
+    assert "band" in out["ayurdaya"] and "atmakaraka" in out
+
+    # Admissibility: the bound (from the cheap, no-Shadbala chart) never under-
+    # states the true composite score -> the funnel can't drop a qualifying chart.
+    assert unshakable_upper_bound(cheap) >= out["score"] - 1e-6

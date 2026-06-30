@@ -50,3 +50,16 @@ def yoga_strength(chart: dict) -> dict:
         contributions.append({"name": y.get("name"), "type": y.get("type"), "points": pts})
     score = max(0.0, min(total, 100.0))
     return {"score": round(score, 1), "raw": round(total, 1), "yogas": contributions}
+
+
+def upper_bound(chart: dict) -> float:
+    """Max yoga score this chart could reach with a perfect (max-multiplier)
+    Shadbala — admissible bound for the funnel. Yoga *detection* needs no
+    Shadbala, so this works on a cheap chart: positive yogas take the max
+    multiplier, negative (challenging) ones take the min (least penalty)."""
+    yogas = calc_yogas(chart["planets"], chart["lagna"])
+    total = 0.0
+    for y in yogas:
+        base = _BASE.get(y.get("type"), 5.0)
+        total += base * (_MULT_MAX if base > 0 else _MULT_MIN)
+    return max(0.0, min(total, 100.0))

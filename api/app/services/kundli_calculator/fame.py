@@ -60,3 +60,15 @@ def fame(chart: dict) -> dict:
     }
     score = 0.30 * tenth_sav + 0.25 * tenth_lord_sb + 0.25 * sun_score + 0.20 * ak_sb
     return {"score": round(score, 1), "components": comps, "atmakaraka": ak}
+
+
+def upper_bound(chart: dict) -> float:
+    """Max fame score with a perfect 10th-lord / Sun / Atmakaraka Shadbala —
+    admissible bound for the funnel (uses only cheap Ashtakavarga + Sun's
+    house)."""
+    totals = chart.get("ashtakavarga", {}).get("totals") or [28] * 12
+    ls = chart["lagna"]["sign"]
+    tenth_sav = _norm_sav(totals[(ls + 9) % 12])
+    sun_house = chart["planets"].get("Sun", {}).get("house", 0)
+    sun_bonus = 100.0 if sun_house == 10 else 75.0 if sun_house in _KENDRA else 50.0
+    return 0.30 * tenth_sav + 0.25 * 100.0 + 0.25 * (0.6 * 100.0 + 0.4 * sun_bonus) + 0.20 * 100.0

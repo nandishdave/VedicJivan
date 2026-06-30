@@ -128,3 +128,14 @@ def longevity(chart: dict) -> dict:
         "note": ("Simplified Ayurdaya estimates; classical methods disagree and "
                  "many harana reductions are not modelled — indicative band, not a prediction."),
     }
+
+
+def upper_bound(chart: dict) -> float:
+    """Max longevity score with a perfect Saturn + Lagna-lord Shadbala and no
+    Balarishta penalty — admissible bound for the funnel (uses only the cheap
+    Ashtakavarga)."""
+    totals = chart.get("ashtakavarga", {}).get("totals") or [28] * 12
+    ls = chart["lagna"]["sign"]
+    eighth = _norm_sav(totals[(ls + 7) % 12])
+    first = _norm_sav(totals[ls])
+    return 0.30 * eighth + 0.25 * first + 0.25 * 100.0 + 0.20 * 100.0

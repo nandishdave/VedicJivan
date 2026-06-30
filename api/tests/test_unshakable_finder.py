@@ -20,7 +20,7 @@ def test_funnel_matches_bruteforce_at_every_bar():
     actual = {(c["date"], c["time"]): c["score"] for c in bf["candidates"]}
     assert actual  # sanity: brute force scored something
 
-    for bar in (55.0, 70.0, 85.0):
+    for bar in (55.0, 72.0, 90.0):
         fn = find_unshakable(start_date="2026-06-20", days=1, bar=bar, mode="funnel", **_PLACE)
         expected = {k for k, s in actual.items() if s >= bar}
         got = {(c["date"], c["time"]) for c in fn["candidates"]}
@@ -30,10 +30,10 @@ def test_funnel_matches_bruteforce_at_every_bar():
 def test_funnel_prunes_at_a_high_bar():
     """A high bar nothing can reach -> the funnel skips full evals and still
     returns an honest fallback (best available)."""
-    fn = find_unshakable(start_date="2026-06-20", days=1, bar=85.0, mode="funnel", **_PLACE)
+    fn = find_unshakable(start_date="2026-06-20", days=1, bar=95.0, mode="funnel", **_PLACE)
     assert fn["skipped"] > 0
     assert fn["count"] == 0
-    assert fn.get("fallback") and 0 <= fn["fallback"]["score"] < 85.0
+    assert fn.get("fallback") and 0 <= fn["fallback"]["score"] < 95.0
 
 
 def test_funnel_does_no_more_full_evals_than_bruteforce():
@@ -47,4 +47,5 @@ def test_results_ranked_and_shaped():
     scores = [c["score"] for c in res["candidates"]]
     assert scores == sorted(scores, reverse=True)
     c = res["candidates"][0]
-    assert {"date", "time", "lagna", "score", "components"} <= set(c)
+    assert {"date", "time", "lagna", "score", "layers", "ayurdaya"} <= set(c)
+    assert set(c["layers"]) == {"structural", "yoga", "longevity", "fame"}

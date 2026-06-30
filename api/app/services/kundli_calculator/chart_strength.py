@@ -112,6 +112,52 @@ def _placement_score(chart: dict) -> float:
     return num / total if total else 50.0
 
 
+# Composite "Unshakable" score = Layer-1 structural (rigorous, ~65%) + Layer-2
+# greatness (yoga/longevity/fame, heuristic, ~35%). Tunable.
+LAYER_WEIGHTS = {"structural": 0.65, "yoga": 0.15, "longevity": 0.12, "fame": 0.08}
+
+
+def unshakable_score(chart: dict) -> dict:
+    """Full 0-100 Unshakable score for a chart: Layer-1 structural strength plus
+    the Layer-2 greatness markers (yoga power, longevity strength, fame). Returns
+    the blended score, the per-layer scores, and the display extras (Ayurdaya
+    band, Balarishta flags, detected yogas, Atmakaraka)."""
+    from app.services.kundli_calculator.fame import fame
+    from app.services.kundli_calculator.longevity import longevity
+    from app.services.kundli_calculator.yoga_strength import yoga_strength
+
+    s = structural_strength(chart)
+    y = yoga_strength(chart)
+    lon = longevity(chart)
+    fm = fame(chart)
+    layers = {"structural": s["score"], "yoga": y["score"],
+              "longevity": lon["score"], "fame": fm["score"]}
+    score = sum(layers[k] * LAYER_WEIGHTS[k] for k in LAYER_WEIGHTS)
+    return {
+        "score": round(score, 1),
+        "layers": layers,
+        "structural": s["components"],
+        "yogas": y["yogas"],
+        "ayurdaya": lon["ayurdaya"],
+        "balarishta": lon["balarishta"],
+        "atmakaraka": fm["atmakaraka"],
+    }
+
+
+def unshakable_upper_bound(chart: dict) -> float:
+    """Admissible upper bound for ``unshakable_score`` from a *cheap* chart (no
+    Shadbala): each layer is bounded with a perfect Shadbala, so the composite
+    bound is always >= the true composite score. Below the bar -> safe to skip."""
+    from app.services.kundli_calculator.fame import upper_bound as _fame_ub
+    from app.services.kundli_calculator.longevity import upper_bound as _lon_ub
+    from app.services.kundli_calculator.yoga_strength import upper_bound as _yoga_ub
+
+    return (LAYER_WEIGHTS["structural"] * optimistic_upper_bound(chart)
+            + LAYER_WEIGHTS["yoga"] * _yoga_ub(chart)
+            + LAYER_WEIGHTS["longevity"] * _lon_ub(chart)
+            + LAYER_WEIGHTS["fame"] * _fame_ub(chart))
+
+
 def optimistic_upper_bound(chart: dict) -> float:
     """Highest `structural_strength` score this chart could *possibly* reach if
     its (not-yet-computed) Shadbala were perfect.
