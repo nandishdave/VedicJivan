@@ -404,3 +404,73 @@ def send_muhurta_analysis(to_email: str, result: dict) -> None:
     from a background worker thread). No-ops with a log if RESEND_API_KEY unset."""
     subject = f"Your Auspicious Birth-Time Analysis — {result.get('date', '')}"
     _send_email(to_email, subject, _render_muhurta_html(result))
+
+
+# ── Unshakable Chart Finder email ────────────────────────────────────────────
+def _render_unshakable_html(result: dict) -> str:
+    th = "background:#7c3aed;color:#fff;padding:5px 6px;font-size:11px;text-align:center;"
+    rows = ""
+    for i, c in enumerate(result.get("candidates", [])[:50], 1):
+        L = c["layers"]
+        ayu = c["ayurdaya"]
+        bg = "#faf9ff" if i % 2 else "#ffffff"
+        rows += (
+            f'<tr style="background:{bg};">'
+            f'<td style="padding:5px 6px;font-weight:bold;color:#7c3aed;">{i}</td>'
+            f'<td style="padding:5px 6px;white-space:nowrap;">{c["date"]}</td>'
+            f'<td style="padding:5px 6px;">{c["time"]}</td>'
+            f'<td style="padding:5px 6px;white-space:nowrap;">{c["lagna"]}</td>'
+            f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{c["score"]}</td>'
+            f'<td style="padding:5px 6px;text-align:center;color:#666;font-size:11px;">'
+            f'{round(L["structural"])}&middot;{round(L["yoga"])}&middot;{round(L["longevity"])}&middot;{round(L["fame"])}</td>'
+            f'<td style="padding:5px 6px;white-space:nowrap;font-size:11px;">{ayu["band"][0]}&ndash;{ayu["band"][1]} {ayu["label"].split()[0]}</td>'
+            f'</tr>'
+        )
+    if rows:
+        body = (
+            f'<p style="color:#555;">These birth moments scored <strong>&ge; {result["bar"]}</strong> on the '
+            f'composite strength scale — the genuinely exceptional charts in your range.</p>'
+            '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
+            f'<tr><th style="{th}">#</th><th style="{th}">Date</th><th style="{th}">Time</th>'
+            f'<th style="{th}">Lagna</th><th style="{th}">Score</th><th style="{th}">S&middot;Y&middot;L&middot;F</th>'
+            f'<th style="{th}">Longevity</th></tr>{rows}</table>'
+            '<p style="font-size:11px;color:#888;margin:8px 0 0;">S&middot;Y&middot;L&middot;F = Structural &middot; Yoga &middot; '
+            'Longevity &middot; Fame layer scores. Longevity = indicative Ayurdaya band (estimates only).</p>'
+        )
+    else:
+        fb = result.get("fallback")
+        if fb:
+            body = (
+                f'<p style="color:#555;">No chart cleared the <strong>{result["bar"]}</strong> bar in this range — '
+                'which is itself useful to know (a truly exceptional chart is rare). The strongest available was:</p>'
+                f'<p style="background:#ede9fe;border-left:4px solid #7c3aed;padding:10px 14px;border-radius:4px;color:#4c1d95;">'
+                f'<strong>{fb["date"]} at {fb["time"]}</strong> &mdash; {fb["lagna"]} Lagna, score <strong>{fb["score"]}</strong>.</p>'
+                '<p style="color:#777;font-size:13px;">You may want to widen the date range or lower the bar.</p>'
+            )
+        else:
+            body = '<p style="color:#555;">No charts were found for this range.</p>'
+
+    return f"""
+    <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
+        {_email_header()}
+        <h2 style="color:#7c3aed;text-align:center;margin:0 0 4px;">Unshakable Birth-Time Search</h2>
+        <p style="text-align:center;color:#666;margin:0 0 20px;">
+            {result["start_date"]} &middot; {result["days"]} day(s) &middot; {result["place_name"]}
+        </p>
+        {body}
+        <p style="font-size:12px;color:#999;margin:18px 0 0;">Composite of Shadbala, Ashtakavarga, dignity, yogas,
+        longevity &amp; fame (Lahiri ayanamsha, Whole-Sign houses). The yoga/longevity/fame layers are classical
+        heuristics &mdash; indicative, not absolute. Guidance only; consult an astrologer for a final decision.</p>
+        <div style="text-align:center;margin:24px 0;">
+            <a href="{settings.FRONTEND_URL}/services/" style="background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Book a Consultation</a>
+        </div>
+        {_email_footer()}
+    </div>
+    """
+
+
+def send_unshakable_analysis(to_email: str, result: dict) -> None:
+    """Render + send the unshakable search results (synchronous; safe from a
+    background worker thread). No-ops with a log if RESEND_API_KEY unset."""
+    subject = f"Your Auspicious Birth Charts — {result.get('start_date', '')} (+{result.get('days', '')}d)"
+    _send_email(to_email, subject, _render_unshakable_html(result))

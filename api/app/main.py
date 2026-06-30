@@ -25,6 +25,7 @@ from app.routers import (
     muhurta,
     payments,
     services,
+    unshakable,
 )
 from app.services.default_services import DEFAULT_SERVICES
 
@@ -77,6 +78,7 @@ app.include_router(admin.router)
 app.include_router(internal.router)
 app.include_router(kundli.router)
 app.include_router(muhurta.router)
+app.include_router(unshakable.router)
 app.include_router(services.router)
 
 

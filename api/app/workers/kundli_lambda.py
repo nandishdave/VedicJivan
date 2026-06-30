@@ -95,12 +95,33 @@ def _run_muhurta_sync(body: dict[str, Any]) -> None:
     send_muhurta_analysis(body["email"], result)
 
 
+def _run_unshakable_sync(body: dict[str, Any]) -> None:
+    """Run a week-scale unshakable search (funnel) and email the ranked results.
+    Imported lazily; synchronous CPU work offloaded to a worker thread."""
+    from app.services.email_service import send_unshakable_analysis
+    from app.services.unshakable_finder import find_unshakable
+
+    result = find_unshakable(
+        start_date=body["start_date"],
+        days=body.get("days", 7),
+        lat=body["lat"],
+        lon=body["lon"],
+        place_name=body["place_name"],
+        bar=body.get("bar", 90.0),
+        mode="funnel",
+    )
+    send_unshakable_analysis(body["email"], result)
+
+
 async def _process_record(record: dict[str, Any]) -> None:
     body = json.loads(record["body"])
-    # Second job type on the same queue, distinguished by `type` (kundli messages
+    # Extra job types on the same queue, distinguished by `type` (kundli messages
     # have no `type`, so they keep working unchanged).
     if body.get("type") == "muhurta":
         await asyncio.to_thread(_run_muhurta_sync, body)
+        return
+    if body.get("type") == "unshakable":
+        await asyncio.to_thread(_run_unshakable_sync, body)
         return
     record_id = ObjectId(body.pop("record_id"))
     req = KundliRequest(**body)

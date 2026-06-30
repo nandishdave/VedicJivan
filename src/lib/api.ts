@@ -393,3 +393,18 @@ export const muhurtaApi = {
   }) =>
     apiRequest<{ message: string }>("/api/muhurta/birth", { method: "POST", body: data }),
 };
+
+// ── Unshakable Chart Finder ──
+export const unshakableApi = {
+  // Heavy scan: the backend runs it async and emails the ranked results.
+  find: (data: {
+    start_date: string;
+    days: number;
+    lat: number;
+    lon: number;
+    place_name: string;
+    email: string;
+    bar: number;
+  }) =>
+    apiRequest<{ message: string }>("/api/unshakable/find", { method: "POST", body: data }),
+};

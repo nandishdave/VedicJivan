@@ -10,6 +10,7 @@ export const mainNav: NavItem[] = [
   { label: "About", href: "/about" },
   { label: "Free Kundli", href: "/kundli" },
   { label: "Birth Muhurta", href: "/muhurta" },
+  { label: "Unshakable Charts", href: "/unshakable" },
   {
     label: "Services",
     href: "/services",
