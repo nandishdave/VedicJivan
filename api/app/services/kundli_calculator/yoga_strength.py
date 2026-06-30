@@ -13,7 +13,18 @@ the magic numbers.
 """
 from __future__ import annotations
 
+import math
+
 from app.services.kundli_calculator.yogas import calc_yogas
+
+# Diminishing-returns curve: a few strong yogas no longer all flatten at 100.
+# Spreads the mid-range and approaches 100 only asymptotically, so the yoga
+# layer actually *discriminates* instead of saturating on yoga-rich days.
+_SAT_K = 80.0
+
+
+def _saturate(raw: float) -> float:
+    return 100.0 * (1.0 - math.exp(-max(raw, 0.0) / _SAT_K))
 
 # Base greatness points per yoga type. Mahapurusha (a "great personage" yoga) and
 # Raja (power/status) yogas are the real greatness markers; Dhana = wealth;
@@ -48,8 +59,7 @@ def yoga_strength(chart: dict) -> dict:
         pts = round(base * mult, 1)
         total += pts
         contributions.append({"name": y.get("name"), "type": y.get("type"), "points": pts})
-    score = max(0.0, min(total, 100.0))
-    return {"score": round(score, 1), "raw": round(total, 1), "yogas": contributions}
+    return {"score": round(_saturate(total), 1), "raw": round(total, 1), "yogas": contributions}
 
 
 def upper_bound(chart: dict) -> float:
@@ -62,4 +72,4 @@ def upper_bound(chart: dict) -> float:
     for y in yogas:
         base = _BASE.get(y.get("type"), 5.0)
         total += base * (_MULT_MAX if base > 0 else _MULT_MIN)
-    return max(0.0, min(total, 100.0))
+    return _saturate(total)

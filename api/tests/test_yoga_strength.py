@@ -52,8 +52,8 @@ def test_score_bounded_and_shaped(mocker):
     many = [{"name": f"R{i}", "type": "raj", "planets": ["Jupiter", "Venus"]} for i in range(8)]
     mocker.patch.object(ys_mod, "calc_yogas", return_value=many)
     out = yoga_strength(make_chart(ratio=1.5))
-    assert 0.0 <= out["score"] <= 100.0
-    assert out["score"] == 100.0  # 8 strong raja yogas saturate
+    assert 0.0 <= out["score"] < 100.0  # diminishing-returns curve never hits exactly 100
+    assert out["score"] > 90.0          # but 8 strong raja yogas still score very high
     assert len(out["yogas"]) == 8
 
 

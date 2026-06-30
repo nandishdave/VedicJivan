@@ -13,6 +13,7 @@ class UnshakableRequest(BaseModel):
     lon: float = Field(..., ge=-180, le=180)
     place_name: str = Field(..., min_length=1, max_length=200)
     email: EmailStr
-    # Absolute quality bar on the 0-100 composite. Default 90 = "magical only"
-    # (a fallback "best available" is returned when nothing clears it).
-    bar: float = Field(default=90.0, ge=0, le=100)
+    # Absolute quality bar on the 0-100 composite. The metric tops out ~78 in
+    # practice, so 72 ~= "a genuinely strong chart"; the bar just stars the
+    # standouts (everything is ranked regardless).
+    bar: float = Field(default=72.0, ge=0, le=100)

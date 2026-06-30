@@ -17,7 +17,7 @@ export default function UnshakablePage() {
   const [days, setDays] = useState(7);
   const [place, setPlace] = useState<{ name: string; lat: number; lon: number } | null>(null);
   const [email, setEmail] = useState("");
-  const [bar, setBar] = useState(90);
+  const [bar, setBar] = useState(72);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -175,14 +175,14 @@ export default function UnshakablePage() {
               id="bar"
               type="range"
               min={50}
-              max={98}
+              max={80}
               value={bar}
               onChange={(e) => setBar(Number(e.target.value))}
               className="w-full accent-primary-600"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Higher = only the most exceptional charts (90+ is &ldquo;magical only&rdquo;). If nothing clears the
-              bar, we email you the strongest chart available.
+              Every chart is ranked regardless — the bar just <strong>stars the standouts</strong>. In practice
+              the score tops out around ~78, so <strong>~72+</strong> marks a genuinely strong chart.
             </p>
           </div>
 
