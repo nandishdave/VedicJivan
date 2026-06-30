@@ -350,6 +350,7 @@ export interface MuhurtaWindow {
   window: { start: string; end: string; mid: string };
   overall: number;
   rank_score: number;
+  highlighted: boolean;
   panchanga: { nakshatra: string; tithi: string; yoga: string; paksha: string };
   aspects: Record<string, MuhurtaAspect>;
 }
@@ -370,6 +371,8 @@ export interface MuhurtaResult {
   lat: number;
   lon: number;
   priorities: string[];
+  query_time: string | null;
+  highlight_lagna: string | null;
   planet_positions: MuhurtaPlanet[];
   positions_time: string;
   aspects_config: { key: string; label: string; group: string }[];
@@ -385,6 +388,7 @@ export const muhurtaApi = {
     lon: number;
     place_name: string;
     email: string;
+    time?: string | null;
     priorities?: string[] | null;
   }) =>
     apiRequest<{ message: string }>("/api/muhurta/birth", { method: "POST", body: data }),

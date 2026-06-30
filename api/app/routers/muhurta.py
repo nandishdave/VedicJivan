@@ -52,10 +52,11 @@ async def birth_muhurta_preview(
     lat: float = 21.7333,
     lon: float = 70.6167,
     place_name: str = "Jetpur, Gujarat, India",
+    time: str | None = None,
     use_case: AnalyzeBirthMuhurta = Depends(_analyze_use_case),
 ) -> dict:
     """Dev preview (GET, synchronous) — disabled in production. Returns the full
     analysis JSON directly for local inspection."""
     if os.environ.get("APP_ENV", "").lower() == "production":
         raise HTTPException(status_code=404, detail="Not found")
-    return await use_case.execute(date=date, lat=lat, lon=lon, place_name=place_name)
+    return await use_case.execute(date=date, lat=lat, lon=lon, place_name=place_name, time=time)

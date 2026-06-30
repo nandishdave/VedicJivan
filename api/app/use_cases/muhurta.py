@@ -22,6 +22,7 @@ class AnalyzeBirthMuhurta:
         lon: float,
         place_name: str,
         priorities: list[str] | None = None,
+        time: str | None = None,
     ) -> dict:
         return await run_in_threadpool(
             self._analyze,
@@ -31,4 +32,5 @@ class AnalyzeBirthMuhurta:
             place_name=place_name,
             chart_fn=self._chart_fn,
             priorities=priorities,
+            time=time,
         )

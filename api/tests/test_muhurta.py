@@ -156,3 +156,28 @@ def test_engine_real_output_structure():
     names = {p["planet"] for p in res["planet_positions"]}
     assert {"Uranus", "Neptune", "Pluto", "Rahu", "Ketu"} <= names
     assert len(res["planet_positions"]) == 12
+
+
+def test_no_time_defaults_to_noon_and_no_highlight():
+    res = analyze_birth_muhurta(
+        dob="2026-06-20", lat=21.7333, lon=70.6167, place_name="Jetpur",
+        chart_fn=build_muhurta_chart,
+    )
+    assert res["positions_time"] == "12:00"
+    assert res["query_time"] is None
+    assert res["highlight_lagna"] is None
+    assert all(w["highlighted"] is False for w in res["windows"])
+
+
+def test_given_time_highlights_the_rising_lagna():
+    """An already-born birth time flags exactly the Lagna rising then, and takes
+    the positions snapshot at that time."""
+    res = analyze_birth_muhurta(
+        dob="2026-06-20", lat=21.7333, lon=70.6167, place_name="Jetpur",
+        chart_fn=build_muhurta_chart, time="09:30",
+    )
+    assert res["positions_time"] == "09:30"
+    assert res["query_time"] == "09:30"
+    highlighted = [w for w in res["windows"] if w["highlighted"]]
+    assert len(highlighted) == 1  # exactly one Lagna rises at a given instant
+    assert res["highlight_lagna"] == highlighted[0]["lagna_name"]

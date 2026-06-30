@@ -323,9 +323,12 @@ def _render_muhurta_html(result: dict) -> str:
             bg, fg, ltr = _MUHURTA_CELL[v]
             cells += f'<td style="background:{bg};color:{fg};text-align:center;font-weight:bold;padding:5px 0;border:1px solid #fff;font-size:11px;">{ltr}</td>'
         lord = w["lagna_lord"] + (" (R)" if w.get("lord_retrograde") else "")
+        hl = w.get("highlighted")
+        tr_style = "background:#ede9fe;" if hl else ""
+        star = ' <span style="color:#7c3aed;">&#9733;</span>' if hl else ""
         rows += (
-            f'<tr><td style="padding:4px 6px;font-weight:bold;color:#7c3aed;">{w["rank"]}</td>'
-            f'<td style="padding:4px 6px;font-weight:bold;white-space:nowrap;">{w["lagna_name"]}</td>'
+            f'<tr style="{tr_style}"><td style="padding:4px 6px;font-weight:bold;color:#7c3aed;">{w["rank"]}</td>'
+            f'<td style="padding:4px 6px;font-weight:bold;white-space:nowrap;">{w["lagna_name"]}{star}</td>'
             f'<td style="padding:4px 6px;white-space:nowrap;">{lord}</td>'
             f'<td style="padding:4px 6px;white-space:nowrap;">{w["window"]["start"]}&ndash;{w["window"]["end"]}</td>'
             f'<td style="padding:4px 6px;text-align:center;font-weight:bold;">{round(w["overall"])}</td>{cells}</tr>'
@@ -352,6 +355,19 @@ def _render_muhurta_html(result: dict) -> str:
     )
     pr = result.get("priorities") or []
     prioritised = f' &middot; prioritised for: <strong>{", ".join(pr)}</strong>' if pr else ""
+    # "Already born?" banner — point to the Lagna rising at the given time.
+    banner = ""
+    hl_lagna, qt = result.get("highlight_lagna"), result.get("query_time")
+    if hl_lagna and qt:
+        hlw = next((w for w in result["windows"] if w.get("highlighted")), None)
+        rank = hlw["rank"] if hlw else "?"
+        banner = (
+            f'<p style="background:#ede9fe;border-left:4px solid #7c3aed;padding:10px 14px;'
+            f'border-radius:4px;color:#4c1d95;margin:0 0 16px;">At your chosen time '
+            f'<strong>{qt}</strong>, the rising Lagna is <strong>{hl_lagna}</strong> '
+            f'(highlighted &#9733; below, ranked <strong>#{rank}</strong> of 12 for the day).</p>'
+        )
+    pos_label = result.get("positions_time", "12:00")
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
         {_email_header()}
@@ -362,6 +378,7 @@ def _render_muhurta_html(result: dict) -> str:
         <p style="color:#555;">Each row below is one rising ascendant (Lagna) for the day, ranked by overall
         strength. The coloured cells show how that Lagna favours each area of life. No Lagna is perfect —
         choose the window that best matches what your family values.</p>
+        {banner}
         <h3 style="color:#7c3aed;margin:20px 0 8px;">Rising Lagna Windows</h3>
         {grid}
         <p style="font-size:12px;color:#777;margin:8px 0 0;">
@@ -370,7 +387,7 @@ def _render_muhurta_html(result: dict) -> str:
             &nbsp; <span style="background:#fee2e2;color:#991b1b;font-weight:bold;padding:1px 6px;border-radius:8px;">W</span> Weak
             &nbsp; &middot; (R) = Lagna-lord retrograde &middot; Str = overall strength 0&ndash;100
         </p>
-        <h3 style="color:#7c3aed;margin:28px 0 8px;">Planetary Positions ({result["date"]}, noon)</h3>
+        <h3 style="color:#7c3aed;margin:28px 0 8px;">Planetary Positions ({result["date"]}, {pos_label})</h3>
         {positions}
         <p style="font-size:12px;color:#999;margin:16px 0 0;">Computed with Lahiri ayanamsha (Swiss Ephemeris),
         Whole-Sign houses, Ashtakavarga &amp; Shadbala. Guidance only &mdash; consult an astrologer for a final decision.</p>

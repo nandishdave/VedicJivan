@@ -106,11 +106,11 @@ def _dms(deg: float) -> str:
     return f"{d:02d}°{m:02d}'{s:02d}\""
 
 
-def _day_planet_positions(dob: str, lat: float, lon: float) -> list[dict]:
+def _day_planet_positions(dob: str, lat: float, lon: float, tob: str = "12:00") -> list[dict]:
     """Day-level planetary positions (sign, degree, direct/retrograde) for all
-    planets incl. Uranus/Neptune/Pluto, taken at local noon as the day's
-    representative (only the Moon moves materially within a day)."""
-    jd = get_julian_day(dob, "12:00", lat, lon)
+    planets incl. Uranus/Neptune/Pluto. Taken at ``tob`` (default local noon as
+    the day's representative; only the Moon moves materially within a day)."""
+    jd = get_julian_day(dob, tob, lat, lon)
     pos = calc_planet_positions(jd, lat, lon)["planets"]
     out: list[dict] = []
     for p in _DISPLAY_ORDER:
@@ -298,6 +298,7 @@ def analyze_birth_muhurta(
     place_name: str,
     chart_fn=build_muhurta_chart,
     priorities: list[str] | None = None,
+    time: str | None = None,
 ) -> dict:
     """Rank the day's rising Lagnas with a per-life-aspect verdict for each.
 
@@ -305,14 +306,27 @@ def analyze_birth_muhurta(
     tests can substitute a fake. ``priorities`` is an optional list of aspect keys;
     when given, windows are ranked by the average of those aspects instead of
     overall Lagna strength.
+
+    ``time`` (HH:MM) is optional. When given (e.g. an already-born person), the
+    Lagna actually rising at that instant is flagged ``highlighted`` and scored at
+    the exact moment, and the planetary-positions table is taken at that time.
+    When omitted, nothing is highlighted and positions default to local noon.
     """
     windows = _lagna_windows(dob, lat, lon)
     # Compute sunrise/sunset once for the whole day and reuse across windows.
     day_sun = calc_sunrise_sunset(get_julian_day(dob, "12:00", lat, lon), lat, lon)
+    positions_time = time or "12:00"
+    # If a birth time is given, find which Lagna was actually rising then.
+    highlight_sign = (
+        _ascendant_sign(get_julian_day(dob, time, lat, lon), lat, lon) if time else None
+    )
     results: list[dict] = []
     for w in windows:
+        is_highlighted = time is not None and w["sign"] == highlight_sign
         mid = (w["start_min"] + w["end_min"]) // 2
-        tob = _fmt(mid)
+        # Score the highlighted Lagna at the exact birth moment; the rest at the
+        # window midpoint as the sign's representative time.
+        tob = time if is_highlighted else _fmt(mid)
         chart = chart_fn(dob=dob, tob=tob, lat=lat, lon=lon, sun_sunset=day_sun)
         aspects = {
             key: {
@@ -334,7 +348,8 @@ def analyze_birth_muhurta(
             "lagna_name": SIGN_NAMES[w["sign"]],
             "lagna_lord": lord,
             "lord_retrograde": chart["planets"].get(lord, {}).get("retrograde", False),
-            "window": {"start": _fmt(w["start_min"]), "end": _fmt(w["end_min"]), "mid": tob},
+            "window": {"start": _fmt(w["start_min"]), "end": _fmt(w["end_min"]), "mid": _fmt(mid)},
+            "highlighted": is_highlighted,
             "overall": overall,
             "rank_score": rank_score,
             "panchanga": {
@@ -356,8 +371,10 @@ def analyze_birth_muhurta(
         "lat": lat,
         "lon": lon,
         "priorities": priorities or [],
-        "planet_positions": _day_planet_positions(dob, lat, lon),
-        "positions_time": "12:00",
+        "planet_positions": _day_planet_positions(dob, lat, lon, tob=positions_time),
+        "positions_time": positions_time,
+        "query_time": time,
+        "highlight_lagna": SIGN_NAMES[highlight_sign] if highlight_sign is not None else None,
         "aspects_config": [
             {"key": k, "label": label, "group": group}
             for k, label, group, _h, _kar in LIFE_ASPECTS

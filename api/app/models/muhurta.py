@@ -11,6 +11,10 @@ class BirthMuhurtaRequest(BaseModel):
     place_name: str = Field(..., min_length=1, max_length=200)
     # The full analysis is slow; we run it in the background and email the result.
     email: EmailStr
+    # Optional HH:MM. If given (e.g. an already-born person), the report flags the
+    # Lagna rising at that instant + takes planetary positions at that time;
+    # omitted -> nothing highlighted, positions at local noon.
+    time: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
     # Optional aspect keys (e.g. ["health", "wealth"]) to re-rank windows toward
     # what the family values most. Empty/omitted -> rank by overall Lagna strength.
     priorities: list[str] | None = Field(default=None, max_length=12)

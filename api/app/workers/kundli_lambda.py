@@ -90,6 +90,7 @@ def _run_muhurta_sync(body: dict[str, Any]) -> None:
         place_name=body["place_name"],
         chart_fn=build_muhurta_chart,
         priorities=body.get("priorities"),
+        time=body.get("time"),
     )
     send_muhurta_analysis(body["email"], result)
 

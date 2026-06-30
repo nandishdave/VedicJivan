@@ -29,6 +29,7 @@ function todayISO(): string {
 
 export default function MuhurtaPage() {
   const [date, setDate] = useState(todayISO());
+  const [time, setTime] = useState("");
   const [place, setPlace] = useState<{ name: string; lat: number; lon: number } | null>(null);
   const [email, setEmail] = useState("");
   const [priorities, setPriorities] = useState<Set<string>>(new Set());
@@ -58,6 +59,7 @@ export default function MuhurtaPage() {
         lon: place.lon,
         place_name: place.name,
         email,
+        time: time || null,
         priorities: priorities.size ? Array.from(priorities) : null,
       });
       setSent(true);
@@ -147,6 +149,22 @@ export default function MuhurtaPage() {
           </div>
 
           <div>
+            <label htmlFor="time" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Time <span className="font-normal text-gray-400">(optional)</span>
+            </label>
+            <input
+              id="time"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Already born? Add the birth time to see which Lagna was rising &amp; how it scores. Blank = whole-day view (positions at noon).
+            </p>
+          </div>
+
+          <div className="sm:col-span-2">
             <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Place
             </label>
