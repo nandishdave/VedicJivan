@@ -108,7 +108,7 @@ def _run_unshakable_sync(body: dict[str, Any]) -> None:
         lon=body["lon"],
         place_name=body["place_name"],
         bar=body.get("bar", 90.0),
-        mode="funnel",
+        mode="bruteforce",  # complete per-day ranked menu (week-scale fits 300s)
     )
     send_unshakable_analysis(body["email"], result)
 

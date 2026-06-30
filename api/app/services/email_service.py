@@ -407,48 +407,87 @@ def send_muhurta_analysis(to_email: str, result: dict) -> None:
 
 
 # ── Unshakable Chart Finder email ────────────────────────────────────────────
-def _render_unshakable_html(result: dict) -> str:
-    th = "background:#7c3aed;color:#fff;padding:5px 6px;font-size:11px;text-align:center;"
+_U_TH = "background:#7c3aed;color:#fff;padding:5px 6px;font-size:11px;text-align:center;"
+
+
+def _u_chart_row(rank, c, bg):
+    """One ranked chart row (rank, time, lagna, score, S·Y·L·F, longevity band).
+    Exceptional (>= bar) charts are starred + tinted."""
+    L = c["layers"]
+    ayu = c["ayurdaya"]
+    if c.get("exceptional"):
+        bg = "#ede9fe"
+    star = ' <span style="color:#7c3aed;">&#9733;</span>' if c.get("exceptional") else ""
+    return (
+        f'<tr style="background:{bg};">'
+        f'<td style="padding:5px 6px;font-weight:bold;color:#7c3aed;">{rank}</td>'
+        f'<td style="padding:5px 6px;">{c["time"]}</td>'
+        f'<td style="padding:5px 6px;white-space:nowrap;">{c["lagna"]}{star}</td>'
+        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{c["score"]}</td>'
+        f'<td style="padding:5px 6px;text-align:center;color:#666;font-size:11px;">'
+        f'{round(L["structural"])}&middot;{round(L["yoga"])}&middot;{round(L["longevity"])}&middot;{round(L["fame"])}</td>'
+        f'<td style="padding:5px 6px;white-space:nowrap;font-size:11px;">{ayu["band"][0]}&ndash;{ayu["band"][1]} {ayu["label"].split()[0]}</td>'
+        f'</tr>'
+    )
+
+
+def _u_table(charts, start_rank=1):
+    head = (f'<tr><th style="{_U_TH}">#</th><th style="{_U_TH}">Time</th><th style="{_U_TH}">Lagna</th>'
+            f'<th style="{_U_TH}">Score</th><th style="{_U_TH}">S&middot;Y&middot;L&middot;F</th>'
+            f'<th style="{_U_TH}">Longevity</th></tr>')
+    rows = "".join(_u_chart_row(start_rank + i, c, "#faf9ff" if i % 2 else "#ffffff")
+                   for i, c in enumerate(charts))
+    return ('<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
+            f'{head}{rows}</table>')
+
+
+def _u_positions(result):
+    if not result.get("planet_positions"):
+        return ""
     rows = ""
-    for i, c in enumerate(result.get("candidates", [])[:50], 1):
-        L = c["layers"]
-        ayu = c["ayurdaya"]
+    for i, p in enumerate(result["planet_positions"]):
         bg = "#faf9ff" if i % 2 else "#ffffff"
-        rows += (
-            f'<tr style="background:{bg};">'
-            f'<td style="padding:5px 6px;font-weight:bold;color:#7c3aed;">{i}</td>'
-            f'<td style="padding:5px 6px;white-space:nowrap;">{c["date"]}</td>'
-            f'<td style="padding:5px 6px;">{c["time"]}</td>'
-            f'<td style="padding:5px 6px;white-space:nowrap;">{c["lagna"]}</td>'
-            f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{c["score"]}</td>'
-            f'<td style="padding:5px 6px;text-align:center;color:#666;font-size:11px;">'
-            f'{round(L["structural"])}&middot;{round(L["yoga"])}&middot;{round(L["longevity"])}&middot;{round(L["fame"])}</td>'
-            f'<td style="padding:5px 6px;white-space:nowrap;font-size:11px;">{ayu["band"][0]}&ndash;{ayu["band"][1]} {ayu["label"].split()[0]}</td>'
-            f'</tr>'
-        )
-    if rows:
+        mc = "#b91c1c" if p.get("retrograde") else "#15803d"
+        rows += (f'<tr style="background:{bg};"><td style="padding:5px 8px;font-weight:bold;">{p["planet"]}</td>'
+                 f'<td style="padding:5px 8px;">{p["sign"]}</td><td style="padding:5px 8px;">{p["degree_dms"]}</td>'
+                 f'<td style="padding:5px 8px;color:{mc};font-weight:bold;">{p["motion"]}</td></tr>')
+    return (f'<h3 style="color:#7c3aed;margin:28px 0 8px;">Planetary Positions '
+            f'({result["start_date"]}, {result.get("positions_time", "12:00")})</h3>'
+            '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:13px;">'
+            f'<tr><th style="{_U_TH};text-align:left;">Planet</th><th style="{_U_TH};text-align:left;">Rashi</th>'
+            f'<th style="{_U_TH};text-align:left;">Degree</th><th style="{_U_TH};text-align:left;">Motion</th></tr>{rows}</table>')
+
+
+def _render_unshakable_html(result: dict) -> str:
+    n = result.get("exceptional_count", 0)
+    bar = result["bar"]
+    summary = (
+        f'<p style="background:#ede9fe;border-left:4px solid #7c3aed;padding:10px 14px;border-radius:4px;color:#4c1d95;">'
+        f'<strong>{n}</strong> chart(s) cleared your bar of <strong>{bar}</strong> (marked &#9733;).</p>'
+        if n else
+        f'<p style="color:#555;">No chart cleared the <strong>{bar}</strong> bar in this range '
+        '(a truly exceptional chart is rare) — the strongest available are ranked below. '
+        'You may want to widen the range or lower the bar.</p>'
+    )
+
+    if result["days"] == 1:
+        charts = result["per_day"][0]["charts"] if result["per_day"] else []
         body = (
-            f'<p style="color:#555;">These birth moments scored <strong>&ge; {result["bar"]}</strong> on the '
-            f'composite strength scale — the genuinely exceptional charts in your range.</p>'
-            '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
-            f'<tr><th style="{th}">#</th><th style="{th}">Date</th><th style="{th}">Time</th>'
-            f'<th style="{th}">Lagna</th><th style="{th}">Score</th><th style="{th}">S&middot;Y&middot;L&middot;F</th>'
-            f'<th style="{th}">Longevity</th></tr>{rows}</table>'
-            '<p style="font-size:11px;color:#888;margin:8px 0 0;">S&middot;Y&middot;L&middot;F = Structural &middot; Yoga &middot; '
-            'Longevity &middot; Fame layer scores. Longevity = indicative Ayurdaya band (estimates only).</p>'
+            f'{summary}'
+            '<h3 style="color:#7c3aed;margin:20px 0 8px;">Every Rising Lagna, Ranked</h3>'
+            f'{_u_table(charts)}'
+            f'{_u_positions(result)}'
         )
     else:
-        fb = result.get("fallback")
-        if fb:
-            body = (
-                f'<p style="color:#555;">No chart cleared the <strong>{result["bar"]}</strong> bar in this range — '
-                'which is itself useful to know (a truly exceptional chart is rare). The strongest available was:</p>'
-                f'<p style="background:#ede9fe;border-left:4px solid #7c3aed;padding:10px 14px;border-radius:4px;color:#4c1d95;">'
-                f'<strong>{fb["date"]} at {fb["time"]}</strong> &mdash; {fb["lagna"]} Lagna, score <strong>{fb["score"]}</strong>.</p>'
-                '<p style="color:#777;font-size:13px;">You may want to widen the date range or lower the bar.</p>'
-            )
-        else:
-            body = '<p style="color:#555;">No charts were found for this range.</p>'
+        sections = ""
+        for day in result["per_day"]:
+            sections += (f'<h3 style="color:#7c3aed;margin:22px 0 6px;">{day["date"]} &mdash; top {len(day["charts"])}</h3>'
+                         f'{_u_table(day["charts"])}')
+        body = f'{summary}{sections}'
+
+    body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;">S&middot;Y&middot;L&middot;F = Structural &middot; Yoga &middot; '
+             'Longevity &middot; Fame layer scores. Longevity = indicative Ayurdaya band (estimates only). '
+             '&#9733; = cleared your quality bar.</p>')
 
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">

@@ -15,14 +15,23 @@ _REQ = {
     "place_name": "Jetpur", "email": "test@example.com", "bar": 90.0,
 }
 
-_RESULT = {
-    "start_date": "2026-06-20", "days": 7, "place_name": "Jetpur", "bar": 90.0,
-    "candidates": [{
-        "date": "2026-06-26", "time": "01:02", "lagna": "Pisces", "score": 76.1,
+def _chart(time, lagna, score, exceptional=False):
+    return {
+        "date": "2026-06-20", "time": time, "lagna": lagna, "score": score,
         "layers": {"structural": 70.0, "yoga": 100.0, "longevity": 73.5, "fame": 83.5},
         "ayurdaya": {"band": [75.3, 85.7], "label": "Purnayu (full)"},
         "yogas": ["Hamsa Yoga"], "balarishta": [], "atmakaraka": "Mars",
-    }],
+        "exceptional": exceptional,
+    }
+
+
+_RESULT = {
+    "start_date": "2026-06-20", "days": 1, "place_name": "Jetpur", "bar": 90.0,
+    "exceptional_count": 0,
+    "per_day": [{"date": "2026-06-20", "charts": [_chart("03:01", "Aries", 76.1)]}],
+    "planet_positions": [{"planet": "Sun", "sign": "Gemini", "degree_dms": "05° 00'",
+                          "motion": "Direct", "retrograde": False}],
+    "positions_time": "12:00",
 }
 
 
@@ -68,14 +77,25 @@ async def test_lambda_routes_unshakable_message(mocker):
     assert captured["type"] == "unshakable" and captured["email"] == "test@example.com"
 
 
-def test_email_renders_candidates():
+def test_email_renders_single_day_with_positions():
     html = _render_unshakable_html(_RESULT)
     assert "Unshakable Birth-Time Search" in html
-    assert "Pisces" in html and "76.1" in html and "Purnayu" in html
+    assert "Every Rising Lagna" in html and "Planetary Positions" in html
+    assert "Aries" in html and "76.1" in html and "Gemini" in html  # chart + positions
+    assert "No chart cleared" in html  # exceptional_count == 0 -> the soft note
 
 
-def test_email_renders_fallback():
-    result = {**_RESULT, "candidates": [],
-              "fallback": {"date": "2026-06-26", "time": "01:02", "lagna": "Pisces", "score": 68.4}}
+def test_email_renders_multi_day_top_per_day():
+    result = {
+        "start_date": "2026-06-20", "days": 2, "place_name": "Jetpur", "bar": 90.0,
+        "exceptional_count": 1,
+        "per_day": [
+            {"date": "2026-06-20", "charts": [_chart("03:01", "Aries", 91.0, exceptional=True)]},
+            {"date": "2026-06-21", "charts": [_chart("06:00", "Gemini", 72.0)]},
+        ],
+    }
     html = _render_unshakable_html(result)
-    assert "No chart cleared" in html and "Pisces" in html
+    assert "2026-06-20" in html and "2026-06-21" in html  # per-day sections
+    assert "cleared your bar" in html  # exceptional summary
+    assert "&#9733;" in html  # the star on the exceptional chart
+    assert "Planetary Positions" not in html  # multi-day has no positions table
