@@ -38,7 +38,18 @@ def _send_email(to: str, subject: str, html: str):
 
     resend.api_key = settings.RESEND_API_KEY
     resend.Emails.send(
-        {"from": settings.EMAIL_FROM, "to": to, "subject": subject, "html": html}
+        {
+            "from": settings.EMAIL_FROM,
+            "to": to,
+            "subject": subject,
+            "html": html,
+            # Deliverability signal (Gmail bulk-sender guidance) — a valid
+            # List-Unsubscribe pointing at a real, monitored inbox. We use a
+            # mailto: (not One-Click, which would need an HTTPS POST endpoint).
+            "headers": {
+                "List-Unsubscribe": f"<mailto:{settings.ADMIN_EMAIL}?subject=unsubscribe>",
+            },
+        }
     )
 
 
