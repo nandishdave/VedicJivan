@@ -28,7 +28,10 @@ from app.services.kundli_calculator.shadbala import calc_shadbala
 from app.services.kundli_calculator.sunrise import calc_sunrise_sunset
 
 
-def build_muhurta_chart(*, dob: str, tob: str, lat: float, lon: float, sun_sunset: dict | None = None) -> dict:
+def build_muhurta_chart(
+    *, dob: str, tob: str, lat: float, lon: float,
+    sun_sunset: dict | None = None, with_shadbala: bool = True,
+) -> dict:
     """Lighter chart for muhurta scoring — only what a strength scan needs.
 
     Computes positions + Whole-Sign houses, Ashtakavarga, Shadbala (which itself
@@ -36,6 +39,12 @@ def build_muhurta_chart(*, dob: str, tob: str, lat: float, lon: float, sun_sunse
     dashas, KP, Jaimini, yogas/doshas, gochar, varshaphal and numerology that the
     full Kundli report needs but birth-muhurta ranking does not — several times
     faster than the full ``build_chart``.
+
+    ``with_shadbala=False`` skips the Shadbala (and the divisional charts it
+    needs) — by far the most expensive step — leaving positions + Ashtakavarga +
+    panchanga + drishti. The Unshakable funnel uses this *cheap* chart to compute
+    an optimistic upper bound before deciding whether a full (Shadbala) eval is
+    worth it.
     """
     jd = get_julian_day(dob, tob, lat, lon)
     pos = calc_planet_positions(jd, lat, lon)
@@ -44,18 +53,22 @@ def build_muhurta_chart(*, dob: str, tob: str, lat: float, lon: float, sun_sunse
     # caller can compute it once and pass it in to avoid 12x rise_trans.
     if sun_sunset is None:
         sun_sunset = calc_sunrise_sunset(jd, lat, lon)
-    divisional = calc_divisional_charts(planets, lagna)
-    return {
+    chart = {
         "lagna": lagna,
         "planets": planets,
         "nakshatra": calc_nakshatra(planets["Moon"]["longitude"]),
         "panchanga": calc_panchanga(jd),
         "graha_drishti": calc_graha_drishti(planets, lagna),
-        "shadbala": calc_shadbala(planets, lagna, jd, dob, tob, divisional, sun_sunset=sun_sunset),
         "ashtakavarga": calc_ashtakavarga(planets, lagna["sign"]),
         "sunrise": sun_sunset["sunrise"],
         "sunset": sun_sunset["sunset"],
     }
+    if with_shadbala:
+        divisional = calc_divisional_charts(planets, lagna)
+        chart["shadbala"] = calc_shadbala(
+            planets, lagna, jd, dob, tob, divisional, sun_sunset=sun_sunset
+        )
+    return chart
 
 # ── Life aspects → (label, group, houses[primary first], karaka planets) ──────
 # Houses follow the consultation cheat-sheet mapping. Primary house is weighted

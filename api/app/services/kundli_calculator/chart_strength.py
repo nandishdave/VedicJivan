@@ -112,6 +112,36 @@ def _placement_score(chart: dict) -> float:
     return num / total if total else 50.0
 
 
+def optimistic_upper_bound(chart: dict) -> float:
+    """Highest `structural_strength` score this chart could *possibly* reach if
+    its (not-yet-computed) Shadbala were perfect.
+
+    Admissible bound: every term except Shadbala uses the chart's real cheap
+    value; the Shadbala component (and the Shadbala part of the Lagna-lord
+    component) are set to their maximum (100). So the bound is always >= the true
+    score. If the bound is below the bar, the real score is too — the funnel can
+    safely skip the expensive full eval without ever dropping a qualifying chart.
+
+    Accepts a *cheap* chart (no ``shadbala`` key needed) — it reads only
+    ashtakavarga, planet dignities/houses and the Lagna.
+    """
+    av = _ashtakavarga_score(chart)
+    dig = _dignity_score(chart)
+    place = _placement_score(chart)
+    lord = chart["lagna"].get("sign_lord")
+    p = chart.get("planets", {}).get(lord, {})
+    dig_lord = _DIGNITY_PTS.get(p.get("dignity", "Neutral Sign"), 45.0)
+    house = p.get("house", 0)
+    place_lord = (100.0 if house in _TRIKONA else 80.0 if house in _KENDRA
+                  else 20.0 if house in _DUSTHANA else 55.0)
+    ll_max = 0.40 * 100.0 + 0.35 * dig_lord + 0.25 * place_lord  # Shadbala part maxed
+    return (WEIGHTS["shadbala"] * 100.0
+            + WEIGHTS["ashtakavarga"] * av
+            + WEIGHTS["dignity"] * dig
+            + WEIGHTS["lagna_lord"] * ll_max
+            + WEIGHTS["placement"] * place)
+
+
 def structural_strength(chart: dict) -> dict:
     """Layer-1 structural-strength score for one chart.
 
