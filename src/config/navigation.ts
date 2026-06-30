@@ -9,6 +9,7 @@ export const mainNav: NavItem[] = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Free Kundli", href: "/kundli" },
+  { label: "Birth Muhurta", href: "/muhurta" },
   {
     label: "Services",
     href: "/services",
