@@ -1,14 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Loader2, AlertCircle, Star } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, CheckCircle, Mail } from "lucide-react";
+import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { PlaceOfBirthAutocomplete } from "@/components/booking/PlaceOfBirthAutocomplete";
-import {
-  muhurtaApi,
-  type MuhurtaResult,
-  type MuhurtaVerdict,
-} from "@/lib/api";
+import { muhurtaApi } from "@/lib/api";
 
 const ASPECTS: { key: string; label: string; short: string; group: string }[] = [
   { key: "health", label: "Health & Vitality", short: "Health", group: "Self & Body" },
@@ -25,17 +22,6 @@ const ASPECTS: { key: string; label: string; short: string; group: string }[] = 
   { key: "spiritual", label: "Spirituality", short: "Spiritual", group: "Beyond" },
 ];
 
-const VERDICT_CELL: Record<MuhurtaVerdict, string> = {
-  good: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  moderate: "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300",
-  challenging: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-};
-const VERDICT_LETTER: Record<MuhurtaVerdict, string> = {
-  good: "G",
-  moderate: "M",
-  challenging: "W",
-};
-
 function todayISO(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -44,12 +30,13 @@ function todayISO(): string {
 export default function MuhurtaPage() {
   const [date, setDate] = useState(todayISO());
   const [place, setPlace] = useState<{ name: string; lat: number; lon: number } | null>(null);
+  const [email, setEmail] = useState("");
   const [priorities, setPriorities] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<MuhurtaResult | null>(null);
+  const [sent, setSent] = useState(false);
 
-  const canSubmit = !!date && !!place && !loading;
+  const canSubmit = !!date && !!place && !!email && !loading;
 
   const togglePriority = (key: string) =>
     setPriorities((prev) => {
@@ -64,16 +51,17 @@ export default function MuhurtaPage() {
     if (!place) return;
     setLoading(true);
     setError("");
-    setResult(null);
     try {
-      const r = await muhurtaApi.analyzeBirth({
+      await muhurtaApi.analyzeBirth({
         date,
         lat: place.lat,
         lon: place.lon,
         place_name: place.name,
+        email,
         priorities: priorities.size ? Array.from(priorities) : null,
       });
-      setResult(r);
+      setSent(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -81,9 +69,49 @@ export default function MuhurtaPage() {
     }
   };
 
+  if (sent) {
+    return (
+      <Container className="py-20">
+        <div className="mx-auto max-w-lg text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+            <CheckCircle className="h-8 w-8 text-green-600" />
+          </div>
+          <h1 className="mb-3 text-2xl font-bold text-gray-900 dark:text-white">
+            Your analysis is on its way!
+          </h1>
+          <p className="mb-2 text-gray-600 dark:text-gray-400">
+            We&apos;re calculating every rising Lagna for <strong className="text-gray-900 dark:text-white">{date}</strong>{" "}
+            and will email the full report to{" "}
+            <strong className="text-gray-900 dark:text-white">{email}</strong> within a few minutes.
+          </p>
+          <p className="mb-8 text-sm text-gray-500 dark:text-gray-500">
+            Please check your inbox (and spam folder). The detailed analysis takes a little time to compute.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              onClick={() => {
+                setSent(false);
+                setEmail("");
+              }}
+              className="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-primary-700"
+            >
+              Run Another Date
+            </button>
+            <Link
+              href="/services"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              Book a Consultation
+            </Link>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
   return (
     <Container className="py-12">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-2xl">
         {/* Header */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
@@ -92,17 +120,17 @@ export default function MuhurtaPage() {
           <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
             Auspicious Birth-Time Calculator
           </h1>
-          <p className="mx-auto max-w-2xl text-gray-600 dark:text-gray-400">
-            For a chosen day and place, see every rising ascendant (Lagna) ranked by strength —
-            and how each one favours or challenges every area of life. No Lagna is perfect; pick the
-            window that matches what matters most.
+          <p className="mx-auto max-w-xl text-gray-600 dark:text-gray-400">
+            For a chosen day and place, we rank every rising ascendant (Lagna) by strength and show how
+            each favours or challenges every area of life. The full analysis is detailed, so we email it to
+            you the moment it&apos;s ready.
           </p>
         </div>
 
         {/* Form */}
         <form
           onSubmit={handleSubmit}
-          className="mb-10 grid gap-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 p-6 shadow-sm sm:grid-cols-2"
+          className="grid gap-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 p-6 shadow-sm sm:grid-cols-2"
         >
           <div>
             <label htmlFor="date" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -126,6 +154,22 @@ export default function MuhurtaPage() {
               value={place?.name ?? ""}
               onPlaceSelect={(p) => setPlace({ name: p.name, lat: p.latitude, lon: p.longitude })}
             />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email Address
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your@email.com"
+              required
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">We&apos;ll email your full analysis here.</p>
           </div>
 
           {/* Priorities */}
@@ -165,159 +209,23 @@ export default function MuhurtaPage() {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="w-full rounded-lg bg-primary-600 px-6 py-3 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
               {loading ? (
-                <span className="flex items-center justify-center gap-2">
+                <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Analysing the 12 ascendant windows…
-                </span>
+                  Submitting…
+                </>
               ) : (
-                "Find Auspicious Windows"
+                <>
+                  <Mail className="h-4 w-4" />
+                  Email My Auspicious Windows
+                </>
               )}
             </button>
           </div>
         </form>
-
-        {result && <Results result={result} />}
       </div>
     </Container>
-  );
-}
-
-function StrengthBar({ value }: { value: number }) {
-  const color = value >= 70 ? "bg-green-500" : value >= 55 ? "bg-amber-500" : "bg-red-400";
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-2 w-14 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-        <div className={`h-full ${color}`} style={{ width: `${value}%` }} />
-      </div>
-      <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{Math.round(value)}</span>
-    </div>
-  );
-}
-
-function Results({ result }: { result: MuhurtaResult }) {
-  return (
-    <div className="space-y-10">
-      {/* Summary */}
-      <div className="rounded-xl bg-primary-50 dark:bg-primary-900/10 px-5 py-4 text-sm text-gray-700 dark:text-gray-300">
-        <strong className="text-primary-700 dark:text-primary-300">Auspicious birth windows</strong> for{" "}
-        <strong>{result.date}</strong> at <strong>{result.place_name}</strong>
-        {result.priorities.length > 0 && (
-          <> — ranked for: <strong>{result.priorities.join(", ")}</strong></>
-        )}
-        . Each row is one rising Lagna; cells show how that ascendant favours each life area.
-      </div>
-
-      {/* Ranked grid */}
-      <div>
-        <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">Rising Lagna Windows</h2>
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-          <table className="min-w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-primary-600 text-white">
-                <th className="px-2 py-2 text-left font-semibold">#</th>
-                <th className="px-2 py-2 text-left font-semibold">Lagna</th>
-                <th className="px-2 py-2 text-left font-semibold">Lord</th>
-                <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">Window</th>
-                <th className="px-2 py-2 text-left font-semibold">Strength</th>
-                {ASPECTS.map((a) => (
-                  <th key={a.key} title={a.label} className="px-1.5 py-2 text-center text-[11px] font-semibold whitespace-nowrap">
-                    {a.short}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {result.windows.map((w) => (
-                <tr key={w.lagna_sign} className="border-t border-gray-100 dark:border-gray-800">
-                  <td className="px-2 py-2 font-bold text-primary-600">{w.rank}</td>
-                  <td className="px-2 py-2 font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                    {w.lagna_name}
-                  </td>
-                  <td className="px-2 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {w.lagna_lord}
-                    {w.lord_retrograde && <span className="text-red-500"> (R)</span>}
-                  </td>
-                  <td className="px-2 py-2 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {w.window.start}–{w.window.end}
-                  </td>
-                  <td className="px-2 py-2"><StrengthBar value={w.overall} /></td>
-                  {ASPECTS.map((a) => {
-                    const v = w.aspects[a.key]?.verdict ?? "moderate";
-                    return (
-                      <td key={a.key} className="px-1 py-1.5 text-center">
-                        <span
-                          className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${VERDICT_CELL[v]}`}
-                          title={`${a.label}: ${Math.round(w.aspects[a.key]?.score ?? 0)}`}
-                        >
-                          {VERDICT_LETTER[v]}
-                        </span>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500">
-          <span className="font-medium text-gray-600 dark:text-gray-400">Legend:</span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${VERDICT_CELL.good}`}>G</span> = Good
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${VERDICT_CELL.moderate}`}>M</span> = Moderate
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${VERDICT_CELL.challenging}`}>W</span> = Weak
-          </span>
-          <span className="text-gray-400">· (R) = Lagna-lord retrograde · hover a cell for its 0–100 score</span>
-        </div>
-      </div>
-
-      {/* Planetary positions */}
-      <div>
-        <h2 className="mb-3 flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white">
-          <Star className="h-5 w-5 text-primary-600" /> Planetary Positions
-          <span className="text-sm font-normal text-gray-400">({result.date}, noon)</span>
-        </h2>
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-          <table className="min-w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-primary-600 text-white">
-                <th className="px-3 py-2 text-left font-semibold">Planet</th>
-                <th className="px-3 py-2 text-left font-semibold">Rashi (Sign)</th>
-                <th className="px-3 py-2 text-left font-semibold">Degree</th>
-                <th className="px-3 py-2 text-left font-semibold">Motion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.planet_positions.map((p, i) => (
-                <tr
-                  key={p.planet}
-                  className={`border-t border-gray-100 dark:border-gray-800 ${i % 2 ? "bg-gray-50 dark:bg-white/5" : ""}`}
-                >
-                  <td className="px-3 py-2 font-semibold text-gray-900 dark:text-white">{p.planet}</td>
-                  <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{p.sign}</td>
-                  <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{p.degree_dms}</td>
-                  <td className="px-3 py-2">
-                    <span className={p.retrograde ? "font-medium text-red-600 dark:text-red-400" : "text-green-700 dark:text-green-400"}>
-                      {p.motion}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <p className="text-center text-xs text-gray-400">
-        Computed with Lahiri ayanamsha (Swiss Ephemeris), Whole-Sign houses, Ashtakavarga &amp; Shadbala.
-        Verdicts are guidance, not absolutes — consult an astrologer for a final decision.
-      </p>
-    </div>
   );
 }

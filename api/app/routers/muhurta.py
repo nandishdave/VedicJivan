@@ -1,8 +1,12 @@
 """Public endpoint for the Auspicious Birth-Time (Muhurta) calculator.
 
-Synchronous request/response (unlike the Kundli flow): the analysis is CPU-bound
-but bounded (~12 charts) and returns JSON directly. Thin router — the engine
-lives in `app/services/muhurta.py` and the use case in `app/use_cases/muhurta.py`.
+The full analysis (12 charts incl. Shadbala) is too heavy for the API's gateway
+timeout, so POST /api/muhurta/birth enqueues the job onto the SAME SQS queue the
+Kundli flow uses (distinguished by `type: "muhurta"`); the Kundli Lambda worker
+runs the full analysis on demand and emails the result. Returns 202 immediately —
+the calculation is never simplified, and there's no fixed-cost server scaling.
+
+A dev GET preview runs synchronously for local inspection.
 """
 from __future__ import annotations
 
@@ -10,9 +14,11 @@ import os
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.dependencies import get_message_queue
 from app.infrastructure.logging import get_logger
+from app.infrastructure.queue import MessageQueue
 from app.models.muhurta import BirthMuhurtaRequest
-# Module-scope so tests can patch `app.routers.muhurta.build_muhurta_chart` / `analyze_birth_muhurta`.
+# Module-scope so tests can patch these on `app.routers.muhurta`.
 from app.services.muhurta import analyze_birth_muhurta, build_muhurta_chart
 from app.use_cases.muhurta import AnalyzeBirthMuhurta
 
@@ -21,28 +27,23 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/muhurta", tags=["Muhurta"])
 
 
-def _analyze_use_case() -> AnalyzeBirthMuhurta:
-    # Fresh each call so test patches on the module globals are honoured.
-    return AnalyzeBirthMuhurta(chart_fn=build_muhurta_chart, analyze=analyze_birth_muhurta)
-
-
-@router.post("/birth")
+@router.post("/birth", status_code=202)
 async def birth_muhurta(
     req: BirthMuhurtaRequest,
-    use_case: AnalyzeBirthMuhurta = Depends(_analyze_use_case),
+    queue: MessageQueue = Depends(get_message_queue),
 ) -> dict:
-    """Rank the day's rising Lagnas with a per-life-aspect verdict for each."""
-    try:
-        return await use_case.execute(
-            date=req.date,
-            lat=req.lat,
-            lon=req.lon,
-            place_name=req.place_name,
-            priorities=req.priorities,
+    """Queue the full birth-muhurta analysis; the worker emails the result."""
+    await queue.send({"type": "muhurta", **req.model_dump()})
+    return {
+        "message": (
+            "Your auspicious birth-time analysis is being prepared and will arrive "
+            "in your email within a few minutes."
         )
-    except Exception as e:  # noqa: BLE001
-        logger.exception("Birth muhurta analysis failed")
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)[:200]}")
+    }
+
+
+def _analyze_use_case() -> AnalyzeBirthMuhurta:
+    return AnalyzeBirthMuhurta(chart_fn=build_muhurta_chart, analyze=analyze_birth_muhurta)
 
 
 @router.get("/birth/preview")
@@ -53,7 +54,8 @@ async def birth_muhurta_preview(
     place_name: str = "Jetpur, Gujarat, India",
     use_case: AnalyzeBirthMuhurta = Depends(_analyze_use_case),
 ) -> dict:
-    """Dev preview (GET) — disabled in production, mirrors the kundli preview."""
+    """Dev preview (GET, synchronous) — disabled in production. Returns the full
+    analysis JSON directly for local inspection."""
     if os.environ.get("APP_ENV", "").lower() == "production":
         raise HTTPException(status_code=404, detail="Not found")
     return await use_case.execute(date=date, lat=lat, lon=lon, place_name=place_name)

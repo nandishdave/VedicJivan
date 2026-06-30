@@ -377,12 +377,15 @@ export interface MuhurtaResult {
 }
 
 export const muhurtaApi = {
+  // The full analysis is slow, so the backend runs it async and emails the
+  // result; this returns a 202 acknowledgement, not the analysis itself.
   analyzeBirth: (data: {
     date: string;
     lat: number;
     lon: number;
     place_name: string;
+    email: string;
     priorities?: string[] | null;
   }) =>
-    apiRequest<MuhurtaResult>("/api/muhurta/birth", { method: "POST", body: data }),
+    apiRequest<{ message: string }>("/api/muhurta/birth", { method: "POST", body: data }),
 };

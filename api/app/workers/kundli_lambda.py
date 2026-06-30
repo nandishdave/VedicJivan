@@ -76,8 +76,31 @@ def _get_processor() -> ProcessKundliReport:
 # ── Lambda entry point ───────────────────────────────────────────────────────
 
 
+def _run_muhurta_sync(body: dict[str, Any]) -> None:
+    """Run the full birth-muhurta analysis (incl. Shadbala) and email it. Imported
+    lazily so kundli invocations don't pay for it. Synchronous CPU work, so the
+    caller offloads it to a worker thread."""
+    from app.services.email_service import send_muhurta_analysis
+    from app.services.muhurta import analyze_birth_muhurta, build_muhurta_chart
+
+    result = analyze_birth_muhurta(
+        dob=body["date"],
+        lat=body["lat"],
+        lon=body["lon"],
+        place_name=body["place_name"],
+        chart_fn=build_muhurta_chart,
+        priorities=body.get("priorities"),
+    )
+    send_muhurta_analysis(body["email"], result)
+
+
 async def _process_record(record: dict[str, Any]) -> None:
     body = json.loads(record["body"])
+    # Second job type on the same queue, distinguished by `type` (kundli messages
+    # have no `type`, so they keep working unchanged).
+    if body.get("type") == "muhurta":
+        await asyncio.to_thread(_run_muhurta_sync, body)
+        return
     record_id = ObjectId(body.pop("record_id"))
     req = KundliRequest(**body)
     await _get_processor().execute(record_id, req)

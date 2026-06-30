@@ -285,3 +285,94 @@ async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
             ],
         },
     )
+
+
+# ── Muhurta (Auspicious Birth-Time) analysis email ──────────────────────────
+_MUHURTA_ASPECTS = [
+    ("health", "Health"), ("longevity", "Longevity"), ("wealth", "Wealth"),
+    ("career", "Career"), ("property", "Property"), ("marriage", "Marriage"),
+    ("children", "Children"), ("family", "Family"), ("education", "Education"),
+    ("fortune", "Fortune"), ("foreign", "Foreign"), ("spiritual", "Spiritual"),
+]
+_MUHURTA_CELL = {
+    "good": ("#dcfce7", "#166534", "G"),
+    "moderate": ("#fef9c3", "#854d0e", "M"),
+    "challenging": ("#fee2e2", "#991b1b", "W"),
+}
+
+
+def _render_muhurta_html(result: dict) -> str:
+    th = "background:#7c3aed;color:#fff;padding:5px 4px;font-size:11px;text-align:center;"
+    head_cells = "".join(f'<th style="{th}">{short}</th>' for _k, short in _MUHURTA_ASPECTS)
+    rows = ""
+    for w in result["windows"]:
+        cells = ""
+        for key, _short in _MUHURTA_ASPECTS:
+            v = w["aspects"].get(key, {}).get("verdict", "moderate")
+            bg, fg, ltr = _MUHURTA_CELL[v]
+            cells += f'<td style="background:{bg};color:{fg};text-align:center;font-weight:bold;padding:5px 0;border:1px solid #fff;font-size:11px;">{ltr}</td>'
+        lord = w["lagna_lord"] + (" (R)" if w.get("lord_retrograde") else "")
+        rows += (
+            f'<tr><td style="padding:4px 6px;font-weight:bold;color:#7c3aed;">{w["rank"]}</td>'
+            f'<td style="padding:4px 6px;font-weight:bold;white-space:nowrap;">{w["lagna_name"]}</td>'
+            f'<td style="padding:4px 6px;white-space:nowrap;">{lord}</td>'
+            f'<td style="padding:4px 6px;white-space:nowrap;">{w["window"]["start"]}&ndash;{w["window"]["end"]}</td>'
+            f'<td style="padding:4px 6px;text-align:center;font-weight:bold;">{round(w["overall"])}</td>{cells}</tr>'
+        )
+    grid = (
+        '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
+        f'<tr><th style="{th}">#</th><th style="{th}">Lagna</th><th style="{th}">Lord</th>'
+        f'<th style="{th}">Window</th><th style="{th}">Str</th>{head_cells}</tr>{rows}</table>'
+    )
+    pos_rows = ""
+    for i, p in enumerate(result.get("planet_positions", [])):
+        bg = "#faf9ff" if i % 2 else "#ffffff"
+        mc = "#b91c1c" if p.get("retrograde") else "#15803d"
+        pos_rows += (
+            f'<tr style="background:{bg};"><td style="padding:5px 8px;font-weight:bold;">{p["planet"]}</td>'
+            f'<td style="padding:5px 8px;">{p["sign"]}</td>'
+            f'<td style="padding:5px 8px;">{p["degree_dms"]}</td>'
+            f'<td style="padding:5px 8px;color:{mc};font-weight:bold;">{p["motion"]}</td></tr>'
+        )
+    positions = (
+        '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:13px;">'
+        f'<tr><th style="{th};text-align:left;">Planet</th><th style="{th};text-align:left;">Rashi</th>'
+        f'<th style="{th};text-align:left;">Degree</th><th style="{th};text-align:left;">Motion</th></tr>{pos_rows}</table>'
+    )
+    pr = result.get("priorities") or []
+    prioritised = f' &middot; prioritised for: <strong>{", ".join(pr)}</strong>' if pr else ""
+    return f"""
+    <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
+        {_email_header()}
+        <h2 style="color:#7c3aed;text-align:center;margin:0 0 4px;">Auspicious Birth-Time Analysis</h2>
+        <p style="text-align:center;color:#666;margin:0 0 20px;">
+            {result["date"]} &middot; {result["place_name"]}{prioritised}
+        </p>
+        <p style="color:#555;">Each row below is one rising ascendant (Lagna) for the day, ranked by overall
+        strength. The coloured cells show how that Lagna favours each area of life. No Lagna is perfect —
+        choose the window that best matches what your family values.</p>
+        <h3 style="color:#7c3aed;margin:20px 0 8px;">Rising Lagna Windows</h3>
+        {grid}
+        <p style="font-size:12px;color:#777;margin:8px 0 0;">
+            <span style="background:#dcfce7;color:#166534;font-weight:bold;padding:1px 6px;border-radius:8px;">G</span> Good
+            &nbsp; <span style="background:#fef9c3;color:#854d0e;font-weight:bold;padding:1px 6px;border-radius:8px;">M</span> Moderate
+            &nbsp; <span style="background:#fee2e2;color:#991b1b;font-weight:bold;padding:1px 6px;border-radius:8px;">W</span> Weak
+            &nbsp; &middot; (R) = Lagna-lord retrograde &middot; Str = overall strength 0&ndash;100
+        </p>
+        <h3 style="color:#7c3aed;margin:28px 0 8px;">Planetary Positions ({result["date"]}, noon)</h3>
+        {positions}
+        <p style="font-size:12px;color:#999;margin:16px 0 0;">Computed with Lahiri ayanamsha (Swiss Ephemeris),
+        Whole-Sign houses, Ashtakavarga &amp; Shadbala. Guidance only &mdash; consult an astrologer for a final decision.</p>
+        <div style="text-align:center;margin:24px 0;">
+            <a href="{settings.FRONTEND_URL}/services/" style="background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Book a Consultation</a>
+        </div>
+        {_email_footer()}
+    </div>
+    """
+
+
+def send_muhurta_analysis(to_email: str, result: dict) -> None:
+    """Render + send the birth-muhurta analysis email (synchronous; safe to call
+    from a background worker thread). No-ops with a log if RESEND_API_KEY unset."""
+    subject = f"Your Auspicious Birth-Time Analysis — {result.get('date', '')}"
+    _send_email(to_email, subject, _render_muhurta_html(result))

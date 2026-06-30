@@ -6,7 +6,12 @@ the real engine to guard the Swiss-Ephemeris integration. The key guard is
 Lagna's per-aspect verdict is driven by the Bhava + Bhava-lord (which vary by
 ascendant), not the karaka (constant across all 12 Lagnas).
 """
+import json
+
+from app.dependencies import get_message_queue
+from app.main import app
 from app.services.kundli_calculator._core import SIGN_LORDS, SIGN_NAMES
+from app.workers import kundli_lambda
 from app.services.muhurta import (
     LIFE_ASPECTS,
     _aspect_score,
@@ -66,8 +71,8 @@ def test_house_lord_dominates_karaka():
     weak_lord = make_chart(overrides={"Sun": {"dignity": "Debilitated", "house": 6}})
     lord_swing = _aspect_score(strong_lord, [5], ["Jupiter"]) - _aspect_score(weak_lord, [5], ["Jupiter"])
 
-    strong_kar = make_chart(overrides={"Jupiter": {"dignity": "Exalted"}})
-    weak_kar = make_chart(overrides={"Jupiter": {"dignity": "Debilitated"}})
+    strong_kar = make_chart(ratios={"Jupiter": 2.5})
+    weak_kar = make_chart(ratios={"Jupiter": 0.1})
     kar_swing = _aspect_score(strong_kar, [5], ["Jupiter"]) - _aspect_score(weak_kar, [5], ["Jupiter"])
 
     assert lord_swing > 0 and kar_swing > 0
@@ -75,20 +80,62 @@ def test_house_lord_dominates_karaka():
 
 
 def test_overall_score_rewards_strong_lagna_lord():
-    weak = make_chart(lagna_sign=0, overrides={"Mars": {"dignity": "Debilitated", "house": 6}})
-    strong = make_chart(lagna_sign=0, overrides={"Mars": {"dignity": "Exalted", "house": 1}})
+    weak = make_chart(lagna_sign=0, ratios={"Mars": 0.2})  # Aries lord Mars weak
+    strong = make_chart(
+        lagna_sign=0,
+        ratios={"Mars": 2.0},
+        overrides={"Mars": {"dignity": "Exalted", "house": 1}},
+    )
     assert _overall_score(strong) > _overall_score(weak)
 
 
-async def test_birth_endpoint_returns_analysis(client, mocker):
-    canned = {"date": "2026-06-20", "windows": [{"rank": 1, "lagna_name": "Aries"}], "planet_positions": []}
-    mocker.patch("app.routers.muhurta.analyze_birth_muhurta", return_value=canned)
-    resp = await client.post(
-        "/api/muhurta/birth",
-        json={"date": "2026-06-20", "lat": 21.7333, "lon": 70.6167, "place_name": "Jetpur"},
-    )
-    assert resp.status_code == 200
-    assert resp.json()["windows"][0]["lagna_name"] == "Aries"
+async def test_birth_endpoint_enqueues_muhurta_job(client, fake_queue):
+    """POST returns 202 immediately and enqueues a `type: muhurta` job (the heavy
+    analysis runs on the Lambda worker, not in the request)."""
+    app.dependency_overrides[get_message_queue] = lambda: fake_queue
+    try:
+        resp = await client.post(
+            "/api/muhurta/birth",
+            json={
+                "date": "2026-06-20", "lat": 21.7333, "lon": 70.6167,
+                "place_name": "Jetpur", "email": "test@example.com",
+            },
+        )
+        assert resp.status_code == 202
+        assert len(fake_queue.sent) == 1
+        payload = fake_queue.sent[0]
+        assert payload["type"] == "muhurta"
+        assert payload["email"] == "test@example.com"
+        assert payload["date"] == "2026-06-20"
+    finally:
+        app.dependency_overrides.pop(get_message_queue, None)
+
+
+async def test_birth_endpoint_requires_email(client, fake_queue):
+    app.dependency_overrides[get_message_queue] = lambda: fake_queue
+    try:
+        resp = await client.post(
+            "/api/muhurta/birth",
+            json={"date": "2026-06-20", "lat": 21.7333, "lon": 70.6167, "place_name": "Jetpur"},
+        )
+        assert resp.status_code == 422  # missing email
+        assert len(fake_queue.sent) == 0
+    finally:
+        app.dependency_overrides.pop(get_message_queue, None)
+
+
+async def test_lambda_routes_muhurta_message(mocker):
+    """The shared Kundli Lambda routes a `type: muhurta` SQS message to the
+    muhurta worker (and kundli messages, which have no type, are untouched)."""
+    captured = {}
+    mocker.patch.object(kundli_lambda, "_run_muhurta_sync", lambda body: captured.update(body))
+    await kundli_lambda._process_record({
+        "body": json.dumps({
+            "type": "muhurta", "date": "2026-06-20", "lat": 21.7, "lon": 70.6,
+            "place_name": "X", "email": "a@b.com",
+        })
+    })
+    assert captured["email"] == "a@b.com" and captured["type"] == "muhurta"
 
 
 def test_engine_real_output_structure():

@@ -1,7 +1,7 @@
 """Request model for the Auspicious Birth-Time (Muhurta) calculator."""
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class BirthMuhurtaRequest(BaseModel):
@@ -9,6 +9,8 @@ class BirthMuhurtaRequest(BaseModel):
     lat: float = Field(..., ge=-90, le=90)
     lon: float = Field(..., ge=-180, le=180)
     place_name: str = Field(..., min_length=1, max_length=200)
+    # The full analysis is slow; we run it in the background and email the result.
+    email: EmailStr
     # Optional aspect keys (e.g. ["health", "wealth"]) to re-rank windows toward
     # what the family values most. Empty/omitted -> rank by overall Lagna strength.
     priorities: list[str] | None = Field(default=None, max_length=12)
