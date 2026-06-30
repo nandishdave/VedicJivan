@@ -410,17 +410,19 @@ def send_muhurta_analysis(to_email: str, result: dict) -> None:
 _U_TH = "background:#7c3aed;color:#fff;padding:5px 6px;font-size:11px;text-align:center;"
 
 
-def _u_chart_row(rank, c, bg):
-    """One ranked chart row (rank, time, lagna, score, S·Y·L·F, longevity band).
-    Exceptional (>= bar) charts are starred + tinted."""
+def _u_chart_row(rank, c, bg, dated=False):
+    """One ranked chart row (rank, [date], time, lagna, score, S·Y·L·F, longevity
+    band). Exceptional (>= bar) charts are starred + tinted."""
     L = c["layers"]
     ayu = c["ayurdaya"]
     if c.get("exceptional"):
         bg = "#ede9fe"
     star = ' <span style="color:#7c3aed;">&#9733;</span>' if c.get("exceptional") else ""
+    date_cell = f'<td style="padding:5px 6px;white-space:nowrap;">{c["date"]}</td>' if dated else ""
     return (
         f'<tr style="background:{bg};">'
         f'<td style="padding:5px 6px;font-weight:bold;color:#7c3aed;">{rank}</td>'
+        f'{date_cell}'
         f'<td style="padding:5px 6px;">{c["time"]}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;">{c["lagna"]}{star}</td>'
         f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{c["score"]}</td>'
@@ -431,11 +433,12 @@ def _u_chart_row(rank, c, bg):
     )
 
 
-def _u_table(charts, start_rank=1):
-    head = (f'<tr><th style="{_U_TH}">#</th><th style="{_U_TH}">Time</th><th style="{_U_TH}">Lagna</th>'
+def _u_table(charts, start_rank=1, dated=False):
+    date_h = f'<th style="{_U_TH}">Date</th>' if dated else ""
+    head = (f'<tr><th style="{_U_TH}">#</th>{date_h}<th style="{_U_TH}">Time</th><th style="{_U_TH}">Lagna</th>'
             f'<th style="{_U_TH}">Score</th><th style="{_U_TH}">S&middot;Y&middot;L&middot;F</th>'
             f'<th style="{_U_TH}">Longevity</th></tr>')
-    rows = "".join(_u_chart_row(start_rank + i, c, "#faf9ff" if i % 2 else "#ffffff")
+    rows = "".join(_u_chart_row(start_rank + i, c, "#faf9ff" if i % 2 else "#ffffff", dated)
                    for i, c in enumerate(charts))
     return ('<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
             f'{head}{rows}</table>')
@@ -478,12 +481,20 @@ def _render_unshakable_html(result: dict) -> str:
             f'{_u_table(charts)}'
             f'{_u_positions(result)}'
         )
-    else:
+    elif result["days"] <= 7:
         sections = ""
         for day in result["per_day"]:
             sections += (f'<h3 style="color:#7c3aed;margin:22px 0 6px;">{day["date"]} &mdash; top {len(day["charts"])}</h3>'
                          f'{_u_table(day["charts"])}')
         body = f'{summary}{sections}'
+    else:
+        top = result.get("top_overall", [])
+        body = (
+            f'{summary}'
+            f'<h3 style="color:#7c3aed;margin:20px 0 8px;">Strongest {len(top)} Moments '
+            f'({result["days"]} days)</h3>'
+            f'{_u_table(top, dated=True)}'
+        )
 
     body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;">S&middot;Y&middot;L&middot;F = Structural &middot; Yoga &middot; '
              'Longevity &middot; Fame layer scores. Longevity = indicative Ayurdaya band (estimates only). '

@@ -59,10 +59,13 @@ def find_unshakable(
     bar: float = 90.0,
     mode: str = "bruteforce",
     top_per_day: int = 3,
+    top_overall_n: int = 25,
 ) -> dict:
     """Rank the range's birth moments. Returns a per-day menu (all Lagnas for a
-    single day, top ``top_per_day`` per day otherwise), the ``exceptional`` set
-    (>= bar across the range), and — for a single day — a noon planetary table."""
+    single day, top ``top_per_day`` per day for a few days), a ``top_overall``
+    list (the strongest ``top_overall_n`` across the whole range — used for big
+    ranges), the ``exceptional`` set (>= bar), and a noon planetary table for a
+    single day."""
     from app.services.muhurta import (
         _day_planet_positions,
         _fmt,
@@ -72,6 +75,7 @@ def find_unshakable(
 
     per_day: list[dict] = []
     exceptional: list[dict] = []
+    all_evaluated: list[dict] = []
     full_evals = skipped = 0
 
     for dob in _date_range(start_date, days):
@@ -96,11 +100,15 @@ def find_unshakable(
             if rec["exceptional"]:
                 exceptional.append(rec)
 
+        all_evaluated.extend(day_charts)
         day_charts.sort(key=lambda r: r["score"], reverse=True)
-        keep = day_charts if days == 1 else day_charts[:top_per_day]
-        per_day.append({"date": dob, "charts": keep})
+        # Per-day menu only matters for small ranges; skip it for big scans.
+        if days <= 7:
+            keep = day_charts if days == 1 else day_charts[:top_per_day]
+            per_day.append({"date": dob, "charts": keep})
 
     exceptional.sort(key=lambda r: r["score"], reverse=True)
+    all_evaluated.sort(key=lambda r: r["score"], reverse=True)
     result = {
         "start_date": start_date,
         "days": days,
@@ -110,6 +118,7 @@ def find_unshakable(
         "bar": bar,
         "mode": mode,
         "per_day": per_day,
+        "top_overall": all_evaluated[:top_overall_n],
         "exceptional": exceptional,
         "exceptional_count": len(exceptional),
         "full_evals": full_evals,

@@ -22,10 +22,10 @@ resource "aws_sqs_queue" "kundli_dlq" {
 resource "aws_sqs_queue" "kundli" {
   name = "${local.name_prefix}-kundli"
 
-  # 5 min — must exceed the Lambda's max execution time so a slow
-  # render doesn't get redelivered to a second Lambda invocation
-  # while the first is still working.
-  visibility_timeout_seconds = 300
+  # 15 min — must be >= the Lambda's max execution time so a slow job
+  # (e.g. a month-scale unshakable scan) doesn't get redelivered to a
+  # second Lambda invocation while the first is still working.
+  visibility_timeout_seconds = 900
 
   # 4-day retention on the main queue. If something is stuck for
   # 4 days we have bigger problems than the message itself.

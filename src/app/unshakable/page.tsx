@@ -138,6 +138,7 @@ export default function UnshakablePage() {
               <option value={1}>1 day</option>
               <option value={3}>3 days</option>
               <option value={7}>7 days (a week)</option>
+              <option value={30}>30 days (a month)</option>
             </select>
           </div>
 

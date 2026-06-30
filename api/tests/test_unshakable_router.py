@@ -60,12 +60,14 @@ async def test_requires_email(client, fake_queue):
         app.dependency_overrides.pop(get_message_queue, None)
 
 
-async def test_days_capped_at_week(client, fake_queue):
+async def test_days_capped_at_month(client, fake_queue):
     app.dependency_overrides[get_message_queue] = lambda: fake_queue
     try:
-        resp = await client.post("/api/unshakable/find", json={**_REQ, "days": 31})
-        assert resp.status_code == 422  # week-scale cap (le=7)
+        resp = await client.post("/api/unshakable/find", json={**_REQ, "days": 32})
+        assert resp.status_code == 422  # month-scale cap (le=31)
         assert len(fake_queue.sent) == 0
+        ok = await client.post("/api/unshakable/find", json={**_REQ, "days": 30})
+        assert ok.status_code == 202  # a month is allowed
     finally:
         app.dependency_overrides.pop(get_message_queue, None)
 
@@ -99,3 +101,15 @@ def test_email_renders_multi_day_top_per_day():
     assert "cleared your bar" in html  # exceptional summary
     assert "&#9733;" in html  # the star on the exceptional chart
     assert "Planetary Positions" not in html  # multi-day has no positions table
+
+
+def test_email_renders_big_range_top_overall():
+    result = {
+        "start_date": "2026-06-01", "days": 30, "place_name": "Jetpur", "bar": 90.0,
+        "exceptional_count": 0, "per_day": [],
+        "top_overall": [_chart("03:01", "Aries", 76.1), _chart("06:00", "Gemini", 72.0)],
+    }
+    html = _render_unshakable_html(result)
+    assert "Strongest 2 Moments" in html and "30 days" in html
+    assert "Aries" in html and ">Date<" in html  # dated table for the big range
+    assert "Planetary Positions" not in html

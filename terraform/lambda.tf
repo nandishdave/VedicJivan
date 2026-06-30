@@ -131,7 +131,7 @@ resource "aws_lambda_function" "kundli_worker" {
   image_uri    = "${aws_ecr_repository.kundli_worker.repository_url}:latest"
 
   memory_size = 2048
-  timeout     = 300 # must match SQS visibility_timeout_seconds in sqs.tf
+  timeout     = 900 # 15 min (Lambda max) — fits a month-scale unshakable scan; must match SQS visibility_timeout_seconds in sqs.tf
 
   environment {
     variables = {

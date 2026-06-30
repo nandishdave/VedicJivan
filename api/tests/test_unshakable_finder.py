@@ -52,6 +52,13 @@ def test_multi_day_returns_top_per_day():
     assert "planet_positions" not in res  # only for single-day
 
 
+def test_top_overall_present_and_ranked():
+    res = find_unshakable(start_date="2026-06-20", days=2, bar=70.0, mode="bruteforce", **_PLACE)
+    top = res["top_overall"]
+    assert 1 <= len(top) <= 25
+    assert [c["score"] for c in top] == sorted([c["score"] for c in top], reverse=True)
+
+
 def test_exceptional_flagged_and_ranked():
     res = find_unshakable(start_date="2026-06-20", days=1, bar=68.0, mode="bruteforce", **_PLACE)
     ex = res["exceptional"]
