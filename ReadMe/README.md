@@ -51,17 +51,11 @@ as a soft tilt (~0.57), never a guarantee.
 ReadMe/
 ├── README.md                        ← this file
 ├── data/
-│   ├── celebrities-databank.json    ← 32 famous charts (D1–D60 + dasha + bios)
-│   ├── normal-people-databank.json  ← 96 ordinary charts (D1–D60 + dasha)
-│   ├── ordinary_birth_data.json     ← clean birth inputs (re-importable)  ← canonical
+│   ├── ordinary_birth_data.json     ← clean birth inputs, re-importable  ← canonical input list
 │   ├── ordinary_birth_data.md       ← same, human-readable table
 │   ├── famous_vs_ordinary_ranking.md← all 128 charts ranked by famous-likeness
-│   ├── famous-charts-computed.json  ← famous charts computed set
 │   ├── famous-charts-reference.md   ← famous gold-set reference (ratings, sources)
 │   └── unshakable-chart-finder-plan.md
-├── visualizations/
-│   ├── famous-charts-north.html     ← North-Indian chart renders
-│   └── famous-charts-visual.html
 └── scripts/
     ├── gen_normal.py     ← birth inputs → full databank (add charts here)
     ├── compare_real.py   ← famous-vs-ordinary verification (CV-AUC + lifts)
@@ -70,8 +64,12 @@ ReadMe/
     └── gen_reusable.py   ← export birth data → JSON/MD
 ```
 
-The live gallery data is also in the app itself: `src/data/celebrities.json`
-and `src/data/ordinary.json` (served on `/celebrities` and `/ordinary`).
+### The full chart data lives in the app (single source of truth — not duplicated here)
+- **`src/data/celebrities.json`** — 37 famous charts (D1–D60 + dasha + bios), served on `/celebrities`
+- **`src/data/ordinary.json`** — 96 ordinary charts (D1–D60 + dasha), served on `/ordinary`
+
+`data/ordinary_birth_data.*` is just the clean birth-**input** slice of `ordinary.json`
+(regenerate it with `scripts/gen_reusable.py`).
 
 ---
 
