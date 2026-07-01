@@ -67,21 +67,30 @@ def feats(dob,tob,lat,lon):
 F=np.array([feats(*r) for r in FAMOUS],float); R=np.array([feats(*r) for r in ORD],float)
 X=np.vstack([F,R]); y=np.array([1]*len(F)+[0]*len(R),float)
 names=FNAMES+ONAMES; labels=["★"]*len(F)+[" "]*len(R)
-def fit(Xt,yt,l2=1.0,lr=0.2,it=3000):
-    w=np.zeros(Xt.shape[1]);b=0.0
-    for _ in range(it):
-        p=1/(1+np.exp(-(Xt@w+b)));w-=lr*(Xt.T@(p-yt)/len(yt)+l2*w/len(yt));b-=lr*np.mean(p-yt)
-    return w,b
-np.random.seed(7); idx=np.random.permutation(len(y)); folds=np.array_split(idx,5); cvp=np.zeros(len(y))
+def _auc(sc,yy):
+    pos=sc[yy==1];neg=sc[yy==0];return float(np.mean([np.mean(p>neg)+0.5*np.mean(p==neg) for p in pos]))
+
+# ---- COMPOSITE score: how many of the 8 strong-chart factors a chart stacks ----
+# Orient each factor famous-positive, standardise, count the elevated ones (z>0).
+# This co-occurrence count separates fame better than the weighted linear model.
+sign=np.sign(F.mean(0)-R.mean(0)); mu,sd=X.mean(0),X.std(0)+1e-9
+Z=((X-mu)/sd)*sign
+count=(Z>0).sum(1).astype(float)   # 0..8 strong factors stacked
+zsum=Z.sum(1)                      # continuous composite (tie-break within a count)
+order=np.lexsort((-zsum,-count))   # rank by strong-count, then by composite z-sum
+
+# Honest out-of-sample check: CV-AUC of the count (orientation learned per fold).
+np.random.seed(7); idx=np.random.permutation(len(y)); folds=np.array_split(idx,5); cvc=np.zeros(len(y))
 for i in range(5):
     te=folds[i]; tr=np.concatenate([folds[j] for j in range(5) if j!=i])
-    mu,sd=X[tr].mean(0),X[tr].std(0)+1e-9; w,b=fit((X[tr]-mu)/sd,y[tr]); cvp[te]=1/(1+np.exp(-(((X[te]-mu)/sd)@w+b)))
-score=(cvp*100).round(1)
-order=np.argsort(-score)
-print("RANK  SCORE  WHO   NAME")
+    sg=np.sign(X[tr][y[tr]==1].mean(0)-X[tr][y[tr]==0].mean(0)); m,s=X[tr].mean(0),X[tr].std(0)+1e-9
+    cvc[te]=(((X[te]-m)/s*sg)>0).sum(1)
+
+print("RANK  STRONG  COMPOSITE  WHO   NAME")
 for rank,k in enumerate(order,1):
-    print(f"{rank:>3}  {score[k]:6.1f}   {labels[k]}    {names[k]}")
+    print(f"{rank:>3}    {int(count[k])}/8   {zsum[k]:+7.2f}    {labels[k]}    {names[k]}")
 topN=20; tf=sum(1 for k in order[:topN] if labels[k]=="★")
 print(f"\n★ = famous ({len(F)}), blank = ordinary ({len(R)})")
-print(f"Famous mean score={score[y==1].mean():.1f}  |  Ordinary mean={score[y==0].mean():.1f}")
+print(f"Famous mean strong-count={count[y==1].mean():.2f}  |  Ordinary mean={count[y==0].mean():.2f}")
 print(f"Top {topN}: {tf} famous / {topN-tf} ordinary  |  famous median rank={np.median([list(order).index(i)+1 for i in range(len(F))]):.0f} of {len(y)}")
+print(f"CV-AUC of the composite strong-count = {_auc(cvc,y):.3f}  (linear 8-feature was 0.485; 0.5=chance)")

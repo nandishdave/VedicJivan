@@ -24,6 +24,15 @@ Seven checkpoints all land in one ±0.06 band — the fingerprint of a **genuine
 weak** effect. In the pick-two test: shown one famous + one ordinary chart, the
 model picks the famous one ~57% of the time (a coin flip is 50%, "useful" is 65%+).
 
+**Best formulation = a composite CO-OCCURRENCE count.** No single factor and no
+weighted linear model beats a simple **count of how many of the 8 strong-chart
+factors a chart stacks** (orient each famous-positive, count the elevated ones).
+Famous charts stack more (mean ~4.0 vs ~3.4 of 8; ≥5 strong: 34% vs 21%), and this
+count gives **CV-AUC 0.547 > the linear model's 0.485**. It is co-occurrence, not
+synergy — adding pairwise interactions *overfits* (0.428). Still weak (~0.55, not a
+predictor), but the right shape for the signal — so the ranking is now scored by
+this strong-factor count.
+
 ### What stands strong (consistent, famous-positive every run)
 | Factor | Strength | Reading |
 |---|---|---|
