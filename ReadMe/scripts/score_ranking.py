@@ -6,6 +6,7 @@ import numpy as np
 from app.services.muhurta import build_muhurta_chart
 from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
 from app.services.kundli_calculator.dhana_yoga import dhana_yoga_score, prosperity_yoga_score
+from app.services.kundli_calculator.raja_yoga import raja_yoga_score
 from app.services.kundli_calculator.divisional import calc_divisional_charts
 from app.services.kundli_calculator.vimshottari import calc_vimshottari_dasha
 
@@ -57,16 +58,8 @@ def feats(dob,tob,lat,lon):
     fd=acc/tot if tot else 50
     fw=dhana_yoga_score(c)[0]       # graded Dhana yoga (strict 1/2/11 wealth)
     fp=prosperity_yoga_score(c)[0]  # graded Prosperity yoga (5/9 fortune extension)
-    tri=list({L(1),L(5),L(9)}); par={p:p for p in tri}
-    def fn(x):
-        while par[x]!=x: par[x]=par[par[x]]; x=par[x]
-        return x
-    for i in range(len(tri)):
-        for j in range(i+1,len(tri)):
-            if samb(tri[i],tri[j],P,asp): par[fn(tri[i])]=fn(tri[j])
-    sz={}
-    for p in tri: sz[fn(p)]=sz.get(fn(p),0)+1
-    ft=max(sz.values()); fb=FB_A if ls in CAMP_A else FB_B
+    ft=raja_yoga_score(c)[0]  # graded Raja yoga (replaces crude trikona-clustering)
+    fb=FB_A if ls in CAMP_A else FB_B
     ffb=sum(1 for p in fb if P[p]["house"] in KT); tv=c["ashtakavarga"]["totals"]
     d60=calc_divisional_charts(P,lag)["D60"]; fd60=np.mean([_DP.get(_get_dignity(p,d60[p]),45) for p in _C])
     return [fd,fw,fp,ft,ffb,tv[ls],tv[(ls+9)%12],fd60]

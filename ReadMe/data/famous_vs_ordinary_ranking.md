@@ -1,146 +1,148 @@
-﻿# Famous vs Ordinary - Full Ranking (Dhana + Prosperity split)
+﻿# Famous vs Ordinary - Full Ranking (Dhana + Prosperity + graded Raja yoga)
 
-All 128 charts (32 famous star + 96 ordinary), scored by a cross-validated 8-feature
-model. The wealth axis is now TWO separate graded features from
-api/app/services/kundli_calculator/dhana_yoga.py:
-  - Dhana yoga       = lords of 1/2/11 (Lagnesh/Dhanesh/Labhesh) - true wealth
-  - Prosperity yoga  = links touching the 5th/9th lord - fortune, kept separate
+All 128 charts (32 famous star + 96 ordinary), cross-validated 8-feature model.
+Yoga features from api/app/services/kundli_calculator/:
+  - Dhana yoga       = lords of 1/2/11 (wealth)                    [dhana_yoga.py]
+  - Prosperity yoga  = links touching 5/9 (fortune), separate      [dhana_yoga.py]
+  - Raja yoga        = kendra(1/4/7/10)+trikona(1/5/9) lords,       [raja_yoga.py]
+                       graded by connection x lord-grade x dignity
+                       x house x COMBUSTION (replaces crude trikona)
 
-Honest note: neither yoga separates fame (famous 27.5 vs ordinary 26.5, famous
-median rank 74/128) - they are wealth/fortune readouts, not fame predictors.
+Honest note: none of the yogas separate fame (famous 26.6 vs ordinary 26.5, famous
+median rank 63/128) - they are wealth/fortune/power readouts, not fame predictors.
 Regenerate with scripts/score_ranking.py.
 ```text
 RANK  SCORE  WHO   NAME
-  1    78.0        Bhargav M Raval
-  2    64.7   â˜…    Oprah
-  3    60.0   â˜…    Tesla
-  4    59.5        Harsh Raval
-  5    57.0        Nayan Shah
-  6    56.6   â˜…    Churchill
-  7    56.5   â˜…    GW Bush
-  8    52.1        Nandish Dave
-  9    52.0        Sneha Shah
- 10    51.4        Arohi N Parikh
- 11    50.5   â˜…    Queen Elizabeth II
- 12    49.6        Dhaval J Shah
- 13    48.5        Snehal J Chauhan
- 14    48.4        Ruchi Raval
- 15    47.2        Rupal Raghuvanshi
- 16    46.5        Shobha Dave
- 17    46.4        Esha Shah
- 18    46.0        Pooja Priya
- 19    44.4        Bhupesh Kumar
- 20    44.3        Varta Shah
- 21    44.1        Hardik Suchak
- 22    43.0   â˜…    Reagan
- 23    41.9        Lav Butala
- 24    40.2        Rahul R Joshi
- 25    39.8        Yatin Punjabi
- 26    39.2        Harsh Trivedi
- 27    38.8   â˜…    Taylor Swift
- 28    38.7        Priyal Parikh
- 29    38.7   â˜…    Trump
- 30    38.5        Pragati Nayak
- 31    38.4        Binal Shah
- 32    37.8        Pooja Dhaval Shah
- 33    37.0        Partha Saha
- 34    36.8        Sahil Jani
- 35    36.7        Yaduvendra Chaurasia
- 36    35.5        Jinal Shah
- 37    35.4   â˜…    Hendrix
- 38    35.1        Manish Singh
- 39    34.2   â˜…    Elvis
- 40    33.4   â˜…    John Lennon
- 41    33.2        Harsh Shah
- 42    33.2   â˜…    Madonna
- 43    32.2        Vatsal Raicha
- 44    31.4        Bhusan Savani
- 45    31.0        Helena Dave
- 46    30.7        Bishal Bose
- 47    30.6        Aniket Shah
- 48    30.6        Krutik Shah
- 49    30.0        Jigisha Dhruv Jani
- 50    29.7        Vixita Nayak
- 51    28.9        Yatin Mirani
- 52    28.8        Prasad
- 53    27.9        Jigar Mehta
- 54    26.0        Suraj Mehta
- 55    25.4        Heena T Dave
- 56    25.4        Mayank Kumar
- 57    24.9        Karan Patel
- 58    24.8   â˜…    Obama
- 59    24.7        Shikha Kumari
- 60    24.3        Bhargav
- 61    23.8        Moxta
- 62    22.8   â˜…    Muhammad Ali
- 63    22.6        Sonali Pagar
- 64    22.5        Nency A Shah
- 65    22.3        Rama G Dave
- 66    22.1        Melvin Methew
- 67    21.8        Bhavika Bhayani
- 68    21.6        Monika Pattanayak
- 69    21.5        Paras Gajjar
- 70    21.0        Harshal Joshi
- 71    20.7   â˜…    Marilyn Monroe
- 72    20.6        Grandin Major Vincent
- 73    20.0   â˜…    Freud
- 74    19.8   â˜…    Jim Morrison
- 75    19.5        Nishit Parikh
- 76    19.5   â˜…    Diana
- 77    19.4        Darshan
- 78    19.4        Varun Chaturvedi
- 79    18.5        Ravi Shah
- 80    18.3   â˜…    Prince Harry
- 81    18.2   â˜…    Bill Clinton
- 82    17.9   â˜…    Charles III
- 83    17.5   â˜…    Carl Jung
- 84    16.8        Devang Shah
- 85    16.7   â˜…    Darwin
- 86    16.3        Janki Dave
- 87    16.2        Tushar G Dave
- 88    16.1   â˜…    Einstein
- 89    16.1        Praveen
- 90    15.9   â˜…    Prince William
- 91    15.9        Viraj Shah
- 92    15.7        Manthan
- 93    15.7        Neha Khetrapal
- 94    15.2        Kaumil Bhavsar
- 95    15.2   â˜…    JFK
- 96    14.8        Aastha Sachin Raval
- 97    14.8        Priyesh Dave
- 98    14.6        Jainith Nayak
- 99    14.5        Venkat
-100    14.3        Shreya
-101    14.3        Rohan
-102    14.0        Sanjay M Raval
-103    13.8   â˜…    Michael Jackson
-104    13.8        Rumna Saha
-105    13.6        Anmol Mehta
-106    13.6   â˜…    Kurt Cobain
-107    13.2   â˜…    Angelina Jolie
-108    13.1        Riddhish Shah
-109    13.0        Viral Gajjar
-110    12.7        Dhruv Jani
-111    11.4        Shivani Kandarp Dave
-112    11.2   â˜…    Hitler
-113    11.1   â˜…    Hillary Clinton
-114    10.7        Kandarp Dave
-115    10.2        Pooja Dave
-116     9.7        Akash Zaveri
-117     9.6        Shikha Dave
-118     9.1        Papu ben
-119     8.6        Dipti Dave
-120     8.4   â˜…    McCartney
-121     8.4        Kushal Shah
-122     8.2        Dhara Ravi Shah
-123     7.5        Vishal Khetrapal
-124     6.9        Dharini Anmol Mehta
-125     6.7        Riya Viraj Shah
-126     6.7        Misika Butala
-127     5.7        Harshad Patel
-128     5.1        Pratiksha
+  1    69.4   â˜…    Tesla
+  2    68.1   â˜…    Churchill
+  3    60.2        Dhaval J Shah
+  4    56.0   â˜…    GW Bush
+  5    53.3        Binal Shah
+  6    53.2        Sahil Jani
+  7    52.3        Rahul R Joshi
+  8    51.9        Bhargav M Raval
+  9    51.3        Hardik Suchak
+ 10    51.0        Esha Shah
+ 11    50.5        Helena Dave
+ 12    50.3        Harsh Trivedi
+ 13    50.2        Shobha Dave
+ 14    49.5        Heena T Dave
+ 15    46.5        Lav Butala
+ 16    46.2   â˜…    Oprah
+ 17    44.6        Priyal Parikh
+ 18    43.9        Bhupesh Kumar
+ 19    42.1        Snehal J Chauhan
+ 20    41.8        Grandin Major Vincent
+ 21    41.5        Pooja Priya
+ 22    39.9        Karan Patel
+ 23    39.5        Nayan Shah
+ 24    38.0        Nency A Shah
+ 25    37.4        Yaduvendra Chaurasia
+ 26    36.5        Harsh Raval
+ 27    36.4        Ruchi Raval
+ 28    36.3        Partha Saha
+ 29    36.1   â˜…    Hendrix
+ 30    36.1        Neha Khetrapal
+ 31    35.8        Harshal Joshi
+ 32    35.7   â˜…    Freud
+ 33    34.1   â˜…    Elvis
+ 34    34.0        Arohi N Parikh
+ 35    33.9        Bhusan Savani
+ 36    33.6        Harsh Shah
+ 37    33.5   â˜…    Muhammad Ali
+ 38    33.0   â˜…    John Lennon
+ 39    32.4   â˜…    Taylor Swift
+ 40    32.3   â˜…    Reagan
+ 41    30.5   â˜…    Madonna
+ 42    30.3        Priyesh Dave
+ 43    29.9        Bhargav
+ 44    29.9        Vixita Nayak
+ 45    29.8        Pragati Nayak
+ 46    29.7        Aastha Sachin Raval
+ 47    29.6        Janki Dave
+ 48    29.0        Jinal Shah
+ 49    28.5        Nandish Dave
+ 50    28.2   â˜…    Jim Morrison
+ 51    28.1        Manish Singh
+ 52    28.1        Aniket Shah
+ 53    27.8        Shikha Kumari
+ 54    27.7        Viraj Shah
+ 55    27.6   â˜…    Carl Jung
+ 56    27.5   â˜…    Trump
+ 57    27.2        Melvin Methew
+ 58    27.0   â˜…    Queen Elizabeth II
+ 59    26.9        Bishal Bose
+ 60    26.8        Viral Gajjar
+ 61    26.4        Nishit Parikh
+ 62    25.5        Rama G Dave
+ 63    24.9        Prasad
+ 64    24.9        Krutik Shah
+ 65    24.5        Darshan
+ 66    24.4        Sneha Shah
+ 67    24.1        Kaumil Bhavsar
+ 68    23.8   â˜…    Prince Harry
+ 69    23.2        Yatin Mirani
+ 70    23.1        Vatsal Raicha
+ 71    21.9        Riddhish Shah
+ 72    21.8        Varta Shah
+ 73    21.7        Jigar Mehta
+ 74    21.2        Rupal Raghuvanshi
+ 75    21.2   â˜…    Angelina Jolie
+ 76    20.6        Tushar G Dave
+ 77    20.2        Sanjay M Raval
+ 78    20.1        Vishal Khetrapal
+ 79    19.4        Pooja Dhaval Shah
+ 80    19.4        Shreya
+ 81    19.0        Jigisha Dhruv Jani
+ 82    18.7   â˜…    Darwin
+ 83    18.7   â˜…    Diana
+ 84    18.5        Varun Chaturvedi
+ 85    17.9        Venkat
+ 86    17.7   â˜…    Marilyn Monroe
+ 87    17.7        Jainith Nayak
+ 88    17.7   â˜…    Bill Clinton
+ 89    17.4   â˜…    Charles III
+ 90    15.8   â˜…    Kurt Cobain
+ 91    15.7   â˜…    Michael Jackson
+ 92    15.5        Dhruv Jani
+ 93    15.4        Mayank Kumar
+ 94    15.4        Paras Gajjar
+ 95    15.3        Suraj Mehta
+ 96    15.2        Monika Pattanayak
+ 97    14.9        Bhavika Bhayani
+ 98    14.9        Moxta
+ 99    14.6        Harshad Patel
+100    14.4        Yatin Punjabi
+101    14.1        Anmol Mehta
+102    13.8        Shivani Kandarp Dave
+103    13.8        Devang Shah
+104    13.7        Ravi Shah
+105    13.6        Kushal Shah
+106    13.6        Kandarp Dave
+107    13.0        Pooja Dave
+108    12.9        Dhara Ravi Shah
+109    12.4        Sonali Pagar
+110    12.4   â˜…    Obama
+111    12.2   â˜…    Hillary Clinton
+112    12.0        Dharini Anmol Mehta
+113    11.9   â˜…    JFK
+114    11.9        Praveen
+115    10.9        Manthan
+116    10.2        Rumna Saha
+117    10.0        Shikha Dave
+118     9.9   â˜…    Prince William
+119     9.6        Papu ben
+120     9.2        Misika Butala
+121     9.0        Rohan
+122     8.7   â˜…    Hitler
+123     8.0   â˜…    McCartney
+124     7.3        Pratiksha
+125     6.3        Akash Zaveri
+126     5.4        Dipti Dave
+127     4.9   â˜…    Einstein
+128     4.1        Riya Viraj Shah
 
 â˜… = famous (32), blank = ordinary (96)
-Famous mean score=27.5  |  Ordinary mean=26.5
-Top 20: 5 famous / 15 ordinary  |  famous median rank=74 of 128
+Famous mean score=26.6  |  Ordinary mean=26.5
+Top 20: 4 famous / 16 ordinary  |  famous median rank=63 of 128
 ```

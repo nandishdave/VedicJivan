@@ -28,6 +28,10 @@ from app.services.kundli_calculator.dhana_yoga import (
     prosperity_yoga_score,
 )
 from app.services.kundli_calculator.divisional import calc_divisional_charts
+from app.services.kundli_calculator.raja_yoga import (
+    raja_yoga_normalized,
+    raja_yoga_score,
+)
 from app.services.kundli_calculator.nakshatra import calc_nakshatra
 from app.services.kundli_calculator.panchanga import calc_panchanga
 from app.services.kundli_calculator.shadbala import calc_shadbala
@@ -352,18 +356,22 @@ def analyze_birth_muhurta(
         # extension (links touching the 5th/9th), kept separate.
         dy_score, dy_links = dhana_yoga_score(chart)
         pr_score, pr_links = prosperity_yoga_score(chart)
+        rj_score, rj_links = raja_yoga_score(chart)
         dy_norm = dhana_yoga_normalized(chart)
         pr_norm = prosperity_yoga_normalized(chart)
+        rj_norm = raja_yoga_normalized(chart)
         aspects = {}
         for key, label, group, houses, karakas in LIFE_ASPECTS:
             sc = _aspect_score(chart, houses, karakas)
-            # Wealth blends houses 2/11 with the graded Dhana yoga; Fortune blends
-            # house 9 with the Prosperity (5th/9th) yoga — the yoga, not the houses
-            # in isolation, is what makes the verdict real.
+            # Each verdict blends its house/karaka strength with the relevant graded
+            # yoga — the yoga, not the houses in isolation, is what makes it real.
+            # Wealth←Dhana(1/2/11), Fortune←Prosperity(5/9), Career/status←Raja(kendra/trikona).
             if key == "wealth":
                 sc = round(sc * 0.65 + dy_norm * 0.35, 1)
             elif key == "fortune":
                 sc = round(sc * 0.65 + pr_norm * 0.35, 1)
+            elif key == "career":
+                sc = round(sc * 0.65 + rj_norm * 0.35, 1)
             aspects[key] = {
                 "label": label, "group": group, "score": sc, "verdict": _verdict(sc),
             }
@@ -385,6 +393,7 @@ def analyze_birth_muhurta(
             "rank_score": rank_score,
             "dhana_yoga": {"score": dy_score, "links": dy_links},
             "prosperity_yoga": {"score": pr_score, "links": pr_links},
+            "raja_yoga": {"score": rj_score, "links": rj_links},
             "panchanga": {
                 "nakshatra": chart["nakshatra"]["name"],
                 "tithi": chart["panchanga"]["tithi_name"],

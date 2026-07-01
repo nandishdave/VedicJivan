@@ -60,6 +60,22 @@ faithful (a strong, well-placed yoga outscores a fallen one) but neither improve
 fame separation (both yogas are ~equally common in famous & ordinary charts) — they
 are wealth/fortune readouts, not fame predictors.
 
+### Graded Raja yoga
+`api/app/services/kundli_calculator/raja_yoga.py` grades the classical Raja yoga —
+association of a **Kendra lord (1/4/7/10)** with a **Trikona lord (1/5/9)** — as
+`connection × lord-grade × dignity × house-of-formation × combustion`:
+
+- **lord-grade** — 9th+10th (Dharma-Karmadhipati) supreme, then any pair with the
+  1st (Lagnesh), all four kendras otherwise equal;
+- **house** — Kendra best > Trikona > 2/11 > 3 > dusthana 6/8/12 (placement is the
+  decisive lever);
+- **combustion** — a yoga-planet too close to the Sun is burnt (×0.5 each), which
+  dignity alone can't catch.
+
+It feeds the Muhurta **career/status** verdict and replaces the crude trikona
+feature in this ranking. Example: Nandish's 9L↔10L parivartana (a "supreme"
+Dharma-Karmadhipati) scores only ~2.1 — Venus debilitated **and** Mercury combust.
+
 ---
 
 ## Contents
