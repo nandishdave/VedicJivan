@@ -9308,5 +9308,250 @@
     "age_end": 118
    }
   ]
+ },
+ {
+  "slug": "virat-kohli",
+  "name": "Virat Kohli",
+  "category": "Cricketer",
+  "rating": "B",
+  "birth": {
+   "date": "1988-11-05",
+   "time": "10:28",
+   "place": "New Delhi, India",
+   "lat": 28.65,
+   "lon": 77.2167
+  },
+  "bio": "Indian cricketer regarded as one of the greatest batsmen of the modern era and among the finest ODI batsmen of all time. Former captain of India across all formats, holder of numerous run-scoring records, celebrated for his aggression, consistency and fitness. Nicknamed 'King Kohli'.",
+  "lagna": "Sagittarius",
+  "lagna_lord": "Jupiter",
+  "nakshatra": "Uttara Phalguni",
+  "charts": {
+   "D1": {
+    "Sun": {
+     "sign": "Libra",
+     "house": 11,
+     "deg": 19.3,
+     "dignity": "Debilitated",
+     "retro": false
+    },
+    "Moon": {
+     "sign": "Virgo",
+     "house": 10,
+     "deg": 0.33,
+     "dignity": "Friendly Sign",
+     "retro": false
+    },
+    "Mars": {
+     "sign": "Pisces",
+     "house": 4,
+     "deg": 6.59,
+     "dignity": "Friendly Sign",
+     "retro": false
+    },
+    "Mercury": {
+     "sign": "Libra",
+     "house": 11,
+     "deg": 4.1,
+     "dignity": "Friendly Sign",
+     "retro": false
+    },
+    "Jupiter": {
+     "sign": "Taurus",
+     "house": 6,
+     "deg": 9.7,
+     "dignity": "Enemy Sign",
+     "retro": true
+    },
+    "Venus": {
+     "sign": "Virgo",
+     "house": 10,
+     "deg": 13.83,
+     "dignity": "Debilitated",
+     "retro": false
+    },
+    "Saturn": {
+     "sign": "Sagittarius",
+     "house": 1,
+     "deg": 5.6,
+     "dignity": "Neutral Sign",
+     "retro": false
+    },
+    "Rahu": {
+     "sign": "Aquarius",
+     "house": 3,
+     "deg": 18.71,
+     "dignity": "Own Sign",
+     "retro": true
+    },
+    "Ketu": {
+     "sign": "Leo",
+     "house": 9,
+     "deg": 18.71,
+     "dignity": "Enemy Sign",
+     "retro": true
+    }
+   },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Cancer",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Sagittarius",
+    "Moon": "Sagittarius",
+    "Mars": "Gemini",
+    "Mercury": "Libra",
+    "Jupiter": "Virgo",
+    "Venus": "Capricorn",
+    "Saturn": "Sagittarius",
+    "Rahu": "Aries",
+    "Ketu": "Libra",
+    "Lagna": "Capricorn"
+   },
+   "D9": {
+    "Sun": "Pisces",
+    "Moon": "Capricorn",
+    "Mars": "Leo",
+    "Mercury": "Scorpio",
+    "Jupiter": "Pisces",
+    "Venus": "Taurus",
+    "Saturn": "Taurus",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Gemini"
+   },
+   "D10": {
+    "Sun": "Aries",
+    "Moon": "Taurus",
+    "Mars": "Capricorn",
+    "Mercury": "Scorpio",
+    "Jupiter": "Aries",
+    "Venus": "Virgo",
+    "Saturn": "Capricorn",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Aquarius"
+   },
+   "D11": {
+    "Sun": "Taurus",
+    "Moon": "Virgo",
+    "Mars": "Taurus",
+    "Mercury": "Scorpio",
+    "Jupiter": "Leo",
+    "Venus": "Aquarius",
+    "Saturn": "Aquarius",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Pisces"
+   },
+   "D16": {
+    "Sun": "Aquarius",
+    "Moon": "Sagittarius",
+    "Mars": "Pisces",
+    "Mercury": "Gemini",
+    "Jupiter": "Capricorn",
+    "Venus": "Cancer",
+    "Saturn": "Aquarius",
+    "Rahu": "Taurus",
+    "Ketu": "Taurus",
+    "Lagna": "Aries"
+   },
+   "D24": {
+    "Sun": "Scorpio",
+    "Moon": "Cancer",
+    "Mars": "Sagittarius",
+    "Mercury": "Scorpio",
+    "Jupiter": "Aquarius",
+    "Venus": "Gemini",
+    "Saturn": "Sagittarius",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Pisces"
+   },
+   "D60": {
+    "Sun": "Sagittarius",
+    "Moon": "Virgo",
+    "Mars": "Aries",
+    "Mercury": "Gemini",
+    "Jupiter": "Sagittarius",
+    "Venus": "Sagittarius",
+    "Saturn": "Scorpio",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Taurus"
+   }
+  },
+  "dasha": [
+   {
+    "planet": "Sun",
+    "start": "1988-11-05",
+    "end": "1993-03-13",
+    "age_start": 0,
+    "age_end": 5
+   },
+   {
+    "planet": "Moon",
+    "start": "1993-03-13",
+    "end": "2003-03-14",
+    "age_start": 5,
+    "age_end": 15
+   },
+   {
+    "planet": "Mars",
+    "start": "2003-03-14",
+    "end": "2010-03-13",
+    "age_start": 15,
+    "age_end": 22
+   },
+   {
+    "planet": "Rahu",
+    "start": "2010-03-13",
+    "end": "2028-03-13",
+    "age_start": 22,
+    "age_end": 40
+   },
+   {
+    "planet": "Jupiter",
+    "start": "2028-03-13",
+    "end": "2044-03-13",
+    "age_start": 40,
+    "age_end": 56
+   },
+   {
+    "planet": "Saturn",
+    "start": "2044-03-13",
+    "end": "2063-03-13",
+    "age_start": 56,
+    "age_end": 75
+   },
+   {
+    "planet": "Mercury",
+    "start": "2063-03-13",
+    "end": "2080-03-12",
+    "age_start": 75,
+    "age_end": 92
+   },
+   {
+    "planet": "Ketu",
+    "start": "2080-03-12",
+    "end": "2087-03-13",
+    "age_start": 92,
+    "age_end": 99
+   },
+   {
+    "planet": "Venus",
+    "start": "2087-03-13",
+    "end": "2107-03-14",
+    "age_start": 99,
+    "age_end": 119
+   }
+  ]
  }
 ]
