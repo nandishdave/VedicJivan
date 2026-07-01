@@ -9063,5 +9063,250 @@
     "age_end": 108
    }
   ]
+ },
+ {
+  "slug": "mahendra-singh-dhoni",
+  "name": "Mahendra Singh Dhoni",
+  "category": "Cricketer",
+  "rating": "C",
+  "birth": {
+   "date": "1981-07-07",
+   "time": "12:00",
+   "place": "Ranchi, Jharkhand, India",
+   "lat": 23.3441,
+   "lon": 85.3096
+  },
+  "bio": "Indian cricketer and one of the most successful captains in the sport's history — the only captain to win all three major ICC white-ball trophies (2007 T20 World Cup, 2011 ODI World Cup, 2013 Champions Trophy). Celebrated wicket-keeper batsman and finisher, nicknamed 'Captain Cool'. (Birth time approximate.)",
+  "lagna": "Virgo",
+  "lagna_lord": "Mercury",
+  "nakshatra": "Uttara Phalguni",
+  "charts": {
+   "D1": {
+    "Sun": {
+     "sign": "Gemini",
+     "house": 10,
+     "deg": 21.46,
+     "dignity": "Neutral Sign",
+     "retro": false
+    },
+    "Moon": {
+     "sign": "Virgo",
+     "house": 1,
+     "deg": 0.58,
+     "dignity": "Friendly Sign",
+     "retro": false
+    },
+    "Mars": {
+     "sign": "Taurus",
+     "house": 9,
+     "deg": 28.85,
+     "dignity": "Neutral Sign",
+     "retro": false
+    },
+    "Mercury": {
+     "sign": "Gemini",
+     "house": 10,
+     "deg": 3.32,
+     "dignity": "Own Sign",
+     "retro": false
+    },
+    "Jupiter": {
+     "sign": "Virgo",
+     "house": 1,
+     "deg": 9.18,
+     "dignity": "Enemy Sign",
+     "retro": false
+    },
+    "Venus": {
+     "sign": "Cancer",
+     "house": 11,
+     "deg": 15.43,
+     "dignity": "Enemy Sign",
+     "retro": false
+    },
+    "Saturn": {
+     "sign": "Virgo",
+     "house": 1,
+     "deg": 10.26,
+     "dignity": "Friendly Sign",
+     "retro": false
+    },
+    "Rahu": {
+     "sign": "Cancer",
+     "house": 11,
+     "deg": 8.2,
+     "dignity": "Enemy Sign",
+     "retro": true
+    },
+    "Ketu": {
+     "sign": "Capricorn",
+     "house": 5,
+     "deg": 8.2,
+     "dignity": "Friendly Sign",
+     "retro": true
+    }
+   },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Leo",
+    "Moon": "Sagittarius",
+    "Mars": "Scorpio",
+    "Mercury": "Gemini",
+    "Jupiter": "Capricorn",
+    "Venus": "Sagittarius",
+    "Saturn": "Capricorn",
+    "Rahu": "Scorpio",
+    "Ketu": "Taurus",
+    "Lagna": "Pisces"
+   },
+   "D9": {
+    "Sun": "Aries",
+    "Moon": "Capricorn",
+    "Mars": "Virgo",
+    "Mercury": "Libra",
+    "Jupiter": "Pisces",
+    "Venus": "Scorpio",
+    "Saturn": "Aries",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Cancer"
+   },
+   "D10": {
+    "Sun": "Capricorn",
+    "Moon": "Taurus",
+    "Mars": "Libra",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Leo",
+    "Rahu": "Taurus",
+    "Ketu": "Scorpio",
+    "Lagna": "Sagittarius"
+   },
+   "D11": {
+    "Sun": "Capricorn",
+    "Moon": "Virgo",
+    "Mars": "Pisces",
+    "Mercury": "Cancer",
+    "Jupiter": "Sagittarius",
+    "Venus": "Sagittarius",
+    "Saturn": "Sagittarius",
+    "Rahu": "Libra",
+    "Ketu": "Aries",
+    "Lagna": "Taurus"
+   },
+   "D16": {
+    "Sun": "Scorpio",
+    "Moon": "Sagittarius",
+    "Mars": "Scorpio",
+    "Mercury": "Capricorn",
+    "Jupiter": "Aries",
+    "Venus": "Sagittarius",
+    "Saturn": "Taurus",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Sagittarius"
+   },
+   "D24": {
+    "Sun": "Capricorn",
+    "Moon": "Cancer",
+    "Mars": "Gemini",
+    "Mercury": "Libra",
+    "Jupiter": "Aquarius",
+    "Venus": "Cancer",
+    "Saturn": "Pisces",
+    "Rahu": "Capricorn",
+    "Ketu": "Capricorn",
+    "Lagna": "Capricorn"
+   },
+   "D60": {
+    "Sun": "Sagittarius",
+    "Moon": "Libra",
+    "Mars": "Aquarius",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Pisces",
+    "Venus": "Capricorn",
+    "Saturn": "Taurus",
+    "Rahu": "Scorpio",
+    "Ketu": "Taurus",
+    "Lagna": "Gemini"
+   }
+  },
+  "dasha": [
+   {
+    "planet": "Sun",
+    "start": "1981-07-07",
+    "end": "1985-10-02",
+    "age_start": 0,
+    "age_end": 4
+   },
+   {
+    "planet": "Moon",
+    "start": "1985-10-02",
+    "end": "1995-10-02",
+    "age_start": 4,
+    "age_end": 14
+   },
+   {
+    "planet": "Mars",
+    "start": "1995-10-02",
+    "end": "2002-10-02",
+    "age_start": 14,
+    "age_end": 21
+   },
+   {
+    "planet": "Rahu",
+    "start": "2002-10-02",
+    "end": "2020-10-01",
+    "age_start": 21,
+    "age_end": 39
+   },
+   {
+    "planet": "Jupiter",
+    "start": "2020-10-01",
+    "end": "2036-10-01",
+    "age_start": 39,
+    "age_end": 55
+   },
+   {
+    "planet": "Saturn",
+    "start": "2036-10-01",
+    "end": "2055-10-02",
+    "age_start": 55,
+    "age_end": 74
+   },
+   {
+    "planet": "Mercury",
+    "start": "2055-10-02",
+    "end": "2072-10-01",
+    "age_start": 74,
+    "age_end": 91
+   },
+   {
+    "planet": "Ketu",
+    "start": "2072-10-01",
+    "end": "2079-10-02",
+    "age_start": 91,
+    "age_end": 98
+   },
+   {
+    "planet": "Venus",
+    "start": "2079-10-02",
+    "end": "2099-10-02",
+    "age_start": 98,
+    "age_end": 118
+   }
+  ]
  }
 ]
