@@ -5,6 +5,7 @@ import numpy as np
 
 from app.services.muhurta import build_muhurta_chart
 from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
+from app.services.kundli_calculator.dhana_yoga import dhana_yoga_score
 from app.services.kundli_calculator.divisional import calc_divisional_charts
 from app.services.kundli_calculator.vimshottari import calc_vimshottari_dasha
 
@@ -53,10 +54,8 @@ def feats(dob,tob,lat,lon):
         s=min(sb.get(d["planet"],{}).get("ratio",1.0)/1.5,1.0)*100
         if d["planet"] in _BEN or d["planet"]==L(1): s=min(s*1.15,100)
         acc+=s*ov; tot+=ov
-    fd=acc/tot if tot else 50; l2,l11=L(2),L(11)
-    fw=sum([l2!=l11 and SIGN_LORDS[P[l2]["sign"]]==l11 and SIGN_LORDS[P[l11]["sign"]]==l2,
-            l2!=l11 and P[l2]["house"]==P[l11]["house"],P[l2]["house"]==11,P[l11]["house"]==2,
-            P[l2]["house"]==P["Rahu"]["house"] or P[l11]["house"]==P["Rahu"]["house"]])
+    fd=acc/tot if tot else 50
+    fw=dhana_yoga_score(c)[0]  # graded Dhana-yoga (replaces the old crude 2-11 flag)
     tri=list({L(1),L(5),L(9)}); par={p:p for p in tri}
     def fn(x):
         while par[x]!=x: par[x]=par[par[x]]; x=par[x]

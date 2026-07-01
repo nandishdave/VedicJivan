@@ -43,6 +43,16 @@ model picks the famous one ~57% of the time (a coin flip is 50%, "useful" is 65%
 wealth/karma indicators; de-emphasise "benefics in kendra"; always present results
 as a soft tilt (~0.57), never a guarantee.
 
+### Graded Dhana-yoga (wealth strength)
+The crude "2–11 flag" was replaced by a **graded Dhana-yoga score** —
+`connection-type × which-lords × dignity × house-of-formation` — now a shared
+production module: **`api/app/services/kundli_calculator/dhana_yoga.py`**. It is
+wired into the **baby-birth Muhurta** wealth verdict and into this ranking
+(`scripts/score_ranking.py`). Honest note: it is astrologically faithful (a strong,
+well-placed yoga outscores a fallen one) but does **not** improve fame separation
+(Dhana yogas are ~equally common in famous & ordinary charts) — it's a
+*wealth-strength* readout, not a fame predictor.
+
 ---
 
 ## Contents

@@ -21,6 +21,10 @@ from app.services.kundli_calculator._core import (
 )
 from app.services.kundli_calculator.aspects import calc_graha_drishti
 from app.services.kundli_calculator.ashtakavarga import calc_ashtakavarga
+from app.services.kundli_calculator.dhana_yoga import (
+    dhana_yoga_normalized,
+    dhana_yoga_score,
+)
 from app.services.kundli_calculator.divisional import calc_divisional_charts
 from app.services.kundli_calculator.nakshatra import calc_nakshatra
 from app.services.kundli_calculator.panchanga import calc_panchanga
@@ -341,14 +345,19 @@ def analyze_birth_muhurta(
         # window midpoint as the sign's representative time.
         tob = time if is_highlighted else _fmt(mid)
         chart = chart_fn(dob=dob, tob=tob, lat=lat, lon=lon, sun_sunset=day_sun)
-        aspects = {
-            key: {
-                "label": label, "group": group,
-                "score": (sc := _aspect_score(chart, houses, karakas)),
-                "verdict": _verdict(sc),
+        # Graded Dhana-yoga strength for this Lagna (lords change per ascendant).
+        dy_score, dy_links = dhana_yoga_score(chart)
+        dy_norm = max(0.0, min(100.0, dy_score * 4.5))
+        aspects = {}
+        for key, label, group, houses, karakas in LIFE_ASPECTS:
+            sc = _aspect_score(chart, houses, karakas)
+            # Wealth blends the house/karaka strength with the graded Dhana yoga —
+            # a real wealth verdict needs the yoga, not just houses 2 & 11 in isolation.
+            if key == "wealth":
+                sc = round(sc * 0.65 + dy_norm * 0.35, 1)
+            aspects[key] = {
+                "label": label, "group": group, "score": sc, "verdict": _verdict(sc),
             }
-            for key, label, group, houses, karakas in LIFE_ASPECTS
-        }
         overall = _overall_score(chart)
         if priorities:
             picked = [aspects[k]["score"] for k in priorities if k in aspects]
@@ -365,6 +374,7 @@ def analyze_birth_muhurta(
             "highlighted": is_highlighted,
             "overall": overall,
             "rank_score": rank_score,
+            "dhana_yoga": {"score": dy_score, "links": dy_links},
             "panchanga": {
                 "nakshatra": chart["nakshatra"]["name"],
                 "tithi": chart["panchanga"]["tithi_name"],
