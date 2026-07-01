@@ -19,7 +19,8 @@ export default function CelebritiesPage() {
         <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Celebrity Charts</h1>
         <p className="mx-auto max-w-2xl text-gray-600 dark:text-gray-400">
           Explore the Vedic birth charts (D1, D9, D10, D60) and Dasha timelines of famous figures — all from
-          birth-certificate-confirmed (AA-rated) times. Browse by the first letter of the surname.
+          highly-reliable (AA birth-certificate or A family-record) birth times. Browse by the first letter of
+          the surname.
         </p>
       </div>
 
