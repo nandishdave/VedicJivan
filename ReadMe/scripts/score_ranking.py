@@ -49,14 +49,18 @@ def feats(dob,tob,lat,lon):
     asp=c["graha_drishti"]["planet_aspects"]; ls=lag["sign"]
     def L(h): return SIGN_LORDS[(ls+h-1)%12]
     fb=FB_A if ls in CAMP_A else FB_B  # FUNCTIONAL benefics for this lagna (NOT natural)
+    def _fben(pl):  # functional benefic? nodes inherit their dispositor's nature
+        if pl in ("Rahu","Ketu"): return SIGN_LORDS[P[pl]["sign"]] in fb
+        return pl in fb or pl==L(1)
     by=int(dob[:4]); acc=tot=0.0
     for d in calc_vimshottari_dasha(P["Moon"]["longitude"],dob,tob)["dashas"]:
         ov=max(0,min(int(d["end_date"][:4])-by,50)-max(int(d["start_date"][:4])-by,20))
         if ov<=0: continue
         s=min(sb.get(d["planet"],{}).get("ratio",1.0)/1.5,1.0)*100
         # Bonus only if the dasha lord is a FUNCTIONAL benefic for this lagna (or the
-        # Lagnesh) — e.g. Jupiter (3rd+6th lord) is a functional MALEFIC for Libra.
-        if d["planet"] in fb or d["planet"]==L(1): s=min(s*1.15,100)
+        # Lagnesh) — Jupiter (3rd+6th lord) is a functional MALEFIC for Libra; Rahu/Ketu
+        # inherit their dispositor's nature.
+        if _fben(d["planet"]): s=min(s*1.15,100)
         acc+=s*ov; tot+=ov
     fd=acc/tot if tot else 50
     fw=dhana_yoga_score(c)[0]       # graded Dhana yoga (strict 1/2/11 wealth)

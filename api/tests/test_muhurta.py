@@ -46,8 +46,19 @@ def test_hybrid_functional_benefics_with_moon_paksha():
     # Moon by paksha, regardless of lagna: waxing benefic, waning malefic.
     assert _is_benefic(_mini(6, moon_lon=90.0), "Moon")       # phase 90 < 180 -> waxing
     assert _is_malefic(_mini(6, moon_lon=200.0), "Moon")      # phase 200 -> waning
-    # Rahu/Ketu are always malefic.
-    assert _is_malefic(aries, "Rahu") and _is_malefic(libra, "Ketu")
+
+def test_nodes_inherit_dispositor_functional_nature():
+    # Libra lagna (Saturn/Venus/Mercury are the functional benefics).
+    def chart(rahu_sign):
+        return {"lagna": {"sign": 6},
+                "planets": {"Moon": {"longitude": 90.0}, "Sun": {"longitude": 0.0},
+                            "Rahu": {"sign": rahu_sign}}}
+    # Rahu in Capricorn (dispositor Saturn = functional benefic for Libra) -> benefic.
+    cap = chart(9)
+    assert _is_benefic(cap, "Rahu") and not _is_malefic(cap, "Rahu")
+    # Rahu in Aries (dispositor Mars = functional malefic for Libra) -> malefic.
+    ari = chart(0)
+    assert _is_malefic(ari, "Rahu") and not _is_benefic(ari, "Rahu")
 
 
 def make_chart(*, lagna_sign=0, totals=None, overrides=None, ratios=None, aspected_by=None):

@@ -27,11 +27,12 @@ model picks the famous one ~57% of the time (a coin flip is 50%, "useful" is 65%
 **Best formulation = a composite CO-OCCURRENCE count.** No single factor and no
 weighted linear model beats a simple **count of how many of the 8 strong-chart
 factors a chart stacks** (orient each famous-positive, count the elevated ones).
-Famous charts stack more (mean ~4.1 vs ~3.4 of 8; ≥5 strong: 34% vs 21%), and this
-count gives **CV-AUC 0.565 > the linear model's 0.498**. It is co-occurrence, not
-synergy — adding pairwise interactions *overfits* (0.428). Still weak (~0.55, not a
+Famous charts stack more (mean ~4.0 vs ~3.4 of 8; ≥5 strong: 34% vs 21%), and this
+count gives **CV-AUC 0.544 > the linear model's ~0.50**. It is co-occurrence, not
+synergy — adding pairwise interactions *overfits* (0.428). Still weak (~0.54, not a
 predictor), but the right shape for the signal — so the ranking is now scored by
-this strong-factor count. (Dasha factor uses functional benefics — lagna-specific.)
+this strong-factor count. (Benefic checks are functional/lagna-specific; Rahu/Ketu
+inherit their dispositor's nature.)
 
 ### What stands strong (consistent, famous-positive every run)
 | Factor | Strength | Reading |

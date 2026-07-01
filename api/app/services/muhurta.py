@@ -212,12 +212,20 @@ def _functional_benefics(chart: dict) -> set:
     return _FB_A if chart["lagna"]["sign"] in _FB_A_SIGNS else _FB_B
 
 
+def _node_dispositor(chart: dict, node: str) -> str:
+    """Sign-lord of the node's sign — Rahu/Ketu rule no sign, so they take the
+    functional nature of their dispositor (the classical rule for the nodes)."""
+    return SIGN_LORDS[chart["planets"][node]["sign"]]
+
+
 def _is_benefic(chart: dict, p: str) -> bool:
     # Hybrid: the Moon by paksha (waxing = benefic); the other 6 classical planets
     # by their FUNCTIONAL nature for this lagna (a natural benefic like Jupiter is a
-    # functional malefic for Libra). Rahu/Ketu are never benefic.
+    # functional malefic for Libra); Rahu/Ketu inherit their dispositor's nature.
     if p == "Moon":
         return _moon_waxing(chart)
+    if p in ("Rahu", "Ketu"):
+        return _is_benefic(chart, _node_dispositor(chart, p))
     return p in _functional_benefics(chart)
 
 
@@ -225,7 +233,7 @@ def _is_malefic(chart: dict, p: str) -> bool:
     if p == "Moon":
         return not _moon_waxing(chart)
     if p in ("Rahu", "Ketu"):
-        return True  # shadow planets — always malefic
+        return _is_malefic(chart, _node_dispositor(chart, p))
     return p not in _functional_benefics(chart)
 
 

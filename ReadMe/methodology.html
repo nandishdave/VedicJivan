@@ -52,7 +52,7 @@
 <p class="muted">Each factor is a single number per chart. The <em>lift</em> column is the famous-mean minus ordinary-mean across the 128 charts (its sign sets the "famous-positive" orientation).</p>
 <table>
   <tr><th>#</th><th>Factor</th><th>What it measures</th><th>Lift (fam − ord)</th></tr>
-  <tr><td>1</td><td><b>Dasha timing</b></td><td>Strength of the planetary periods ruling ages 20–50</td><td class="pos">+3.17</td></tr>
+  <tr><td>1</td><td><b>Dasha timing</b></td><td>Strength of the planetary periods ruling ages 20–50</td><td class="pos">+2.75</td></tr>
   <tr><td>2</td><td><b>Dhana yoga</b></td><td>Wealth yoga — lords of 1 / 2 / 11</td><td class="pos">+0.52</td></tr>
   <tr><td>3</td><td><b>Prosperity yoga</b></td><td>Fortune extension — links touching the 5th / 9th</td><td class="neg">−0.41</td></tr>
   <tr><td>4</td><td><b>Raja yoga</b></td><td>Power yoga — Kendra + Trikona lords (with combustion)</td><td class="pos">+0.80</td></tr>
@@ -76,7 +76,9 @@ factor = Σ(strength × overlap_years) / Σ(overlap_years)   # time-weighted ave
   A natural benefic can be a functional <em>malefic</em>: e.g. for <b>Libra</b> lagna,
   Jupiter rules the 3rd &amp; 6th (a dusthana) and is a functional malefic — its dashā gets
   <em>no</em> bonus. Functional benefics used (lagna-group scheme, matching factor 5):
-  Saturn/Venus/Mercury for Ta,Ge,Vi,Li,Cp,Aq · Sun/Moon/Mars/Jupiter for Ar,Cn,Le,Sc,Sg,Pi.</div>
+  Saturn/Venus/Mercury for Ta,Ge,Vi,Li,Cp,Aq · Sun/Moon/Mars/Jupiter for Ar,Cn,Le,Sc,Sg,Pi.
+  <b>Rahu/Ketu</b> own no sign, so they inherit their <em>dispositor's</em> functional nature
+  (Rahu in Capricorn for a Libra chart → dispositor Saturn = functional benefic → Rahu acts benefic).</div>
 </div>
 
 <div class="card">
@@ -165,12 +167,12 @@ combustion : × 0.5 for each yoga-planet within the Sun's combustion orb
 <h2>Results — honestly</h2>
 <table>
   <tr><th>Scoring method</th><th>CV-AUC</th><th>Note</th></tr>
-  <tr><td><b>Composite strong-count</b></td><td><b>0.565</b></td><td>best formulation — the one now used</td></tr>
-  <tr><td>Weighted linear (8 factors)</td><td>0.498</td><td>at/below chance</td></tr>
+  <tr><td><b>Composite strong-count</b></td><td><b>0.544</b></td><td>best formulation — the one now used</td></tr>
+  <tr><td>Weighted linear (8 factors)</td><td>~0.50</td><td>at/below chance</td></tr>
   <tr><td>Yogas only (Dhana+Prosperity+Raja)</td><td>0.447</td><td>yogas alone don't separate fame</td></tr>
   <tr><td>8 factors + 28 interactions</td><td>0.428</td><td>synergy overfits — worse</td></tr>
 </table>
-<p>With the composite count: famous stack <b>4.09 vs 3.42</b> of 8 on average, the famous <b>median rank is 43 / 128</b> (top third), and <b>8 of the top 20</b> are famous (vs a 25% base rate). Real, repeatable, and <em>still weak</em> — an ordinary chart ties for the top (7/8) and Einstein sits low (2/8). Fame is not encoded in the chart; this is the best-shaped version of a faint signal.</p>
+<p>With the composite count: famous stack <b>4.03 vs 3.42</b> of 8 on average, the famous <b>median rank is 44 / 128</b> (top third), and <b>8 of the top 20</b> are famous (vs a 25% base rate). Real, repeatable, and <em>still weak</em> — an ordinary chart ties for the top (7/8) and Einstein sits low (2/8). Fame is not encoded in the chart; this is the best-shaped version of a faint signal.</p>
 
 <div class="callout">
   <strong>Bottom line.</strong> These 8 graded factors are faithful <em>chart-strength</em> tools — genuinely useful for individual chart analysis and for ranking auspicious birth-moments (Muhurta) by the <em>quality</em> of the yogas forming. They are <em>not</em> fame predictors, and no honest reading of the data makes them one.
