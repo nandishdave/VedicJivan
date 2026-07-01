@@ -17,7 +17,6 @@ export const mainNav: NavItem[] = [
       { label: "Unshakable Charts", href: "/unshakable" },
     ],
   },
-  { label: "Celebrity Charts", href: "/celebrities" },
   {
     label: "Services",
     href: "/services",
@@ -60,6 +59,8 @@ export const footerNav: Record<string, NavItem[]> = {
   ],
   company: [
     { label: "About Us", href: "/about" },
+    { label: "Celebrity Charts", href: "/celebrities" },
+    { label: "Ordinary Charts", href: "/ordinary" },
     { label: "Blog", href: "/blog" },
     { label: "Nandish Dave Blog", href: "https://blog.nandishdave.world/vedicjivan/", external: true },
     { label: "Courses", href: "/courses" },

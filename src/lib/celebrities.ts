@@ -71,20 +71,22 @@ export interface HouseData {
 
 /** Turn a varga chart into house→planets + house→sign-number for rendering. */
 export type VargaKey = "D1" | "D2" | "D4" | "D9" | "D10" | "D11" | "D16" | "D24" | "D60";
+export type ChartData = Celebrity["charts"];
 
-export function chartHouses(cel: Celebrity, type: VargaKey): HouseData {
+/** Works for any person with a `charts` + `lagna` (celebrity or ordinary). */
+export function chartHouses(person: { charts: ChartData; lagna: string }, type: VargaKey): HouseData {
   const houses: Record<number, string[]> = {};
   const signByHouse: Record<number, number> = {};
   let lagnaIdx: number;
 
   if (type === "D1") {
-    lagnaIdx = idx(cel.lagna);
+    lagnaIdx = idx(person.lagna);
     for (const p of PLANETS) {
-      const h = cel.charts.D1[p].house;
+      const h = person.charts.D1[p].house;
       (houses[h] ||= []).push(p);
     }
   } else {
-    const ch = cel.charts[type];
+    const ch = person.charts[type];
     lagnaIdx = idx(ch.Lagna);
     for (const p of PLANETS) {
       const h = ((idx(ch[p]) - lagnaIdx + 12) % 12) + 1;
