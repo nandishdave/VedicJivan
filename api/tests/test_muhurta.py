@@ -16,6 +16,8 @@ from app.services.muhurta import (
     LIFE_ASPECTS,
     _aspect_score,
     _house_strength,
+    _is_benefic,
+    _is_malefic,
     _overall_score,
     _verdict,
     analyze_birth_muhurta,
@@ -26,6 +28,26 @@ _ALL = [
     "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn",
     "Rahu", "Ketu", "Uranus", "Neptune", "Pluto",
 ]
+
+
+def _mini(lagna_sign, moon_lon=90.0, sun_lon=0.0):
+    return {"lagna": {"sign": lagna_sign},
+            "planets": {"Moon": {"longitude": moon_lon}, "Sun": {"longitude": sun_lon}}}
+
+
+def test_hybrid_functional_benefics_with_moon_paksha():
+    # Libra (6): Jupiter rules 3rd+6th -> functional MALEFIC; Venus/Saturn/Mercury benefic.
+    libra = _mini(6)
+    assert not _is_benefic(libra, "Jupiter") and _is_malefic(libra, "Jupiter")
+    assert _is_benefic(libra, "Venus") and _is_benefic(libra, "Saturn")
+    # Aries (0): Jupiter is a functional benefic; Venus is a functional malefic.
+    aries = _mini(0)
+    assert _is_benefic(aries, "Jupiter") and _is_malefic(aries, "Venus")
+    # Moon by paksha, regardless of lagna: waxing benefic, waning malefic.
+    assert _is_benefic(_mini(6, moon_lon=90.0), "Moon")       # phase 90 < 180 -> waxing
+    assert _is_malefic(_mini(6, moon_lon=200.0), "Moon")      # phase 200 -> waning
+    # Rahu/Ketu are always malefic.
+    assert _is_malefic(aries, "Rahu") and _is_malefic(libra, "Ketu")
 
 
 def make_chart(*, lagna_sign=0, totals=None, overrides=None, ratios=None, aspected_by=None):

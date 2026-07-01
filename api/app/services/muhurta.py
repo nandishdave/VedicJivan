@@ -99,8 +99,13 @@ LIFE_ASPECTS: list[tuple[str, str, str, list[int], list[str]]] = [
 ]
 
 _CLASSICAL = ("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu")
-_BENEFICS = {"Jupiter", "Venus", "Mercury"}
-_MALEFICS = {"Saturn", "Mars", "Sun", "Rahu", "Ketu"}
+_BENEFICS = {"Jupiter", "Venus", "Mercury"}  # natural (kept for reference)
+_MALEFICS = {"Saturn", "Mars", "Sun", "Rahu", "Ketu"}  # natural (kept for reference)
+# Functional benefics are lagna-specific (two-group scheme). Applied to the 6
+# non-Moon classical planets; the Moon keeps its own waxing/waning (paksha) rule.
+_FB_A = {"Saturn", "Venus", "Mercury"}       # for Ta, Ge, Vi, Li, Cp, Aq lagnas
+_FB_B = {"Sun", "Moon", "Mars", "Jupiter"}   # for Ar, Cn, Le, Sc, Sg, Pi lagnas
+_FB_A_SIGNS = {1, 2, 5, 6, 9, 10}
 _KENDRA = {1, 4, 7, 10}
 _TRIKONA = {1, 5, 9}
 _DUSTHANA = {6, 8, 12}
@@ -202,16 +207,26 @@ def _moon_waxing(chart: dict) -> bool:
     return phase < 180
 
 
+def _functional_benefics(chart: dict) -> set:
+    """Functional benefics for this chart's ascendant (lagna-specific)."""
+    return _FB_A if chart["lagna"]["sign"] in _FB_A_SIGNS else _FB_B
+
+
 def _is_benefic(chart: dict, p: str) -> bool:
-    if p in _BENEFICS:
-        return True
-    return p == "Moon" and _moon_waxing(chart)
+    # Hybrid: the Moon by paksha (waxing = benefic); the other 6 classical planets
+    # by their FUNCTIONAL nature for this lagna (a natural benefic like Jupiter is a
+    # functional malefic for Libra). Rahu/Ketu are never benefic.
+    if p == "Moon":
+        return _moon_waxing(chart)
+    return p in _functional_benefics(chart)
 
 
 def _is_malefic(chart: dict, p: str) -> bool:
-    if p in _MALEFICS:
-        return True
-    return p == "Moon" and not _moon_waxing(chart)
+    if p == "Moon":
+        return not _moon_waxing(chart)
+    if p in ("Rahu", "Ketu"):
+        return True  # shadow planets — always malefic
+    return p not in _functional_benefics(chart)
 
 
 def _house_strength(chart: dict, house: int) -> float:
