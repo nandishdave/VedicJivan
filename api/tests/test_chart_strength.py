@@ -6,6 +6,7 @@ These lock *behaviour* (a stronger chart scores higher; the score stays in
 """
 from app.services.kundli_calculator.chart_strength import (
     WEIGHTS,
+    _functional_benefics,
     structural_strength,
     unshakable_score,
     unshakable_upper_bound,
@@ -30,6 +31,15 @@ def make_chart(*, lagna_sign=0, ratio=1.0, dignity="Neutral Sign", sav=28, house
 
 def test_weights_sum_to_one():
     assert abs(sum(WEIGHTS.values()) - 1.0) < 1e-9
+
+
+def test_functional_benefics_are_lagna_specific():
+    # Libra (sign 6): Jupiter rules 3rd+6th -> functional MALEFIC, not a benefic.
+    libra = _functional_benefics(make_chart(lagna_sign=6))
+    assert libra == {"Saturn", "Venus", "Mercury"} and "Jupiter" not in libra
+    # Aries (sign 0): Jupiter (5th+... trikona lord) IS a functional benefic.
+    aries = _functional_benefics(make_chart(lagna_sign=0))
+    assert "Jupiter" in aries and "Venus" not in aries
 
 
 def test_score_bounded():

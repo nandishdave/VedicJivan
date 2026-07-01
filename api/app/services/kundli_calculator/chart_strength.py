@@ -17,7 +17,20 @@ sign), ``planets`` (each with ``dignity``/``house``) and ``lagna`` (``sign`` +
 from __future__ import annotations
 
 _CLASSICAL = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
-_BENEFICS = {"Jupiter", "Venus", "Mercury"}
+_BENEFICS = {"Jupiter", "Venus", "Mercury"}  # natural benefics (kept for reference)
+
+# Functional benefics are lagna-specific — a natural benefic can be a functional
+# malefic (e.g. Jupiter rules 3rd+6th for Libra → malefic). Two-group scheme:
+# Saturn/Venus/Mercury benefic for Ta,Ge,Vi,Li,Cp,Aq; Sun/Moon/Mars/Jupiter for
+# Ar,Cn,Le,Sc,Sg,Pi. (Same scheme used across the codebase.)
+_FB_A = {"Saturn", "Venus", "Mercury"}
+_FB_B = {"Sun", "Moon", "Mars", "Jupiter"}
+_FB_A_SIGNS = {1, 2, 5, 6, 9, 10}  # Taurus, Gemini, Virgo, Libra, Capricorn, Aquarius
+
+
+def _functional_benefics(chart: dict) -> set:
+    """The functional benefics for this chart's ascendant (lagna-specific)."""
+    return _FB_A if chart["lagna"]["sign"] in _FB_A_SIGNS else _FB_B
 _KENDRA = {1, 4, 7, 10}
 _TRIKONA = {1, 5, 9}
 _DUSTHANA = {6, 8, 12}
@@ -52,10 +65,11 @@ def _shadbala_score(chart: dict) -> float:
     (the planets that most carry a chart)."""
     sb = chart.get("shadbala", {})
     lord = chart["lagna"].get("sign_lord")
+    benefics = _functional_benefics(chart)
     num = den = 0.0
     for p in _CLASSICAL:
         s = _ratio_to_score(sb.get(p, {}).get("ratio", 0.0))
-        w = 2.0 if p == lord else (1.4 if p in _BENEFICS else 1.0)
+        w = 2.0 if p == lord else (1.4 if p in benefics else 1.0)
         num += s * w
         den += w
     return num / den if den else 0.0
@@ -97,13 +111,14 @@ def _placement_score(chart: dict) -> float:
     """Benefics thrive in kendras/trikonas; malefics do their best work in the
     upachaya houses (3/6/10/11). First-pass placement quality, 0-100."""
     planets = chart.get("planets", {})
+    benefics = _functional_benefics(chart)
     total = num = 0.0
     for p in _CLASSICAL:
         house = planets.get(p, {}).get("house")
         if not house:
             continue
         total += 1
-        if p in _BENEFICS:
+        if p in benefics:
             num += (100.0 if house in (_KENDRA | _TRIKONA)
                     else 25.0 if house in _DUSTHANA else 60.0)
         else:

@@ -48,18 +48,20 @@ def feats(dob,tob,lat,lon):
     c=build_muhurta_chart(dob=dob,tob=tob,lat=lat,lon=lon); P,lag,sb=c["planets"],c["lagna"],c["shadbala"]
     asp=c["graha_drishti"]["planet_aspects"]; ls=lag["sign"]
     def L(h): return SIGN_LORDS[(ls+h-1)%12]
+    fb=FB_A if ls in CAMP_A else FB_B  # FUNCTIONAL benefics for this lagna (NOT natural)
     by=int(dob[:4]); acc=tot=0.0
     for d in calc_vimshottari_dasha(P["Moon"]["longitude"],dob,tob)["dashas"]:
         ov=max(0,min(int(d["end_date"][:4])-by,50)-max(int(d["start_date"][:4])-by,20))
         if ov<=0: continue
         s=min(sb.get(d["planet"],{}).get("ratio",1.0)/1.5,1.0)*100
-        if d["planet"] in _BEN or d["planet"]==L(1): s=min(s*1.15,100)
+        # Bonus only if the dasha lord is a FUNCTIONAL benefic for this lagna (or the
+        # Lagnesh) — e.g. Jupiter (3rd+6th lord) is a functional MALEFIC for Libra.
+        if d["planet"] in fb or d["planet"]==L(1): s=min(s*1.15,100)
         acc+=s*ov; tot+=ov
     fd=acc/tot if tot else 50
     fw=dhana_yoga_score(c)[0]       # graded Dhana yoga (strict 1/2/11 wealth)
     fp=prosperity_yoga_score(c)[0]  # graded Prosperity yoga (5/9 fortune extension)
     ft=raja_yoga_score(c)[0]  # graded Raja yoga (replaces crude trikona-clustering)
-    fb=FB_A if ls in CAMP_A else FB_B
     ffb=sum(1 for p in fb if P[p]["house"] in KT); tv=c["ashtakavarga"]["totals"]
     d60=calc_divisional_charts(P,lag)["D60"]; fd60=np.mean([_DP.get(_get_dignity(p,d60[p]),45) for p in _C])
     return [fd,fw,fp,ft,ffb,tv[ls],tv[(ls+9)%12],fd60]
