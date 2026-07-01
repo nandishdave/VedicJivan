@@ -17,6 +17,7 @@ export const mainNav: NavItem[] = [
       { label: "Unshakable Charts", href: "/unshakable" },
     ],
   },
+  { label: "Celebrity Charts", href: "/celebrities" },
   {
     label: "Services",
     href: "/services",
