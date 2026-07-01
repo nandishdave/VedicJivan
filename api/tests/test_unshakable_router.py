@@ -22,6 +22,7 @@ def _chart(time, lagna, score, exceptional=False):
         "ayurdaya": {"band": [75.3, 85.7], "label": "Purnayu (full)"},
         "yogas": ["Hamsa Yoga"], "balarishta": [], "atmakaraka": "Mars",
         "exceptional": exceptional,
+        "dhana": 6, "prosperity": 3, "raja": 8, "strength_stack": {"count": 5, "of": 8},
     }
 
 
@@ -85,6 +86,8 @@ def test_email_renders_single_day_with_positions():
     assert "Every Rising Lagna" in html and "Planetary Positions" in html
     assert "Aries" in html and "76.1" in html and "Gemini" in html  # chart + positions
     assert "No chart cleared" in html  # exceptional_count == 0 -> the soft note
+    assert "Stack" in html and "5/8" in html  # composite strength-stack column + value
+    assert "D&middot;P&middot;R" in html and "6&middot;3&middot;8" in html  # graded yogas column
 
 
 def test_email_renders_multi_day_top_per_day():

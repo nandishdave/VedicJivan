@@ -122,8 +122,15 @@ def unshakable_score(chart: dict) -> dict:
     the Layer-2 greatness markers (yoga power, longevity strength, fame). Returns
     the blended score, the per-layer scores, and the display extras (Ayurdaya
     band, Balarishta flags, detected yogas, Atmakaraka)."""
+    from app.services.kundli_calculator.dhana_yoga import (
+        dhana_yoga_normalized, dhana_yoga_score,
+        prosperity_yoga_normalized, prosperity_yoga_score,
+    )
     from app.services.kundli_calculator.fame import fame
     from app.services.kundli_calculator.longevity import longevity
+    from app.services.kundli_calculator.raja_yoga import (
+        raja_yoga_normalized, raja_yoga_score,
+    )
     from app.services.kundli_calculator.yoga_strength import yoga_strength
 
     s = structural_strength(chart)
@@ -133,6 +140,21 @@ def unshakable_score(chart: dict) -> dict:
     layers = {"structural": s["score"], "yoga": y["score"],
               "longevity": lon["score"], "fame": fm["score"]}
     score = sum(layers[k] * LAYER_WEIGHTS[k] for k in LAYER_WEIGHTS)
+
+    # Graded classical yogas (separate from the tuned score) — shown per moment.
+    dh_s, dh_l = dhana_yoga_score(chart)
+    pr_s, pr_l = prosperity_yoga_score(chart)
+    rj_s, rj_l = raja_yoga_score(chart)
+    # Composite strength stack: how many of 8 strength factors are notably strong
+    # (>60/100). A co-occurrence readout oriented to auspiciousness (all "higher=better").
+    comp = s["components"]
+    strength_factors = [
+        comp["shadbala"], comp["ashtakavarga"], comp["dignity"],
+        comp["lagna_lord"], comp["placement"],
+        dhana_yoga_normalized(chart), prosperity_yoga_normalized(chart),
+        raja_yoga_normalized(chart),
+    ]
+    stack = sum(1 for f in strength_factors if f > 60.0)
     return {
         "score": round(score, 1),
         "layers": layers,
@@ -141,6 +163,10 @@ def unshakable_score(chart: dict) -> dict:
         "ayurdaya": lon["ayurdaya"],
         "balarishta": lon["balarishta"],
         "atmakaraka": fm["atmakaraka"],
+        "dhana": {"score": dh_s, "links": dh_l},
+        "prosperity": {"score": pr_s, "links": pr_l},
+        "raja": {"score": rj_s, "links": rj_l},
+        "strength_stack": {"count": stack, "of": len(strength_factors)},
     }
 
 

@@ -46,6 +46,11 @@ def _record(dob: str, tob: str, chart: dict, scored: dict, bar: float) -> dict:
         "yogas": [y["name"] for y in scored["yogas"]],
         "atmakaraka": scored["atmakaraka"],
         "exceptional": scored["score"] >= bar,
+        # Graded classical yogas + composite strength-stack, shown per moment.
+        "dhana": round(scored["dhana"]["score"]),
+        "prosperity": round(scored["prosperity"]["score"]),
+        "raja": round(scored["raja"]["score"]),
+        "strength_stack": scored["strength_stack"],
     }
 
 

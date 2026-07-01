@@ -102,6 +102,11 @@ def test_unshakable_composite_and_admissible_bound():
     assert 0.0 <= out["score"] <= 100.0
     assert set(out["layers"]) == {"structural", "yoga", "longevity", "fame"}
     assert "band" in out["ayurdaya"] and "atmakaraka" in out
+    # Graded yogas + composite strength-stack surfaced for the report.
+    for k in ("dhana", "prosperity", "raja"):
+        assert out[k]["score"] >= 0.0 and isinstance(out[k]["links"], list)
+    assert out["strength_stack"]["of"] == 8
+    assert 0 <= out["strength_stack"]["count"] <= 8
 
     # Admissibility: the bound (from the cheap, no-Shadbala chart) never under-
     # states the true composite score -> the funnel can't drop a qualifying chart.

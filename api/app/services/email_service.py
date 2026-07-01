@@ -419,6 +419,9 @@ def _u_chart_row(rank, c, bg, dated=False):
         bg = "#ede9fe"
     star = ' <span style="color:#7c3aed;">&#9733;</span>' if c.get("exceptional") else ""
     date_cell = f'<td style="padding:5px 6px;white-space:nowrap;">{c["date"]}</td>' if dated else ""
+    stack = c.get("strength_stack") or {}
+    stack_txt = f'{stack["count"]}/{stack.get("of", 8)}' if "count" in stack else "&ndash;"
+    dpr = f'{c.get("dhana", "&ndash;")}&middot;{c.get("prosperity", "&ndash;")}&middot;{c.get("raja", "&ndash;")}'
     return (
         f'<tr style="background:{bg};">'
         f'<td style="padding:5px 6px;font-weight:bold;color:#7c3aed;">{rank}</td>'
@@ -426,8 +429,10 @@ def _u_chart_row(rank, c, bg, dated=False):
         f'<td style="padding:5px 6px;">{c["time"]}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;">{c["lagna"]}{star}</td>'
         f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{c["score"]}</td>'
+        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#7c3aed;">{stack_txt}</td>'
         f'<td style="padding:5px 6px;text-align:center;color:#666;font-size:11px;">'
         f'{round(L["structural"])}&middot;{round(L["yoga"])}&middot;{round(L["longevity"])}&middot;{round(L["fame"])}</td>'
+        f'<td style="padding:5px 6px;text-align:center;color:#666;font-size:11px;">{dpr}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;font-size:11px;">{ayu["band"][0]}&ndash;{ayu["band"][1]} {ayu["label"].split()[0]}</td>'
         f'</tr>'
     )
@@ -436,8 +441,8 @@ def _u_chart_row(rank, c, bg, dated=False):
 def _u_table(charts, start_rank=1, dated=False):
     date_h = f'<th style="{_U_TH}">Date</th>' if dated else ""
     head = (f'<tr><th style="{_U_TH}">#</th>{date_h}<th style="{_U_TH}">Time</th><th style="{_U_TH}">Lagna</th>'
-            f'<th style="{_U_TH}">Score</th><th style="{_U_TH}">S&middot;Y&middot;L&middot;F</th>'
-            f'<th style="{_U_TH}">Longevity</th></tr>')
+            f'<th style="{_U_TH}">Score</th><th style="{_U_TH}">Stack</th><th style="{_U_TH}">S&middot;Y&middot;L&middot;F</th>'
+            f'<th style="{_U_TH}">D&middot;P&middot;R</th><th style="{_U_TH}">Longevity</th></tr>')
     rows = "".join(_u_chart_row(start_rank + i, c, "#faf9ff" if i % 2 else "#ffffff", dated)
                    for i, c in enumerate(charts))
     return ('<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
@@ -496,9 +501,12 @@ def _render_unshakable_html(result: dict) -> str:
             f'{_u_table(top, dated=True)}'
         )
 
-    body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;">S&middot;Y&middot;L&middot;F = Structural &middot; Yoga &middot; '
-             'Longevity &middot; Fame layer scores. Longevity = indicative Ayurdaya band (estimates only). '
-             '&#9733; = cleared your quality bar.</p>')
+    body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;">'
+             'Stack = how many of 8 strength factors are notably strong (Shadbala, Ashtakavarga, dignity, '
+             'Lagna-lord, placement, and the graded Dhana / Prosperity / Raja yogas). '
+             'S&middot;Y&middot;L&middot;F = Structural &middot; Yoga &middot; Longevity &middot; Fame layer scores. '
+             'D&middot;P&middot;R = graded Dhana &middot; Prosperity &middot; Raja yoga strengths. '
+             'Longevity = indicative Ayurdaya band (estimates only). &#9733; = cleared your quality bar.</p>')
 
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
