@@ -1,0 +1,106 @@
+# Famous-vs-Ordinary Chart Study
+
+An honest investigation into a single question: **can Vedic birth-chart factors
+distinguish famous/successful people from ordinary people?**
+
+Short answer: **a real but weak signal exists (~0.57 AUC)** — genuine, stable,
+directionally consistent, but nowhere near a predictor. This folder holds the
+full data, the reproducible scripts, and the findings.
+
+---
+
+## The finding
+
+Against **32 AA-rated famous charts** (birth-certificate reliability) and
+**96 real, verified ordinary charts**, a cross-validated model separates the two
+groups with:
+
+```
+CV-AUC by control size: 0.591@30 → 0.597@35 → 0.612@49 → 0.554@58
+                      → 0.582@69 → 0.577@88 → 0.554@96      center ≈ 0.57
+```
+
+Seven checkpoints all land in one ±0.06 band — the fingerprint of a **genuine but
+weak** effect. In the pick-two test: shown one famous + one ordinary chart, the
+model picks the famous one ~57% of the time (a coin flip is 50%, "useful" is 65%+).
+
+### What stands strong (consistent, famous-positive every run)
+| Factor | Strength | Reading |
+|---|---|---|
+| **Dasha timing (Vimshottari) in productive years** | strongest | *timing beats the static snapshot* |
+| **D60 (Shashtiamsa) strength** | solid | the karma/fruits varga carries signal |
+| **10th-house Ashtakavarga** | solid | career-house bindu density |
+| **2–11 wealth-axis connections** | consistent | classic wealth combinations |
+| **1st-house Ashtakavarga**, **trikona (1/5/9) links** | mild | vitality + raja-yoga trines |
+
+### What failed
+- **Functional benefics in kendra/trikona** — the *lone consistently negative*
+  factor (famous slightly LOWER). The popular "benefics in the kendras" rule did
+  **not** predict worldly success here.
+- Static raja-yoga / exalted-planet / Shadbala-total snapshots — no separation.
+
+**Takeaway for muhurta / future-date work:** weight *timing* (dasha) + career/
+wealth/karma indicators; de-emphasise "benefics in kendra"; always present results
+as a soft tilt (~0.57), never a guarantee.
+
+---
+
+## Contents
+
+```
+ReadMe/
+├── README.md                        ← this file
+├── data/
+│   ├── celebrities-databank.json    ← 32 famous charts (D1–D60 + dasha + bios)
+│   ├── normal-people-databank.json  ← 96 ordinary charts (D1–D60 + dasha)
+│   ├── ordinary_birth_data.json     ← clean birth inputs (re-importable)  ← canonical
+│   ├── ordinary_birth_data.md       ← same, human-readable table
+│   ├── famous_vs_ordinary_ranking.md← all 128 charts ranked by famous-likeness
+│   ├── famous-charts-computed.json  ← famous charts computed set
+│   ├── famous-charts-reference.md   ← famous gold-set reference (ratings, sources)
+│   └── unshakable-chart-finder-plan.md
+├── visualizations/
+│   ├── famous-charts-north.html     ← North-Indian chart renders
+│   └── famous-charts-visual.html
+└── scripts/
+    ├── gen_normal.py     ← birth inputs → full databank (add charts here)
+    ├── compare_real.py   ← famous-vs-ordinary verification (CV-AUC + lifts)
+    ├── score_ranking.py  ← full 128-chart ranking
+    ├── breakdown.py      ← per-chart weights + line-by-line "why this score"
+    └── gen_reusable.py   ← export birth data → JSON/MD
+```
+
+The live gallery data is also in the app itself: `src/data/celebrities.json`
+and `src/data/ordinary.json` (served on `/celebrities` and `/ordinary`).
+
+---
+
+## How to reproduce
+
+The scripts import the backend chart engine, so they run **inside the API Docker
+container**:
+
+```bash
+# copy a script in and run it
+docker cp ReadMe/scripts/compare_real.py vedicjivan-api:/app/compare_real.py
+docker exec -w /app vedicjivan-api python compare_real.py
+```
+
+To **add ordinary charts**: append `(name, sex, "YYYY-MM-DD", "HH:MM", place, lat, lon)`
+tuples to the `NORMAL` list in `scripts/gen_normal.py`, then:
+
+```bash
+docker cp ReadMe/scripts/gen_normal.py vedicjivan-api:/app/gen_normal.py
+docker exec -w /app vedicjivan-api python gen_normal.py           # regenerate
+docker cp vedicjivan-api:/app/normal_people.json src/data/ordinary.json
+```
+
+---
+
+## Caveats
+
+- **Birth-time accuracy** is the main risk for ordinary charts (must be from
+  records, not guessed).
+- The signal is **weak (~0.57)** — treat it as a tendency of the crowd, not a
+  verdict on any individual chart.
+- Pre-~1910 charts use LMT that may be off ±30 min until LMT handling is added.

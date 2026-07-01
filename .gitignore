@@ -59,6 +59,7 @@ __pycache__/
 *.py[cod]
 api/.env
 api/.coverage
+api/.hypothesis/
 nul
 /scripts/
 
