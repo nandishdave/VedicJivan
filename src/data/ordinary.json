@@ -4372,5 +4372,734 @@
     "age_end": 113
    }
   ]
+ },
+ {
+  "slug": "darshan",
+  "name": "Darshan",
+  "sex": "Male",
+  "birth": {
+   "date": "1989-06-27",
+   "time": "21:34",
+   "place": "Ahmedabad, Gujarat, India",
+   "lat": 23.0333,
+   "lon": 72.5833
+  },
+  "lagna": "Capricorn",
+  "lagna_lord": "Saturn",
+  "nakshatra": "Revati",
+  "charts": {
+   "D1": {
+    "Sun": {
+     "sign": "Gemini",
+     "house": 6,
+     "deg": 12.26,
+     "dignity": "Neutral Sign",
+     "retro": false
+    },
+    "Moon": {
+     "sign": "Pisces",
+     "house": 3,
+     "deg": 29.34,
+     "dignity": "Neutral Sign",
+     "retro": false
+    },
+    "Mars": {
+     "sign": "Cancer",
+     "house": 7,
+     "deg": 13.18,
+     "dignity": "Debilitated",
+     "retro": false
+    },
+    "Mercury": {
+     "sign": "Taurus",
+     "house": 5,
+     "deg": 21.94,
+     "dignity": "Friendly Sign",
+     "retro": false
+    },
+    "Jupiter": {
+     "sign": "Taurus",
+     "house": 5,
+     "deg": 29.01,
+     "dignity": "Enemy Sign",
+     "retro": false
+    },
+    "Venus": {
+     "sign": "Cancer",
+     "house": 7,
+     "deg": 4.3,
+     "dignity": "Enemy Sign",
+     "retro": false
+    },
+    "Saturn": {
+     "sign": "Sagittarius",
+     "house": 12,
+     "deg": 17.27,
+     "dignity": "Neutral Sign",
+     "retro": true
+    },
+    "Rahu": {
+     "sign": "Aquarius",
+     "house": 2,
+     "deg": 3.41,
+     "dignity": "Own Sign",
+     "retro": true
+    },
+    "Ketu": {
+     "sign": "Leo",
+     "house": 8,
+     "deg": 3.41,
+     "dignity": "Enemy Sign",
+     "retro": true
+    }
+   },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Cancer",
+    "Moon": "Virgo",
+    "Mars": "Scorpio",
+    "Mercury": "Libra",
+    "Jupiter": "Scorpio",
+    "Venus": "Libra",
+    "Saturn": "Aquarius",
+    "Rahu": "Aquarius",
+    "Ketu": "Leo",
+    "Lagna": "Gemini"
+   },
+   "D9": {
+    "Sun": "Capricorn",
+    "Moon": "Pisces",
+    "Mars": "Libra",
+    "Mercury": "Cancer",
+    "Jupiter": "Virgo",
+    "Venus": "Leo",
+    "Saturn": "Virgo",
+    "Rahu": "Scorpio",
+    "Ketu": "Taurus",
+    "Lagna": "Taurus"
+   },
+   "D10": {
+    "Sun": "Libra",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Libra",
+    "Venus": "Aries",
+    "Saturn": "Taurus",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Aquarius"
+   },
+   "D11": {
+    "Sun": "Libra",
+    "Moon": "Capricorn",
+    "Mars": "Scorpio",
+    "Mercury": "Capricorn",
+    "Jupiter": "Pisces",
+    "Venus": "Leo",
+    "Saturn": "Gemini",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Gemini"
+   },
+   "D16": {
+    "Sun": "Gemini",
+    "Moon": "Pisces",
+    "Mars": "Scorpio",
+    "Mercury": "Cancer",
+    "Jupiter": "Scorpio",
+    "Venus": "Gemini",
+    "Saturn": "Virgo",
+    "Rahu": "Virgo",
+    "Ketu": "Virgo",
+    "Lagna": "Sagittarius"
+   },
+   "D24": {
+    "Sun": "Taurus",
+    "Moon": "Gemini",
+    "Mars": "Taurus",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Gemini",
+    "Venus": "Libra",
+    "Saturn": "Virgo",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Cancer"
+   },
+   "D60": {
+    "Sun": "Gemini",
+    "Moon": "Capricorn",
+    "Mars": "Virgo",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Pisces",
+    "Venus": "Pisces",
+    "Saturn": "Libra",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Cancer"
+   }
+  },
+  "dasha": [
+   {
+    "planet": "Mercury",
+    "start": "1989-06-27",
+    "end": "1990-05-03",
+    "age_start": 0,
+    "age_end": 1
+   },
+   {
+    "planet": "Ketu",
+    "start": "1990-05-03",
+    "end": "1997-05-02",
+    "age_start": 1,
+    "age_end": 8
+   },
+   {
+    "planet": "Venus",
+    "start": "1997-05-02",
+    "end": "2017-05-02",
+    "age_start": 8,
+    "age_end": 28
+   },
+   {
+    "planet": "Sun",
+    "start": "2017-05-02",
+    "end": "2023-05-03",
+    "age_start": 28,
+    "age_end": 34
+   },
+   {
+    "planet": "Moon",
+    "start": "2023-05-03",
+    "end": "2033-05-02",
+    "age_start": 34,
+    "age_end": 44
+   },
+   {
+    "planet": "Mars",
+    "start": "2033-05-02",
+    "end": "2040-05-02",
+    "age_start": 44,
+    "age_end": 51
+   },
+   {
+    "planet": "Rahu",
+    "start": "2040-05-02",
+    "end": "2058-05-02",
+    "age_start": 51,
+    "age_end": 69
+   },
+   {
+    "planet": "Jupiter",
+    "start": "2058-05-02",
+    "end": "2074-05-02",
+    "age_start": 69,
+    "age_end": 85
+   },
+   {
+    "planet": "Saturn",
+    "start": "2074-05-02",
+    "end": "2093-05-02",
+    "age_start": 85,
+    "age_end": 104
+   }
+  ]
+ },
+ {
+  "slug": "varun-chaturvedi",
+  "name": "Varun Chaturvedi",
+  "sex": "Male",
+  "birth": {
+   "date": "1984-11-12",
+   "time": "20:05",
+   "place": "Gorakhpur, Uttar Pradesh, India",
+   "lat": 26.75,
+   "lon": 83.3667
+  },
+  "lagna": "Gemini",
+  "lagna_lord": "Mercury",
+  "nakshatra": "Ardra",
+  "charts": {
+   "D1": {
+    "Sun": {
+     "sign": "Libra",
+     "house": 5,
+     "deg": 26.75,
+     "dignity": "Debilitated",
+     "retro": false
+    },
+    "Moon": {
+     "sign": "Gemini",
+     "house": 1,
+     "deg": 11.21,
+     "dignity": "Friendly Sign",
+     "retro": false
+    },
+    "Mars": {
+     "sign": "Capricorn",
+     "house": 8,
+     "deg": 4.01,
+     "dignity": "Exalted",
+     "retro": false
+    },
+    "Mercury": {
+     "sign": "Scorpio",
+     "house": 6,
+     "deg": 15.14,
+     "dignity": "Neutral Sign",
+     "retro": false
+    },
+    "Jupiter": {
+     "sign": "Sagittarius",
+     "house": 7,
+     "deg": 17.24,
+     "dignity": "Moolatrikona",
+     "retro": false
+    },
+    "Venus": {
+     "sign": "Sagittarius",
+     "house": 7,
+     "deg": 4.69,
+     "dignity": "Neutral Sign",
+     "retro": false
+    },
+    "Saturn": {
+     "sign": "Libra",
+     "house": 5,
+     "deg": 25.59,
+     "dignity": "Exalted",
+     "retro": false
+    },
+    "Rahu": {
+     "sign": "Taurus",
+     "house": 12,
+     "deg": 3.78,
+     "dignity": "Friendly Sign",
+     "retro": true
+    },
+    "Ketu": {
+     "sign": "Scorpio",
+     "house": 6,
+     "deg": 3.78,
+     "dignity": "Own Sign",
+     "retro": true
+    }
+   },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Capricorn",
+    "Moon": "Cancer",
+    "Mars": "Aries",
+    "Mercury": "Aries",
+    "Jupiter": "Aquarius",
+    "Venus": "Sagittarius",
+    "Saturn": "Capricorn",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Cancer"
+   },
+   "D9": {
+    "Sun": "Gemini",
+    "Moon": "Capricorn",
+    "Mars": "Aquarius",
+    "Mercury": "Scorpio",
+    "Jupiter": "Virgo",
+    "Venus": "Taurus",
+    "Saturn": "Taurus",
+    "Rahu": "Aquarius",
+    "Ketu": "Leo",
+    "Lagna": "Capricorn"
+   },
+   "D10": {
+    "Sun": "Gemini",
+    "Moon": "Virgo",
+    "Mars": "Libra",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Taurus",
+    "Venus": "Capricorn",
+    "Saturn": "Gemini",
+    "Rahu": "Aquarius",
+    "Ketu": "Leo",
+    "Lagna": "Libra"
+   },
+   "D11": {
+    "Sun": "Cancer",
+    "Moon": "Libra",
+    "Mars": "Aquarius",
+    "Mercury": "Aries",
+    "Jupiter": "Gemini",
+    "Venus": "Capricorn",
+    "Saturn": "Cancer",
+    "Rahu": "Gemini",
+    "Ketu": "Sagittarius",
+    "Lagna": "Libra"
+   },
+   "D16": {
+    "Sun": "Gemini",
+    "Moon": "Taurus",
+    "Mars": "Gemini",
+    "Mercury": "Aries",
+    "Jupiter": "Virgo",
+    "Venus": "Aquarius",
+    "Saturn": "Taurus",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Gemini"
+   },
+   "D24": {
+    "Sun": "Taurus",
+    "Moon": "Aries",
+    "Mars": "Libra",
+    "Mercury": "Cancer",
+    "Jupiter": "Virgo",
+    "Venus": "Scorpio",
+    "Saturn": "Aries",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Taurus"
+   },
+   "D60": {
+    "Sun": "Pisces",
+    "Moon": "Aries",
+    "Mars": "Virgo",
+    "Mercury": "Taurus",
+    "Jupiter": "Libra",
+    "Venus": "Virgo",
+    "Saturn": "Capricorn",
+    "Rahu": "Sagittarius",
+    "Ketu": "Gemini",
+    "Lagna": "Gemini"
+   }
+  },
+  "dasha": [
+   {
+    "planet": "Rahu",
+    "start": "1984-11-12",
+    "end": "1996-09-24",
+    "age_start": 0,
+    "age_end": 12
+   },
+   {
+    "planet": "Jupiter",
+    "start": "1996-09-24",
+    "end": "2012-09-24",
+    "age_start": 12,
+    "age_end": 28
+   },
+   {
+    "planet": "Saturn",
+    "start": "2012-09-24",
+    "end": "2031-09-25",
+    "age_start": 28,
+    "age_end": 47
+   },
+   {
+    "planet": "Mercury",
+    "start": "2031-09-25",
+    "end": "2048-09-24",
+    "age_start": 47,
+    "age_end": 64
+   },
+   {
+    "planet": "Ketu",
+    "start": "2048-09-24",
+    "end": "2055-09-25",
+    "age_start": 64,
+    "age_end": 71
+   },
+   {
+    "planet": "Venus",
+    "start": "2055-09-25",
+    "end": "2075-09-25",
+    "age_start": 71,
+    "age_end": 91
+   },
+   {
+    "planet": "Sun",
+    "start": "2075-09-25",
+    "end": "2081-09-24",
+    "age_start": 91,
+    "age_end": 97
+   },
+   {
+    "planet": "Moon",
+    "start": "2081-09-24",
+    "end": "2091-09-25",
+    "age_start": 97,
+    "age_end": 107
+   },
+   {
+    "planet": "Mars",
+    "start": "2091-09-25",
+    "end": "2098-09-24",
+    "age_start": 107,
+    "age_end": 114
+   }
+  ]
+ },
+ {
+  "slug": "riddhish-shah",
+  "name": "Riddhish Shah",
+  "sex": "Male",
+  "birth": {
+   "date": "1988-02-09",
+   "time": "11:20",
+   "place": "Anand, Gujarat, India",
+   "lat": 22.5667,
+   "lon": 72.9167
+  },
+  "lagna": "Aries",
+  "lagna_lord": "Mars",
+  "nakshatra": "Chitra",
+  "charts": {
+   "D1": {
+    "Sun": {
+     "sign": "Capricorn",
+     "house": 10,
+     "deg": 26.0,
+     "dignity": "Enemy Sign",
+     "retro": false
+    },
+    "Moon": {
+     "sign": "Libra",
+     "house": 7,
+     "deg": 5.86,
+     "dignity": "Neutral Sign",
+     "retro": false
+    },
+    "Mars": {
+     "sign": "Scorpio",
+     "house": 8,
+     "deg": 27.44,
+     "dignity": "Own Sign",
+     "retro": false
+    },
+    "Mercury": {
+     "sign": "Aquarius",
+     "house": 11,
+     "deg": 0.17,
+     "dignity": "Neutral Sign",
+     "retro": true
+    },
+    "Jupiter": {
+     "sign": "Aries",
+     "house": 1,
+     "deg": 0.99,
+     "dignity": "Friendly Sign",
+     "retro": false
+    },
+    "Venus": {
+     "sign": "Pisces",
+     "house": 12,
+     "deg": 5.95,
+     "dignity": "Exalted",
+     "retro": false
+    },
+    "Saturn": {
+     "sign": "Sagittarius",
+     "house": 9,
+     "deg": 5.9,
+     "dignity": "Neutral Sign",
+     "retro": false
+    },
+    "Rahu": {
+     "sign": "Aquarius",
+     "house": 11,
+     "deg": 29.8,
+     "dignity": "Own Sign",
+     "retro": true
+    },
+    "Ketu": {
+     "sign": "Leo",
+     "house": 5,
+     "deg": 29.8,
+     "dignity": "Enemy Sign",
+     "retro": true
+    }
+   },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Cancer",
+    "Moon": "Libra",
+    "Mars": "Taurus",
+    "Mercury": "Aquarius",
+    "Jupiter": "Aries",
+    "Venus": "Gemini",
+    "Saturn": "Sagittarius",
+    "Rahu": "Taurus",
+    "Ketu": "Scorpio",
+    "Lagna": "Taurus"
+   },
+   "D9": {
+    "Sun": "Leo",
+    "Moon": "Scorpio",
+    "Mars": "Pisces",
+    "Mercury": "Libra",
+    "Jupiter": "Aries",
+    "Venus": "Leo",
+    "Saturn": "Taurus",
+    "Rahu": "Gemini",
+    "Ketu": "Sagittarius",
+    "Lagna": "Leo"
+   },
+   "D10": {
+    "Sun": "Taurus",
+    "Moon": "Scorpio",
+    "Mars": "Aries",
+    "Mercury": "Aquarius",
+    "Jupiter": "Aries",
+    "Venus": "Sagittarius",
+    "Saturn": "Capricorn",
+    "Rahu": "Scorpio",
+    "Ketu": "Taurus",
+    "Lagna": "Leo"
+   },
+   "D11": {
+    "Sun": "Libra",
+    "Moon": "Sagittarius",
+    "Mars": "Virgo",
+    "Mercury": "Aquarius",
+    "Jupiter": "Aries",
+    "Venus": "Taurus",
+    "Saturn": "Aquarius",
+    "Rahu": "Sagittarius",
+    "Ketu": "Gemini",
+    "Lagna": "Leo"
+   },
+   "D16": {
+    "Sun": "Taurus",
+    "Moon": "Cancer",
+    "Mars": "Libra",
+    "Mercury": "Leo",
+    "Jupiter": "Aries",
+    "Venus": "Pisces",
+    "Saturn": "Pisces",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
+    "Lagna": "Scorpio"
+   },
+   "D24": {
+    "Sun": "Pisces",
+    "Moon": "Sagittarius",
+    "Mars": "Aries",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Scorpio",
+    "Saturn": "Sagittarius",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Gemini"
+   },
+   "D60": {
+    "Sun": "Aries",
+    "Moon": "Virgo",
+    "Mars": "Taurus",
+    "Mercury": "Aquarius",
+    "Jupiter": "Taurus",
+    "Venus": "Aquarius",
+    "Saturn": "Scorpio",
+    "Rahu": "Capricorn",
+    "Ketu": "Cancer",
+    "Lagna": "Cancer"
+   }
+  },
+  "dasha": [
+   {
+    "planet": "Mars",
+    "start": "1988-02-09",
+    "end": "1988-07-12",
+    "age_start": 0,
+    "age_end": 0
+   },
+   {
+    "planet": "Rahu",
+    "start": "1988-07-12",
+    "end": "2006-07-13",
+    "age_start": 0,
+    "age_end": 18
+   },
+   {
+    "planet": "Jupiter",
+    "start": "2006-07-13",
+    "end": "2022-07-13",
+    "age_start": 18,
+    "age_end": 34
+   },
+   {
+    "planet": "Saturn",
+    "start": "2022-07-13",
+    "end": "2041-07-12",
+    "age_start": 34,
+    "age_end": 53
+   },
+   {
+    "planet": "Mercury",
+    "start": "2041-07-12",
+    "end": "2058-07-12",
+    "age_start": 53,
+    "age_end": 70
+   },
+   {
+    "planet": "Ketu",
+    "start": "2058-07-12",
+    "end": "2065-07-12",
+    "age_start": 70,
+    "age_end": 77
+   },
+   {
+    "planet": "Venus",
+    "start": "2065-07-12",
+    "end": "2085-07-12",
+    "age_start": 77,
+    "age_end": 97
+   },
+   {
+    "planet": "Sun",
+    "start": "2085-07-12",
+    "end": "2091-07-12",
+    "age_start": 97,
+    "age_end": 103
+   },
+   {
+    "planet": "Moon",
+    "start": "2091-07-12",
+    "end": "2101-07-13",
+    "age_start": 103,
+    "age_end": 113
+   }
+  ]
  }
 ]
