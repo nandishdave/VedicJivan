@@ -92,6 +92,7 @@ Dharma-Karmadhipati) scores only ~2.1 — Venus debilitated **and** Mercury comb
 ```
 ReadMe/
 ├── README.md                        ← this file
+├── methodology.html                 ← the 8 factors + composite, explained (open in a browser)
 ├── data/
 │   ├── ordinary_birth_data.json     ← clean birth inputs, re-importable  ← canonical input list
 │   ├── ordinary_birth_data.md       ← same, human-readable table

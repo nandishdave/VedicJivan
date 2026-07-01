@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chart-Strength Methodology — 8 Factors + Composite</title>
+<style>
+  :root{--ink:#1d2330;--muted:#5c6675;--line:#e4e8ef;--accent:#7a3ea3;--good:#1a7f5a;--bad:#b23b3b;--bg:#fbfcfe;--card:#fff;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:900px;margin:0 auto;padding:32px 22px 80px;}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:-.02em}
+  h2{font-size:22px;margin:44px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--line);}
+  h3{font-size:17px;margin:26px 0 6px;color:var(--accent);}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 8px}
+  p{margin:8px 0}
+  code{background:#f0f2f7;padding:1px 6px;border-radius:5px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;}
+  pre{background:#0f1524;color:#e6ebf5;padding:14px 16px;border-radius:9px;overflow:auto;font:13px/1.55 ui-monospace,Menlo,monospace;}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14.5px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;}
+  th{background:#f4f6fb;font-weight:650;}
+  tr:nth-child(even) td{background:#fafbfe;}
+  .callout{background:#fff7ed;border:1px solid #f2d9b3;border-left:4px solid #d98a2b;border-radius:9px;padding:14px 16px;margin:16px 0;}
+  .callout.info{background:#eef4ff;border-color:#c3d6f5;border-left-color:#3a6fd8;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:16px 18px;margin:14px 0;box-shadow:0 1px 2px rgba(20,30,60,.04);}
+  .num{display:inline-block;min-width:26px;height:26px;line-height:26px;text-align:center;background:var(--accent);color:#fff;border-radius:50%;font-size:14px;font-weight:700;margin-right:8px;}
+  .pos{color:var(--good);font-weight:600}.neg{color:var(--bad);font-weight:600}
+  .pill{display:inline-block;background:#eef;border:1px solid #ccd;border-radius:20px;padding:1px 9px;font-size:12.5px;color:#334;margin:0 2px;}
+  .muted{color:var(--muted)}
+  .foot{margin-top:50px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Chart-Strength Methodology</h1>
+<p class="sub">How the 8 factors are calculated &amp; ranked, and how the composite score is built — VedicJivan famous-vs-ordinary study.</p>
+
+<div class="callout">
+  <strong>Read this first — the honest boundary.</strong> This system does <em>not</em> predict fame. Across 128 real charts (32 famous + 96 ordinary) the best out-of-sample score is <strong>CV-AUC ≈ 0.55</strong> — a weak tilt, only a little above a coin flip (0.50), well short of "useful" (0.65+). Treat every number here as a <em>chart-strength readout</em>, never a verdict on a person.
+</div>
+
+<h2>The pipeline in one picture</h2>
+<pre>each chart ──▶ 8 factors ──▶ orient each "famous-positive" ──▶ standardise (z-score)
+                                                    │
+                                                    ▼
+                              COUNT how many factors are elevated (z &gt; 0)  ──▶  score "X / 8"
+                              (tie-break: sum of the z-scores)</pre>
+<p>The headline score is simply <strong>how many of the 8 factors a chart stacks above par</strong>. That co-occurrence count separated famous from ordinary better than any weighted model we tried.</p>
+
+<h2>The 8 factors</h2>
+<p class="muted">Each factor is a single number per chart. The <em>lift</em> column is the famous-mean minus ordinary-mean across the 128 charts (its sign sets the "famous-positive" orientation).</p>
+<table>
+  <tr><th>#</th><th>Factor</th><th>What it measures</th><th>Lift (fam − ord)</th></tr>
+  <tr><td>1</td><td><b>Dasha timing</b></td><td>Strength of the planetary periods ruling ages 20–50</td><td class="pos">+2.63</td></tr>
+  <tr><td>2</td><td><b>Dhana yoga</b></td><td>Wealth yoga — lords of 1 / 2 / 11</td><td class="pos">+0.52</td></tr>
+  <tr><td>3</td><td><b>Prosperity yoga</b></td><td>Fortune extension — links touching the 5th / 9th</td><td class="neg">−0.41</td></tr>
+  <tr><td>4</td><td><b>Raja yoga</b></td><td>Power yoga — Kendra + Trikona lords (with combustion)</td><td class="pos">+0.80</td></tr>
+  <tr><td>5</td><td><b>Functional benefics in kendra/trikona</b></td><td>Lagna-specific benefics in angles/trines</td><td class="neg">−0.28</td></tr>
+  <tr><td>6</td><td><b>1st-house Ashtakavarga</b></td><td>Sarvashtakavarga bindus on the 1st (self/vitality)</td><td class="pos">+0.53</td></tr>
+  <tr><td>7</td><td><b>10th-house Ashtakavarga</b></td><td>Sarvashtakavarga bindus on the 10th (career)</td><td class="pos">+1.11</td></tr>
+  <tr><td>8</td><td><b>D60 strength</b></td><td>Average planetary dignity in the D60 (karma varga)</td><td class="pos">+1.73</td></tr>
+</table>
+<p class="muted">Note factors 3 &amp; 5 lean <span class="neg">negative</span> (famous score <em>lower</em>) — a genuine, repeatable finding: the "benefics in kendra" rule and the 5/9 fortune links do not mark worldly success in this data.</p>
+
+<div class="card">
+  <h3><span class="num">1</span>Dasha timing (ages 20–50)</h3>
+  <p>Vedic astrology holds that <em>when</em> a strong period runs matters more than the static snapshot. For each Vimshottari mahādashā overlapping ages 20–50:</p>
+  <pre>strength = min(dasha_lord_shadbala_ratio / 1.5, 1.0) × 100
+if lord is a natural benefic (Jupiter/Venus/Mercury) or the Lagna lord:
+        strength = min(strength × 1.15, 100)      # a light bonus
+factor = Σ(strength × overlap_years) / Σ(overlap_years)   # time-weighted average</pre>
+  <p>Higher = strong, benefic-flavoured periods ran through the productive years.</p>
+</div>
+
+<div class="card">
+  <h3><span class="num">2</span>Dhana yoga &nbsp;·&nbsp; <span class="num">3</span>Prosperity yoga</h3>
+  <p>Both use the shared graded engine (below). <b>Dhana</b> = associations among the <b>core wealth lords 1 / 2 / 11</b> (Lagnesh / Dhanesh / Labhesh). <b>Prosperity</b> = any association that also touches the <b>5th or 9th</b> lord (purva-punya / fortune) — scored <em>separately</em>, never mixed into Dhana.</p>
+  <pre>link score = connection-type × lord-multiplier × dignity × house-of-formation
+factor      = Σ (all qualifying links)</pre>
+</div>
+
+<div class="card">
+  <h3><span class="num">4</span>Raja yoga</h3>
+  <p>Association of a <b>Kendra lord</b> (1/4/7/10) with a <b>Trikona lord</b> (1/5/9). The 6/8/12 lords are <em>not</em> partners. Same engine, plus a <b>combustion</b> penalty:</p>
+  <pre>link score = connection × lord-grade × dignity × house × combustion
+lord-grade : 9th+10th (Dharma-Karmadhipati) 1.30 · any pair with the 1st 1.15 · else 1.0
+combustion : × 0.5 for each yoga-planet within the Sun's combustion orb
+             (dignity alone can't catch a "burnt" planet)</pre>
+  <p class="muted">Example — a chart with a 9th↔10th <em>parivartana</em> (a "supreme" raja yoga on paper) but the 10th lord debilitated <em>and</em> the 9th lord combust scores only ≈2.1, not the ≈13 the raw combination suggests.</p>
+</div>
+
+<div class="card">
+  <h3><span class="num">5</span>Functional benefics in kendra/trikona</h3>
+  <p>The functional benefics are <em>lagna-specific</em>:</p>
+  <table>
+    <tr><th>Lagna group</th><th>Functional benefics</th></tr>
+    <tr><td>Taurus, Gemini, Virgo, Libra, Capricorn, Aquarius</td><td>Saturn, Venus, Mercury</td></tr>
+    <tr><td>Aries, Cancer, Leo, Scorpio, Sagittarius, Pisces</td><td>Sun, Moon, Mars, Jupiter</td></tr>
+  </table>
+  <p>Factor = <b>count</b> of these planets sitting in a kendra or trikona house {1,4,5,7,9,10}. (This factor leans <span class="neg">famous-negative</span>, so it's oriented accordingly in the composite.)</p>
+</div>
+
+<div class="card">
+  <h3><span class="num">6</span> &amp; <span class="num">7</span> Ashtakavarga (1st &amp; 10th houses)</h3>
+  <p>Sarvashtakavarga (SAV) sums each sign's benefic bindus (0–56, average ~28). Factor 6 = bindus on the <b>1st</b> house (self/vitality); factor 7 = bindus on the <b>10th</b> (career/status). More bindus = more supported house.</p>
+</div>
+
+<div class="card">
+  <h3><span class="num">8</span>D60 (Shashtiamsa) strength</h3>
+  <p>The D60 is the finest divisional chart — the "karma" varga. Factor = average dignity of the 7 classical planets in the D60:</p>
+  <pre>Exalted 100 · Moolatrikona 85 · Own 75 · Friendly 55 · Neutral 45 · Enemy 25 · Debilitated 5</pre>
+</div>
+
+<h2>The shared grading engine (yogas 2–4)</h2>
+<p>Every yoga link is graded on the same four (Raja adds a fifth) multiplied dimensions, so a strong well-placed yoga far outscores a "technically present but diluted" one.</p>
+
+<h3>Connection type — how the lords associate</h3>
+<table>
+  <tr><th>Connection</th><th>Points</th><th>Meaning</th></tr>
+  <tr><td>Parivartana</td><td>10</td><td>the two lords exchange signs (mutual reception)</td></tr>
+  <tr><td>Raja-karaka <span class="muted">(Raja only)</span></td><td>9</td><td>one planet owns a kendra <em>and</em> a trikona</td></tr>
+  <tr><td>Conjunction</td><td>8</td><td>same house</td></tr>
+  <tr><td>Inherent <span class="muted">(Dhana only)</span></td><td>7</td><td>one planet owns two of the money-houses</td></tr>
+  <tr><td>Mutual aspect</td><td>6</td><td>both aspect each other</td></tr>
+  <tr><td>One-way aspect</td><td>3</td><td>only one aspects the other</td></tr>
+</table>
+
+<h3>Dignity — quality of the participating planets (average of the two)</h3>
+<table>
+  <tr><th>Exalted</th><th>Moolatrikona</th><th>Own</th><th>Friendly</th><th>Neutral</th><th>Enemy</th><th>Debilitated</th></tr>
+  <tr><td>1.00</td><td>0.90</td><td>0.80</td><td>0.60</td><td>0.45</td><td>0.25</td><td>0.10</td></tr>
+</table>
+
+<h3>House of formation — where the yoga forms (placement is the decisive lever)</h3>
+<table>
+  <tr><th>Yoga</th><th>Kendra 1/4/7/10</th><th>Trikona 5/9</th><th>2 / 11</th><th>3rd</th><th>Dusthana 6/8/12</th><th>7th</th></tr>
+  <tr><td>Dhana / Prosperity</td><td>1.00 <span class="muted">(good set 1,2,4,5,9,10,11)</span></td><td>1.00</td><td>1.00</td><td>0.50</td><td>0.35</td><td>0.75</td></tr>
+  <tr><td>Raja</td><td>1.00</td><td>0.85</td><td>0.65</td><td>0.50</td><td>0.40</td><td>1.00</td></tr>
+</table>
+
+<h3>Lord weighting</h3>
+<table>
+  <tr><th>Dhana / Prosperity</th><th>Raja</th></tr>
+  <tr><td>both lords core (1/2/11) → 1.0 · one core → 0.7 · neither → 0.5</td>
+      <td>9th+10th (D-K) → 1.30 · pair includes 1st → 1.15 · else → 1.0</td></tr>
+</table>
+
+<h2>From factors to the composite score</h2>
+<p>The weighted linear model (logistic regression over the 8 factors) actually <em>underperformed</em> — it fought itself with negative weights. A simpler idea won:</p>
+<pre>1. ORIENT   — flip each factor so "higher = more famous-like" (using its lift sign)
+2. STANDARDISE — z-score each factor across all 128 charts
+3. COUNT    — how many of the 8 are elevated (z &gt; 0)   →   the score, shown "X / 8"
+4. TIE-BREAK — sum of the 8 z-scores (a continuous composite)</pre>
+<div class="callout info">
+  <strong>Why a count, not a weighted sum?</strong> The signal is <em>co-occurrence</em>: famous charts tend to stack <em>more</em> strong factors at once, rather than having one factor amplify another. Adding multiplicative interaction terms only <em>overfit</em> the data (it made things worse), confirming there's no synergy to exploit — just "how many line up."
+</div>
+
+<h2>Results — honestly</h2>
+<table>
+  <tr><th>Scoring method</th><th>CV-AUC</th><th>Note</th></tr>
+  <tr><td><b>Composite strong-count</b></td><td><b>0.547</b></td><td>best formulation — the one now used</td></tr>
+  <tr><td>Weighted linear (8 factors)</td><td>0.485</td><td>at/below chance</td></tr>
+  <tr><td>Yogas only (Dhana+Prosperity+Raja)</td><td>0.447</td><td>yogas alone don't separate fame</td></tr>
+  <tr><td>8 factors + 28 interactions</td><td>0.428</td><td>synergy overfits — worse</td></tr>
+</table>
+<p>With the composite count: famous stack <b>4.0 vs 3.4</b> of 8 on average, the famous <b>median rank is 41 / 128</b> (top third), and <b>8 of the top 20</b> are famous (vs a 25% base rate). Real, repeatable, and <em>still weak</em> — an ordinary chart tops the list (7/8) and Einstein sits low (2/8). Fame is not encoded in the chart; this is the best-shaped version of a faint signal.</p>
+
+<div class="callout">
+  <strong>Bottom line.</strong> These 8 graded factors are faithful <em>chart-strength</em> tools — genuinely useful for individual chart analysis and for ranking auspicious birth-moments (Muhurta) by the <em>quality</em> of the yogas forming. They are <em>not</em> fame predictors, and no honest reading of the data makes them one.
+</div>
+
+<div class="foot">
+  VedicJivan · generated methodology reference. Source of truth: <code>api/app/services/kundli_calculator/{dhana_yoga,raja_yoga}.py</code>,
+  <code>api/app/services/muhurta.py</code>, and <code>ReadMe/scripts/score_ranking.py</code>. Regenerate the ranking with that script.
+</div>
+
+</div>
+</body>
+</html>
