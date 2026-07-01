@@ -43,15 +43,22 @@ model picks the famous one ~57% of the time (a coin flip is 50%, "useful" is 65%
 wealth/karma indicators; de-emphasise "benefics in kendra"; always present results
 as a soft tilt (~0.57), never a guarantee.
 
-### Graded Dhana-yoga (wealth strength)
-The crude "2–11 flag" was replaced by a **graded Dhana-yoga score** —
-`connection-type × which-lords × dignity × house-of-formation` — now a shared
-production module: **`api/app/services/kundli_calculator/dhana_yoga.py`**. It is
-wired into the **baby-birth Muhurta** wealth verdict and into this ranking
-(`scripts/score_ranking.py`). Honest note: it is astrologically faithful (a strong,
-well-placed yoga outscores a fallen one) but does **not** improve fame separation
-(Dhana yogas are ~equally common in famous & ordinary charts) — it's a
-*wealth-strength* readout, not a fame predictor.
+### Graded Dhana + Prosperity yogas
+The crude "2–11 flag" was replaced by **two separate graded scores** —
+`connection-type × which-lords × dignity × house-of-formation` — in the shared
+module **`api/app/services/kundli_calculator/dhana_yoga.py`**:
+
+- **Dhana** (wealth) — the tight yoga among the lords of **1, 2, 11** (Lagnesh /
+  Dhanesh / Labhesh).
+- **Prosperity** (fortune) — the wider extension that also touches the **5th / 9th**
+  lords, scored on its own at a lower weight and **never mixed into Dhana**.
+
+They are wired into the **baby-birth Muhurta** (Dhana → the *wealth* verdict,
+Prosperity → the *fortune* verdict; each Lagna window exposes both score + links)
+and into this ranking as two separate features. Honest note: astrologically
+faithful (a strong, well-placed yoga outscores a fallen one) but neither improves
+fame separation (both yogas are ~equally common in famous & ordinary charts) — they
+are wealth/fortune readouts, not fame predictors.
 
 ---
 

@@ -7,6 +7,7 @@ deterministically. Aries lagna → money-lords 1=Mars, 2=Venus, 5=Sun, 9=Jupiter
 from app.services.kundli_calculator.dhana_yoga import (
     dhana_yoga_normalized,
     dhana_yoga_score,
+    prosperity_yoga_score,
 )
 
 
@@ -88,3 +89,26 @@ def test_normalized_is_bounded_0_100():
     assert dhana_yoga_normalized(_chart(0, _NO_YOGA)) == 0.0
     n = dhana_yoga_normalized(_chart(0, dict(_NO_YOGA, Venus={"house": 1, "sign": 1, "dignity": "Own Sign"})))
     assert 0.0 <= n <= 100.0
+
+
+def test_5_9_link_is_prosperity_not_dhana():
+    # 5L Sun + 9L Jupiter conjunct → a fortune (5-9) link, NOT a Dhana (1/2/11) link.
+    planets = dict(_NO_YOGA, Jupiter={"house": 5, "sign": 8, "dignity": "Own Sign"})  # conj Sun in h5
+    dhana, _ = dhana_yoga_score(_chart(0, planets))
+    prosperity, plinks = prosperity_yoga_score(_chart(0, planets))
+    assert dhana == 0.0                       # nothing among 1/2/11
+    assert prosperity > 0.0                   # the 5-9 conjunction lands here
+    assert plinks and plinks[0]["type"] == "conjunction"
+
+
+def test_dhana_and_prosperity_are_kept_separate():
+    # a core 1L-2L conjunction (Dhana) AND a 5L-9L conjunction (Prosperity).
+    planets = {**_NO_YOGA,
+               "Venus": {"house": 1, "sign": 1, "dignity": "Own Sign"},   # 2L conj 1L (Dhana)
+               "Jupiter": {"house": 5, "sign": 8, "dignity": "Own Sign"}}  # 9L conj 5L (Prosperity)
+    assert dhana_yoga_score(_chart(0, planets))[0] > 0.0
+    assert prosperity_yoga_score(_chart(0, planets))[0] > 0.0
+    # no link is double-counted across the two buckets
+    dscore, dlinks = dhana_yoga_score(_chart(0, planets))
+    pscore, plinks = prosperity_yoga_score(_chart(0, planets))
+    assert {l["link"] for l in dlinks}.isdisjoint({l["link"] for l in plinks})

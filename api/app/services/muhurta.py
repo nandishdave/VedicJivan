@@ -24,6 +24,8 @@ from app.services.kundli_calculator.ashtakavarga import calc_ashtakavarga
 from app.services.kundli_calculator.dhana_yoga import (
     dhana_yoga_normalized,
     dhana_yoga_score,
+    prosperity_yoga_normalized,
+    prosperity_yoga_score,
 )
 from app.services.kundli_calculator.divisional import calc_divisional_charts
 from app.services.kundli_calculator.nakshatra import calc_nakshatra
@@ -345,16 +347,23 @@ def analyze_birth_muhurta(
         # window midpoint as the sign's representative time.
         tob = time if is_highlighted else _fmt(mid)
         chart = chart_fn(dob=dob, tob=tob, lat=lat, lon=lon, sun_sunset=day_sun)
-        # Graded Dhana-yoga strength for this Lagna (lords change per ascendant).
+        # Graded yogas for this Lagna (lords change per ascendant). Dhana = the
+        # tight wealth yoga (lords of 1/2/11); Prosperity = the wider fortune
+        # extension (links touching the 5th/9th), kept separate.
         dy_score, dy_links = dhana_yoga_score(chart)
-        dy_norm = max(0.0, min(100.0, dy_score * 4.5))
+        pr_score, pr_links = prosperity_yoga_score(chart)
+        dy_norm = dhana_yoga_normalized(chart)
+        pr_norm = prosperity_yoga_normalized(chart)
         aspects = {}
         for key, label, group, houses, karakas in LIFE_ASPECTS:
             sc = _aspect_score(chart, houses, karakas)
-            # Wealth blends the house/karaka strength with the graded Dhana yoga —
-            # a real wealth verdict needs the yoga, not just houses 2 & 11 in isolation.
+            # Wealth blends houses 2/11 with the graded Dhana yoga; Fortune blends
+            # house 9 with the Prosperity (5th/9th) yoga — the yoga, not the houses
+            # in isolation, is what makes the verdict real.
             if key == "wealth":
                 sc = round(sc * 0.65 + dy_norm * 0.35, 1)
+            elif key == "fortune":
+                sc = round(sc * 0.65 + pr_norm * 0.35, 1)
             aspects[key] = {
                 "label": label, "group": group, "score": sc, "verdict": _verdict(sc),
             }
@@ -375,6 +384,7 @@ def analyze_birth_muhurta(
             "overall": overall,
             "rank_score": rank_score,
             "dhana_yoga": {"score": dy_score, "links": dy_links},
+            "prosperity_yoga": {"score": pr_score, "links": pr_links},
             "panchanga": {
                 "nakshatra": chart["nakshatra"]["name"],
                 "tithi": chart["panchanga"]["tithi_name"],

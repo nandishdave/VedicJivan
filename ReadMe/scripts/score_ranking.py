@@ -5,7 +5,7 @@ import numpy as np
 
 from app.services.muhurta import build_muhurta_chart
 from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
-from app.services.kundli_calculator.dhana_yoga import dhana_yoga_score
+from app.services.kundli_calculator.dhana_yoga import dhana_yoga_score, prosperity_yoga_score
 from app.services.kundli_calculator.divisional import calc_divisional_charts
 from app.services.kundli_calculator.vimshottari import calc_vimshottari_dasha
 
@@ -55,7 +55,8 @@ def feats(dob,tob,lat,lon):
         if d["planet"] in _BEN or d["planet"]==L(1): s=min(s*1.15,100)
         acc+=s*ov; tot+=ov
     fd=acc/tot if tot else 50
-    fw=dhana_yoga_score(c)[0]  # graded Dhana-yoga (replaces the old crude 2-11 flag)
+    fw=dhana_yoga_score(c)[0]       # graded Dhana yoga (strict 1/2/11 wealth)
+    fp=prosperity_yoga_score(c)[0]  # graded Prosperity yoga (5/9 fortune extension)
     tri=list({L(1),L(5),L(9)}); par={p:p for p in tri}
     def fn(x):
         while par[x]!=x: par[x]=par[par[x]]; x=par[x]
@@ -68,7 +69,7 @@ def feats(dob,tob,lat,lon):
     ft=max(sz.values()); fb=FB_A if ls in CAMP_A else FB_B
     ffb=sum(1 for p in fb if P[p]["house"] in KT); tv=c["ashtakavarga"]["totals"]
     d60=calc_divisional_charts(P,lag)["D60"]; fd60=np.mean([_DP.get(_get_dignity(p,d60[p]),45) for p in _C])
-    return [fd,fw,ft,ffb,tv[ls],tv[(ls+9)%12],fd60]
+    return [fd,fw,fp,ft,ffb,tv[ls],tv[(ls+9)%12],fd60]
 
 F=np.array([feats(*r) for r in FAMOUS],float); R=np.array([feats(*r) for r in ORD],float)
 X=np.vstack([F,R]); y=np.array([1]*len(F)+[0]*len(R),float)

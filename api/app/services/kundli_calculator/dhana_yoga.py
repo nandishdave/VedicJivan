@@ -1,20 +1,24 @@
-"""Graded Dhana-Yoga (wealth-yoga) strength for a chart.
+"""Graded Dhana-yoga (wealth) + Prosperity (fortune) strength for a chart.
 
-Classical Dhana yogas form from the mutual association of the lords of the
-"money axis" — houses 1 (self), 2 (accumulated wealth), 5 (purva-punya), 9
-(fortune) and 11 (gains). Instead of a yes/no flag, this scores the yoga as a
-single graded number so the *quality* of the yoga scales its strength:
+Two SEPARATE graded scores, deliberately not mixed:
 
-    link score = connection-type  x  which-lords  x  dignity  x  house-of-formation
+* **Dhana yoga** — the tight wealth yoga: association of the lords of the *core
+  money houses* 1 (self / Lagnesh), 2 (accumulated wealth / Dhanesh) and 11
+  (gains / Labhesh). This is "am I wealthy".
 
-so an exalted Dhanesh+Labhesh conjunct in the 11th scores near the top, while a
-"technically present but diluted" yoga (a fallen lord in a dusthana) scores low
-but non-zero. This is deliberately faithful to the classical grading — a strong
-yoga and a weak one are not treated alike.
+* **Prosperity yoga** — the wider fortune extension: any association that also
+  touches the 5th (purva-punya) or 9th (bhagya) lords. Classical texts fold these
+  into Dhana yogas, but they are dharma/fortune links, not pure Dhanesh–Labhesh
+  wealth — so they are scored on their own, at the naturally lower weight their
+  non-core lords carry, and never added into the Dhana number.
 
-Empirical note: this does NOT separate famous from ordinary charts (Dhana yogas
-are roughly as common in both) — it is a *wealth-strength* readout, not a fame
-predictor. See ReadMe/ (famous-vs-ordinary study).
+Each link is graded ``connection-type x which-lords x dignity x house-of-formation``
+so a strong, well-placed yoga outscores a "technically present but diluted" one
+(a fallen lord in a dusthana scores low but non-zero).
+
+Empirical note: neither score separates famous from ordinary charts (both yogas
+are ~equally common in both) — these are wealth/fortune readouts, not fame
+predictors. See ReadMe/ (famous-vs-ordinary study).
 """
 from __future__ import annotations
 
@@ -33,10 +37,11 @@ _DIGF = {
     "Exalted": 1.0, "Moolatrikona": 0.9, "Own Sign": 0.8, "Friendly Sign": 0.6,
     "Neutral Sign": 0.45, "Enemy Sign": 0.25, "Debilitated": 0.1,
 }
-_MONEY = (1, 2, 5, 9, 11)          # the money axis
-_CORE = frozenset({1, 2, 11})      # self + wealth + gains carry full weight
+_MONEY = (1, 2, 5, 9, 11)          # money + fortune axis
+_CORE = frozenset({1, 2, 11})      # Dhana: self + wealth + gains
+_EXT = frozenset({5, 9})           # Prosperity: purva-punya + fortune
 _GOOD_HOUSES = frozenset({1, 2, 4, 5, 9, 10, 11})
-_NORM = 4.5                        # raw→0..100 scale (strong yogas reach ~20-26 raw)
+_NORM = 4.5                        # raw→0..100 scale (strong yogas reach ~15-25 raw)
 
 
 def _house_factor(h: int) -> float:
@@ -50,12 +55,12 @@ def _house_factor(h: int) -> float:
     return 0.35  # dusthana 6 / 8 / 12
 
 
-def dhana_yoga_score(chart: dict) -> tuple[float, list[dict]]:
-    """Graded Dhana-yoga strength for a chart.
+def _all_links(chart: dict) -> tuple[list[dict], list[dict]]:
+    """All graded money-lord links, split into ``(dhana_links, prosperity_links)``.
 
-    Returns ``(score, links)`` where ``score >= 0`` and ``links`` describes each
-    contributing connection (link name, type, avg dignity, house(s), sub-score).
-    Deduplicated so a single physical conjunction is never counted twice.
+    A link is *Dhana* only when every money-house it touches is core {1,2,11};
+    any link touching the 5th or 9th is bucketed as *Prosperity*. Deduplicated so
+    one physical connection is never counted twice.
     """
     planets = chart["planets"]
     lagna_sign = chart["lagna"]["sign"]
@@ -72,8 +77,11 @@ def dhana_yoga_score(chart: dict) -> tuple[float, list[dict]]:
     def house(p: str) -> int:
         return planets[p]["house"]
 
-    total = 0.0
-    links: list[dict] = []
+    dhana: list[dict] = []
+    prosperity: list[dict] = []
+
+    def bucket(houses_touched: set[int]) -> list[dict]:
+        return dhana if houses_touched <= _CORE else prosperity
 
     # 1) a single planet owning two or more money-houses = an inherent link
     for p, hs in owns.items():
@@ -81,8 +89,7 @@ def dhana_yoga_score(chart: dict) -> tuple[float, list[dict]]:
             core_ct = len(hs & _CORE)
             mult = 1.0 if core_ct >= 2 else (0.7 if core_ct == 1 else 0.5)
             sc = _CONN["inherent"] * mult * dig(p) * _house_factor(house(p))
-            total += sc
-            links.append({
+            bucket(hs).append({
                 "link": f"{p} owns {'&'.join(map(str, sorted(hs)))}",
                 "type": "inherent", "dignity": round(dig(p), 2),
                 "house": house(p), "score": round(sc, 2),
@@ -109,17 +116,36 @@ def dhana_yoga_score(chart: dict) -> tuple[float, list[dict]]:
             d = (dig(a) + dig(b)) / 2
             hf = _house_factor(ha) if t == "conjunction" else (_house_factor(ha) + _house_factor(hb)) / 2
             sc = _CONN[t] * mult * d * hf
-            total += sc
-            links.append({
+            bucket(owns[a] | owns[b]).append({
                 "link": f"{a}({'&'.join(map(str, sorted(owns[a])))})-{b}({'&'.join(map(str, sorted(owns[b])))})",
                 "type": t, "dignity": round(d, 2), "house": f"{ha}/{hb}", "score": round(sc, 2),
             })
 
-    return round(total, 2), links
+    return dhana, prosperity
+
+
+def dhana_yoga_score(chart: dict) -> tuple[float, list[dict]]:
+    """Option A — strict Dhana yoga: lords of 1, 2, 11 only. ``(score, links)``."""
+    dhana, _ = _all_links(chart)
+    return round(sum(link["score"] for link in dhana), 2), dhana
+
+
+def prosperity_yoga_score(chart: dict) -> tuple[float, list[dict]]:
+    """Option B — Prosperity/fortune extension: links touching the 5th/9th lord,
+    scored separately (never mixed into Dhana). ``(score, links)``."""
+    _, prosperity = _all_links(chart)
+    return round(sum(link["score"] for link in prosperity), 2), prosperity
 
 
 def dhana_yoga_normalized(chart: dict) -> float:
-    """0–100 view of the Dhana-yoga score, for blending with the other 0–100
-    house/karaka strengths in the Muhurta scorer."""
+    """0–100 view of the Dhana score, for blending with the 0–100 house/karaka
+    strengths in the Muhurta wealth verdict."""
     score, _ = dhana_yoga_score(chart)
+    return max(0.0, min(100.0, score * _NORM))
+
+
+def prosperity_yoga_normalized(chart: dict) -> float:
+    """0–100 view of the Prosperity score, for blending into the Muhurta fortune
+    verdict."""
+    score, _ = prosperity_yoga_score(chart)
     return max(0.0, min(100.0, score * _NORM))
