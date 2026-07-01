@@ -81,6 +81,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Aries",
+    "Moon": "Gemini",
+    "Mars": "Taurus",
+    "Mercury": "Gemini",
+    "Jupiter": "Libra",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Libra",
+    "Ketu": "Aries",
+    "Lagna": "Capricorn"
+   },
    "D9": {
     "Sun": "Aquarius",
     "Moon": "Gemini",
@@ -104,6 +128,42 @@
     "Rahu": "Pisces",
     "Ketu": "Virgo",
     "Lagna": "Scorpio"
+   },
+   "D11": {
+    "Sun": "Aquarius",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Scorpio",
+    "Venus": "Scorpio",
+    "Saturn": "Aquarius",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Aries"
+   },
+   "D16": {
+    "Sun": "Gemini",
+    "Moon": "Aquarius",
+    "Mars": "Virgo",
+    "Mercury": "Aquarius",
+    "Jupiter": "Gemini",
+    "Venus": "Gemini",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Gemini"
+   },
+   "D24": {
+    "Sun": "Libra",
+    "Moon": "Libra",
+    "Mars": "Aries",
+    "Mercury": "Scorpio",
+    "Jupiter": "Libra",
+    "Venus": "Taurus",
+    "Saturn": "Gemini",
+    "Rahu": "Sagittarius",
+    "Ketu": "Sagittarius",
+    "Lagna": "Aries"
    },
    "D60": {
     "Sun": "Virgo",
@@ -266,6 +326,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Leo",
+    "Moon": "Pisces",
+    "Mars": "Libra",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Pisces",
+    "Venus": "Capricorn",
+    "Saturn": "Libra",
+    "Rahu": "Scorpio",
+    "Ketu": "Taurus",
+    "Lagna": "Scorpio"
+   },
    "D9": {
     "Sun": "Aries",
     "Moon": "Leo",
@@ -289,6 +373,42 @@
     "Rahu": "Libra",
     "Ketu": "Aries",
     "Lagna": "Cancer"
+   },
+   "D11": {
+    "Sun": "Capricorn",
+    "Moon": "Taurus",
+    "Mars": "Capricorn",
+    "Mercury": "Capricorn",
+    "Jupiter": "Gemini",
+    "Venus": "Taurus",
+    "Saturn": "Leo",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Sagittarius"
+   },
+   "D16": {
+    "Sun": "Scorpio",
+    "Moon": "Sagittarius",
+    "Mars": "Aries",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Capricorn",
+    "Venus": "Cancer",
+    "Saturn": "Taurus",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Scorpio"
+   },
+   "D24": {
+    "Sun": "Sagittarius",
+    "Moon": "Capricorn",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Pisces",
+    "Venus": "Taurus",
+    "Saturn": "Virgo",
+    "Rahu": "Aries",
+    "Ketu": "Aries",
+    "Lagna": "Gemini"
    },
    "D60": {
     "Sun": "Scorpio",
@@ -451,6 +571,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Aries",
+    "Moon": "Virgo",
+    "Mars": "Pisces",
+    "Mercury": "Capricorn",
+    "Jupiter": "Libra",
+    "Venus": "Taurus",
+    "Saturn": "Gemini",
+    "Rahu": "Aries",
+    "Ketu": "Libra",
+    "Lagna": "Capricorn"
+   },
    "D9": {
     "Sun": "Scorpio",
     "Moon": "Gemini",
@@ -474,6 +618,42 @@
     "Rahu": "Taurus",
     "Ketu": "Scorpio",
     "Lagna": "Cancer"
+   },
+   "D11": {
+    "Sun": "Aries",
+    "Moon": "Libra",
+    "Mars": "Taurus",
+    "Mercury": "Cancer",
+    "Jupiter": "Libra",
+    "Venus": "Virgo",
+    "Saturn": "Cancer",
+    "Rahu": "Taurus",
+    "Ketu": "Scorpio",
+    "Lagna": "Scorpio"
+   },
+   "D16": {
+    "Sun": "Aries",
+    "Moon": "Sagittarius",
+    "Mars": "Capricorn",
+    "Mercury": "Taurus",
+    "Jupiter": "Aries",
+    "Venus": "Scorpio",
+    "Saturn": "Capricorn",
+    "Rahu": "Taurus",
+    "Ketu": "Taurus",
+    "Lagna": "Aries"
+   },
+   "D24": {
+    "Sun": "Cancer",
+    "Moon": "Aquarius",
+    "Mars": "Aquarius",
+    "Mercury": "Aries",
+    "Jupiter": "Virgo",
+    "Venus": "Gemini",
+    "Saturn": "Leo",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Capricorn"
    },
    "D60": {
     "Sun": "Gemini",
@@ -636,6 +816,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Scorpio",
+    "Moon": "Gemini",
+    "Mars": "Sagittarius",
+    "Mercury": "Capricorn",
+    "Jupiter": "Aquarius",
+    "Venus": "Capricorn",
+    "Saturn": "Capricorn",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Gemini"
+   },
    "D9": {
     "Sun": "Sagittarius",
     "Moon": "Leo",
@@ -659,6 +863,42 @@
     "Rahu": "Capricorn",
     "Ketu": "Cancer",
     "Lagna": "Leo"
+   },
+   "D11": {
+    "Sun": "Capricorn",
+    "Moon": "Taurus",
+    "Mars": "Aquarius",
+    "Mercury": "Leo",
+    "Jupiter": "Capricorn",
+    "Venus": "Gemini",
+    "Saturn": "Taurus",
+    "Rahu": "Taurus",
+    "Ketu": "Scorpio",
+    "Lagna": "Leo"
+   },
+   "D16": {
+    "Sun": "Virgo",
+    "Moon": "Pisces",
+    "Mars": "Pisces",
+    "Mercury": "Cancer",
+    "Jupiter": "Scorpio",
+    "Venus": "Aries",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Pisces"
+   },
+   "D24": {
+    "Sun": "Pisces",
+    "Moon": "Scorpio",
+    "Mars": "Scorpio",
+    "Mercury": "Gemini",
+    "Jupiter": "Sagittarius",
+    "Venus": "Aquarius",
+    "Saturn": "Taurus",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Capricorn"
    },
    "D60": {
     "Sun": "Taurus",
@@ -821,6 +1061,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Capricorn",
+    "Mercury": "Scorpio",
+    "Jupiter": "Libra",
+    "Venus": "Aquarius",
+    "Saturn": "Scorpio",
+    "Rahu": "Scorpio",
+    "Ketu": "Taurus",
+    "Lagna": "Scorpio"
+   },
    "D9": {
     "Sun": "Aries",
     "Moon": "Scorpio",
@@ -844,6 +1108,42 @@
     "Rahu": "Virgo",
     "Ketu": "Pisces",
     "Lagna": "Taurus"
+   },
+   "D11": {
+    "Sun": "Virgo",
+    "Moon": "Capricorn",
+    "Mars": "Capricorn",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Libra",
+    "Venus": "Pisces",
+    "Saturn": "Libra",
+    "Rahu": "Aquarius",
+    "Ketu": "Leo",
+    "Lagna": "Gemini"
+   },
+   "D16": {
+    "Sun": "Virgo",
+    "Moon": "Gemini",
+    "Mars": "Cancer",
+    "Mercury": "Scorpio",
+    "Jupiter": "Aries",
+    "Venus": "Virgo",
+    "Saturn": "Leo",
+    "Rahu": "Virgo",
+    "Ketu": "Virgo",
+    "Lagna": "Scorpio"
+   },
+   "D24": {
+    "Sun": "Libra",
+    "Moon": "Taurus",
+    "Mars": "Taurus",
+    "Mercury": "Gemini",
+    "Jupiter": "Leo",
+    "Venus": "Virgo",
+    "Saturn": "Aquarius",
+    "Rahu": "Pisces",
+    "Ketu": "Pisces",
+    "Lagna": "Cancer"
    },
    "D60": {
     "Sun": "Capricorn",
@@ -1006,6 +1306,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Pisces",
+    "Moon": "Leo",
+    "Mars": "Scorpio",
+    "Mercury": "Taurus",
+    "Jupiter": "Libra",
+    "Venus": "Gemini",
+    "Saturn": "Gemini",
+    "Rahu": "Gemini",
+    "Ketu": "Sagittarius",
+    "Lagna": "Scorpio"
+   },
    "D9": {
     "Sun": "Sagittarius",
     "Moon": "Pisces",
@@ -1029,6 +1353,42 @@
     "Rahu": "Virgo",
     "Ketu": "Pisces",
     "Lagna": "Taurus"
+   },
+   "D11": {
+    "Sun": "Taurus",
+    "Moon": "Capricorn",
+    "Mars": "Capricorn",
+    "Mercury": "Scorpio",
+    "Jupiter": "Cancer",
+    "Venus": "Aries",
+    "Saturn": "Aries",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Gemini"
+   },
+   "D16": {
+    "Sun": "Sagittarius",
+    "Moon": "Libra",
+    "Mars": "Leo",
+    "Mercury": "Virgo",
+    "Jupiter": "Taurus",
+    "Venus": "Capricorn",
+    "Saturn": "Aquarius",
+    "Rahu": "Sagittarius",
+    "Ketu": "Sagittarius",
+    "Lagna": "Scorpio"
+   },
+   "D24": {
+    "Sun": "Aquarius",
+    "Moon": "Scorpio",
+    "Mars": "Aquarius",
+    "Mercury": "Aries",
+    "Jupiter": "Leo",
+    "Venus": "Virgo",
+    "Saturn": "Scorpio",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
    },
    "D60": {
     "Sun": "Gemini",
@@ -1191,6 +1551,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Aquarius",
+    "Moon": "Aries",
+    "Mars": "Libra",
+    "Mercury": "Aries",
+    "Jupiter": "Gemini",
+    "Venus": "Leo",
+    "Saturn": "Pisces",
+    "Rahu": "Sagittarius",
+    "Ketu": "Gemini",
+    "Lagna": "Pisces"
+   },
    "D9": {
     "Sun": "Libra",
     "Moon": "Capricorn",
@@ -1214,6 +1598,42 @@
     "Rahu": "Pisces",
     "Ketu": "Virgo",
     "Lagna": "Scorpio"
+   },
+   "D11": {
+    "Sun": "Aquarius",
+    "Moon": "Capricorn",
+    "Mars": "Scorpio",
+    "Mercury": "Leo",
+    "Jupiter": "Pisces",
+    "Venus": "Leo",
+    "Saturn": "Pisces",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Aries"
+   },
+   "D16": {
+    "Sun": "Leo",
+    "Moon": "Aries",
+    "Mars": "Gemini",
+    "Mercury": "Taurus",
+    "Jupiter": "Sagittarius",
+    "Venus": "Leo",
+    "Saturn": "Aquarius",
+    "Rahu": "Sagittarius",
+    "Ketu": "Sagittarius",
+    "Lagna": "Pisces"
+   },
+   "D24": {
+    "Sun": "Virgo",
+    "Moon": "Cancer",
+    "Mars": "Scorpio",
+    "Mercury": "Libra",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Aries",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Gemini"
    },
    "D60": {
     "Sun": "Taurus",
@@ -1376,6 +1796,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Leo",
+    "Moon": "Aquarius",
+    "Mars": "Virgo",
+    "Mercury": "Cancer",
+    "Jupiter": "Taurus",
+    "Venus": "Leo",
+    "Saturn": "Aries",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Taurus"
+   },
    "D9": {
     "Sun": "Aquarius",
     "Moon": "Libra",
@@ -1398,6 +1842,42 @@
     "Saturn": "Libra",
     "Rahu": "Virgo",
     "Ketu": "Pisces",
+    "Lagna": "Pisces"
+   },
+   "D11": {
+    "Sun": "Scorpio",
+    "Moon": "Aquarius",
+    "Mars": "Scorpio",
+    "Mercury": "Virgo",
+    "Jupiter": "Taurus",
+    "Venus": "Taurus",
+    "Saturn": "Aquarius",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Leo"
+   },
+   "D16": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Sagittarius",
+    "Mercury": "Taurus",
+    "Jupiter": "Libra",
+    "Venus": "Leo",
+    "Saturn": "Gemini",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Virgo"
+   },
+   "D24": {
+    "Sun": "Virgo",
+    "Moon": "Virgo",
+    "Mars": "Aquarius",
+    "Mercury": "Pisces",
+    "Jupiter": "Aries",
+    "Venus": "Cancer",
+    "Saturn": "Libra",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
     "Lagna": "Pisces"
    },
    "D60": {
@@ -1561,6 +2041,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Gemini",
+    "Moon": "Aries",
+    "Mars": "Aries",
+    "Mercury": "Cancer",
+    "Jupiter": "Aquarius",
+    "Venus": "Virgo",
+    "Saturn": "Cancer",
+    "Rahu": "Taurus",
+    "Ketu": "Scorpio",
+    "Lagna": "Leo"
+   },
    "D9": {
     "Sun": "Cancer",
     "Moon": "Capricorn",
@@ -1584,6 +2088,42 @@
     "Rahu": "Sagittarius",
     "Ketu": "Gemini",
     "Lagna": "Scorpio"
+   },
+   "D11": {
+    "Sun": "Pisces",
+    "Moon": "Cancer",
+    "Mars": "Aquarius",
+    "Mercury": "Cancer",
+    "Jupiter": "Pisces",
+    "Venus": "Sagittarius",
+    "Saturn": "Cancer",
+    "Rahu": "Aries",
+    "Ketu": "Libra",
+    "Lagna": "Sagittarius"
+   },
+   "D16": {
+    "Sun": "Sagittarius",
+    "Moon": "Cancer",
+    "Mars": "Gemini",
+    "Mercury": "Taurus",
+    "Jupiter": "Libra",
+    "Venus": "Capricorn",
+    "Saturn": "Gemini",
+    "Rahu": "Virgo",
+    "Ketu": "Virgo",
+    "Lagna": "Leo"
+   },
+   "D24": {
+    "Sun": "Leo",
+    "Moon": "Sagittarius",
+    "Mars": "Libra",
+    "Mercury": "Pisces",
+    "Jupiter": "Sagittarius",
+    "Venus": "Aquarius",
+    "Saturn": "Aries",
+    "Rahu": "Pisces",
+    "Ketu": "Pisces",
+    "Lagna": "Virgo"
    },
    "D60": {
     "Sun": "Taurus",
@@ -1746,6 +2286,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Cancer",
+    "Moon": "Scorpio",
+    "Mars": "Capricorn",
+    "Mercury": "Leo",
+    "Jupiter": "Cancer",
+    "Venus": "Aries",
+    "Saturn": "Gemini",
+    "Rahu": "Aries",
+    "Ketu": "Libra",
+    "Lagna": "Sagittarius"
+   },
    "D9": {
     "Sun": "Scorpio",
     "Moon": "Cancer",
@@ -1769,6 +2333,42 @@
     "Rahu": "Aries",
     "Ketu": "Libra",
     "Lagna": "Aries"
+   },
+   "D11": {
+    "Sun": "Sagittarius",
+    "Moon": "Capricorn",
+    "Mars": "Capricorn",
+    "Mercury": "Cancer",
+    "Jupiter": "Taurus",
+    "Venus": "Taurus",
+    "Saturn": "Leo",
+    "Rahu": "Aries",
+    "Ketu": "Libra",
+    "Lagna": "Aries"
+   },
+   "D16": {
+    "Sun": "Taurus",
+    "Moon": "Leo",
+    "Mars": "Gemini",
+    "Mercury": "Scorpio",
+    "Jupiter": "Aries",
+    "Venus": "Gemini",
+    "Saturn": "Pisces",
+    "Rahu": "Taurus",
+    "Ketu": "Taurus",
+    "Lagna": "Capricorn"
+   },
+   "D24": {
+    "Sun": "Pisces",
+    "Moon": "Capricorn",
+    "Mars": "Aries",
+    "Mercury": "Scorpio",
+    "Jupiter": "Capricorn",
+    "Venus": "Scorpio",
+    "Saturn": "Sagittarius",
+    "Rahu": "Virgo",
+    "Ketu": "Virgo",
+    "Lagna": "Libra"
    },
    "D60": {
     "Sun": "Aries",
@@ -1931,6 +2531,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Aquarius",
+    "Moon": "Capricorn",
+    "Mars": "Capricorn",
+    "Mercury": "Scorpio",
+    "Jupiter": "Cancer",
+    "Venus": "Capricorn",
+    "Saturn": "Aries",
+    "Rahu": "Scorpio",
+    "Ketu": "Taurus",
+    "Lagna": "Aquarius"
+   },
    "D9": {
     "Sun": "Gemini",
     "Moon": "Pisces",
@@ -1953,6 +2577,42 @@
     "Saturn": "Capricorn",
     "Rahu": "Cancer",
     "Ketu": "Capricorn",
+    "Lagna": "Sagittarius"
+   },
+   "D11": {
+    "Sun": "Pisces",
+    "Moon": "Taurus",
+    "Mars": "Cancer",
+    "Mercury": "Aquarius",
+    "Jupiter": "Aquarius",
+    "Venus": "Gemini",
+    "Saturn": "Gemini",
+    "Rahu": "Sagittarius",
+    "Ketu": "Gemini",
+    "Lagna": "Taurus"
+   },
+   "D16": {
+    "Sun": "Leo",
+    "Moon": "Gemini",
+    "Mars": "Gemini",
+    "Mercury": "Libra",
+    "Jupiter": "Cancer",
+    "Venus": "Aries",
+    "Saturn": "Gemini",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
+    "Lagna": "Scorpio"
+   },
+   "D24": {
+    "Sun": "Leo",
+    "Moon": "Aries",
+    "Mars": "Taurus",
+    "Mercury": "Taurus",
+    "Jupiter": "Gemini",
+    "Venus": "Pisces",
+    "Saturn": "Scorpio",
+    "Rahu": "Taurus",
+    "Ketu": "Taurus",
     "Lagna": "Sagittarius"
    },
    "D60": {
@@ -2116,6 +2776,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Scorpio",
+    "Moon": "Cancer",
+    "Mars": "Taurus",
+    "Mercury": "Virgo",
+    "Jupiter": "Capricorn",
+    "Venus": "Pisces",
+    "Saturn": "Sagittarius",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Aquarius"
+   },
    "D9": {
     "Sun": "Sagittarius",
     "Moon": "Sagittarius",
@@ -2139,6 +2823,42 @@
     "Rahu": "Aquarius",
     "Ketu": "Leo",
     "Lagna": "Taurus"
+   },
+   "D11": {
+    "Sun": "Gemini",
+    "Moon": "Aquarius",
+    "Mars": "Cancer",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Pisces",
+    "Venus": "Taurus",
+    "Saturn": "Taurus",
+    "Rahu": "Cancer",
+    "Ketu": "Capricorn",
+    "Lagna": "Gemini"
+   },
+   "D16": {
+    "Sun": "Scorpio",
+    "Moon": "Gemini",
+    "Mars": "Leo",
+    "Mercury": "Aquarius",
+    "Jupiter": "Taurus",
+    "Venus": "Sagittarius",
+    "Saturn": "Aquarius",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
+    "Lagna": "Virgo"
+   },
+   "D24": {
+    "Sun": "Cancer",
+    "Moon": "Gemini",
+    "Mars": "Capricorn",
+    "Mercury": "Taurus",
+    "Jupiter": "Pisces",
+    "Venus": "Aquarius",
+    "Saturn": "Scorpio",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
+    "Lagna": "Libra"
    },
    "D60": {
     "Sun": "Gemini",
@@ -2301,6 +3021,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Cancer",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Pisces",
+    "Moon": "Libra",
+    "Mars": "Capricorn",
+    "Mercury": "Pisces",
+    "Jupiter": "Libra",
+    "Venus": "Pisces",
+    "Saturn": "Libra",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Sagittarius"
+   },
    "D9": {
     "Sun": "Libra",
     "Moon": "Leo",
@@ -2324,6 +3068,42 @@
     "Rahu": "Virgo",
     "Ketu": "Pisces",
     "Lagna": "Sagittarius"
+   },
+   "D11": {
+    "Sun": "Pisces",
+    "Moon": "Leo",
+    "Mars": "Gemini",
+    "Mercury": "Aquarius",
+    "Jupiter": "Cancer",
+    "Venus": "Aries",
+    "Saturn": "Libra",
+    "Rahu": "Libra",
+    "Ketu": "Aries",
+    "Lagna": "Sagittarius"
+   },
+   "D16": {
+    "Sun": "Aquarius",
+    "Moon": "Gemini",
+    "Mars": "Taurus",
+    "Mercury": "Capricorn",
+    "Jupiter": "Aries",
+    "Venus": "Pisces",
+    "Saturn": "Aries",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
+    "Lagna": "Sagittarius"
+   },
+   "D24": {
+    "Sun": "Aries",
+    "Moon": "Scorpio",
+    "Mars": "Pisces",
+    "Mercury": "Aquarius",
+    "Jupiter": "Leo",
+    "Venus": "Gemini",
+    "Saturn": "Leo",
+    "Rahu": "Sagittarius",
+    "Ketu": "Sagittarius",
+    "Lagna": "Virgo"
    },
    "D60": {
     "Sun": "Libra",
@@ -2486,6 +3266,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Taurus",
+    "Moon": "Capricorn",
+    "Mars": "Cancer",
+    "Mercury": "Aries",
+    "Jupiter": "Aquarius",
+    "Venus": "Cancer",
+    "Saturn": "Sagittarius",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Libra"
+   },
    "D9": {
     "Sun": "Gemini",
     "Moon": "Leo",
@@ -2509,6 +3313,42 @@
     "Rahu": "Capricorn",
     "Ketu": "Cancer",
     "Lagna": "Libra"
+   },
+   "D11": {
+    "Sun": "Cancer",
+    "Moon": "Taurus",
+    "Mars": "Sagittarius",
+    "Mercury": "Taurus",
+    "Jupiter": "Taurus",
+    "Venus": "Sagittarius",
+    "Saturn": "Aquarius",
+    "Rahu": "Aquarius",
+    "Ketu": "Leo",
+    "Lagna": "Libra"
+   },
+   "D16": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Aries",
+    "Mercury": "Taurus",
+    "Jupiter": "Leo",
+    "Venus": "Taurus",
+    "Saturn": "Pisces",
+    "Rahu": "Sagittarius",
+    "Ketu": "Sagittarius",
+    "Lagna": "Taurus"
+   },
+   "D24": {
+    "Sun": "Aquarius",
+    "Moon": "Cancer",
+    "Mars": "Pisces",
+    "Mercury": "Libra",
+    "Jupiter": "Leo",
+    "Venus": "Pisces",
+    "Saturn": "Scorpio",
+    "Rahu": "Aquarius",
+    "Ketu": "Aquarius",
+    "Lagna": "Virgo"
    },
    "D60": {
     "Sun": "Leo",
@@ -2671,6 +3511,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Aries",
+    "Moon": "Sagittarius",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Aries",
+    "Saturn": "Aquarius",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Pisces"
+   },
    "D9": {
     "Sun": "Gemini",
     "Moon": "Sagittarius",
@@ -2694,6 +3558,42 @@
     "Rahu": "Pisces",
     "Ketu": "Virgo",
     "Lagna": "Virgo"
+   },
+   "D11": {
+    "Sun": "Gemini",
+    "Moon": "Aquarius",
+    "Mars": "Scorpio",
+    "Mercury": "Cancer",
+    "Jupiter": "Scorpio",
+    "Venus": "Virgo",
+    "Saturn": "Scorpio",
+    "Rahu": "Aries",
+    "Ketu": "Libra",
+    "Lagna": "Libra"
+   },
+   "D16": {
+    "Sun": "Cancer",
+    "Moon": "Aquarius",
+    "Mars": "Gemini",
+    "Mercury": "Gemini",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Aquarius",
+    "Ketu": "Aquarius",
+    "Lagna": "Pisces"
+   },
+   "D24": {
+    "Sun": "Capricorn",
+    "Moon": "Libra",
+    "Mars": "Taurus",
+    "Mercury": "Aries",
+    "Jupiter": "Gemini",
+    "Venus": "Sagittarius",
+    "Saturn": "Leo",
+    "Rahu": "Taurus",
+    "Ketu": "Taurus",
+    "Lagna": "Gemini"
    },
    "D60": {
     "Sun": "Gemini",
@@ -2856,6 +3756,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Capricorn",
+    "Moon": "Aries",
+    "Mars": "Taurus",
+    "Mercury": "Scorpio",
+    "Jupiter": "Sagittarius",
+    "Venus": "Pisces",
+    "Saturn": "Virgo",
+    "Rahu": "Taurus",
+    "Ketu": "Scorpio",
+    "Lagna": "Scorpio"
+   },
    "D9": {
     "Sun": "Gemini",
     "Moon": "Gemini",
@@ -2879,6 +3803,42 @@
     "Rahu": "Cancer",
     "Ketu": "Capricorn",
     "Lagna": "Cancer"
+   },
+   "D11": {
+    "Sun": "Leo",
+    "Moon": "Gemini",
+    "Mars": "Virgo",
+    "Mercury": "Pisces",
+    "Jupiter": "Aquarius",
+    "Venus": "Taurus",
+    "Saturn": "Sagittarius",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Scorpio"
+   },
+   "D16": {
+    "Sun": "Cancer",
+    "Moon": "Cancer",
+    "Mars": "Libra",
+    "Mercury": "Scorpio",
+    "Jupiter": "Pisces",
+    "Venus": "Sagittarius",
+    "Saturn": "Aquarius",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Libra"
+   },
+   "D24": {
+    "Sun": "Cancer",
+    "Moon": "Capricorn",
+    "Mars": "Taurus",
+    "Mercury": "Cancer",
+    "Jupiter": "Capricorn",
+    "Venus": "Capricorn",
+    "Saturn": "Taurus",
+    "Rahu": "Taurus",
+    "Ketu": "Taurus",
+    "Lagna": "Aries"
    },
    "D60": {
     "Sun": "Leo",
@@ -3041,6 +4001,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Virgo",
+    "Moon": "Taurus",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Libra",
+    "Venus": "Capricorn",
+    "Saturn": "Taurus",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Scorpio"
+   },
    "D9": {
     "Sun": "Cancer",
     "Moon": "Taurus",
@@ -3064,6 +4048,42 @@
     "Rahu": "Aquarius",
     "Ketu": "Leo",
     "Lagna": "Leo"
+   },
+   "D11": {
+    "Sun": "Sagittarius",
+    "Moon": "Libra",
+    "Mars": "Aquarius",
+    "Mercury": "Leo",
+    "Jupiter": "Scorpio",
+    "Venus": "Pisces",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Capricorn",
+    "Lagna": "Capricorn"
+   },
+   "D16": {
+    "Sun": "Aquarius",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Virgo",
+    "Jupiter": "Gemini",
+    "Venus": "Aries",
+    "Saturn": "Virgo",
+    "Rahu": "Pisces",
+    "Ketu": "Pisces",
+    "Lagna": "Leo"
+   },
+   "D24": {
+    "Sun": "Gemini",
+    "Moon": "Pisces",
+    "Mars": "Cancer",
+    "Mercury": "Virgo",
+    "Jupiter": "Sagittarius",
+    "Venus": "Aquarius",
+    "Saturn": "Pisces",
+    "Rahu": "Gemini",
+    "Ketu": "Gemini",
+    "Lagna": "Capricorn"
    },
    "D60": {
     "Sun": "Libra",
@@ -3226,6 +4246,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Libra",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Scorpio",
+    "Jupiter": "Virgo",
+    "Venus": "Libra",
+    "Saturn": "Virgo",
+    "Rahu": "Aquarius",
+    "Ketu": "Leo",
+    "Lagna": "Libra"
+   },
    "D9": {
     "Sun": "Gemini",
     "Moon": "Sagittarius",
@@ -3249,6 +4293,42 @@
     "Rahu": "Virgo",
     "Ketu": "Pisces",
     "Lagna": "Aries"
+   },
+   "D11": {
+    "Sun": "Sagittarius",
+    "Moon": "Libra",
+    "Mars": "Virgo",
+    "Mercury": "Pisces",
+    "Jupiter": "Scorpio",
+    "Venus": "Leo",
+    "Saturn": "Aquarius",
+    "Rahu": "Capricorn",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D16": {
+    "Sun": "Gemini",
+    "Moon": "Libra",
+    "Mars": "Virgo",
+    "Mercury": "Scorpio",
+    "Jupiter": "Sagittarius",
+    "Venus": "Gemini",
+    "Saturn": "Sagittarius",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
+    "Lagna": "Gemini"
+   },
+   "D24": {
+    "Sun": "Libra",
+    "Moon": "Libra",
+    "Mars": "Leo",
+    "Mercury": "Gemini",
+    "Jupiter": "Aquarius",
+    "Venus": "Libra",
+    "Saturn": "Pisces",
+    "Rahu": "Sagittarius",
+    "Ketu": "Sagittarius",
+    "Lagna": "Scorpio"
    },
    "D60": {
     "Sun": "Leo",
@@ -3411,6 +4491,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Scorpio",
+    "Moon": "Cancer",
+    "Mars": "Taurus",
+    "Mercury": "Leo",
+    "Jupiter": "Libra",
+    "Venus": "Virgo",
+    "Saturn": "Aquarius",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Taurus"
+   },
    "D9": {
     "Sun": "Libra",
     "Moon": "Scorpio",
@@ -3434,6 +4538,42 @@
     "Rahu": "Taurus",
     "Ketu": "Scorpio",
     "Lagna": "Sagittarius"
+   },
+   "D11": {
+    "Sun": "Scorpio",
+    "Moon": "Sagittarius",
+    "Mars": "Virgo",
+    "Mercury": "Capricorn",
+    "Jupiter": "Libra",
+    "Venus": "Pisces",
+    "Saturn": "Aquarius",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Taurus"
+   },
+   "D16": {
+    "Sun": "Virgo",
+    "Moon": "Aries",
+    "Mars": "Scorpio",
+    "Mercury": "Scorpio",
+    "Jupiter": "Aries",
+    "Venus": "Capricorn",
+    "Saturn": "Virgo",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Libra"
+   },
+   "D24": {
+    "Sun": "Pisces",
+    "Moon": "Aquarius",
+    "Mars": "Gemini",
+    "Mercury": "Capricorn",
+    "Jupiter": "Virgo",
+    "Venus": "Aries",
+    "Saturn": "Virgo",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Aries"
    },
    "D60": {
     "Sun": "Taurus",
@@ -3596,6 +4736,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Libra",
+    "Moon": "Scorpio",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Scorpio",
+    "Saturn": "Libra",
+    "Rahu": "Aquarius",
+    "Ketu": "Leo",
+    "Lagna": "Pisces"
+   },
    "D9": {
     "Sun": "Taurus",
     "Moon": "Scorpio",
@@ -3619,6 +4783,42 @@
     "Rahu": "Gemini",
     "Ketu": "Sagittarius",
     "Lagna": "Aquarius"
+   },
+   "D11": {
+    "Sun": "Libra",
+    "Moon": "Aries",
+    "Mars": "Capricorn",
+    "Mercury": "Aquarius",
+    "Jupiter": "Taurus",
+    "Venus": "Capricorn",
+    "Saturn": "Leo",
+    "Rahu": "Gemini",
+    "Ketu": "Sagittarius",
+    "Lagna": "Cancer"
+   },
+   "D16": {
+    "Sun": "Aries",
+    "Moon": "Virgo",
+    "Mars": "Taurus",
+    "Mercury": "Gemini",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Gemini",
+    "Rahu": "Virgo",
+    "Ketu": "Virgo",
+    "Lagna": "Aquarius"
+   },
+   "D24": {
+    "Sun": "Cancer",
+    "Moon": "Pisces",
+    "Mars": "Aries",
+    "Mercury": "Gemini",
+    "Jupiter": "Cancer",
+    "Venus": "Aquarius",
+    "Saturn": "Libra",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Aries"
    },
    "D60": {
     "Sun": "Scorpio",
@@ -3781,6 +4981,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Pisces",
+    "Moon": "Taurus",
+    "Mars": "Capricorn",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Gemini",
+    "Venus": "Virgo",
+    "Saturn": "Gemini",
+    "Rahu": "Aquarius",
+    "Ketu": "Leo",
+    "Lagna": "Virgo"
+   },
    "D9": {
     "Sun": "Cancer",
     "Moon": "Aries",
@@ -3804,6 +5028,42 @@
     "Rahu": "Libra",
     "Ketu": "Aries",
     "Lagna": "Cancer"
+   },
+   "D11": {
+    "Sun": "Taurus",
+    "Moon": "Aries",
+    "Mars": "Sagittarius",
+    "Mercury": "Pisces",
+    "Jupiter": "Scorpio",
+    "Venus": "Scorpio",
+    "Saturn": "Scorpio",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Sagittarius"
+   },
+   "D16": {
+    "Sun": "Sagittarius",
+    "Moon": "Virgo",
+    "Mars": "Taurus",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Pisces",
+    "Venus": "Capricorn",
+    "Saturn": "Aquarius",
+    "Rahu": "Virgo",
+    "Ketu": "Virgo",
+    "Lagna": "Aquarius"
+   },
+   "D24": {
+    "Sun": "Capricorn",
+    "Moon": "Pisces",
+    "Mars": "Aquarius",
+    "Mercury": "Leo",
+    "Jupiter": "Sagittarius",
+    "Venus": "Aries",
+    "Saturn": "Sagittarius",
+    "Rahu": "Virgo",
+    "Ketu": "Virgo",
+    "Lagna": "Aries"
    },
    "D60": {
     "Sun": "Cancer",
@@ -3966,6 +5226,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Capricorn",
+    "Moon": "Libra",
+    "Mars": "Gemini",
+    "Mercury": "Virgo",
+    "Jupiter": "Libra",
+    "Venus": "Libra",
+    "Saturn": "Taurus",
+    "Rahu": "Libra",
+    "Ketu": "Aries",
+    "Lagna": "Virgo"
+   },
    "D9": {
     "Sun": "Pisces",
     "Moon": "Virgo",
@@ -3989,6 +5273,42 @@
     "Rahu": "Libra",
     "Ketu": "Aries",
     "Lagna": "Sagittarius"
+   },
+   "D11": {
+    "Sun": "Taurus",
+    "Moon": "Aquarius",
+    "Mars": "Sagittarius",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Scorpio",
+    "Venus": "Virgo",
+    "Saturn": "Leo",
+    "Rahu": "Libra",
+    "Ketu": "Aries",
+    "Lagna": "Capricorn"
+   },
+   "D16": {
+    "Sun": "Cancer",
+    "Moon": "Taurus",
+    "Mars": "Pisces",
+    "Mercury": "Aquarius",
+    "Jupiter": "Taurus",
+    "Venus": "Cancer",
+    "Saturn": "Virgo",
+    "Rahu": "Aries",
+    "Ketu": "Aries",
+    "Lagna": "Pisces"
+   },
+   "D24": {
+    "Sun": "Gemini",
+    "Moon": "Libra",
+    "Mars": "Capricorn",
+    "Mercury": "Taurus",
+    "Jupiter": "Libra",
+    "Venus": "Sagittarius",
+    "Saturn": "Pisces",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
    },
    "D60": {
     "Sun": "Gemini",
@@ -4151,6 +5471,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Libra",
+    "Moon": "Capricorn",
+    "Mars": "Aquarius",
+    "Mercury": "Capricorn",
+    "Jupiter": "Cancer",
+    "Venus": "Scorpio",
+    "Saturn": "Sagittarius",
+    "Rahu": "Taurus",
+    "Ketu": "Scorpio",
+    "Lagna": "Sagittarius"
+   },
    "D9": {
     "Sun": "Cancer",
     "Moon": "Gemini",
@@ -4174,6 +5518,42 @@
     "Rahu": "Aries",
     "Ketu": "Libra",
     "Lagna": "Sagittarius"
+   },
+   "D11": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Aries",
+    "Mercury": "Pisces",
+    "Jupiter": "Virgo",
+    "Venus": "Pisces",
+    "Saturn": "Pisces",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Sagittarius"
+   },
+   "D16": {
+    "Sun": "Taurus",
+    "Moon": "Gemini",
+    "Mars": "Libra",
+    "Mercury": "Aries",
+    "Jupiter": "Aries",
+    "Venus": "Scorpio",
+    "Saturn": "Pisces",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
+    "Lagna": "Sagittarius"
+   },
+   "D24": {
+    "Sun": "Leo",
+    "Moon": "Gemini",
+    "Mars": "Libra",
+    "Mercury": "Capricorn",
+    "Jupiter": "Aquarius",
+    "Venus": "Gemini",
+    "Saturn": "Sagittarius",
+    "Rahu": "Gemini",
+    "Ketu": "Gemini",
+    "Lagna": "Leo"
    },
    "D60": {
     "Sun": "Scorpio",
@@ -4336,6 +5716,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Gemini",
+    "Moon": "Capricorn",
+    "Mars": "Scorpio",
+    "Mercury": "Scorpio",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Virgo",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Sagittarius"
+   },
    "D9": {
     "Sun": "Scorpio",
     "Moon": "Aquarius",
@@ -4359,6 +5763,42 @@
     "Rahu": "Sagittarius",
     "Ketu": "Gemini",
     "Lagna": "Taurus"
+   },
+   "D11": {
+    "Sun": "Cancer",
+    "Moon": "Pisces",
+    "Mars": "Libra",
+    "Mercury": "Aquarius",
+    "Jupiter": "Virgo",
+    "Venus": "Capricorn",
+    "Saturn": "Virgo",
+    "Rahu": "Sagittarius",
+    "Ketu": "Gemini",
+    "Lagna": "Virgo"
+   },
+   "D16": {
+    "Sun": "Capricorn",
+    "Moon": "Taurus",
+    "Mars": "Virgo",
+    "Mercury": "Virgo",
+    "Jupiter": "Aries",
+    "Venus": "Taurus",
+    "Saturn": "Aquarius",
+    "Rahu": "Pisces",
+    "Ketu": "Pisces",
+    "Lagna": "Capricorn"
+   },
+   "D24": {
+    "Sun": "Libra",
+    "Moon": "Aquarius",
+    "Mars": "Aquarius",
+    "Mercury": "Pisces",
+    "Jupiter": "Pisces",
+    "Venus": "Aries",
+    "Saturn": "Aries",
+    "Rahu": "Gemini",
+    "Ketu": "Gemini",
+    "Lagna": "Leo"
    },
    "D60": {
     "Sun": "Capricorn",
@@ -4521,6 +5961,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Libra",
+    "Moon": "Cancer",
+    "Mars": "Taurus",
+    "Mercury": "Virgo",
+    "Jupiter": "Aquarius",
+    "Venus": "Aries",
+    "Saturn": "Capricorn",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Sagittarius"
+   },
    "D9": {
     "Sun": "Gemini",
     "Moon": "Leo",
@@ -4544,6 +6008,42 @@
     "Rahu": "Aquarius",
     "Ketu": "Leo",
     "Lagna": "Virgo"
+   },
+   "D11": {
+    "Sun": "Scorpio",
+    "Moon": "Libra",
+    "Mars": "Sagittarius",
+    "Mercury": "Libra",
+    "Jupiter": "Pisces",
+    "Venus": "Gemini",
+    "Saturn": "Leo",
+    "Rahu": "Aquarius",
+    "Ketu": "Leo",
+    "Lagna": "Aquarius"
+   },
+   "D16": {
+    "Sun": "Taurus",
+    "Moon": "Gemini",
+    "Mars": "Libra",
+    "Mercury": "Pisces",
+    "Jupiter": "Libra",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Sagittarius",
+    "Ketu": "Sagittarius",
+    "Lagna": "Aquarius"
+   },
+   "D24": {
+    "Sun": "Virgo",
+    "Moon": "Aries",
+    "Mars": "Gemini",
+    "Mercury": "Gemini",
+    "Jupiter": "Scorpio",
+    "Venus": "Sagittarius",
+    "Saturn": "Gemini",
+    "Rahu": "Pisces",
+    "Ketu": "Pisces",
+    "Lagna": "Scorpio"
    },
    "D60": {
     "Sun": "Aries",
@@ -4706,6 +6206,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Taurus",
+    "Moon": "Gemini",
+    "Mars": "Libra",
+    "Mercury": "Capricorn",
+    "Jupiter": "Leo",
+    "Venus": "Libra",
+    "Saturn": "Gemini",
+    "Rahu": "Sagittarius",
+    "Ketu": "Gemini",
+    "Lagna": "Gemini"
+   },
    "D9": {
     "Sun": "Capricorn",
     "Moon": "Leo",
@@ -4729,6 +6253,42 @@
     "Rahu": "Leo",
     "Ketu": "Aquarius",
     "Lagna": "Pisces"
+   },
+   "D11": {
+    "Sun": "Cancer",
+    "Moon": "Virgo",
+    "Mars": "Scorpio",
+    "Mercury": "Aquarius",
+    "Jupiter": "Virgo",
+    "Venus": "Sagittarius",
+    "Saturn": "Gemini",
+    "Rahu": "Sagittarius",
+    "Ketu": "Gemini",
+    "Lagna": "Leo"
+   },
+   "D16": {
+    "Sun": "Leo",
+    "Moon": "Sagittarius",
+    "Mars": "Taurus",
+    "Mercury": "Aries",
+    "Jupiter": "Libra",
+    "Venus": "Cancer",
+    "Saturn": "Sagittarius",
+    "Rahu": "Sagittarius",
+    "Ketu": "Sagittarius",
+    "Lagna": "Aquarius"
+   },
+   "D24": {
+    "Sun": "Capricorn",
+    "Moon": "Leo",
+    "Mars": "Virgo",
+    "Mercury": "Aquarius",
+    "Jupiter": "Scorpio",
+    "Venus": "Capricorn",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Libra"
    },
    "D60": {
     "Sun": "Leo",
@@ -4891,6 +6451,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Aquarius",
+    "Moon": "Sagittarius",
+    "Mars": "Capricorn",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Aquarius",
+    "Venus": "Libra",
+    "Saturn": "Virgo",
+    "Rahu": "Cancer",
+    "Ketu": "Capricorn",
+    "Lagna": "Capricorn"
+   },
    "D9": {
     "Sun": "Cancer",
     "Moon": "Sagittarius",
@@ -4914,6 +6498,42 @@
     "Rahu": "Virgo",
     "Ketu": "Pisces",
     "Lagna": "Libra"
+   },
+   "D11": {
+    "Sun": "Scorpio",
+    "Moon": "Capricorn",
+    "Mars": "Sagittarius",
+    "Mercury": "Aries",
+    "Jupiter": "Taurus",
+    "Venus": "Sagittarius",
+    "Saturn": "Scorpio",
+    "Rahu": "Libra",
+    "Ketu": "Aries",
+    "Lagna": "Pisces"
+   },
+   "D16": {
+    "Sun": "Leo",
+    "Moon": "Capricorn",
+    "Mars": "Taurus",
+    "Mercury": "Capricorn",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Capricorn",
+    "Rahu": "Gemini",
+    "Ketu": "Gemini",
+    "Lagna": "Aries"
+   },
+   "D24": {
+    "Sun": "Cancer",
+    "Moon": "Virgo",
+    "Mars": "Aquarius",
+    "Mercury": "Virgo",
+    "Jupiter": "Leo",
+    "Venus": "Capricorn",
+    "Saturn": "Aries",
+    "Rahu": "Taurus",
+    "Ketu": "Taurus",
+    "Lagna": "Capricorn"
    },
    "D60": {
     "Sun": "Scorpio",
@@ -5076,6 +6696,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Sagittarius",
+    "Moon": "Virgo",
+    "Mars": "Scorpio",
+    "Mercury": "Scorpio",
+    "Jupiter": "Taurus",
+    "Venus": "Cancer",
+    "Saturn": "Aries",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Cancer"
+   },
    "D9": {
     "Sun": "Sagittarius",
     "Moon": "Aries",
@@ -5099,6 +6743,42 @@
     "Rahu": "Virgo",
     "Ketu": "Pisces",
     "Lagna": "Taurus"
+   },
+   "D11": {
+    "Sun": "Aquarius",
+    "Moon": "Leo",
+    "Mars": "Gemini",
+    "Mercury": "Libra",
+    "Jupiter": "Pisces",
+    "Venus": "Virgo",
+    "Saturn": "Capricorn",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Libra"
+   },
+   "D16": {
+    "Sun": "Aquarius",
+    "Moon": "Capricorn",
+    "Mars": "Scorpio",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Aries",
+    "Saturn": "Taurus",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Taurus"
+   },
+   "D24": {
+    "Sun": "Libra",
+    "Moon": "Pisces",
+    "Mars": "Cancer",
+    "Mercury": "Aquarius",
+    "Jupiter": "Capricorn",
+    "Venus": "Aquarius",
+    "Saturn": "Leo",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
+    "Lagna": "Aquarius"
    },
    "D60": {
     "Sun": "Virgo",
@@ -5261,6 +6941,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Pisces",
+    "Moon": "Pisces",
+    "Mars": "Aquarius",
+    "Mercury": "Pisces",
+    "Jupiter": "Capricorn",
+    "Venus": "Aries",
+    "Saturn": "Aquarius",
+    "Rahu": "Taurus",
+    "Ketu": "Scorpio",
+    "Lagna": "Aries"
+   },
    "D9": {
     "Sun": "Scorpio",
     "Moon": "Sagittarius",
@@ -5284,6 +6988,42 @@
     "Rahu": "Scorpio",
     "Ketu": "Taurus",
     "Lagna": "Capricorn"
+   },
+   "D11": {
+    "Sun": "Leo",
+    "Moon": "Taurus",
+    "Mars": "Aries",
+    "Mercury": "Libra",
+    "Jupiter": "Cancer",
+    "Venus": "Pisces",
+    "Saturn": "Pisces",
+    "Rahu": "Aries",
+    "Ketu": "Libra",
+    "Lagna": "Gemini"
+   },
+   "D16": {
+    "Sun": "Sagittarius",
+    "Moon": "Sagittarius",
+    "Mars": "Libra",
+    "Mercury": "Pisces",
+    "Jupiter": "Taurus",
+    "Venus": "Cancer",
+    "Saturn": "Virgo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Gemini"
+   },
+   "D24": {
+    "Sun": "Pisces",
+    "Moon": "Pisces",
+    "Mars": "Libra",
+    "Mercury": "Cancer",
+    "Jupiter": "Aries",
+    "Venus": "Sagittarius",
+    "Saturn": "Libra",
+    "Rahu": "Capricorn",
+    "Ketu": "Capricorn",
+    "Lagna": "Libra"
    },
    "D60": {
     "Sun": "Sagittarius",
@@ -5446,6 +7186,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Cancer",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Capricorn",
+    "Moon": "Gemini",
+    "Mars": "Aquarius",
+    "Mercury": "Aries",
+    "Jupiter": "Aquarius",
+    "Venus": "Sagittarius",
+    "Saturn": "Scorpio",
+    "Rahu": "Sagittarius",
+    "Ketu": "Gemini",
+    "Lagna": "Taurus"
+   },
    "D9": {
     "Sun": "Gemini",
     "Moon": "Leo",
@@ -5469,6 +7233,42 @@
     "Rahu": "Virgo",
     "Ketu": "Pisces",
     "Lagna": "Aries"
+   },
+   "D11": {
+    "Sun": "Aquarius",
+    "Moon": "Aries",
+    "Mars": "Aquarius",
+    "Mercury": "Cancer",
+    "Jupiter": "Sagittarius",
+    "Venus": "Gemini",
+    "Saturn": "Scorpio",
+    "Rahu": "Capricorn",
+    "Ketu": "Cancer",
+    "Lagna": "Virgo"
+   },
+   "D16": {
+    "Sun": "Aries",
+    "Moon": "Aquarius",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Virgo",
+    "Venus": "Pisces",
+    "Saturn": "Scorpio",
+    "Rahu": "Capricorn",
+    "Ketu": "Capricorn",
+    "Lagna": "Libra"
+   },
+   "D24": {
+    "Sun": "Aquarius",
+    "Moon": "Libra",
+    "Mars": "Cancer",
+    "Mercury": "Sagittarius",
+    "Jupiter": "Virgo",
+    "Venus": "Capricorn",
+    "Saturn": "Taurus",
+    "Rahu": "Virgo",
+    "Ketu": "Virgo",
+    "Lagna": "Taurus"
    },
    "D60": {
     "Sun": "Pisces",
@@ -5631,6 +7431,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Cancer",
+    "Moon": "Gemini",
+    "Mars": "Capricorn",
+    "Mercury": "Pisces",
+    "Jupiter": "Sagittarius",
+    "Venus": "Pisces",
+    "Saturn": "Taurus",
+    "Rahu": "Gemini",
+    "Ketu": "Sagittarius",
+    "Lagna": "Aquarius"
+   },
    "D9": {
     "Sun": "Leo",
     "Moon": "Virgo",
@@ -5654,6 +7478,42 @@
     "Rahu": "Scorpio",
     "Ketu": "Taurus",
     "Lagna": "Virgo"
+   },
+   "D11": {
+    "Sun": "Virgo",
+    "Moon": "Scorpio",
+    "Mars": "Aries",
+    "Mercury": "Libra",
+    "Jupiter": "Taurus",
+    "Venus": "Gemini",
+    "Saturn": "Cancer",
+    "Rahu": "Scorpio",
+    "Ketu": "Taurus",
+    "Lagna": "Capricorn"
+   },
+   "D16": {
+    "Sun": "Aries",
+    "Moon": "Aquarius",
+    "Mars": "Gemini",
+    "Mercury": "Pisces",
+    "Jupiter": "Pisces",
+    "Venus": "Capricorn",
+    "Saturn": "Leo",
+    "Rahu": "Pisces",
+    "Ketu": "Pisces",
+    "Lagna": "Scorpio"
+   },
+   "D24": {
+    "Sun": "Aquarius",
+    "Moon": "Scorpio",
+    "Mars": "Taurus",
+    "Mercury": "Cancer",
+    "Jupiter": "Sagittarius",
+    "Venus": "Aries",
+    "Saturn": "Aquarius",
+    "Rahu": "Capricorn",
+    "Ketu": "Capricorn",
+    "Lagna": "Sagittarius"
    },
    "D60": {
     "Sun": "Sagittarius",
@@ -5816,6 +7676,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Taurus",
+    "Moon": "Cancer",
+    "Mars": "Aquarius",
+    "Mercury": "Capricorn",
+    "Jupiter": "Cancer",
+    "Venus": "Taurus",
+    "Saturn": "Aquarius",
+    "Rahu": "Cancer",
+    "Ketu": "Capricorn",
+    "Lagna": "Aquarius"
+   },
    "D9": {
     "Sun": "Pisces",
     "Moon": "Sagittarius",
@@ -5839,6 +7723,42 @@
     "Rahu": "Taurus",
     "Ketu": "Scorpio",
     "Lagna": "Cancer"
+   },
+   "D11": {
+    "Sun": "Virgo",
+    "Moon": "Leo",
+    "Mars": "Sagittarius",
+    "Mercury": "Taurus",
+    "Jupiter": "Scorpio",
+    "Venus": "Pisces",
+    "Saturn": "Cancer",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Scorpio"
+   },
+   "D16": {
+    "Sun": "Libra",
+    "Moon": "Aries",
+    "Mars": "Virgo",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Leo",
+    "Saturn": "Libra",
+    "Rahu": "Aries",
+    "Ketu": "Aries",
+    "Lagna": "Leo"
+   },
+   "D24": {
+    "Sun": "Taurus",
+    "Moon": "Aquarius",
+    "Mars": "Virgo",
+    "Mercury": "Cancer",
+    "Jupiter": "Cancer",
+    "Venus": "Capricorn",
+    "Saturn": "Scorpio",
+    "Rahu": "Aquarius",
+    "Ketu": "Aquarius",
+    "Lagna": "Leo"
    },
    "D60": {
     "Sun": "Gemini",
@@ -6001,6 +7921,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Virgo",
+    "Moon": "Aquarius",
+    "Mars": "Pisces",
+    "Mercury": "Gemini",
+    "Jupiter": "Leo",
+    "Venus": "Virgo",
+    "Saturn": "Cancer",
+    "Rahu": "Virgo",
+    "Ketu": "Pisces",
+    "Lagna": "Taurus"
+   },
    "D9": {
     "Sun": "Taurus",
     "Moon": "Cancer",
@@ -6024,6 +7968,42 @@
     "Rahu": "Leo",
     "Ketu": "Aquarius",
     "Lagna": "Cancer"
+   },
+   "D11": {
+    "Sun": "Pisces",
+    "Moon": "Taurus",
+    "Mars": "Gemini",
+    "Mercury": "Leo",
+    "Jupiter": "Virgo",
+    "Venus": "Aquarius",
+    "Saturn": "Scorpio",
+    "Rahu": "Capricorn",
+    "Ketu": "Cancer",
+    "Lagna": "Cancer"
+   },
+   "D16": {
+    "Sun": "Capricorn",
+    "Moon": "Scorpio",
+    "Mars": "Aquarius",
+    "Mercury": "Pisces",
+    "Jupiter": "Leo",
+    "Venus": "Sagittarius",
+    "Saturn": "Cancer",
+    "Rahu": "Pisces",
+    "Ketu": "Pisces",
+    "Lagna": "Virgo"
+   },
+   "D24": {
+    "Sun": "Aries",
+    "Moon": "Sagittarius",
+    "Mars": "Aries",
+    "Mercury": "Capricorn",
+    "Jupiter": "Leo",
+    "Venus": "Aquarius",
+    "Saturn": "Gemini",
+    "Rahu": "Taurus",
+    "Ketu": "Taurus",
+    "Lagna": "Pisces"
    },
    "D60": {
     "Sun": "Virgo",
@@ -6186,6 +8166,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Scorpio",
+    "Moon": "Taurus",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Pisces",
+    "Venus": "Libra",
+    "Saturn": "Libra",
+    "Rahu": "Scorpio",
+    "Ketu": "Taurus",
+    "Lagna": "Leo"
+   },
    "D9": {
     "Sun": "Virgo",
     "Moon": "Pisces",
@@ -6209,6 +8213,42 @@
     "Rahu": "Libra",
     "Ketu": "Aries",
     "Lagna": "Libra"
+   },
+   "D11": {
+    "Sun": "Pisces",
+    "Moon": "Virgo",
+    "Mars": "Virgo",
+    "Mercury": "Scorpio",
+    "Jupiter": "Taurus",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Pisces",
+    "Ketu": "Virgo",
+    "Lagna": "Libra"
+   },
+   "D16": {
+    "Sun": "Scorpio",
+    "Moon": "Libra",
+    "Mars": "Virgo",
+    "Mercury": "Leo",
+    "Jupiter": "Sagittarius",
+    "Venus": "Taurus",
+    "Saturn": "Aries",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Scorpio"
+   },
+   "D24": {
+    "Sun": "Gemini",
+    "Moon": "Taurus",
+    "Mars": "Libra",
+    "Mercury": "Leo",
+    "Jupiter": "Aquarius",
+    "Venus": "Virgo",
+    "Saturn": "Cancer",
+    "Rahu": "Taurus",
+    "Ketu": "Taurus",
+    "Lagna": "Capricorn"
    },
    "D60": {
     "Sun": "Aries",
@@ -6371,6 +8411,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Cancer",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Cancer"
+   },
+   "D4": {
+    "Sun": "Pisces",
+    "Moon": "Aquarius",
+    "Mars": "Aries",
+    "Mercury": "Taurus",
+    "Jupiter": "Libra",
+    "Venus": "Aries",
+    "Saturn": "Capricorn",
+    "Rahu": "Taurus",
+    "Ketu": "Scorpio",
+    "Lagna": "Pisces"
+   },
    "D9": {
     "Sun": "Sagittarius",
     "Moon": "Gemini",
@@ -6394,6 +8458,42 @@
     "Rahu": "Aquarius",
     "Ketu": "Leo",
     "Lagna": "Leo"
+   },
+   "D11": {
+    "Sun": "Libra",
+    "Moon": "Pisces",
+    "Mars": "Gemini",
+    "Mercury": "Taurus",
+    "Jupiter": "Scorpio",
+    "Venus": "Pisces",
+    "Saturn": "Capricorn",
+    "Rahu": "Cancer",
+    "Ketu": "Capricorn",
+    "Lagna": "Virgo"
+   },
+   "D16": {
+    "Sun": "Pisces",
+    "Moon": "Virgo",
+    "Mars": "Cancer",
+    "Mercury": "Libra",
+    "Jupiter": "Gemini",
+    "Venus": "Cancer",
+    "Saturn": "Cancer",
+    "Rahu": "Leo",
+    "Ketu": "Leo",
+    "Lagna": "Capricorn"
+   },
+   "D24": {
+    "Sun": "Cancer",
+    "Moon": "Leo",
+    "Mars": "Capricorn",
+    "Mercury": "Aries",
+    "Jupiter": "Scorpio",
+    "Venus": "Sagittarius",
+    "Saturn": "Taurus",
+    "Rahu": "Capricorn",
+    "Ketu": "Capricorn",
+    "Lagna": "Aries"
    },
    "D60": {
     "Sun": "Libra",
@@ -6556,6 +8656,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Leo",
+    "Mars": "Leo",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Gemini",
+    "Moon": "Cancer",
+    "Mars": "Aquarius",
+    "Mercury": "Libra",
+    "Jupiter": "Libra",
+    "Venus": "Leo",
+    "Saturn": "Aquarius",
+    "Rahu": "Leo",
+    "Ketu": "Aquarius",
+    "Lagna": "Sagittarius"
+   },
    "D9": {
     "Sun": "Scorpio",
     "Moon": "Capricorn",
@@ -6579,6 +8703,42 @@
     "Rahu": "Sagittarius",
     "Ketu": "Gemini",
     "Lagna": "Capricorn"
+   },
+   "D11": {
+    "Sun": "Leo",
+    "Moon": "Libra",
+    "Mars": "Aquarius",
+    "Mercury": "Libra",
+    "Jupiter": "Sagittarius",
+    "Venus": "Taurus",
+    "Saturn": "Taurus",
+    "Rahu": "Capricorn",
+    "Ketu": "Cancer",
+    "Lagna": "Capricorn"
+   },
+   "D16": {
+    "Sun": "Pisces",
+    "Moon": "Gemini",
+    "Mars": "Leo",
+    "Mercury": "Aries",
+    "Jupiter": "Cancer",
+    "Venus": "Virgo",
+    "Saturn": "Scorpio",
+    "Rahu": "Libra",
+    "Ketu": "Libra",
+    "Lagna": "Aquarius"
+   },
+   "D24": {
+    "Sun": "Capricorn",
+    "Moon": "Taurus",
+    "Mars": "Cancer",
+    "Mercury": "Cancer",
+    "Jupiter": "Capricorn",
+    "Venus": "Leo",
+    "Saturn": "Sagittarius",
+    "Rahu": "Scorpio",
+    "Ketu": "Scorpio",
+    "Lagna": "Scorpio"
    },
    "D60": {
     "Sun": "Gemini",
@@ -6741,6 +8901,30 @@
      "retro": true
     }
    },
+   "D2": {
+    "Sun": "Leo",
+    "Moon": "Cancer",
+    "Mars": "Cancer",
+    "Mercury": "Leo",
+    "Jupiter": "Leo",
+    "Venus": "Leo",
+    "Saturn": "Cancer",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Leo"
+   },
+   "D4": {
+    "Sun": "Gemini",
+    "Moon": "Pisces",
+    "Mars": "Aquarius",
+    "Mercury": "Cancer",
+    "Jupiter": "Scorpio",
+    "Venus": "Gemini",
+    "Saturn": "Sagittarius",
+    "Rahu": "Aries",
+    "Ketu": "Libra",
+    "Lagna": "Sagittarius"
+   },
    "D9": {
     "Sun": "Taurus",
     "Moon": "Libra",
@@ -6764,6 +8948,42 @@
     "Rahu": "Virgo",
     "Ketu": "Pisces",
     "Lagna": "Aquarius"
+   },
+   "D11": {
+    "Sun": "Gemini",
+    "Moon": "Pisces",
+    "Mars": "Scorpio",
+    "Mercury": "Libra",
+    "Jupiter": "Capricorn",
+    "Venus": "Gemini",
+    "Saturn": "Pisces",
+    "Rahu": "Capricorn",
+    "Ketu": "Cancer",
+    "Lagna": "Aquarius"
+   },
+   "D16": {
+    "Sun": "Sagittarius",
+    "Moon": "Aquarius",
+    "Mars": "Leo",
+    "Mercury": "Taurus",
+    "Jupiter": "Leo",
+    "Venus": "Sagittarius",
+    "Saturn": "Sagittarius",
+    "Rahu": "Aries",
+    "Ketu": "Aries",
+    "Lagna": "Pisces"
+   },
+   "D24": {
+    "Sun": "Cancer",
+    "Moon": "Aries",
+    "Mars": "Cancer",
+    "Mercury": "Pisces",
+    "Jupiter": "Capricorn",
+    "Venus": "Cancer",
+    "Saturn": "Leo",
+    "Rahu": "Cancer",
+    "Ketu": "Cancer",
+    "Lagna": "Capricorn"
    },
    "D60": {
     "Sun": "Leo",

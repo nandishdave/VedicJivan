@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { NorthIndianChart } from "@/components/charts/NorthIndianChart";
-import { celebrities, chartHouses, getCelebrity, ABBR } from "@/lib/celebrities";
+import { celebrities, chartHouses, getCelebrity, ABBR, type VargaKey } from "@/lib/celebrities";
 
 export function generateStaticParams() {
   return celebrities.map((c) => ({ slug: c.slug }));
@@ -16,11 +16,16 @@ export function generateMetadata({ params }: { params: { slug: string } }) {
     : { title: "Celebrity Chart | VedicJivan" };
 }
 
-const VARGAS: { key: "D1" | "D9" | "D10" | "D60"; label: string }[] = [
-  { key: "D1", label: "D1 · Rāśi" },
-  { key: "D9", label: "D9 · Navāṁśa" },
-  { key: "D10", label: "D10 · Daśāṁśa" },
-  { key: "D60", label: "D60 · Ṣaṣṭyāṁśa" },
+const VARGAS: { key: VargaKey; label: string; note: string }[] = [
+  { key: "D1", label: "D1 · Rāśi", note: "body & life" },
+  { key: "D2", label: "D2 · Horā", note: "wealth" },
+  { key: "D4", label: "D4 · Chaturthāṁśa", note: "property & fortune" },
+  { key: "D9", label: "D9 · Navāṁśa", note: "strength & fortune" },
+  { key: "D10", label: "D10 · Daśāṁśa", note: "career & power" },
+  { key: "D11", label: "D11 · Rudrāṁśa", note: "gains & income" },
+  { key: "D16", label: "D16 · Ṣoḍaśāṁśa", note: "luxuries & comforts" },
+  { key: "D24", label: "D24 · Siddhāṁśa", note: "knowledge & skill" },
+  { key: "D60", label: "D60 · Ṣaṣṭyāṁśa", note: "karma (finest)" },
 ];
 
 export default function CelebrityPage({ params }: { params: { slug: string } }) {
@@ -53,7 +58,7 @@ export default function CelebrityPage({ params }: { params: { slug: string } }) 
       {/* Charts */}
       <div className="mb-10 grid gap-6 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 p-6 sm:grid-cols-2 lg:grid-cols-4">
         {VARGAS.map((v) => (
-          <NorthIndianChart key={v.key} title={v.label} data={chartHouses(c, v.key)} />
+          <NorthIndianChart key={v.key} title={v.label} subtitle={v.note} data={chartHouses(c, v.key)} />
         ))}
       </div>
 

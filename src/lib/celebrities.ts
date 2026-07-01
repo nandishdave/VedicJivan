@@ -20,8 +20,13 @@ export interface Celebrity {
   nakshatra: string;
   charts: {
     D1: Record<string, D1Planet>;
+    D2: Record<string, string>;
+    D4: Record<string, string>;
     D9: Record<string, string>;
     D10: Record<string, string>;
+    D11: Record<string, string>;
+    D16: Record<string, string>;
+    D24: Record<string, string>;
     D60: Record<string, string>;
   };
   dasha: { planet: string; start: string; end: string; age_start: number; age_end: number }[];
@@ -65,7 +70,9 @@ export interface HouseData {
 }
 
 /** Turn a varga chart into house→planets + house→sign-number for rendering. */
-export function chartHouses(cel: Celebrity, type: "D1" | "D9" | "D10" | "D60"): HouseData {
+export type VargaKey = "D1" | "D2" | "D4" | "D9" | "D10" | "D11" | "D16" | "D24" | "D60";
+
+export function chartHouses(cel: Celebrity, type: VargaKey): HouseData {
   const houses: Record<number, string[]> = {};
   const signByHouse: Record<number, number> = {};
   let lagnaIdx: number;

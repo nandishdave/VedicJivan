@@ -14,10 +14,19 @@ const centroid = (pts: [number, number][]): [number, number] => [
   (pts.reduce((a, p) => a + p[1], 0) / pts.length) * S,
 ];
 
-export function NorthIndianChart({ data, title }: { data: HouseData; title: string }) {
+export function NorthIndianChart({
+  data,
+  title,
+  subtitle,
+}: {
+  data: HouseData;
+  title: string;
+  subtitle?: string;
+}) {
   return (
     <div className="text-center">
-      <div className="mb-1 text-sm font-bold text-primary-600">{title}</div>
+      <div className="text-sm font-bold text-primary-600">{title}</div>
+      {subtitle && <div className="mb-1 text-[10px] uppercase tracking-wide text-gray-400">{subtitle}</div>}
       <svg viewBox={`0 0 ${W} ${W}`} className="mx-auto h-[150px] w-[150px]">
         <rect x={0} y={0} width={W} height={W} fill="#fff" stroke="#334155" strokeWidth={2} />
         <line x1={0} y1={0} x2={W} y2={W} stroke="#334155" />
