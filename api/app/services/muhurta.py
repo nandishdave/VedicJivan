@@ -72,9 +72,16 @@ def build_muhurta_chart(
         "ashtakavarga": calc_ashtakavarga(planets, lagna["sign"]),
         "sunrise": sun_sunset["sunrise"],
         "sunset": sun_sunset["sunset"],
+        # Birth moment — lets downstream scorers (e.g. worldly_potential) time the
+        # Vimshottari dashas without re-threading dob/tob through every call.
+        "dob": dob,
+        "tob": tob,
     }
     if with_shadbala:
         divisional = calc_divisional_charts(planets, lagna)
+        # Keep the divisional charts on the chart (already computed for Shadbala)
+        # so D60-based scoring is free rather than recomputed.
+        chart["divisional"] = divisional
         chart["shadbala"] = calc_shadbala(
             planets, lagna, jd, dob, tob, divisional, sun_sunset=sun_sunset
         )

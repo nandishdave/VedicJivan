@@ -110,7 +110,10 @@ def test_unshakable_composite_and_admissible_bound():
 
     out = unshakable_score(full)
     assert 0.0 <= out["score"] <= 100.0
-    assert set(out["layers"]) == {"structural", "yoga", "longevity", "fame"}
+    # The chart carries a birth date, so the validated worldly-potential layer is
+    # present alongside the four structural/greatness layers.
+    assert set(out["layers"]) == {"structural", "yoga", "longevity", "fame", "worldly"}
+    assert out["worldly_potential"] is not None
     assert "band" in out["ayurdaya"] and "atmakaraka" in out
     # Graded yogas + composite strength-stack surfaced for the report.
     for k in ("dhana", "prosperity", "raja"):

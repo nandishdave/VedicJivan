@@ -130,6 +130,11 @@ def _placement_score(chart: dict) -> float:
 # Composite "Unshakable" score = Layer-1 structural (rigorous, ~65%) + Layer-2
 # greatness (yoga/longevity/fame, heuristic, ~35%). Tunable.
 LAYER_WEIGHTS = {"structural": 0.65, "yoga": 0.15, "longevity": 0.12, "fame": 0.08}
+# When the chart carries a birth date (so the validated worldly-potential layer
+# can be computed), it takes a small slot and the others make room. The
+# structural anchor stays dominant. Falls back to LAYER_WEIGHTS otherwise, so
+# dob-less callers keep their exact prior behaviour.
+LAYER_WEIGHTS_WORLDLY = {"structural": 0.60, "yoga": 0.13, "longevity": 0.11, "fame": 0.06, "worldly": 0.10}
 
 
 def unshakable_score(chart: dict) -> dict:
@@ -147,6 +152,7 @@ def unshakable_score(chart: dict) -> dict:
         raja_yoga_normalized, raja_yoga_score,
     )
     from app.services.kundli_calculator.yoga_strength import yoga_strength
+    from app.services.kundli_calculator.worldly_potential import worldly_potential
 
     s = structural_strength(chart)
     y = yoga_strength(chart)
@@ -154,7 +160,15 @@ def unshakable_score(chart: dict) -> dict:
     fm = fame(chart)
     layers = {"structural": s["score"], "yoga": y["score"],
               "longevity": lon["score"], "fame": fm["score"]}
-    score = sum(layers[k] * LAYER_WEIGHTS[k] for k in LAYER_WEIGHTS)
+    # Validated worldly-potential layer — only when the chart has a birth date to
+    # time the dashas. Absent -> keep the original 4-layer weights (unchanged behaviour).
+    wp = worldly_potential(chart)
+    if wp is not None:
+        layers["worldly"] = wp["score"]
+        weights = LAYER_WEIGHTS_WORLDLY
+    else:
+        weights = LAYER_WEIGHTS
+    score = sum(layers[k] * weights[k] for k in weights)
 
     # Graded classical yogas (separate from the tuned score) — shown per moment.
     dh_s, dh_l = dhana_yoga_score(chart)
@@ -182,6 +196,7 @@ def unshakable_score(chart: dict) -> dict:
         "prosperity": {"score": pr_s, "links": pr_l},
         "raja": {"score": rj_s, "links": rj_l},
         "strength_stack": {"count": stack, "of": len(strength_factors)},
+        "worldly_potential": wp,  # None when the chart has no birth date
     }
 
 
@@ -193,10 +208,18 @@ def unshakable_upper_bound(chart: dict) -> float:
     from app.services.kundli_calculator.longevity import upper_bound as _lon_ub
     from app.services.kundli_calculator.yoga_strength import upper_bound as _yoga_ub
 
-    return (LAYER_WEIGHTS["structural"] * optimistic_upper_bound(chart)
-            + LAYER_WEIGHTS["yoga"] * _yoga_ub(chart)
-            + LAYER_WEIGHTS["longevity"] * _lon_ub(chart)
-            + LAYER_WEIGHTS["fame"] * _fame_ub(chart))
+    # Match the weight scheme the real score will use: if the chart has a birth
+    # date, the worldly layer is present, so the bound must include it (bounded by
+    # its max of 100 — we don't compute it here, to keep the pre-filter cheap).
+    has_dob = bool(chart.get("dob"))
+    w = LAYER_WEIGHTS_WORLDLY if has_dob else LAYER_WEIGHTS
+    bound = (w["structural"] * optimistic_upper_bound(chart)
+             + w["yoga"] * _yoga_ub(chart)
+             + w["longevity"] * _lon_ub(chart)
+             + w["fame"] * _fame_ub(chart))
+    if has_dob:
+        bound += w["worldly"] * 100.0
+    return bound
 
 
 def optimistic_upper_bound(chart: dict) -> float:
