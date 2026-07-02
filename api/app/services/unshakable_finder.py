@@ -34,11 +34,12 @@ def _date_range(start: str, days: int) -> list[str]:
     return [(d0 + timedelta(days=i)).isoformat() for i in range(days)]
 
 
-# The composite tops out ~78 in practice, so ~72 marks a genuinely strong chart.
-# This is a fixed internal "standout" threshold (flags the ★ charts) — NOT a
-# user-facing knob. In brute-force mode (the production path) every moment is
-# ranked regardless; the threshold only decides which get starred.
-STANDOUT_BAR = 72.0
+# Fixed internal "standout" threshold (flags the ★ charts) — NOT a user-facing
+# knob. Calibrated from the composite's real distribution over 300+ charts: raw
+# 66.5 ≈ the top ~12% (p88), i.e. ~80% of practical potential in the display
+# scale. In brute-force mode (the production path) every moment is ranked
+# regardless; the threshold only decides which get starred.
+STANDOUT_BAR = 66.5
 
 
 def _record(dob: str, tob: str, chart: dict, scored: dict, bar: float) -> dict:

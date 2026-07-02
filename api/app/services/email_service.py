@@ -474,13 +474,16 @@ def send_muhurta_analysis(to_email: str, result: dict) -> None:
 # ── Unshakable Chart Finder email ────────────────────────────────────────────
 _U_TH = "background:#7c3aed;color:#fff;padding:5px 6px;font-size:11px;text-align:center;"
 
-# The composite tops out ~78 in practice, so we present it as "% of that practical
-# potential": 78 -> 100%, and a rare over-achiever legitimately exceeds 100%.
-_POTENTIAL_CEILING = 78.0
+# Calibrated from the composite's real distribution over 303 diverse charts
+# (min ~46, median ~61, p90 ~67, p99 ~71.5, max ~72.6). A two-point map
+# [floor, ceiling] -> [0, 100]% so a typical chart reads ~59%, a top-decile chart
+# ~81%, and a top-1% chart ~100%; a rare over-achiever legitimately exceeds 100%.
+_POTENTIAL_FLOOR = 45.0
+_POTENTIAL_CEILING = 72.0
 
 
 def _potential_pct(score: float) -> int:
-    return round(score / _POTENTIAL_CEILING * 100)
+    return max(0, round((score - _POTENTIAL_FLOOR) / (_POTENTIAL_CEILING - _POTENTIAL_FLOOR) * 100))
 
 
 # Short labels for the 8 strength-stack factors, shown under the count.
@@ -593,8 +596,8 @@ def _render_unshakable_html(result: dict) -> str:
         )
 
     body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;">'
-             'Potential = % of the practical ceiling — the composite tops out ~78/100, shown as 100%; a rare '
-             'chart exceeds 100%. '
+             'Potential = strength as a % of the practical ceiling (calibrated from 300+ charts): ~59% is a '
+             'typical chart, ~80% top-decile, 100% the top ~1%; a rare chart exceeds 100%. '
              'Stack = how many of 8 strength factors are notably strong (Shadbala, Ashtakavarga, dignity, '
              'Lagna-lord, placement, Dhana, Prosperity, Raja) &mdash; the strong ones are named beneath the count. '
              'S&middot;Y&middot;L&middot;F&middot;W = Structural &middot; Yoga &middot; Longevity &middot; Fame &middot; Worldly-potential layer scores (0&ndash;100). '

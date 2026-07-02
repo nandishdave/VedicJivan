@@ -86,7 +86,7 @@ def test_email_renders_single_day_with_positions():
     html = _render_unshakable_html(_RESULT)
     assert "Unshakable Birth-Time Search" in html
     assert "Every Rising Lagna" in html and "Planetary Positions" in html
-    assert "Aries" in html and "98%" in html and "Gemini" in html  # score 76.1 -> 98% of potential; positions
+    assert "Aries" in html and "115%" in html and "Gemini" in html  # score 76.1 -> 115% (above the ceiling); positions
     assert "No standout chart" in html  # exceptional_count == 0 -> the soft note
     assert "Stack" in html and "5/8" in html  # composite strength-stack column + value
     assert "Shad" in html and "Raja" in html  # the strong factors are named under the count
