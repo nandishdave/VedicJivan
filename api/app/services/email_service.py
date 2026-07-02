@@ -425,6 +425,14 @@ def send_muhurta_analysis(to_email: str, result: dict) -> None:
 # ── Unshakable Chart Finder email ────────────────────────────────────────────
 _U_TH = "background:#7c3aed;color:#fff;padding:5px 6px;font-size:11px;text-align:center;"
 
+# The composite tops out ~78 in practice, so we present it as "% of that practical
+# potential": 78 -> 100%, and a rare over-achiever legitimately exceeds 100%.
+_POTENTIAL_CEILING = 78.0
+
+
+def _potential_pct(score: float) -> int:
+    return round(score / _POTENTIAL_CEILING * 100)
+
 
 def _u_chart_row(rank, c, bg, dated=False):
     """One ranked chart row (rank, [date], time, lagna, score, S·Y·L·F, longevity
@@ -444,7 +452,7 @@ def _u_chart_row(rank, c, bg, dated=False):
         f'{date_cell}'
         f'<td style="padding:5px 6px;">{c["time"]}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;">{c["lagna"]}{star}</td>'
-        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{c["score"]}</td>'
+        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{_potential_pct(c["score"])}%</td>'
         f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#7c3aed;">{stack_txt}</td>'
         f'<td style="padding:5px 6px;text-align:center;color:#666;font-size:11px;">'
         f'{round(L["structural"])}&middot;{round(L["yoga"])}&middot;{round(L["longevity"])}&middot;{round(L["fame"])}</td>'
@@ -457,7 +465,7 @@ def _u_chart_row(rank, c, bg, dated=False):
 def _u_table(charts, start_rank=1, dated=False):
     date_h = f'<th style="{_U_TH}">Date</th>' if dated else ""
     head = (f'<tr><th style="{_U_TH}">#</th>{date_h}<th style="{_U_TH}">Time</th><th style="{_U_TH}">Lagna</th>'
-            f'<th style="{_U_TH}">Score</th><th style="{_U_TH}">Stack</th><th style="{_U_TH}">S&middot;Y&middot;L&middot;F</th>'
+            f'<th style="{_U_TH}">Potential</th><th style="{_U_TH}">Stack</th><th style="{_U_TH}">S&middot;Y&middot;L&middot;F</th>'
             f'<th style="{_U_TH}">D&middot;P&middot;R</th><th style="{_U_TH}">Longevity</th></tr>')
     rows = "".join(_u_chart_row(start_rank + i, c, "#faf9ff" if i % 2 else "#ffffff", dated)
                    for i, c in enumerate(charts))
@@ -484,21 +492,21 @@ def _u_positions(result):
 
 def _render_unshakable_html(result: dict) -> str:
     n = result.get("exceptional_count", 0)
-    bar = round(result.get("bar", 72))
+    bar_pct = _potential_pct(result.get("bar", 72))
     top_list = result.get("top_overall") or []
-    strongest = round(top_list[0]["score"]) if top_list else None
+    strongest_pct = _potential_pct(top_list[0]["score"]) if top_list else None
     if n:
         summary = (
             f'<p style="background:#ede9fe;border-left:4px solid #7c3aed;padding:10px 14px;border-radius:4px;color:#4c1d95;">'
-            f'<strong>{n}</strong> genuinely strong chart(s) here (score &ge; {bar}/100, marked &#9733;). '
-            'Every moment below is ranked by its honest 0&ndash;100 strength.</p>'
+            f'<strong>{n}</strong> genuinely strong chart(s) here (&ge; {bar_pct}% of potential, marked &#9733;). '
+            'Every moment below is ranked by its potential score.</p>'
         )
     else:
-        strong_txt = f' The strongest is <strong>{strongest}/100</strong>.' if strongest is not None else ''
+        strong_txt = f' The strongest reaches <strong>{strongest_pct}%</strong>.' if strongest_pct is not None else ''
         summary = (
-            f'<p style="color:#555;">No standout chart (score &ge; {bar}/100) in this window &mdash; the metric tops '
-            f'out around ~78, so {bar}+ is rare and genuinely strong.{strong_txt} '
-            'Every moment is still ranked below by its honest 0&ndash;100 strength; widen the date range for more options.</p>'
+            f'<p style="color:#555;">No standout chart (&ge; {bar_pct}% of potential) in this window &mdash; '
+            f'{bar_pct}%+ is rare and genuinely strong.{strong_txt} Every moment is still ranked below by its '
+            'potential score; widen the date range for more options.</p>'
         )
 
     if result["days"] == 1:
@@ -525,11 +533,13 @@ def _render_unshakable_html(result: dict) -> str:
         )
 
     body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;">'
+             'Potential = % of the practical ceiling — the composite tops out ~78/100, shown as 100%; a rare '
+             'chart exceeds 100%. '
              'Stack = how many of 8 strength factors are notably strong (Shadbala, Ashtakavarga, dignity, '
              'Lagna-lord, placement, and the graded Dhana / Prosperity / Raja yogas). '
-             'S&middot;Y&middot;L&middot;F = Structural &middot; Yoga &middot; Longevity &middot; Fame layer scores. '
+             'S&middot;Y&middot;L&middot;F = Structural &middot; Yoga &middot; Longevity &middot; Fame layer scores (0&ndash;100). '
              'D&middot;P&middot;R = graded Dhana &middot; Prosperity &middot; Raja yoga strengths. '
-             f'Longevity = indicative Ayurdaya band (estimates only). &#9733; = a genuinely strong chart (score &ge; {bar}/100).</p>')
+             f'Longevity = indicative Ayurdaya band (estimates only). &#9733; = genuinely strong (&ge; {bar_pct}% of potential).</p>')
 
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
