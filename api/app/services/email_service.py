@@ -299,12 +299,17 @@ async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
 
 
 # ── Muhurta (Auspicious Birth-Time) analysis email ──────────────────────────
+# (key, 3-letter header) — full names spelled out in the legend. The 12 aspects
+# made the email table too wide, so headers are abbreviated and cells stay G/M/W.
 _MUHURTA_ASPECTS = [
-    ("health", "Health"), ("longevity", "Longevity"), ("wealth", "Wealth"),
-    ("career", "Career"), ("property", "Property"), ("marriage", "Marriage"),
-    ("children", "Children"), ("family", "Family"), ("education", "Education"),
-    ("fortune", "Fortune"), ("foreign", "Foreign"), ("spiritual", "Spiritual"),
+    ("health", "Hth"), ("longevity", "Lng"), ("wealth", "Wth"),
+    ("career", "Car"), ("property", "Prp"), ("marriage", "Mrg"),
+    ("children", "Chd"), ("family", "Fam"), ("education", "Edu"),
+    ("fortune", "Ftn"), ("foreign", "Frn"), ("spiritual", "Spr"),
 ]
+_MUHURTA_ASPECT_LEGEND = ("Hth Health &middot; Lng Longevity &middot; Wth Wealth &middot; Car Career &middot; "
+                          "Prp Property &middot; Mrg Marriage &middot; Chd Children &middot; Fam Family &middot; "
+                          "Edu Education &middot; Ftn Fortune &middot; Frn Foreign &middot; Spr Spiritual")
 _MUHURTA_CELL = {
     "good": ("#dcfce7", "#166534", "G"),
     "moderate": ("#fef9c3", "#854d0e", "M"),
@@ -314,7 +319,9 @@ _MUHURTA_CELL = {
 
 def _render_muhurta_html(result: dict) -> str:
     th = "background:#7c3aed;color:#fff;padding:5px 4px;font-size:11px;text-align:center;"
-    head_cells = "".join(f'<th style="{th}">{short}</th>' for _k, short in _MUHURTA_ASPECTS)
+    # Narrower header for the 12 aspect columns so the table fits email width.
+    ath = "background:#7c3aed;color:#fff;padding:5px 2px;font-size:10px;text-align:center;"
+    head_cells = "".join(f'<th style="{ath}">{short}</th>' for _k, short in _MUHURTA_ASPECTS)
     rows = ""
     for w in result["windows"]:
         cells = ""
@@ -328,20 +335,22 @@ def _render_muhurta_html(result: dict) -> str:
         star = ' <span style="color:#7c3aed;">&#9733;</span>' if hl else ""
         wp = w.get("worldly_potential")
         wp_cell = (
-            f'<td style="padding:4px 6px;text-align:center;color:#7c3aed;font-weight:bold;">{round(wp["score"])}</td>'
-            if wp else '<td style="padding:4px 6px;text-align:center;color:#bbb;">&ndash;</td>'
+            f'<td style="padding:4px 3px;text-align:center;color:#7c3aed;font-weight:bold;">{round(wp["score"])}</td>'
+            if wp else '<td style="padding:4px 3px;text-align:center;color:#bbb;">&ndash;</td>'
         )
         rows += (
-            f'<tr style="{tr_style}"><td style="padding:4px 6px;font-weight:bold;color:#7c3aed;">{w["rank"]}</td>'
-            f'<td style="padding:4px 6px;font-weight:bold;white-space:nowrap;">{w["lagna_name"]}{star}</td>'
-            f'<td style="padding:4px 6px;white-space:nowrap;">{lord}</td>'
-            f'<td style="padding:4px 6px;white-space:nowrap;">{w["window"]["start"]}&ndash;{w["window"]["end"]}</td>'
-            f'<td style="padding:4px 6px;text-align:center;font-weight:bold;">{round(w["overall"])}</td>{wp_cell}{cells}</tr>'
+            f'<tr style="{tr_style}"><td style="padding:4px 3px;font-weight:bold;color:#7c3aed;">{w["rank"]}</td>'
+            f'<td style="padding:4px 4px;font-weight:bold;white-space:nowrap;">{w["lagna_name"]}{star}</td>'
+            f'<td style="padding:4px 4px;white-space:nowrap;">{lord}</td>'
+            f'<td style="padding:4px 4px;white-space:nowrap;font-size:11px;">{w["window"]["start"]}&ndash;{w["window"]["end"]}</td>'
+            f'<td style="padding:4px 3px;text-align:center;font-weight:bold;">{round(w["overall"])}</td>{wp_cell}{cells}</tr>'
         )
     grid = (
-        '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
+        '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'
+        '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;min-width:560px;">'
         f'<tr><th style="{th}">#</th><th style="{th}">Lagna</th><th style="{th}">Lord</th>'
         f'<th style="{th}">Window</th><th style="{th}">Str</th><th style="{th}">Pot</th>{head_cells}</tr>{rows}</table>'
+        '</div>'
     )
     pos_rows = ""
     for i, p in enumerate(result.get("planet_positions", [])):
@@ -402,6 +411,7 @@ def _render_muhurta_html(result: dict) -> str:
             &nbsp; <span style="background:#fee2e2;color:#991b1b;font-weight:bold;padding:1px 6px;border-radius:8px;">W</span> Weak
             &nbsp; &middot; (R) = Lagna-lord retrograde &middot; Str = overall strength 0&ndash;100 &middot; Pot = worldly-potential
         </p>
+        <p style="font-size:11px;color:#888;margin:6px 0 0;">Aspect columns: {_MUHURTA_ASPECT_LEGEND}</p>
         {wp_note}
         <h3 style="color:#7c3aed;margin:28px 0 8px;">Planetary Positions ({result["date"]}, {pos_label})</h3>
         {positions}
