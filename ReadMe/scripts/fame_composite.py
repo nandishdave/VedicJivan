@@ -148,7 +148,7 @@ for i, n in enumerate(FEAT):
     print(f"  {n:12} {F[:, i].mean():7.2f} {R[:, i].mean():7.2f}  {F[:, i].mean() - R[:, i].mean():+6.2f}")
 
 c, s = cv(F, R)
-print(f"\n7-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
+print(f"\n8-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
 
 print("\nconfound-matched India-born cuts (sum-AUC):")
 for yr in (0, 1940, 1955):
