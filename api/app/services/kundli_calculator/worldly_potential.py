@@ -1,13 +1,13 @@
-"""Worldly-Potential — the validated 7-factor "fame-tilt" composite as a 0-100
+"""Worldly-Potential — the validated 8-factor "fame-tilt" composite as a 0-100
 readout for a single chart.
 
 This is the productionised form of the fame-signal study (see
 ``ReadMe/methodology.html`` and ``ReadMe/scripts/fame_composite.py``): across
-207 famous vs 96 ordinary charts the 7 factors below reached a cross-validated
-AUC ≈ 0.63 (0.649 on the cleanest confound-free cut). It is a *faint* tilt, not
+207 famous vs 96 ordinary charts the 8 factors below reached a cross-validated
+AUC ≈ 0.644 (0.666 on the cleanest confound-free cut). It is a *faint* tilt, not
 a fame predictor — surface it as worldly-potential, never as destiny.
 
-Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 7 factors:
+Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 8 factors:
   1 rahu_prime  — Rahu Mahadasha years in ages 20-50 × clean-dispositor factor
   2 d60         — average dignity of the 7 classical planets in the D60
   3 av_10th     — Sarvashtakavarga bindus on the 10th (career) — the anchor
@@ -16,6 +16,8 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 7 factors:
   5 upa_occ     — peak-years (20-50) under a dasha lord SITTING in 3/6/10/11
   6 raja_late   — years 50-80 under the Mahadasha of a Raja-yoga-forming planet
   7 dhana_late  — years 50-80 under the Mahadasha of a Dhana-yoga-forming planet
+  8 av_11th     — Sarvashtakavarga bindus on the 11th (gains) — 2nd-strongest,
+                  added 2026-07 (D10 dignity was tested alongside and rejected)
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -43,6 +45,7 @@ REF = {
     "upa_occ":    (0.3649, 0.3056, 0.3157),
     "raja_late":  (1.7283, 1.4760, 1.7269),
     "dhana_late": (0.6001, 0.3574, 1.0889),
+    "av_11th":    (32.4010, 30.8854, 4.4462),
 }
 _SQUASH_K = 2.2  # logistic steepness: mean-z 0 -> 50, +0.5 -> ~75, -0.5 -> ~25. Tunable.
 
@@ -72,8 +75,8 @@ def _activation(dashas: list[dict], birth_year: int, weights: dict, a: int, b: i
     return acc / tot if tot else 0.0
 
 
-def seven_factors(chart: dict, dashas: list[dict], birth_year: int) -> dict:
-    """The 7 raw factor values for a chart. Pure; mirrors fame_composite.py."""
+def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
+    """The 8 raw factor values for a chart. Pure; mirrors fame_composite.py."""
     from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
     from app.services.kundli_calculator.divisional import calc_divisional_charts
     from app.services.kundli_calculator.raja_yoga import raja_yoga_score
@@ -93,9 +96,9 @@ def seven_factors(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     d60 = (chart.get("divisional") or calc_divisional_charts(P, lag))["D60"]
     d60_dignity = sum(_DP.get(_get_dignity(p, d60[p]), 45) for p in _C) / len(_C)
 
-    # 3, 4 — Ashtakavarga 10th / 1st
+    # 3, 4, 8 — Ashtakavarga 10th (career) / 1st (self) / 11th (gains)
     tv = chart["ashtakavarga"]["totals"]
-    av_10th, av_1st = tv[(ls + 9) % 12], tv[ls]
+    av_10th, av_1st, av_11th = tv[(ls + 9) % 12], tv[ls], tv[(ls + 10) % 12]
 
     # 5 — upachaya OCCUPANCY dasha in the peak (20-50)
     tot = occ = 0.0
@@ -113,7 +116,8 @@ def seven_factors(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     dhana_late = _activation(dashas, birth_year, _pw(dhana_yoga_score(chart)[1]), 50, 80)
 
     return {"rahu_prime": rahu_prime, "d60": d60_dignity, "av_10th": av_10th,
-            "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late, "dhana_late": dhana_late}
+            "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
+            "dhana_late": dhana_late, "av_11th": av_11th}
 
 
 def worldly_potential(chart: dict) -> dict | None:
@@ -134,7 +138,7 @@ def worldly_potential(chart: dict) -> dict | None:
         from app.services.kundli_calculator.vimshottari import calc_vimshottari_dasha
         dashas = calc_vimshottari_dasha(chart["planets"]["Moon"]["longitude"], dob, chart.get("tob", "12:00"))["dashas"]
 
-    return score_from_factors(seven_factors(chart, dashas, birth_year))
+    return score_from_factors(factor_values(chart, dashas, birth_year))
 
 
 def score_from_factors(raw: dict) -> dict:

@@ -319,7 +319,7 @@ _MUHURTA_CELL = {
 
 _WP_LABELS = [
     ("rahu_prime", "Rahu prime-dasha"), ("d60", "D60 dignity"),
-    ("av_10th", "10th-house AV"), ("av_1st", "1st-house AV"),
+    ("av_10th", "10th-house AV"), ("av_11th", "11th-house AV"), ("av_1st", "1st-house AV"),
     ("upa_occ", "Upachaya dasha"), ("raja_late", "Late Raja"), ("dhana_late", "Late Dhana"),
 ]
 

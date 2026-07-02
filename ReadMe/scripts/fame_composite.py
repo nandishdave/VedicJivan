@@ -1,4 +1,4 @@
-"""Verified 7-factor fame composite — reproduction script.
+"""Verified 8-factor fame composite — reproduction script.
 
 Run inside the API container (the Swiss-Ephemeris engine won't import on the host):
     docker cp ReadMe/scripts/fame_composite.py vedicjivan-api:/app/fame_composite.py
@@ -8,7 +8,7 @@ Reads two chart sets already staged in the container:
     /app/src_celebrities.json   — the 207 famous charts (== src/data/celebrities.json)
     /app/normal_people.json     — the 96 ordinary/control charts
 
-The 7 factors (see ReadMe/methodology.html for the full write-up):
+The 8 factors (see ReadMe/methodology.html for the full write-up):
   1 Rahu prime-dasha (20-50) x clean-dispositor factor   [meteoric rise]
   2 D60 crude dignity of the 7 planets                    [soul-level strength]
   3 10th-house Ashtakavarga (career) — the anchor
@@ -16,10 +16,12 @@ The 7 factors (see ReadMe/methodology.html for the full write-up):
   5 Upachaya OCCUPANCY dasha in peak (lord sitting in 3/6/10/11)  [striving]
   6 Late Raja-yoga activation (50-80)                     [status matures late]
   7 Late Dhana-yoga activation (50-80)                    [wealth matures late]
+  8 11th-house Ashtakavarga (gains) — 2nd-strongest factor [reaping]
 
 Reports per-factor lift, 5-fold cross-validated AUC (count + sum), and the
-confound-matched India-born cuts. Verified result: CV-AUC ~0.63 full set,
-0.649 on the cleanest cut (India-born, born >= 1940).
+confound-matched India-born cuts. Verified result: CV-AUC ~0.644 full set,
+0.666 on the cleanest cut (India-born, born >= 1940). D10 dignity was tested
+alongside 11th-AV and rejected (solo AUC 0.506, hurt the composite).
 """
 import json
 import numpy as np
@@ -37,7 +39,7 @@ _DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
        "Neutral Sign": 45, "Enemy Sign": 25, "Debilitated": 5}
 _BAD = {3, 6, 8, 12}          # dusthana (dispositor / occupancy penalty)
 OCC = {3, 6, 10, 11}          # upachaya / growth-effort houses
-FEAT = ["rahu_prime", "d60_dignity", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late"]
+FEAT = ["rahu_prime", "d60_dignity", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th"]
 
 
 def _yoga_weights(links):
@@ -78,10 +80,11 @@ def feats(dob, tob, lat, lon):
     D60 = calc_divisional_charts(P, lag)["D60"]
     d60_dignity = float(np.mean([_DP.get(_get_dignity(p, D60[p]), 45) for p in _C]))
 
-    # 3, 4 — Ashtakavarga 10th / 1st
+    # 3, 4, 8 — Ashtakavarga 10th (career) / 1st (self) / 11th (gains)
     tv = c["ashtakavarga"]["totals"]
     av_10th = tv[(ls + 9) % 12]
     av_1st = tv[ls]
+    av_11th = tv[(ls + 10) % 12]
 
     # 5 — upachaya OCCUPANCY dasha in the peak (20-50)
     tot = occ = 0.0
@@ -99,7 +102,7 @@ def feats(dob, tob, lat, lon):
     dhana_late = _activation(dl, by, _yoga_weights(dhana_yoga_score(c)[1]), 50, 80)
 
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
-    return [rahu_prime, d60_dignity, av_10th, av_1st, upa_occ, raja_late, dhana_late], by, india
+    return [rahu_prime, d60_dignity, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th], by, india
 
 
 def _bd(p):
