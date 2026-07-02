@@ -49,19 +49,25 @@ def feats(dob,tob,lat,lon):
     asp=c["graha_drishti"]["planet_aspects"]; ls=lag["sign"]
     def L(h): return SIGN_LORDS[(ls+h-1)%12]
     fb=FB_A if ls in CAMP_A else FB_B  # FUNCTIONAL benefics for this lagna (NOT natural)
-    def _fben(pl):  # functional benefic? nodes inherit their dispositor's nature
-        if pl in ("Rahu","Ketu"): return SIGN_LORDS[P[pl]["sign"]] in fb
-        return pl in fb or pl==L(1)
+    _BAD={3,6,8,12}
+    def _dasha_strength(pl):
+        # Rahu/Ketu act THROUGH their dispositor: base = the DISPOSITOR's strength,
+        # then a 2x2 tier by (dispositor functional-benefic?) x (dispositor well-placed?).
+        if pl in ("Rahu","Ketu"):
+            disp=SIGN_LORDS[P[pl]["sign"]]
+            base=min(sb.get(disp,{}).get("ratio",1.0)/1.5,1.0)*100
+            ben=disp in fb or disp==L(1); good=P[disp]["house"] not in _BAD
+            tier=1.20 if (ben and good) else 0.90 if ben else 0.75 if good else 0.45
+            return min(base*tier,100)
+        s=min(sb.get(pl,{}).get("ratio",1.0)/1.5,1.0)*100
+        # Functional-benefic bonus — Jupiter (3rd+6th lord) is a functional MALEFIC for Libra.
+        if pl in fb or pl==L(1): s=min(s*1.15,100)
+        return s
     by=int(dob[:4]); acc=tot=0.0
     for d in calc_vimshottari_dasha(P["Moon"]["longitude"],dob,tob)["dashas"]:
         ov=max(0,min(int(d["end_date"][:4])-by,50)-max(int(d["start_date"][:4])-by,20))
         if ov<=0: continue
-        s=min(sb.get(d["planet"],{}).get("ratio",1.0)/1.5,1.0)*100
-        # Bonus only if the dasha lord is a FUNCTIONAL benefic for this lagna (or the
-        # Lagnesh) — Jupiter (3rd+6th lord) is a functional MALEFIC for Libra; Rahu/Ketu
-        # inherit their dispositor's nature.
-        if _fben(d["planet"]): s=min(s*1.15,100)
-        acc+=s*ov; tot+=ov
+        acc+=_dasha_strength(d["planet"])*ov; tot+=ov
     fd=acc/tot if tot else 50
     fw=dhana_yoga_score(c)[0]       # graded Dhana yoga (strict 1/2/11 wealth)
     fp=prosperity_yoga_score(c)[0]  # graded Prosperity yoga (5/9 fortune extension)

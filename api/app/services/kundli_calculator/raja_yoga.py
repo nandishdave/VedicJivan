@@ -97,7 +97,7 @@ def raja_yoga_score(chart: dict) -> tuple[float, list[dict]]:
             links.append({
                 "link": f"{p} owns {'&'.join(map(str, sorted(hs & (_KENDRA | _TRIKONA))))}",
                 "type": "raja_karaka", "dignity": round(dig(p), 2), "house": house(p),
-                "combust": _is_combust(p, planets), "score": round(sc, 2),
+                "combust": _is_combust(p, planets), "score": round(sc, 2), "planets": [p],
             })
 
     # 2) a kendra-lord planet associating with a (distinct) trikona-lord planet
@@ -129,7 +129,7 @@ def raja_yoga_score(chart: dict) -> tuple[float, list[dict]]:
                 "link": f"{a}({'&'.join(map(str, sorted(owns[a] & (_KENDRA | _TRIKONA))))})"
                         f"-{b}({'&'.join(map(str, sorted(owns[b] & (_KENDRA | _TRIKONA))))})",
                 "type": ty, "dignity": round(d, 2), "house": f"{ha}/{hb}",
-                "combust": _is_combust(a, planets) or _is_combust(b, planets), "score": round(sc, 2),
+                "combust": _is_combust(a, planets) or _is_combust(b, planets), "score": round(sc, 2), "planets": [a, b],
             })
 
     return round(total, 2), links

@@ -92,7 +92,7 @@ def _all_links(chart: dict) -> tuple[list[dict], list[dict]]:
             bucket(hs).append({
                 "link": f"{p} owns {'&'.join(map(str, sorted(hs)))}",
                 "type": "inherent", "dignity": round(dig(p), 2),
-                "house": house(p), "score": round(sc, 2),
+                "house": house(p), "score": round(sc, 2), "planets": [p],
             })
 
     # 2) mutual association between two distinct money-lords
@@ -118,7 +118,7 @@ def _all_links(chart: dict) -> tuple[list[dict], list[dict]]:
             sc = _CONN[t] * mult * d * hf
             bucket(owns[a] | owns[b]).append({
                 "link": f"{a}({'&'.join(map(str, sorted(owns[a])))})-{b}({'&'.join(map(str, sorted(owns[b])))})",
-                "type": t, "dignity": round(d, 2), "house": f"{ha}/{hb}", "score": round(sc, 2),
+                "type": t, "dignity": round(d, 2), "house": f"{ha}/{hb}", "score": round(sc, 2), "planets": [a, b],
             })
 
     return dhana, prosperity
