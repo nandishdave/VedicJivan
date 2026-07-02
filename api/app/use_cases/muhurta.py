@@ -23,6 +23,7 @@ class AnalyzeBirthMuhurta:
         place_name: str,
         priorities: list[str] | None = None,
         time: str | None = None,
+        optimize_prominence: bool = False,
     ) -> dict:
         return await run_in_threadpool(
             self._analyze,
@@ -33,4 +34,5 @@ class AnalyzeBirthMuhurta:
             chart_fn=self._chart_fn,
             priorities=priorities,
             time=time,
+            optimize_prominence=optimize_prominence,
         )

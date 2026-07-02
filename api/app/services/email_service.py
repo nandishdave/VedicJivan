@@ -326,17 +326,22 @@ def _render_muhurta_html(result: dict) -> str:
         hl = w.get("highlighted")
         tr_style = "background:#ede9fe;" if hl else ""
         star = ' <span style="color:#7c3aed;">&#9733;</span>' if hl else ""
+        wp = w.get("worldly_potential")
+        wp_cell = (
+            f'<td style="padding:4px 6px;text-align:center;color:#7c3aed;font-weight:bold;">{round(wp["score"])}</td>'
+            if wp else '<td style="padding:4px 6px;text-align:center;color:#bbb;">&ndash;</td>'
+        )
         rows += (
             f'<tr style="{tr_style}"><td style="padding:4px 6px;font-weight:bold;color:#7c3aed;">{w["rank"]}</td>'
             f'<td style="padding:4px 6px;font-weight:bold;white-space:nowrap;">{w["lagna_name"]}{star}</td>'
             f'<td style="padding:4px 6px;white-space:nowrap;">{lord}</td>'
             f'<td style="padding:4px 6px;white-space:nowrap;">{w["window"]["start"]}&ndash;{w["window"]["end"]}</td>'
-            f'<td style="padding:4px 6px;text-align:center;font-weight:bold;">{round(w["overall"])}</td>{cells}</tr>'
+            f'<td style="padding:4px 6px;text-align:center;font-weight:bold;">{round(w["overall"])}</td>{wp_cell}{cells}</tr>'
         )
     grid = (
         '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
         f'<tr><th style="{th}">#</th><th style="{th}">Lagna</th><th style="{th}">Lord</th>'
-        f'<th style="{th}">Window</th><th style="{th}">Str</th>{head_cells}</tr>{rows}</table>'
+        f'<th style="{th}">Window</th><th style="{th}">Str</th><th style="{th}">Pot</th>{head_cells}</tr>{rows}</table>'
     )
     pos_rows = ""
     for i, p in enumerate(result.get("planet_positions", [])):
@@ -368,6 +373,16 @@ def _render_muhurta_html(result: dict) -> str:
             f'(highlighted &#9733; below, ranked <strong>#{rank}</strong> of 12 for the day).</p>'
         )
     pos_label = result.get("positions_time", "12:00")
+    prom_on = result.get("optimize_prominence")
+    wp_note = (
+        '<p style="font-size:11px;color:#999;margin:6px 0 0;line-height:1.5;">'
+        '<strong>Pot</strong> = Worldly Prominence Potential (0&ndash;100): a faint statistical tilt '
+        '(~0.63 AUC) toward markers seen in prominent charts. Most of worldly success lies outside the '
+        'chart &mdash; treat this as potential, not destiny.'
+        + (' &nbsp;These windows are ranked with potential blended in (0.6 auspiciousness + 0.4 potential).'
+           if prom_on else '')
+        + '</p>'
+    )
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
         {_email_header()}
@@ -385,8 +400,9 @@ def _render_muhurta_html(result: dict) -> str:
             <span style="background:#dcfce7;color:#166534;font-weight:bold;padding:1px 6px;border-radius:8px;">G</span> Good
             &nbsp; <span style="background:#fef9c3;color:#854d0e;font-weight:bold;padding:1px 6px;border-radius:8px;">M</span> Moderate
             &nbsp; <span style="background:#fee2e2;color:#991b1b;font-weight:bold;padding:1px 6px;border-radius:8px;">W</span> Weak
-            &nbsp; &middot; (R) = Lagna-lord retrograde &middot; Str = overall strength 0&ndash;100
+            &nbsp; &middot; (R) = Lagna-lord retrograde &middot; Str = overall strength 0&ndash;100 &middot; Pot = worldly-potential
         </p>
+        {wp_note}
         <h3 style="color:#7c3aed;margin:28px 0 8px;">Planetary Positions ({result["date"]}, {pos_label})</h3>
         {positions}
         <p style="font-size:12px;color:#999;margin:16px 0 0;">Computed with Lahiri ayanamsha (Swiss Ephemeris),

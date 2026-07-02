@@ -91,6 +91,7 @@ def _run_muhurta_sync(body: dict[str, Any]) -> None:
         chart_fn=build_muhurta_chart,
         priorities=body.get("priorities"),
         time=body.get("time"),
+        optimize_prominence=body.get("optimize_prominence", False),
     )
     send_muhurta_analysis(body["email"], result)
 

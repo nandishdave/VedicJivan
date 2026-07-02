@@ -341,6 +341,13 @@ export interface MuhurtaAspect {
   verdict: MuhurtaVerdict;
 }
 
+export interface MuhurtaWorldly {
+  score: number;
+  mean_z: number;
+  factors: Record<string, { value: number; z: number }>;
+  note: string;
+}
+
 export interface MuhurtaWindow {
   rank: number;
   lagna_sign: number;
@@ -351,6 +358,8 @@ export interface MuhurtaWindow {
   overall: number;
   rank_score: number;
   highlighted: boolean;
+  // Faint (~0.63 AUC) worldly-prominence-potential readout; null if unavailable.
+  worldly_potential: MuhurtaWorldly | null;
   panchanga: { nakshatra: string; tithi: string; yoga: string; paksha: string };
   aspects: Record<string, MuhurtaAspect>;
 }
@@ -371,6 +380,7 @@ export interface MuhurtaResult {
   lat: number;
   lon: number;
   priorities: string[];
+  optimize_prominence: boolean;
   query_time: string | null;
   highlight_lagna: string | null;
   planet_positions: MuhurtaPlanet[];
@@ -390,6 +400,7 @@ export const muhurtaApi = {
     email: string;
     time?: string | null;
     priorities?: string[] | null;
+    optimize_prominence?: boolean;
   }) =>
     apiRequest<{ message: string }>("/api/muhurta/birth", { method: "POST", body: data }),
 };

@@ -28,6 +28,7 @@ from app.services.kundli_calculator.dhana_yoga import (
     prosperity_yoga_score,
 )
 from app.services.kundli_calculator.divisional import calc_divisional_charts
+from app.services.kundli_calculator.worldly_potential import worldly_potential
 from app.services.kundli_calculator.raja_yoga import (
     raja_yoga_normalized,
     raja_yoga_score,
@@ -352,6 +353,7 @@ def analyze_birth_muhurta(
     chart_fn=build_muhurta_chart,
     priorities: list[str] | None = None,
     time: str | None = None,
+    optimize_prominence: bool = False,
 ) -> dict:
     """Rank the day's rising Lagnas with a per-life-aspect verdict for each.
 
@@ -406,11 +408,21 @@ def analyze_birth_muhurta(
                 "label": label, "group": group, "score": sc, "verdict": _verdict(sc),
             }
         overall = _overall_score(chart)
+        # Validated worldly-potential readout (0-100) for this Lagna — a faint
+        # (~0.63 AUC) tilt toward prominence markers. Display always; optionally
+        # blended into the ranking below. None if the chart lacks a birth date.
+        wp = worldly_potential(chart)
         if priorities:
             picked = [aspects[k]["score"] for k in priorities if k in aspects]
-            rank_score = round(sum(picked) / len(picked), 1) if picked else overall
+            base = round(sum(picked) / len(picked), 1) if picked else overall
         else:
-            rank_score = overall
+            base = overall
+        # "Prominence" mode blends worldly-potential into the rank without letting
+        # it dominate — auspiciousness (health/longevity/etc.) still leads at 0.6.
+        if optimize_prominence and wp is not None:
+            rank_score = round(0.6 * base + 0.4 * wp["score"], 1)
+        else:
+            rank_score = base
         lord = SIGN_LORDS[w["sign"]]
         results.append({
             "lagna_sign": w["sign"],
@@ -421,6 +433,7 @@ def analyze_birth_muhurta(
             "highlighted": is_highlighted,
             "overall": overall,
             "rank_score": rank_score,
+            "worldly_potential": wp,
             "dhana_yoga": {"score": dy_score, "links": dy_links},
             "prosperity_yoga": {"score": pr_score, "links": pr_links},
             "raja_yoga": {"score": rj_score, "links": rj_links},
@@ -443,6 +456,7 @@ def analyze_birth_muhurta(
         "lat": lat,
         "lon": lon,
         "priorities": priorities or [],
+        "optimize_prominence": optimize_prominence,
         "planet_positions": _day_planet_positions(dob, lat, lon, tob=positions_time),
         "positions_time": positions_time,
         "query_time": time,

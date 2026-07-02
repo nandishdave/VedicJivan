@@ -214,3 +214,24 @@ def test_given_time_highlights_the_rising_lagna():
     highlighted = [w for w in res["windows"] if w["highlighted"]]
     assert len(highlighted) == 1  # exactly one Lagna rises at a given instant
     assert res["highlight_lagna"] == highlighted[0]["lagna_name"]
+
+
+def test_worldly_potential_present_and_prominence_blends_ranking():
+    """Every window carries a worldly-potential readout; opting into prominence
+    blends it into the rank (0.6 base + 0.4 potential) without breaking the sort."""
+    common = dict(dob="2026-06-20", lat=21.7333, lon=70.6167, place_name="Jetpur",
+                  chart_fn=build_muhurta_chart)
+    base = analyze_birth_muhurta(**common)
+    assert base["optimize_prominence"] is False
+    for w in base["windows"]:
+        wp = w["worldly_potential"]
+        assert wp is not None and 0.0 <= wp["score"] <= 100.0 and wp["note"]
+        assert w["rank_score"] == w["overall"]  # default ranking = overall
+
+    prom = analyze_birth_muhurta(**common, optimize_prominence=True)
+    assert prom["optimize_prominence"] is True
+    for w in prom["windows"]:
+        expected = round(0.6 * w["overall"] + 0.4 * w["worldly_potential"]["score"], 1)
+        assert w["rank_score"] == expected
+    scores = [w["rank_score"] for w in prom["windows"]]
+    assert scores == sorted(scores, reverse=True)

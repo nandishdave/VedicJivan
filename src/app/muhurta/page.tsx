@@ -33,6 +33,7 @@ export default function MuhurtaPage() {
   const [place, setPlace] = useState<{ name: string; lat: number; lon: number } | null>(null);
   const [email, setEmail] = useState("");
   const [priorities, setPriorities] = useState<Set<string>>(new Set());
+  const [prominence, setProminence] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -61,6 +62,7 @@ export default function MuhurtaPage() {
         email,
         time: time || null,
         priorities: priorities.size ? Array.from(priorities) : null,
+        optimize_prominence: prominence,
       });
       setSent(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -214,6 +216,26 @@ export default function MuhurtaPage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Worldly-prominence weighting */}
+          <div className="sm:col-span-2">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={prominence}
+                onChange={(e) => setProminence(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="font-medium">Weight worldly prominence potential</span>
+                <span className="mt-0.5 block text-xs text-gray-500">
+                  Blends a faint statistical tilt (~0.63 AUC) toward markers seen in prominent charts into
+                  the ranking. Most of worldly success lies outside the chart — treat it as potential, not
+                  destiny.
+                </span>
+              </span>
+            </label>
           </div>
 
           {error && (

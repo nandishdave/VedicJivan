@@ -18,3 +18,7 @@ class BirthMuhurtaRequest(BaseModel):
     # Optional aspect keys (e.g. ["health", "wealth"]) to re-rank windows toward
     # what the family values most. Empty/omitted -> rank by overall Lagna strength.
     priorities: list[str] | None = Field(default=None, max_length=12)
+    # Optionally blend the validated worldly-potential score (~0.63 fame tilt) into
+    # the ranking: rank = 0.6*base + 0.4*worldly. Off by default. Worldly is always
+    # displayed regardless; this only affects the ordering.
+    optimize_prominence: bool = Field(default=False)
