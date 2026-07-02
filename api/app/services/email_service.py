@@ -317,6 +317,30 @@ _MUHURTA_CELL = {
 }
 
 
+_WP_LABELS = [
+    ("rahu_prime", "Rahu prime-dasha"), ("d60", "D60 dignity"),
+    ("av_10th", "10th-house AV"), ("av_1st", "1st-house AV"),
+    ("upa_occ", "Upachaya dasha"), ("raja_late", "Late Raja"), ("dhana_late", "Late Dhana"),
+]
+
+
+def _worldly_breakdown(wp: dict) -> str:
+    """The 7 worldly-potential factors with an up/down marker vs the average chart."""
+    f = wp.get("factors", {})
+    parts = []
+    for k, lbl in _WP_LABELS:
+        z = f.get(k, {}).get("z", 0)
+        if z > 0.05:
+            arrow, col = "&#9650;", "#166534"   # above average
+        elif z < -0.05:
+            arrow, col = "&#9660;", "#991b1b"   # below average
+        else:
+            arrow, col = "&ndash;", "#999"
+        parts.append(f'<span style="white-space:nowrap;margin-right:14px;display:inline-block;">'
+                     f'{lbl} <span style="color:{col};font-weight:bold;">{arrow}</span></span>')
+    return "".join(parts)
+
+
 def _render_muhurta_html(result: dict) -> str:
     th = "background:#7c3aed;color:#fff;padding:5px 4px;font-size:11px;text-align:center;"
     # Narrower header for the 12 aspect columns so the table fits email width.
@@ -392,6 +416,20 @@ def _render_muhurta_html(result: dict) -> str:
            if prom_on else '')
         + '</p>'
     )
+    # Per-factor worldly breakdown for the recommended pick (highlighted, else #1).
+    bw = next((w for w in result["windows"] if w.get("highlighted")), None)
+    if bw is None and result["windows"]:
+        bw = result["windows"][0]
+    bwp = bw.get("worldly_potential") if bw else None
+    breakdown_block = ""
+    if bwp:
+        breakdown_block = (
+            '<div style="margin:12px 0 0;padding:10px 14px;background:#f7f5fb;border:1px solid #e7e2f0;border-radius:8px;">'
+            f'<p style="font-size:12px;color:#555;margin:0 0 5px;"><strong>Worldly-potential factors</strong> &mdash; '
+            f'{bw["lagna_name"]} (Pot {round(bwp["score"])}) &nbsp;<span style="color:#166534;">&#9650;</span> above average'
+            f' &nbsp;<span style="color:#991b1b;">&#9660;</span> below</p>'
+            f'<p style="font-size:12px;color:#444;margin:0;line-height:1.8;">{_worldly_breakdown(bwp)}</p></div>'
+        )
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
         {_email_header()}
@@ -413,6 +451,7 @@ def _render_muhurta_html(result: dict) -> str:
         </p>
         <p style="font-size:11px;color:#888;margin:6px 0 0;">Aspect columns: {_MUHURTA_ASPECT_LEGEND}</p>
         {wp_note}
+        {breakdown_block}
         <h3 style="color:#7c3aed;margin:28px 0 8px;">Planetary Positions ({result["date"]}, {pos_label})</h3>
         {positions}
         <p style="font-size:12px;color:#999;margin:16px 0 0;">Computed with Lahiri ayanamsha (Swiss Ephemeris),
