@@ -45,12 +45,11 @@ async def preview(
     lon: float = 70.6167,
     place_name: str = "Jetpur, Gujarat, India",
     days: int = 1,
-    bar: float = 0.0,
 ) -> dict:
     """Dev preview (GET, synchronous, capped at 2 days) — disabled in production."""
     if os.environ.get("APP_ENV", "").lower() == "production":
         raise HTTPException(status_code=404, detail="Not found")
     return await run_in_threadpool(
         find_unshakable, start_date=start_date, days=min(days, 2),
-        lat=lat, lon=lon, place_name=place_name, bar=bar, mode="funnel",
+        lat=lat, lon=lon, place_name=place_name, mode="bruteforce",
     )

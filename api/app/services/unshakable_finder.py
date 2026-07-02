@@ -34,6 +34,13 @@ def _date_range(start: str, days: int) -> list[str]:
     return [(d0 + timedelta(days=i)).isoformat() for i in range(days)]
 
 
+# The composite tops out ~78 in practice, so ~72 marks a genuinely strong chart.
+# This is a fixed internal "standout" threshold (flags the ★ charts) — NOT a
+# user-facing knob. In brute-force mode (the production path) every moment is
+# ranked regardless; the threshold only decides which get starred.
+STANDOUT_BAR = 72.0
+
+
 def _record(dob: str, tob: str, chart: dict, scored: dict, bar: float) -> dict:
     return {
         "date": dob,
@@ -61,7 +68,7 @@ def find_unshakable(
     lat: float,
     lon: float,
     place_name: str,
-    bar: float = 90.0,
+    bar: float = STANDOUT_BAR,
     mode: str = "bruteforce",
     top_per_day: int = 3,
     top_overall_n: int = 25,

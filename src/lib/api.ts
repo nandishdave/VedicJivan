@@ -415,7 +415,6 @@ export const unshakableApi = {
     lon: number;
     place_name: string;
     email: string;
-    bar: number;
   }) =>
     apiRequest<{ message: string }>("/api/unshakable/find", { method: "POST", body: data }),
 };

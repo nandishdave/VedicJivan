@@ -17,7 +17,6 @@ export default function UnshakablePage() {
   const [days, setDays] = useState(7);
   const [place, setPlace] = useState<{ name: string; lat: number; lon: number } | null>(null);
   const [email, setEmail] = useState("");
-  const [bar, setBar] = useState(72);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -37,7 +36,6 @@ export default function UnshakablePage() {
         lon: place.lon,
         place_name: place.name,
         email,
-        bar,
       });
       setSent(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -62,7 +60,7 @@ export default function UnshakablePage() {
             We&apos;re scanning every rising Lagna across{" "}
             <strong className="text-gray-900 dark:text-white">{days} day(s)</strong> from{" "}
             <strong className="text-gray-900 dark:text-white">{startDate}</strong> and will email the
-            ranked charts scoring <strong className="text-gray-900 dark:text-white">≥ {bar}</strong> to{" "}
+            ranked charts — each with its 0–100 strength score — to{" "}
             <strong className="text-gray-900 dark:text-white">{email}</strong>.
           </p>
           <p className="mb-8 text-sm text-gray-500 dark:text-gray-500">
@@ -168,21 +166,10 @@ export default function UnshakablePage() {
           </div>
 
           <div className="sm:col-span-2">
-            <label htmlFor="bar" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Quality bar: <span className="font-bold text-primary-600">{bar}</span> / 100
-            </label>
-            <input
-              id="bar"
-              type="range"
-              min={50}
-              max={80}
-              value={bar}
-              onChange={(e) => setBar(Number(e.target.value))}
-              className="w-full accent-primary-600"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Every chart is ranked regardless — the bar just <strong>stars the standouts</strong>. In practice
-              the score tops out around ~78, so <strong>~72+</strong> marks a genuinely strong chart.
+            <p className="text-xs text-gray-500">
+              Every rising moment is ranked by an honest <strong>0–100 strength score</strong>. The metric tops
+              out around ~78, so <strong>~72+</strong> marks a genuinely strong chart — those are starred in
+              your emailed results.
             </p>
           </div>
 

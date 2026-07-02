@@ -85,7 +85,7 @@ def test_email_renders_single_day_with_positions():
     assert "Unshakable Birth-Time Search" in html
     assert "Every Rising Lagna" in html and "Planetary Positions" in html
     assert "Aries" in html and "76.1" in html and "Gemini" in html  # chart + positions
-    assert "No chart cleared" in html  # exceptional_count == 0 -> the soft note
+    assert "No standout chart" in html  # exceptional_count == 0 -> the soft note
     assert "Stack" in html and "5/8" in html  # composite strength-stack column + value
     assert "D&middot;P&middot;R" in html and "6&middot;3&middot;8" in html  # graded yogas column
 
@@ -101,7 +101,7 @@ def test_email_renders_multi_day_top_per_day():
     }
     html = _render_unshakable_html(result)
     assert "2026-06-20" in html and "2026-06-21" in html  # per-day sections
-    assert "cleared your bar" in html  # exceptional summary
+    assert "genuinely strong" in html  # exceptional summary
     assert "&#9733;" in html  # the star on the exceptional chart
     assert "Planetary Positions" not in html  # multi-day has no positions table
 

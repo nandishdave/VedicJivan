@@ -13,7 +13,7 @@ class UnshakableRequest(BaseModel):
     lon: float = Field(..., ge=-180, le=180)
     place_name: str = Field(..., min_length=1, max_length=200)
     email: EmailStr
-    # Absolute quality bar on the 0-100 composite. The metric tops out ~78 in
-    # practice, so 72 ~= "a genuinely strong chart"; the bar just stars the
-    # standouts (everything is ranked regardless).
-    bar: float = Field(default=72.0, ge=0, le=100)
+    # No user-facing quality bar: every moment is ranked by its honest 0-100
+    # score, and a fixed internal threshold flags the genuinely strong ones. The
+    # score itself is the quality signal, so a slider only confused (the metric
+    # tops out ~78, making a 0-100 bar misleading).

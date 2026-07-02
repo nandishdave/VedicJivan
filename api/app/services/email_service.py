@@ -484,15 +484,22 @@ def _u_positions(result):
 
 def _render_unshakable_html(result: dict) -> str:
     n = result.get("exceptional_count", 0)
-    bar = result["bar"]
-    summary = (
-        f'<p style="background:#ede9fe;border-left:4px solid #7c3aed;padding:10px 14px;border-radius:4px;color:#4c1d95;">'
-        f'<strong>{n}</strong> chart(s) cleared your bar of <strong>{bar}</strong> (marked &#9733;).</p>'
-        if n else
-        f'<p style="color:#555;">No chart cleared the <strong>{bar}</strong> bar in this range '
-        '(a truly exceptional chart is rare) — the strongest available are ranked below. '
-        'You may want to widen the range or lower the bar.</p>'
-    )
+    bar = round(result.get("bar", 72))
+    top_list = result.get("top_overall") or []
+    strongest = round(top_list[0]["score"]) if top_list else None
+    if n:
+        summary = (
+            f'<p style="background:#ede9fe;border-left:4px solid #7c3aed;padding:10px 14px;border-radius:4px;color:#4c1d95;">'
+            f'<strong>{n}</strong> genuinely strong chart(s) here (score &ge; {bar}/100, marked &#9733;). '
+            'Every moment below is ranked by its honest 0&ndash;100 strength.</p>'
+        )
+    else:
+        strong_txt = f' The strongest is <strong>{strongest}/100</strong>.' if strongest is not None else ''
+        summary = (
+            f'<p style="color:#555;">No standout chart (score &ge; {bar}/100) in this window &mdash; the metric tops '
+            f'out around ~78, so {bar}+ is rare and genuinely strong.{strong_txt} '
+            'Every moment is still ranked below by its honest 0&ndash;100 strength; widen the date range for more options.</p>'
+        )
 
     if result["days"] == 1:
         charts = result["per_day"][0]["charts"] if result["per_day"] else []
@@ -522,7 +529,7 @@ def _render_unshakable_html(result: dict) -> str:
              'Lagna-lord, placement, and the graded Dhana / Prosperity / Raja yogas). '
              'S&middot;Y&middot;L&middot;F = Structural &middot; Yoga &middot; Longevity &middot; Fame layer scores. '
              'D&middot;P&middot;R = graded Dhana &middot; Prosperity &middot; Raja yoga strengths. '
-             'Longevity = indicative Ayurdaya band (estimates only). &#9733; = cleared your quality bar.</p>')
+             f'Longevity = indicative Ayurdaya band (estimates only). &#9733; = a genuinely strong chart (score &ge; {bar}/100).</p>')
 
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
