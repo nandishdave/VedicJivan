@@ -177,13 +177,15 @@ def unshakable_score(chart: dict) -> dict:
     # Composite strength stack: how many of 8 strength factors are notably strong
     # (>60/100). A co-occurrence readout oriented to auspiciousness (all "higher=better").
     comp = s["components"]
+    _labels = ["Shadbala", "Ashtakavarga", "Dignity", "Lagna-lord", "Placement",
+               "Dhana", "Prosperity", "Raja"]
     strength_factors = [
         comp["shadbala"], comp["ashtakavarga"], comp["dignity"],
         comp["lagna_lord"], comp["placement"],
         dhana_yoga_normalized(chart), prosperity_yoga_normalized(chart),
         raja_yoga_normalized(chart),
     ]
-    stack = sum(1 for f in strength_factors if f > 60.0)
+    strong = [_labels[i] for i, f in enumerate(strength_factors) if f > 60.0]
     return {
         "score": round(score, 1),
         "layers": layers,
@@ -195,7 +197,7 @@ def unshakable_score(chart: dict) -> dict:
         "dhana": {"score": dh_s, "links": dh_l},
         "prosperity": {"score": pr_s, "links": pr_l},
         "raja": {"score": rj_s, "links": rj_l},
-        "strength_stack": {"count": stack, "of": len(strength_factors)},
+        "strength_stack": {"count": len(strong), "of": len(strength_factors), "strong": strong},
         "worldly_potential": wp,  # None when the chart has no birth date
     }
 

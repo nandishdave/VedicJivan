@@ -18,11 +18,13 @@ _REQ = {
 def _chart(time, lagna, score, exceptional=False):
     return {
         "date": "2026-06-20", "time": time, "lagna": lagna, "score": score,
-        "layers": {"structural": 70.0, "yoga": 100.0, "longevity": 73.5, "fame": 83.5},
+        "layers": {"structural": 70.0, "yoga": 100.0, "longevity": 73.5, "fame": 83.5, "worldly": 55.0},
         "ayurdaya": {"band": [75.3, 85.7], "label": "Purnayu (full)"},
         "yogas": ["Hamsa Yoga"], "balarishta": [], "atmakaraka": "Mars",
         "exceptional": exceptional,
-        "dhana": 6, "prosperity": 3, "raja": 8, "strength_stack": {"count": 5, "of": 8},
+        "dhana": 6, "prosperity": 3, "raja": 8,
+        "strength_stack": {"count": 5, "of": 8,
+                           "strong": ["Shadbala", "Ashtakavarga", "Dignity", "Lagna-lord", "Raja"]},
     }
 
 
@@ -87,7 +89,8 @@ def test_email_renders_single_day_with_positions():
     assert "Aries" in html and "98%" in html and "Gemini" in html  # score 76.1 -> 98% of potential; positions
     assert "No standout chart" in html  # exceptional_count == 0 -> the soft note
     assert "Stack" in html and "5/8" in html  # composite strength-stack column + value
-    assert "D&middot;P&middot;R" in html and "6&middot;3&middot;8" in html  # graded yogas column
+    assert "Shad" in html and "Raja" in html  # the strong factors are named under the count
+    assert "S&middot;Y&middot;L&middot;F&middot;W" in html  # 5-layer scores incl. worldly
 
 
 def test_email_renders_multi_day_top_per_day():
