@@ -365,12 +365,12 @@ def _numerology_badge(date_str: str) -> str:
 
 
 _WP_LABELS = [
-    ("rahu_prime", "Rahu prime-dasha"), ("d60", "D60 dignity"),
+    ("rahu_prime", "Rahu prime-dasha"), ("vimsopaka", "Vimśopaka bala (16 vargas)"),
     ("av_10th", "10th-house AV"), ("av_11th", "11th-house AV"), ("av_1st", "1st-house AV"),
     ("upa_occ", "Upachaya dasha"), ("raja_late", "Late Raja"), ("dhana_late", "Late Dhana"),
     ("bright_moon", "Bright Moon"), ("moon_disp", "Moon-lord in 1/2/11/12"), ("moon_sav", "Moon-sign AV"),
     ("sun_disp", "Sun-lord in 1st quadrant"), ("argala_pos", "Śubha argala on 2/10/12"),
-    ("purna_tithi", "Pūrṇa tithi (5/10/15)"),
+    ("purna_tithi", "Pūrṇa tithi (5/10/15)"), ("dig_lords", "Digbala of lagna/10th lords"),
 ]
 
 

@@ -6,8 +6,8 @@ the **don't-re-test registry**: if an idea is in the "Rejected" table below with
 it has already been tried and failed under honest validation. Add to this file; don't start
 a new one.
 
-- **Model as of this writing:** 14-factor `worldly_potential` composite, CV-AUC **≈ 0.73**
-  pooled (0.759 on the cleanest India ≥1940 cut). Reproduction: `ReadMe/scripts/fame_composite.py`.
+- **Model as of this writing:** 15-factor `worldly_potential` composite, CV-AUC **≈ 0.75**
+  pooled (0.789 on the cleanest India ≥1940 cut). Reproduction: `ReadMe/scripts/fame_composite.py`.
 - **Data:** 225 famous (rated AA/A/B/C by birth-time reliability) vs 96 ordinary control.
 - **Scoring convention:** 5-fold cross-validated pairwise AUC; sign + scale learned on the
   *train* fold only. Solo-AUC = a single factor alone. 0.50 = coin-flip; <0.50 = leans *ordinary*.
@@ -20,14 +20,15 @@ a new one.
 
 ---
 
-## A. Accepted — the 14 factors
+## A. Accepted — the 15 factors
 
 Each survived all four validation bars. Labels match `worldly_potential.py` / `_WP_LABELS`.
+**Model as of 2026-07: 15 factors, CV-AUC 0.751 full / 0.789 clean cut (≥1940).**
 
 | # | Factor | What it measures | Established in |
 |---|--------|------------------|----------------|
 | 1 | `rahu` | Rahu mahadāśā lived in prime (20–50) × dispositor not in 3/6/8/12 | compare_rahu, compare_rahu_natal, compare_rahu_composite |
-| 2 | `d60` | D60 (Ṣaṣṭiāṁśa) crude mean dignity of the 7 planets | fame_d10_av11, confirm_av11 |
+| 2 | `vimsopaka` | **Vimśopaka bala** — mean dignity of the 7 planets across all 16 Shodashavarga vargas (wt sum 20; D60/D1/D9 dominant). **Upgraded from crude D60 (0.54→0.61) on 2026-07** | strength_A, strength_final |
 | 3 | `av10` | 10th-house Sarvāṣṭakavarga bindus | av_perhouse, winners5 |
 | 4 | `av1` | 1st-house SAV bindus | av_perhouse, winners5 |
 | 5 | `upa` | Peak (20–50) years under a dāśā lord *occupying* 3/6/10/11 | winners5, dasha_house |
@@ -40,9 +41,21 @@ Each survived all four validation bars. Labels match `worldly_potential.py` / `_
 | 12 | `sun_disp` | Sun-sign dispositor placed in {1,2,3,4} | sun_tests, sun_validate |
 | 13 | `argala_pos` | Positive (śubha) Shadbala-weighted Jaimini argala on 2/10/12 | argala_nested, final13 |
 | 14 | `purna_tithi` | Born in a Pūrṇa tithi (5th/10th/15th of either pakṣa) | tithi_nested, final14 |
+| 15 | `dig_lords` | **Mean Dig Bala (directional strength) of the lagna-lord & 10th-lord.** Solo 0.57, ~zero corr with all others (orthogonal). **Added 2026-07** | strength_C, strength_final |
 
-Milestone composite runs: final5 → final12 → final13 → final14; matched-cut checks in
-compare_matched, confirm_av11. Multivariate CV framework: multivariate, score_ranking, breakdown.
+Milestone composite runs: final5 → final12 → final13 → final14 → **strength_final** (the 15-factor
+verification); matched-cut checks in compare_matched, confirm_av11. Multivariate CV framework:
+multivariate, score_ranking, breakdown. Reproduction: `ReadMe/scripts/fame_composite.py` (15-factor).
+
+### The 2026-07 strength sweep (5 candidates, 2 survived)
+Nandish's intuition that *strength* was under-read. Tested one-by-one, each nested + seed-validated:
+- **A · Cross-divisional strength** → **WIN (swap)**. Vimśopaka bala replaced crude D60 (factor 2).
+  The +factor form was redundant; **vargottama count was reversed** (ordinary 0.81 vs famous 0.67). `strength_A`
+- **B · Yogakāraka** → rejected (see below). `strength_B`
+- **C · Digbala of the lords** → **WIN (+factor 15)** `dig_lords`. `strength_C`
+- **D · House-lord total Shadbala** → rejected — it is *directional* strength specifically, not total. `strength_D`
+- **E · Indu / Sree Lagna** → rejected. `strength_E`
+- Combined A+C verification: full 0.732→0.751, ≥1940 0.759→**0.789**, ≥1955 0.708→0.753 (seed-stable). `strength_final`
 
 ---
 
@@ -84,6 +97,10 @@ solo-AUC unless stated; "nested +x" = honest lift over the then-current composit
 | **Peak single-strongest combination** (breadth vs one activated yoga) | ~0.58, no better than breadth | the count/breadth composite already wins | compare_peak, compare_activated |
 | **Tatva of functional benefics + nakṣatra types** | no separation | element/nakṣatra typing doesn't discriminate | tatva_nak |
 | **Upachaya-*lord condition*** (dignity of 3/6/10/11 lords + dispositors) | no lift beyond occupancy | only the *occupancy* dāśā (factor 5) survived | upachaya_cond |
+| **Yogakāraka** condition (strength/dignity/placement/dasha of the kendra-and-trikoṇa lord) | nested-honest 0.724 (<0.732) | dignified/activated yogakāraka leans faintly famous (0.54–0.56) but redundant with raja/dhana + dasha-activation | strength_B |
+| **House-lord *total* Shadbala** (1st/10th/11th lords, occupant strength) | solo 0.46–0.52; adds nothing beyond digbala | the sharp counter to factor 15 — it is the *directional* (dik) strength, not total strength, that marks fame | strength_D |
+| **Vargottama count** (planets in same D1 & D9 sign) | solo 0.449 (reversed) | ordinary have *more* vargottama (0.81 vs 0.67) — "fixed/repetitive" ≠ dynamic | strength_A |
+| **Indu Lagna & Sree Lagna** (Moon-based wealth/prosperity points) | nested-honest 0.718; several metrics reversed | one right-signed metric (benefics in K/T from Indu Lagna, 0.57) too weak; ordinary carry *more* support at the wealth point — a base-rate mirage | strength_E |
 
 ### Structural findings (not single rules)
 - **Birth-time precision is NOT the ceiling.** AA/A charts score *lower* (0.68–0.70) than the
@@ -110,4 +127,4 @@ Kept for reference; these build data or infrastructure rather than test a fame r
 
 ---
 
-*Last updated: 2026-07-03. Model = 14 factors, CV-AUC ≈ 0.73 (0.759 cleanest cut).*
+*Last updated: 2026-07-03 (strength sweep). Model = 15 factors, CV-AUC ≈ 0.75 pooled / 0.789 cleanest cut.*

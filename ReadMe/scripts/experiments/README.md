@@ -65,3 +65,11 @@ interactions — `compare_composite.py` · peak-vs-breadth — `compare_peak.py`
 `experiment1.py` `discarded_by_time.py` (time precision is not the ceiling) ·
 `experiment2.py` `domain_sig.py` (domain heterogeneity — the key positive result) ·
 `superstar_calib.py` `superstar_calib2.py` (early calibration).
+
+**2026-07 strength sweep (A–E; two survived → the 15-factor model):**
+`strength_A.py` (cross-divisional Vimśopaka — WIN, swapped in as factor 2) ·
+`strength_B.py` (yogakāraka — rejected) ·
+`strength_C.py` (digbala of lagna/10th lords — WIN, added as factor 15) ·
+`strength_D.py` (house-lord total Shadbala — rejected: it's *directional* strength specifically) ·
+`strength_E.py` (Indu/Sree Lagna — rejected) ·
+`strength_final.py` (combined A+C verification: 0.732→0.751 full, 0.759→**0.789** clean cut).

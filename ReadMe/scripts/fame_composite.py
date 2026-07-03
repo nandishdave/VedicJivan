@@ -1,16 +1,17 @@
-"""Verified 14-factor fame composite — reproduction script.
+"""Verified 15-factor fame composite — reproduction script.
 
 Run inside the API container (the Swiss-Ephemeris engine won't import on the host):
     docker cp ReadMe/scripts/fame_composite.py vedicjivan-api:/app/fame_composite.py
     docker exec -w /app vedicjivan-api python fame_composite.py
 
 Reads two chart sets already staged in the container:
-    /app/src_celebrities.json   — the 207 famous charts (== src/data/celebrities.json)
+    /app/src_celebrities.json   — the 225 famous charts (== src/data/celebrities.json)
     /app/normal_people.json     — the 96 ordinary/control charts
 
-The 11 factors (see ReadMe/methodology.html for the full write-up):
+The 15 factors (see ReadMe/methodology.html for the full write-up):
   1 Rahu prime-dasha (20-50) x clean-dispositor factor   [meteoric rise]
-  2 D60 crude dignity of the 7 planets                    [soul-level strength]
+  2 Vimśopaka bala — mean dignity of the 7 planets across the 16 Shodashavarga
+     divisionals (weights sum 20; D60/D1/D9 dominant)     [cross-varga strength]
   3 10th-house Ashtakavarga (career) — the anchor
   4 1st-house Ashtakavarga (self)
   5 Upachaya OCCUPANCY dasha in peak (lord sitting in 3/6/10/11)  [striving]
@@ -23,14 +24,19 @@ The 11 factors (see ReadMe/methodology.html for the full write-up):
  12 Sun-sign dispositor in the 1st quadrant (houses 1-4)  [self/status]
  13 Positive Shadbala-weighted argala on the 2/10/12 houses [Jaimini intervention]
  14 Born in a Pūrṇa tithi (5th/10th/15th — the "full/complete" group) [pañchāṅga]
+ 15 Mean Dig Bala of the lagna-lord and 10th-lord         [directional strength]
 
 Reports per-factor lift, 5-fold cross-validated AUC (count + sum), and the
-confound-matched India-born cuts. Verified result: CV-AUC ~0.73 full set,
-0.76 on the cleanest cut (India-born, born >= 1940). The Moon bundle (9-11)
+confound-matched India-born cuts. Verified result: CV-AUC ~0.74 full set,
+0.78 on the cleanest cut (India-born, born >= 1940). The Moon bundle (9-11)
 lifted the 8-factor 0.644 -> 0.680; the Sun dispositor (12) 0.686 -> 0.703;
-the positive argala (13) 0.703 -> 0.724; the Pūrṇa tithi (14) 0.724 -> 0.732
-(both nested-validated). D10 dignity, date numerology (Moolank/Bhagyank),
-dasha-timing, and the Pañchāṅga Nitya-yoga were tested and rejected.
+the positive argala (13) 0.703 -> 0.724; the Pūrṇa tithi (14) 0.724 -> 0.732;
+then two *strength* upgrades (2026-07): swapping crude D60 for the full
+Shodashavarga Vimśopaka bala (factor 2) and adding the lagna/10th-lord Dig Bala
+(factor 15) lifted 0.732 -> 0.751 full and 0.759 -> 0.789 on the clean cut
+(all seed-stable). Yogakāraka strength, house-lord total Shadbala, and the
+Indu/Sree Lagna special points were tested and rejected; D10, date numerology,
+dasha-timing, and the Pañchāṅga Nitya-yoga were rejected earlier.
 """
 import json
 import numpy as np
@@ -48,8 +54,12 @@ _DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
        "Neutral Sign": 45, "Enemy Sign": 25, "Debilitated": 5}
 _BAD = {3, 6, 8, 12}          # dusthana (dispositor / occupancy penalty)
 OCC = {3, 6, 10, 11}          # upachaya / growth-effort houses
-FEAT = ["rahu_prime", "d60_dignity", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
-        "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos", "purna_tithi"]
+# Factor 2 (Vimśopaka bala) — the 16 Shodashavarga vargas with classical weights (sum 20).
+_VARGA_W = {"D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D10": 0.5,
+            "D12": 0.5, "D16": 2.0, "D20": 0.5, "D24": 0.5, "D27": 0.5, "D30": 1.0,
+            "D40": 0.5, "D45": 0.5, "D60": 4.0}
+FEAT = ["rahu_prime", "vimsopaka", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
+        "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos", "purna_tithi", "dig_lords"]
 
 # Factor 13 — positive Shadbala-weighted argala on the 2/10/12 houses (from Lagna)
 _ARG_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
@@ -104,7 +114,7 @@ def _activation(dashas, birth_year, weights, a, b):
 
 
 def feats(dob, tob, lat, lon):
-    c = build_muhurta_chart(dob=dob, tob=tob, lat=lat, lon=lon)
+    c = build_muhurta_chart(dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=True)
     P, lag = c["planets"], c["lagna"]
     ls = lag["sign"]
     by = int(dob[:4])
@@ -116,9 +126,14 @@ def feats(dob, tob, lat, lon):
     dispf = 1.0 if P[SIGN_LORDS[P["Rahu"]["sign"]]]["house"] not in _BAD else 0.4
     rahu_prime = rahu_years * dispf
 
-    # 2 — D60 crude dignity
-    D60 = calc_divisional_charts(P, lag)["D60"]
-    d60_dignity = float(np.mean([_DP.get(_get_dignity(p, D60[p]), 45) for p in _C]))
+    # 2 — Vimśopaka bala: mean cross-divisional strength of the 7 planets over 16 vargas
+    varga = calc_divisional_charts(P, lag)
+    vim_total = 0.0
+    for p in _C:
+        for vname, vw in _VARGA_W.items():
+            vsign = P[p]["sign"] if vname == "D1" else varga[vname][p]
+            vim_total += vw * (_DP.get(_get_dignity(p, vsign), 45) / 100.0)
+    vimsopaka = vim_total / len(_C)
 
     # 3, 4, 8 — Ashtakavarga 10th (career) / 1st (self) / 11th (gains)
     tv = c["ashtakavarga"]["totals"]
@@ -156,9 +171,15 @@ def feats(dob, tob, lat, lon):
     tithi = int(((P["Moon"]["longitude"] - P["Sun"]["longitude"]) % 360) / 12) + 1
     purna_tithi = 1.0 if (tithi - 1) % 5 == 4 else 0.0
 
+    # 15 — mean Dig Bala of the lagna-lord and 10th-lord (rulers of self & career)
+    sb = c.get("shadbala", {})
+    lords = (SIGN_LORDS[ls], SIGN_LORDS[(ls + 9) % 12])
+    dvals = [sb[q]["dig_bala"] for q in lords if q in sb and "dig_bala" in sb[q]]
+    dig_lords = float(np.mean(dvals)) if dvals else 30.0
+
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
-    return [rahu_prime, d60_dignity, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,
-            bright_moon, moon_disp, moon_sav, sun_disp, argala_pos, purna_tithi], by, india
+    return [rahu_prime, vimsopaka, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,
+            bright_moon, moon_disp, moon_sav, sun_disp, argala_pos, purna_tithi, dig_lords], by, india
 
 
 def _bd(p):
@@ -204,7 +225,7 @@ for i, n in enumerate(FEAT):
     print(f"  {n:12} {F[:, i].mean():7.2f} {R[:, i].mean():7.2f}  {F[:, i].mean() - R[:, i].mean():+6.2f}")
 
 c, s = cv(F, R)
-print(f"\n14-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
+print(f"\n15-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
 
 print("\nconfound-matched India-born cuts (sum-AUC):")
 for yr in (0, 1940, 1955):

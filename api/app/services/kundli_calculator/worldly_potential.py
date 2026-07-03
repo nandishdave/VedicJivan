@@ -1,15 +1,18 @@
-"""Worldly-Potential — the validated 12-factor "fame-tilt" composite as a 0-100
+"""Worldly-Potential — the validated 15-factor "fame-tilt" composite as a 0-100
 readout for a single chart.
 
 This is the productionised form of the fame-signal study (see
 ``ReadMe/methodology.html`` and ``ReadMe/scripts/fame_composite.py``): across
-225 famous vs 96 ordinary charts the 14 factors below reached a cross-validated
-AUC ≈ 0.73 (0.76 on the cleanest confound-free cut). It is a *faint* tilt, not
+225 famous vs 96 ordinary charts the 15 factors below reached a cross-validated
+AUC ≈ 0.74 (0.78 on the cleanest confound-free cut). It is a *faint* tilt, not
 a fame predictor — surface it as worldly-potential, never as destiny.
 
-Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 14 factors:
+Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 15 factors:
   1 rahu_prime  — Rahu Mahadasha years in ages 20-50 × clean-dispositor factor
-  2 d60         — average dignity of the 7 classical planets in the D60
+  2 vimsopaka   — mean Vimśopaka bala of the 7 planets across the 16 Shodashavarga
+                  divisionals (weights sum 20; D60/D1/D9 dominant). "Does the chart's
+                  strength hold across the vargas?" — replaced the old crude single-
+                  varga D60 dignity (solo AUC 0.54 → 0.61; lifts the clean cut ~1.6pts)
   3 av_10th     — Sarvashtakavarga bindus on the 10th (career) — the anchor
   4 av_1st      — SAV bindus on the 1st (self) — near-noise, leans slightly
                   ordinary; kept for fidelity to the validated model
@@ -35,6 +38,15 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 14 factors:
                   11.5% (~2×); nested-validated (Pūrṇa picked in all 5 folds,
                   honest = in-sample 0.732) and independent of bright_moon
                   (corr −0.07 — separates in both bright and dark subsets).
+  ── digbala (added 2026-07, a directional-strength dimension) ──
+ 15 dig_lords   — mean Dig Bala (directional strength) of the lagna-lord and the
+                  10th-lord: the rulers of the *self* and the *career* able to act
+                  with full force in their power direction. Solo AUC 0.57, ~zero
+                  correlation with every existing factor (genuinely orthogonal), so
+                  it lifts the composite where strength-of-placement could not. NB:
+                  the luminaries' OWN digbala (Sun/Mars) was REVERSED — it is the
+                  *lords'* directional strength, not the karakas', that marks fame.
+                  Needs ``chart['shadbala']``.
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -51,6 +63,11 @@ _DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
        "Neutral Sign": 45, "Enemy Sign": 25, "Debilitated": 5}
 _BAD = {3, 6, 8, 12}        # dusthana — dispositor / occupancy penalty
 _OCC = {3, 6, 10, 11}       # upachaya / growth-effort houses
+# Factor 2 (Vimśopaka bala): the 16 Shodashavarga divisionals with their classical
+# weights (sum = 20). "D1" = the natal rasi sign itself. D60/D1/D9 carry the most.
+_VARGA_W = {"D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D10": 0.5,
+            "D12": 0.5, "D16": 2.0, "D20": 0.5, "D24": 0.5, "D27": 0.5, "D30": 1.0,
+            "D40": 0.5, "D45": 0.5, "D60": 4.0}
 # Argala (factor 13): all 9 grahas participate; benefics (J/V/Me, bright Moon)
 # intervene positively. ARG_PAIRS = (argala house Nth-from-R, its virodha Nth-from-R);
 # an argala is "effective" only if it outweighs its virodha counter. ARG_HOUSES
@@ -63,7 +80,7 @@ _ARG_HOUSES = (2, 10, 12)
 # factor -> (famous_mean, ordinary_mean, pooled_std over all 303 charts).
 REF = {
     "rahu_prime": (5.2406, 4.0625, 6.4857),
-    "d60":        (50.8903, 49.4494, 9.5252),
+    "vimsopaka":  (10.0424, 9.8151, 0.6692),
     "av_10th":    (31.9324, 29.8229, 4.6999),
     "av_1st":     (28.8502, 29.1875, 4.2607),
     "upa_occ":    (0.3649, 0.3056, 0.3157),
@@ -76,13 +93,15 @@ REF = {
     "sun_disp":     (0.4311, 0.2188, 0.4829),
     "argala_pos":   (781.0587, 604.2046, 495.3215),
     "purna_tithi":  (0.2267, 0.1146, 0.3954),
+    "dig_lords":    (31.9856, 28.2630, 12.3012),
 }
 _ARGALA_MID = (REF["argala_pos"][0] + REF["argala_pos"][1]) / 2.0  # neutral fallback
+_DIG_MID = (REF["dig_lords"][0] + REF["dig_lords"][1]) / 2.0       # neutral fallback
 _SQUASH_K = 2.2  # logistic steepness: mean-z 0 -> 50, +0.5 -> ~75, -0.5 -> ~25. Tunable.
 
-NOTE = ("A faint statistical tilt (AUC ~0.63) toward markers seen in prominent "
-        "charts — most of worldly success lives outside the chart. Treat as "
-        "potential, not destiny.")
+NOTE = ("A faint statistical tilt (cross-validated AUC ~0.74, ~0.78 on the cleanest "
+        "cut) toward markers seen in prominent charts — most of worldly success lives "
+        "outside the chart. Treat as potential, not destiny.")
 
 
 def _pw(links: list[dict]) -> dict:
@@ -136,8 +155,19 @@ def _positive_argala(chart: dict, bright_moon: float) -> float:
     return total
 
 
+def _dig_lords(chart: dict, ls: int, sign_lords: list) -> float:
+    """Factor 15 — mean Dig Bala (directional strength) of the lagna-lord and the
+    10th-lord, read from ``chart['shadbala'][planet]['dig_bala']``. The rulers of the
+    self and the career able to act in their power direction. Returns the neutral REF
+    midpoint if Shadbala (or the dig_bala component) is absent."""
+    sb = chart.get("shadbala") or {}
+    lords = (sign_lords[ls], sign_lords[(ls + 9) % 12])  # 1st-lord, 10th-lord
+    vals = [sb[p]["dig_bala"] for p in lords if p in sb and "dig_bala" in sb[p]]
+    return sum(vals) / len(vals) if vals else _DIG_MID
+
+
 def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
-    """The 14 raw factor values for a chart. Pure; mirrors fame_composite.py."""
+    """The 15 raw factor values for a chart. Pure; mirrors fame_composite.py."""
     from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
     from app.services.kundli_calculator.divisional import calc_divisional_charts
     from app.services.kundli_calculator.raja_yoga import raja_yoga_score
@@ -153,9 +183,16 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     dispf = 1.0 if P[SIGN_LORDS[P["Rahu"]["sign"]]]["house"] not in _BAD else 0.4
     rahu_prime = rahu_years * dispf
 
-    # 2 — D60 crude dignity (reuse cached divisional if present)
-    d60 = (chart.get("divisional") or calc_divisional_charts(P, lag))["D60"]
-    d60_dignity = sum(_DP.get(_get_dignity(p, d60[p]), 45) for p in _C) / len(_C)
+    # 2 — Vimśopaka bala: mean cross-divisional strength of the 7 planets over the 16
+    # Shodashavarga vargas (weights sum 20). "D1" = the natal rasi sign. Replaces the
+    # old crude single-varga D60 dignity — D60 remains the heaviest weight (4) within it.
+    varga = chart.get("divisional") or calc_divisional_charts(P, lag)
+    vim_total = 0.0
+    for p in _C:
+        for vname, vw in _VARGA_W.items():
+            vsign = P[p]["sign"] if vname == "D1" else varga[vname][p]
+            vim_total += vw * (_DP.get(_get_dignity(p, vsign), 45) / 100.0)
+    vimsopaka = vim_total / len(_C)
 
     # 3, 4, 8 — Ashtakavarga 10th (career) / 1st (self) / 11th (gains)
     tv = chart["ashtakavarga"]["totals"]
@@ -194,11 +231,15 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     tithi = int(elong / 12) + 1                      # 1..30
     purna_tithi = 1.0 if (tithi - 1) % 5 == 4 else 0.0
 
-    return {"rahu_prime": rahu_prime, "d60": d60_dignity, "av_10th": av_10th,
+    # 15 — mean digbala of the lagna-lord and 10th-lord (rulers of self & career)
+    dig_lords = _dig_lords(chart, ls, SIGN_LORDS)
+
+    return {"rahu_prime": rahu_prime, "vimsopaka": vimsopaka, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
             "dhana_late": dhana_late, "av_11th": av_11th,
             "bright_moon": bright_moon, "moon_disp": moon_disp, "moon_sav": moon_sav,
-            "sun_disp": sun_disp, "argala_pos": argala_pos, "purna_tithi": purna_tithi}
+            "sun_disp": sun_disp, "argala_pos": argala_pos, "purna_tithi": purna_tithi,
+            "dig_lords": dig_lords}
 
 
 def worldly_potential(chart: dict) -> dict | None:
@@ -223,7 +264,7 @@ def worldly_potential(chart: dict) -> dict | None:
 
 
 def score_from_factors(raw: dict) -> dict:
-    """Map the 14 raw factor values to a 0-100 worldly-potential readout: z-score
+    """Map the 15 raw factor values to a 0-100 worldly-potential readout: z-score
     each against its REF midpoint, orient famous-positive, average, squash. Pure —
     the deterministic core, split out for testing."""
     zs = {}
