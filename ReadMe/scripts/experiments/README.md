@@ -1,0 +1,67 @@
+# Fame-Signal Experiment Scripts (archive)
+
+The **runnable code** behind every experiment in
+[`ReadMe/experiment-ledger.md`](../../experiment-ledger.md). These were originally written in
+an ephemeral session scratchpad; archived here so the investigation is **reproducible** and,
+crucially, **re-runnable against a larger / cleaner chart set in future**.
+
+For *what each idea concluded and why*, read the ledger. This folder is the *how*.
+
+## Why these exist
+
+The whole point: when we add more **AA-rated** (birth-certificate-accurate) charts, we can
+re-run the rejected ideas to see whether any of them clears the validation bar on the bigger,
+cleaner sample — instead of rebuilding each test from memory. Add charts → re-run → compare.
+
+## How to run
+
+Each script imports the live `app.services...` calculators and reads two JSON datasets from
+the container filesystem, so they run **inside the `vedicjivan-api` container**:
+
+```bash
+# 1. Make sure the two datasets are present at the paths the scripts expect:
+#    /app/src_celebrities.json   <- the famous set   (source: src/data/celebrities.json)
+#    /app/normal_people.json     <- the ordinary set (source: ReadMe/data/ordinary_birth_data.json)
+docker cp src/data/celebrities.json           vedicjivan-api:/app/src_celebrities.json
+docker cp ReadMe/data/ordinary_birth_data.json vedicjivan-api:/app/normal_people.json
+
+# 2. Copy in and run a script (PowerShell on Windows to avoid MSYS path mangling):
+docker cp ReadMe/scripts/experiments/d10_byrating.py vedicjivan-api:/app/d10_byrating.py
+docker exec -w /app vedicjivan-api python d10_byrating.py
+```
+
+Each chart record needs `birth: {date, time, lat, lon, place}`, a `rating` (AA/A/B/C) for the
+time-quality cuts, and (for domain slices) a `category`/domain field.
+
+- **Shadbala:** most scripts pass `with_shadbala=False` for speed; the argala factor needs
+  `with_shadbala=True` (slower). Each script's docstring says which.
+- **Scoring:** 5-fold cross-validated pairwise AUC, sign+scale learned on the train fold only.
+  Nested variants re-select the feature *inside* each fold — that's the honest number.
+
+## Map: script → what it tests (verdict in the ledger)
+
+**Accepted factors (re-validate these on new data):**
+`final5/12/13/14.py` (composite milestones) · `av_perhouse.py` `winners5.py` (AV + upachaya) ·
+`yoga_activation.py` `late_window.py` `winners7.py` (late Raja/Dhana activation) ·
+`moon_tests.py` `moon_disp.py` `moon_disp_houses.py` `revalidate.py` `eleven.py` (Moon factors) ·
+`sun_validate.py` (Sun dispositor) · `confirm_av11.py` (11th AV) ·
+`argala_nested.py` (argala) · `tithi_nested.py` (Pūrṇa tithi) ·
+`compare_rahu*.py` `rahu_behavior.py` (Rahu prime) · `multivariate.py` `compare_matched.py` (CV framework).
+
+**Rejected ideas (the re-test candidates):**
+D10 — `d10_rich.py` `d10_byrating.py` `dasha_d10houses.py` `neecha.py` `neecha_strict.py` `fame_d10_av11.py` ·
+Rich D60 — `d60_rich.py` · static Dhana/Raja — `winners6_dhana.py` `dhana_build.py` `winners6_raja.py` ·
+Prosperity — `prosperity8.py` · FB dāśā — `compare_fbdasha.py` `dasha_now.py` ·
+3/6/10/11-lord dāśā — `md_lagna.py` `upachaya_cond.py` ·
+Numerology — `moolank_test.py` `moolank_house.py` `moolank_rule.py` `moolank_nested.py` `moolank_dasha.py` `numer_recheck.py` ·
+Argala variants — `argala.py` `argala_allhouses.py` ·
+Nitya-yoga / Tithi — `yogatithi.py` · Jaimini — `jaimini_karaka.py` `jaimini_karakamsa.py` `hyp_jaimini.py` ·
+KP — `kp_analysis.py` `kp_probe.py` · Arudha Lagna — `experiment23.py` `al_nested.py` ·
+config/lord yogas — `hyp_config.py` `hyp_fb.py` `hyp_lords.py` ·
+Chandra/Sūrya kundali — `moon_perfactor.py` `sun_tests.py` · Tatva/nakṣatra — `tatva_nak.py` ·
+interactions — `compare_composite.py` · peak-vs-breadth — `compare_peak.py` `compare_activated.py`.
+
+**Structural (birth-time & domain):**
+`experiment1.py` `discarded_by_time.py` (time precision is not the ceiling) ·
+`experiment2.py` `domain_sig.py` (domain heterogeneity — the key positive result) ·
+`superstar_calib.py` `superstar_calib2.py` (early calibration).
