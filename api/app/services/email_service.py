@@ -370,6 +370,7 @@ _WP_LABELS = [
     ("upa_occ", "Upachaya dasha"), ("raja_late", "Late Raja"), ("dhana_late", "Late Dhana"),
     ("bright_moon", "Bright Moon"), ("moon_disp", "Moon-lord in 1/2/11/12"), ("moon_sav", "Moon-sign AV"),
     ("sun_disp", "Sun-lord in 1st quadrant"), ("argala_pos", "Śubha argala on 2/10/12"),
+    ("purna_tithi", "Pūrṇa tithi (5/10/15)"),
 ]
 
 

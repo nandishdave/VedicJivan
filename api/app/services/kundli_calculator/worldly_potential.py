@@ -3,11 +3,11 @@ readout for a single chart.
 
 This is the productionised form of the fame-signal study (see
 ``ReadMe/methodology.html`` and ``ReadMe/scripts/fame_composite.py``): across
-225 famous vs 96 ordinary charts the 13 factors below reached a cross-validated
-AUC ≈ 0.72 (0.75 on the cleanest confound-free cut). It is a *faint* tilt, not
+225 famous vs 96 ordinary charts the 14 factors below reached a cross-validated
+AUC ≈ 0.73 (0.76 on the cleanest confound-free cut). It is a *faint* tilt, not
 a fame predictor — surface it as worldly-potential, never as destiny.
 
-Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 13 factors:
+Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 14 factors:
   1 rahu_prime  — Rahu Mahadasha years in ages 20-50 × clean-dispositor factor
   2 d60         — average dignity of the 7 classical planets in the D60
   3 av_10th     — Sarvashtakavarga bindus on the 10th (career) — the anchor
@@ -29,6 +29,12 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 13 factors:
                   on wealth/career/foreign houses, unobstructed by their virodha
                   (12/10/9/3) counter. Solo AUC 0.60; lifts the composite
                   0.70 -> 0.72 (nested-validated). Needs ``chart['shadbala']``.
+  ── pañchāṅga (added 2026-07) ──
+ 14 purna_tithi — born in a Pūrṇa tithi (5th/10th/15th of either paksha — the
+                  "full/complete" pañcha-tithi group). Famous 22.7% vs ordinary
+                  11.5% (~2×); nested-validated (Pūrṇa picked in all 5 folds,
+                  honest = in-sample 0.732) and independent of bright_moon
+                  (corr −0.07 — separates in both bright and dark subsets).
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -69,6 +75,7 @@ REF = {
     "moon_sav":     (27.5911, 27.1562, 4.7677),
     "sun_disp":     (0.4311, 0.2188, 0.4829),
     "argala_pos":   (781.0587, 604.2046, 495.3215),
+    "purna_tithi":  (0.2267, 0.1146, 0.3954),
 }
 _ARGALA_MID = (REF["argala_pos"][0] + REF["argala_pos"][1]) / 2.0  # neutral fallback
 _SQUASH_K = 2.2  # logistic steepness: mean-z 0 -> 50, +0.5 -> ~75, -0.5 -> ~25. Tunable.
@@ -130,7 +137,7 @@ def _positive_argala(chart: dict, bright_moon: float) -> float:
 
 
 def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
-    """The 13 raw factor values for a chart. Pure; mirrors fame_composite.py."""
+    """The 14 raw factor values for a chart. Pure; mirrors fame_composite.py."""
     from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
     from app.services.kundli_calculator.divisional import calc_divisional_charts
     from app.services.kundli_calculator.raja_yoga import raja_yoga_score
@@ -182,11 +189,16 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     # 13 — positive Shadbala-weighted argala on the 2nd/10th/12th (fame houses)
     argala_pos = _positive_argala(chart, bright_moon)
 
+    # 14 — born in a Pūrṇa tithi (5th/10th/15th of either paksha). Tithi from the
+    # Moon-Sun elongation; the pañcha-tithi group is (tithi-1) mod 5 (4 = Pūrṇa).
+    tithi = int(elong / 12) + 1                      # 1..30
+    purna_tithi = 1.0 if (tithi - 1) % 5 == 4 else 0.0
+
     return {"rahu_prime": rahu_prime, "d60": d60_dignity, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
             "dhana_late": dhana_late, "av_11th": av_11th,
             "bright_moon": bright_moon, "moon_disp": moon_disp, "moon_sav": moon_sav,
-            "sun_disp": sun_disp, "argala_pos": argala_pos}
+            "sun_disp": sun_disp, "argala_pos": argala_pos, "purna_tithi": purna_tithi}
 
 
 def worldly_potential(chart: dict) -> dict | None:
@@ -211,7 +223,7 @@ def worldly_potential(chart: dict) -> dict | None:
 
 
 def score_from_factors(raw: dict) -> dict:
-    """Map the 13 raw factor values to a 0-100 worldly-potential readout: z-score
+    """Map the 14 raw factor values to a 0-100 worldly-potential readout: z-score
     each against its REF midpoint, orient famous-positive, average, squash. Pure —
     the deterministic core, split out for testing."""
     zs = {}

@@ -1,4 +1,4 @@
-"""Verified 13-factor fame composite — reproduction script.
+"""Verified 14-factor fame composite — reproduction script.
 
 Run inside the API container (the Swiss-Ephemeris engine won't import on the host):
     docker cp ReadMe/scripts/fame_composite.py vedicjivan-api:/app/fame_composite.py
@@ -22,13 +22,15 @@ The 11 factors (see ReadMe/methodology.html for the full write-up):
  11 Moon-sign's own Sarvashtakavarga bindus               [weakest of the Moon 3]
  12 Sun-sign dispositor in the 1st quadrant (houses 1-4)  [self/status]
  13 Positive Shadbala-weighted argala on the 2/10/12 houses [Jaimini intervention]
+ 14 Born in a Pūrṇa tithi (5th/10th/15th — the "full/complete" group) [pañchāṅga]
 
 Reports per-factor lift, 5-fold cross-validated AUC (count + sum), and the
-confound-matched India-born cuts. Verified result: CV-AUC ~0.72 full set,
-0.75 on the cleanest cut (India-born, born >= 1940). The Moon bundle (9-11)
+confound-matched India-born cuts. Verified result: CV-AUC ~0.73 full set,
+0.76 on the cleanest cut (India-born, born >= 1940). The Moon bundle (9-11)
 lifted the 8-factor 0.644 -> 0.680; the Sun dispositor (12) 0.686 -> 0.703;
-the positive argala (13) 0.703 -> 0.724 (nested-validated). D10 dignity, date
-numerology (Moolank/Bhagyank), and dasha-timing were tested and rejected.
+the positive argala (13) 0.703 -> 0.724; the Pūrṇa tithi (14) 0.724 -> 0.732
+(both nested-validated). D10 dignity, date numerology (Moolank/Bhagyank),
+dasha-timing, and the Pañchāṅga Nitya-yoga were tested and rejected.
 """
 import json
 import numpy as np
@@ -47,7 +49,7 @@ _DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
 _BAD = {3, 6, 8, 12}          # dusthana (dispositor / occupancy penalty)
 OCC = {3, 6, 10, 11}          # upachaya / growth-effort houses
 FEAT = ["rahu_prime", "d60_dignity", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
-        "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos"]
+        "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos", "purna_tithi"]
 
 # Factor 13 — positive Shadbala-weighted argala on the 2/10/12 houses (from Lagna)
 _ARG_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
@@ -150,9 +152,13 @@ def feats(dob, tob, lat, lon):
     # 13 — positive Shadbala-weighted argala on the 2nd/10th/12th houses
     argala_pos = _positive_argala(P, c.get("shadbala", {}), bright_moon)
 
+    # 14 — born in a Pūrṇa tithi (5th/10th/15th of either paksha)
+    tithi = int(((P["Moon"]["longitude"] - P["Sun"]["longitude"]) % 360) / 12) + 1
+    purna_tithi = 1.0 if (tithi - 1) % 5 == 4 else 0.0
+
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
     return [rahu_prime, d60_dignity, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,
-            bright_moon, moon_disp, moon_sav, sun_disp, argala_pos], by, india
+            bright_moon, moon_disp, moon_sav, sun_disp, argala_pos, purna_tithi], by, india
 
 
 def _bd(p):
@@ -198,7 +204,7 @@ for i, n in enumerate(FEAT):
     print(f"  {n:12} {F[:, i].mean():7.2f} {R[:, i].mean():7.2f}  {F[:, i].mean() - R[:, i].mean():+6.2f}")
 
 c, s = cv(F, R)
-print(f"\n13-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
+print(f"\n14-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
 
 print("\nconfound-matched India-born cuts (sum-AUC):")
 for yr in (0, 1940, 1955):

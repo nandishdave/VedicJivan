@@ -35,14 +35,14 @@
 <div class="wrap">
 
 <h1>The Fame-Signal Study</h1>
-<p class="sub">Can a birth chart tell the famous from the ordinary? A rigorous, confound-checked answer — the verified <strong>13-factor composite</strong>. VedicJivan, 225 famous vs 96 ordinary charts.</p>
+<p class="sub">Can a birth chart tell the famous from the ordinary? A rigorous, confound-checked answer — the verified <strong>14-factor composite</strong>. VedicJivan, 225 famous vs 96 ordinary charts.</p>
 
 <div class="callout good">
-  <strong>The honest headline.</strong> Across <strong>321 real charts (225 famous + 96 ordinary)</strong>, the verified 13-factor composite reaches <strong>cross-validated AUC ≈ 0.72</strong> — and <strong>0.746 on the cleanest confound-free cut</strong> (modern Indian famous vs modern Indian ordinary). That is a <em>real, repeatable, confound-checked</em> tilt — better than chance (0.50), and it <em>survived</em> age-, era-, and geography-matching, which almost nothing in this field does. It is still <em>faint</em>: nowhere near a reliable predictor (0.80+). <strong>A chart is a map of possibility, not a verdict of fame.</strong>
+  <strong>The honest headline.</strong> Across <strong>321 real charts (225 famous + 96 ordinary)</strong>, the verified 14-factor composite reaches <strong>cross-validated AUC ≈ 0.73</strong> — and <strong>0.759 on the cleanest confound-free cut</strong> (modern Indian famous vs modern Indian ordinary). That is a <em>real, repeatable, confound-checked</em> tilt — better than chance (0.50), and it <em>survived</em> age-, era-, and geography-matching, which almost nothing in this field does. It is still <em>faint</em>: nowhere near a reliable predictor (0.80+). <strong>A chart is a map of possibility, not a verdict of fame.</strong>
 </div>
 
 <div class="callout info">
-  <strong>What changed from the earlier "all-null" verdict.</strong> The first investigation (32 famous, 9 rounds) concluded no factor beat ~0.55 and advised not reopening without 500+ charts. Reopening at <strong>207 famous</strong> with two new ideas — <em>Rahu-timing</em> and <em>life-stage yoga activation</em> — produced the first signal that holds up under confound-matching. More charts + the right factors (Rahu-timing, late yoga activation, the 10th/11th-house Ashtakavarga, a three-factor <em>Moon bundle</em>, a <em>Sun-dispositor</em> factor and a Shadbala-weighted <em>Jaimini argala</em> factor) moved it from 0.55 to 0.72.
+  <strong>What changed from the earlier "all-null" verdict.</strong> The first investigation (32 famous, 9 rounds) concluded no factor beat ~0.55 and advised not reopening without 500+ charts. Reopening at <strong>207 famous</strong> with two new ideas — <em>Rahu-timing</em> and <em>life-stage yoga activation</em> — produced the first signal that holds up under confound-matching. More charts + the right factors (Rahu-timing, late yoga activation, the 10th/11th-house Ashtakavarga, a three-factor <em>Moon bundle</em>, a <em>Sun-dispositor</em> factor, a Shadbala-weighted <em>Jaimini argala</em> factor and the <em>Pūrṇa tithi</em>) moved it from 0.55 to 0.73.
 </div>
 
 <h2>The finding in one line</h2>
@@ -57,7 +57,7 @@
 </table>
 <p class="muted">Rahu <em>peaks early</em> — widening its window past 50 only dilutes it. The wealth/power yogas <em>pay off late</em> — they only separate the famous when you look after 50. Give each its correct clock and both contribute.</p>
 
-<h2>The 13 verified factors</h2>
+<h2>The 14 verified factors</h2>
 <p class="muted">Each factor is one number per chart. <em>Lift</em> = famous-mean − ordinary-mean over the 321 charts (its sign sets the "famous-positive" orientation).</p>
 <table>
   <tr><th>#</th><th>Factor</th><th>What it measures</th><th>Lift (fam − ord)</th></tr>
@@ -74,6 +74,7 @@
   <tr><td>11</td><td><b>Moon-sign Ashtakavarga</b> <span class="pill">Moon bundle</span></td><td>The Moon-sign's own SAV bindus — weakest of the three</td><td class="pos">+0.43</td></tr>
   <tr><td>12</td><td><b>Sun-lord in 1st quadrant</b> <span class="pill">luminary</span></td><td>The Sun-sign's dispositor sits in houses 1–4 (self · resources · valor · roots) — the 1st alone is ~6× famous</td><td class="pos">+0.21</td></tr>
   <tr><td>13</td><td><b>Śubha argala on 2/10/12</b> <span class="pill">argala</span></td><td>Positive (benefic) <em>Jaimini argala</em> on the 2nd/10th/12th houses (wealth · career · foreign), weighted by Shadbala — benefics intervening from the 2/4/5/11 and beating their 12/10/9/3 counter. <em>Solo AUC 0.60 — the strongest single factor.</em></td><td class="pos">+176.9</td></tr>
+  <tr><td>14</td><td><b>Pūrṇa tithi</b> <span class="pill">pañchāṅga</span></td><td>Born in a Pūrṇa tithi — the 5th/10th/15th of either paksha (the "full/complete" pañcha-tithi group). Famous <b>22.7%</b> vs ordinary <b>11.5%</b> (~2×); Rikta ("empty") leans ordinary, as tradition predicts. Independent of the bright Moon (corr −0.07).</td><td class="pos">+0.11</td></tr>
 </table>
 <p class="muted">Factor 4 (1st-AV) leans very slightly negative and is oriented accordingly in the composite; it is retained as a weak self/vitality signal that complements the 10th-AV anchor.</p>
 
@@ -133,6 +134,14 @@ activation     = Σ (weight[MD lord] × overlap-years in 50–80) / Σ (overlap-
   <p>This is the <b>strongest single factor of the study</b> (solo AUC 0.60) and lifts the composite <b>0.70 → 0.72</b>. Two things make it trustworthy: (1) the houses were <em>nested-validated</em> — re-picked inside each cross-validation fold, they landed on <b>{2, 10, 12} in all five folds</b>; (2) the <b>Shadbala weighting is essential</b> — the raw <em>count</em> version is flat (AUC 0.556). Real planetary strength, intervening on the earning/career/foreign axis, is the operative thing — exactly as the classics say. Famous carry <b>~12% more</b> Shadbala-weighted benefic argala on these houses (1036 vs 923).</p>
 </div>
 
+<div class="card">
+  <h3><span class="num">14</span>Pūrṇa tithi (the "full/complete" lunar day)</h3>
+  <p>The <em>pañcha-tithi</em> scheme groups the 30 tithis by <code>(tithi−1) mod 5</code>: <b>Nanda</b> (joy) · <b>Bhadra</b> (auspicious) · <b>Jaya</b> (victory) · <b>Rikta</b> (empty) · <b>Pūrṇa</b> (full). Being <b>born in a Pūrṇa tithi</b> — the 5th, 10th or 15th of either paksha — is the standout:</p>
+  <pre>Pūrṇa tithi:  famous 22.7%  vs  ordinary 11.5%   (~2×)
+Rikta tithi:  famous 16.4%  vs  ordinary 21.9%   (leans ordinary, as tradition says)</pre>
+  <p>Two checks make it real, not a fluke of picking the best of five groups: (1) <b>nested-validated</b> — when the winning group was re-chosen inside every fold it landed on <b>Pūrṇa all five times</b>, and the honest AUC (0.732) <em>equals</em> the in-sample value — zero selection bias; (2) <b>independent of the bright Moon</b> (factor 9): correlation just −0.07, and Pūrṇa separates famous from ordinary <em>within both</em> the bright-Moon (18.7% vs 9.8%) and dark-Moon (27.5% vs 12.7%) subsets. It is a distinct "completeness" signal — the Pūrṇa group spans the whole brightness range, so it is not re-counting lunar brightness. Lifts the composite <b>0.724 → 0.732</b> (≥1940 cut 0.746 → 0.759).</p>
+</div>
+
 <h2>What got <span class="neg">falsified</span> (equally important)</h2>
 <p>A finding is only trustworthy next to what it rules out. Every one of these was tested on the full set and <em>failed</em> to separate fame:</p>
 <table>
@@ -149,6 +158,8 @@ activation     = Σ (weight[MD lord] × overlap-years in 50–80) / Σ (overlap-
   <tr><td>Numerology-planet <b>house placement</b> {1,2,3,5,10}</td><td>nested +0.004</td><td>real but tiny &amp; redundant — the date-planets land in prominence houses for reasons the AV factors already capture</td></tr>
   <tr><td>Moolank/Bhagyank <b>Mahadasha in prime</b> (20–50)</td><td>solo AUC 0.48</td><td>clean null — dasha order is set by the birth <em>nakshatra</em>, independent of the calendar date</td></tr>
   <tr><td><b>Net</b> / <b>negative</b> argala; <b>count-based</b> argala</td><td>flat / hurt</td><td>only <em>positive, Shadbala-weighted</em> argala survives; count-only is noise</td></tr>
+  <tr><td>Pañchāṅga <b>Nitya Yoga</b> (27) — benefic-vs-malefic, per-yoga</td><td>solo AUC 0.51</td><td>null &amp; incoherent — malefic yogas (Vyatipata, Vajra) lean famous too; sparse across 27 buckets</td></tr>
+  <tr><td>Tithi groups other than Pūrṇa (Nanda / Jaya / Rikta as +factors)</td><td>flat / reversed</td><td>only <em>Pūrṇa</em> separates; Jaya/Nanda lean ordinary or wash out</td></tr>
 </table>
 <p class="muted">The pattern is unmistakable: the <em>named classical yogas</em> everyone quotes sit at ~0.48–0.53 (chance). What works is <b>strength, effort, and timing</b> — Ashtakavarga, D60 dignity, Rahu timing, life-stage activation.</p>
 
@@ -164,23 +175,23 @@ activation     = Σ (weight[MD lord] × overlap-years in 50–80) / Σ (overlap-
 <h2>Results — honestly</h2>
 <table>
   <tr><th>Model</th><th>CV-AUC (count / sum)</th><th>Note</th></tr>
-  <tr><td><b>13-factor composite</b> (this doc)</td><td><b>0.705 / 0.724</b></td><td>full set — the verified model</td></tr>
-  <tr><td>12-factor (before the argala factor)</td><td>0.687 / 0.703</td><td>the prior lock</td></tr>
+  <tr><td><b>14-factor composite</b> (this doc)</td><td><b>0.713 / 0.732</b></td><td>full set — the verified model</td></tr>
+  <tr><td>13-factor (before the Pūrṇa tithi)</td><td>0.705 / 0.724</td><td>the prior lock</td></tr>
   <tr><td>Weak yogas solo (Dhana/Raja/Prosperity)</td><td>~0.48–0.53</td><td>chance — do not separate fame</td></tr>
 </table>
-<p class="muted">The argala factor's houses (2/10/12) were <em>nested-validated</em> — re-selected inside each training fold and scored on held-out charts — so the lift is not selection bias. The fully out-of-sample floor is ~0.71; the fixed-house full value is 0.724. We headline the honest band, <strong>≈ 0.72</strong>.</p>
+<p class="muted">Both the argala houses (2/10/12) and the Pūrṇa tithi were <em>nested-validated</em> — re-selected inside each training fold and scored on held-out charts — so the lift is not selection bias (for the Pūrṇa tithi the honest AUC <em>equalled</em> the in-sample 0.732). We headline the honest band, <strong>≈ 0.73</strong>.</p>
 <h3>Confound-matched cuts (the trustworthy numbers)</h3>
 <p>The full set carries an age gap (famous born ~1940, ordinary ~1987). Stripping it out by matching on era <em>and</em> geography is the real test:</p>
 <table>
-  <tr><th>Cut</th><th>n (famous)</th><th>8-factor → 13-factor sum-AUC</th></tr>
-  <tr><td>Modern India-born, born ≥ 1940</td><td>84</td><td>0.666 → <b>0.746</b> — best clean cut</td></tr>
-  <tr><td>India-born, all</td><td>128</td><td>0.660 → 0.719</td></tr>
-  <tr><td>Modern India-born, born ≥ 1955</td><td>70</td><td>0.603 → 0.689 — tightest</td></tr>
+  <tr><th>Cut</th><th>n (famous)</th><th>8-factor → 14-factor sum-AUC</th></tr>
+  <tr><td>Modern India-born, born ≥ 1940</td><td>84</td><td>0.666 → <b>0.759</b> — best clean cut</td></tr>
+  <tr><td>India-born, all</td><td>128</td><td>0.660 → 0.729</td></tr>
+  <tr><td>Modern India-born, born ≥ 1955</td><td>70</td><td>0.603 → 0.708 — tightest</td></tr>
 </table>
-<p>The signal <em>held</em> — and even ticked up — once age and geography were removed. That is the strongest evidence it is real astrology, not a demographic artifact. The <em>luminary factors</em> (Moon bundle + Sun dispositor) and the <em>argala factor</em> lifted <em>every</em> cut — the tightest (≥1955) climbed 0.603 → 0.689: this now lives in a <strong>~0.69–0.75 band</strong>, not a hard point.</p>
+<p>The signal <em>held</em> — and even ticked up — once age and geography were removed. That is the strongest evidence it is real astrology, not a demographic artifact. The <em>luminary factors</em> (Moon bundle + Sun dispositor), the <em>argala factor</em> and the <em>Pūrṇa tithi</em> lifted <em>every</em> cut — the tightest (≥1955) climbed 0.603 → 0.708: this now lives in a <strong>~0.71–0.76 band</strong>, not a hard point.</p>
 
 <div class="callout">
-  <strong>Bottom line.</strong> These 13 factors are a genuine, confound-checked <em>fame-tilt</em> readout at <strong>AUC ≈ 0.72</strong> — the strongest honest result of the whole investigation, and every factor has a <em>reason</em>, not just a correlation. They are <em>not</em> a fame oracle (0.80+ is out of reach — most of fame lives outside the chart). Use them as a <em>chart-strength / worldly-potential</em> reading and for ranking auspicious birth-moments (Muhurta) by yoga quality — never as a verdict on a person. <strong>The famous strive; the chart maps the possibility, not the outcome.</strong>
+  <strong>Bottom line.</strong> These 14 factors are a genuine, confound-checked <em>fame-tilt</em> readout at <strong>AUC ≈ 0.73</strong> — the strongest honest result of the whole investigation, and every factor has a <em>reason</em>, not just a correlation. They are <em>not</em> a fame oracle (0.80+ is out of reach — most of fame lives outside the chart). Use them as a <em>chart-strength / worldly-potential</em> reading and for ranking auspicious birth-moments (Muhurta) by yoga quality — never as a verdict on a person. <strong>The famous strive; the chart maps the possibility, not the outcome.</strong>
 </div>
 
 <div class="foot">
