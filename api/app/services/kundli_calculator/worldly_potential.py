@@ -19,7 +19,7 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 11 factors:
   8 av_11th     — Sarvashtakavarga bindus on the 11th (gains) — 2nd-strongest
   ── the Moon bundle (added 2026-07, a lunar dimension independent of the above) ──
   9 bright_moon — Moon in the bright half (Shukla-7..Krishna-7 = elongation 72-264°)
- 10 moon_disp_12— the Moon-sign's dispositor (rashi lord) sits in the 1st or 2nd
+ 10 moon_disp   — the Moon-sign's dispositor sits in the 1st/2nd/11th/12th (public-presence)
  11 moon_sav    — the Moon-sign's own Sarvashtakavarga bindus (weakest of the three)
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
@@ -50,7 +50,7 @@ REF = {
     "dhana_late": (0.6001, 0.3574, 1.0889),
     "av_11th":    (32.4010, 30.8854, 4.4462),
     "bright_moon":  (0.5467, 0.4271, 0.5007),
-    "moon_disp_12": (0.2933, 0.1562, 0.4350),
+    "moon_disp":    (0.4844, 0.3021, 0.4958),
     "moon_sav":     (27.5911, 27.1562, 4.7677),
 }
 _SQUASH_K = 2.2  # logistic steepness: mean-z 0 -> 50, +0.5 -> ~75, -0.5 -> ~25. Tunable.
@@ -125,13 +125,13 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     ms = P["Moon"]["sign"]
     elong = (P["Moon"]["longitude"] - P["Sun"]["longitude"]) % 360
     bright_moon = 1.0 if 72 <= elong <= 264 else 0.0        # Shukla-7 .. Krishna-7 (bright half)
-    moon_disp_12 = 1.0 if P[SIGN_LORDS[ms]]["house"] in (1, 2) else 0.0  # Moon-sign lord in 1st/2nd
+    moon_disp = 1.0 if P[SIGN_LORDS[ms]]["house"] in (1, 2, 11, 12) else 0.0  # Moon-lord in a public-presence house
     moon_sav = tv[ms]                                        # the Moon-sign's own SAV bindus
 
     return {"rahu_prime": rahu_prime, "d60": d60_dignity, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
             "dhana_late": dhana_late, "av_11th": av_11th,
-            "bright_moon": bright_moon, "moon_disp_12": moon_disp_12, "moon_sav": moon_sav}
+            "bright_moon": bright_moon, "moon_disp": moon_disp, "moon_sav": moon_sav}
 
 
 def worldly_potential(chart: dict) -> dict | None:

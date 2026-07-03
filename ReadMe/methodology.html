@@ -38,7 +38,7 @@
 <p class="sub">Can a birth chart tell the famous from the ordinary? A rigorous, confound-checked answer — the verified <strong>11-factor composite</strong>. VedicJivan, 225 famous vs 96 ordinary charts.</p>
 
 <div class="callout good">
-  <strong>The honest headline.</strong> Across <strong>321 real charts (225 famous + 96 ordinary)</strong>, the verified 11-factor composite reaches <strong>cross-validated AUC ≈ 0.68</strong> — and <strong>0.695 on the cleanest confound-free cut</strong> (modern Indian famous vs modern Indian ordinary). That is a <em>real, repeatable, confound-checked</em> tilt — better than chance (0.50), and it <em>survived</em> age-, era-, and geography-matching, which almost nothing in this field does. It is still <em>faint</em>: nowhere near a reliable predictor (0.80+). <strong>A chart is a map of possibility, not a verdict of fame.</strong>
+  <strong>The honest headline.</strong> Across <strong>321 real charts (225 famous + 96 ordinary)</strong>, the verified 11-factor composite reaches <strong>cross-validated AUC ≈ 0.69</strong> — and <strong>0.708 on the cleanest confound-free cut</strong> (modern Indian famous vs modern Indian ordinary). That is a <em>real, repeatable, confound-checked</em> tilt — better than chance (0.50), and it <em>survived</em> age-, era-, and geography-matching, which almost nothing in this field does. It is still <em>faint</em>: nowhere near a reliable predictor (0.80+). <strong>A chart is a map of possibility, not a verdict of fame.</strong>
 </div>
 
 <div class="callout info">
@@ -70,7 +70,7 @@
   <tr><td>7</td><td><b>Late Dhana activation</b></td><td>Years 50–80 run under the Mahadasha of a planet <em>forming</em> the Dhana yoga</td><td class="pos">+0.24</td></tr>
   <tr><td>8</td><td><b>11th-house Ashtakavarga</b></td><td>Sarvashtakavarga bindus on the 11th (gains) — <em>2nd-strongest factor</em></td><td class="pos">+1.52</td></tr>
   <tr><td>9</td><td><b>Bright Moon</b> <span class="pill">Moon bundle</span></td><td>Moon in the bright half — Shukla-7 to Krishna-7 (elongation 72°–264° from the Sun)</td><td class="pos">+0.12</td></tr>
-  <tr><td>10</td><td><b>Moon-lord in 1st/2nd</b> <span class="pill">Moon bundle</span></td><td>The Moon-sign's dispositor (rashi lord) sits in the 1st or 2nd house (public persona)</td><td class="pos">+0.14</td></tr>
+  <tr><td>10</td><td><b>Moon-lord in 1/2/11/12</b> <span class="pill">Moon bundle</span></td><td>The Moon-sign's dispositor (rashi lord) sits in a public-presence house — 1st, 2nd, 11th or 12th</td><td class="pos">+0.18</td></tr>
   <tr><td>11</td><td><b>Moon-sign Ashtakavarga</b> <span class="pill">Moon bundle</span></td><td>The Moon-sign's own SAV bindus — weakest of the three</td><td class="pos">+0.43</td></tr>
 </table>
 <p class="muted">Factor 4 (1st-AV) leans very slightly negative and is oriented accordingly in the composite; it is retained as a weak self/vitality signal that complements the 10th-AV anchor.</p>
@@ -114,7 +114,7 @@ activation     = Σ (weight[MD lord] × overlap-years in 50–80) / Σ (overlap-
   <p>The first eight factors read the <em>houses and dashas</em> from the ascendant. The Moon adds a genuinely <em>independent</em> lunar dimension — three factors that lifted the composite from <b>0.64 → 0.68</b>, its single biggest jump:</p>
   <ul>
     <li><b>Bright Moon</b> — the Moon in the well-lit half of the month (Shukla-7 through Krishna-7, i.e. elongation 72°–264° from the Sun). Debilitation is <em>ignored</em>; brightness is the strength. Famous <b>55%</b> vs ordinary <b>43%</b> — the Moon is the planet of the <em>public and the masses</em>, so a strong, bright Moon fits a publicly-beloved life.</li>
-    <li><b>Moon-lord in the 1st/2nd</b> — the Moon-sign's dispositor (rashi lord) sitting in the 1st (self, body, public image) or 2nd (face, voice, resources). Famous <b>29%</b> vs ordinary <b>16%</b> (~1.9×). Textbook cases: <em>Indira Gandhi</em> (Moon Capricorn → Saturn in the 1st) and <em>Donald Trump</em> (Moon Scorpio → Mars in the 1st).</li>
+    <li><b>Moon-lord in a public-presence house</b> — the Moon-sign's dispositor (rashi lord) sitting in the 1st (self, body, public image), 2nd (face, voice, resources), 11th (gains, recognition) or 12th (foreign, behind-the-scenes). Famous <b>48%</b> vs ordinary <b>30%</b>. The 1st &amp; 2nd carry it most (16% vs 8%, 13% vs 7%); the 11th/12th add. Notably the <b>10th is <em>not</em></b> a fame house here (it leans ordinary). Textbook cases: <em>Indira Gandhi</em> (Moon Capricorn → Saturn in the 1st) and <em>Donald Trump</em> (Moon Scorpio → Mars in the 1st).</li>
     <li><b>Moon-sign Ashtakavarga</b> — the SAV strength of the Moon's own sign (the "1st house from the Moon"). The weakest of the three, but it adds.</li>
   </ul>
   <p class="muted">These are the one place the <em>Chandra Kundali</em> earns its keep: re-running the ascendant's house factors <em>from</em> the Moon actually <em>weakened</em> them (the 10th-AV anchor collapses from the Moon) — but the Moon's <em>own</em> significations (brightness, dispositor placement) are real, independent signal.</p>
@@ -147,7 +147,7 @@ activation     = Σ (weight[MD lord] × overlap-years in 50–80) / Σ (overlap-
 <h2>Results — honestly</h2>
 <table>
   <tr><th>Model</th><th>CV-AUC (count / sum)</th><th>Note</th></tr>
-  <tr><td><b>11-factor composite</b> (this doc)</td><td><b>0.660 / 0.680</b></td><td>full set — the verified model</td></tr>
+  <tr><td><b>11-factor composite</b> (this doc)</td><td><b>0.665 / 0.686</b></td><td>full set — the verified model</td></tr>
   <tr><td>8-factor (before the Moon bundle)</td><td>0.630 / 0.643</td><td>the prior lock</td></tr>
   <tr><td>Weak yogas solo (Dhana/Raja/Prosperity)</td><td>~0.48–0.53</td><td>chance — do not separate fame</td></tr>
 </table>
@@ -155,14 +155,14 @@ activation     = Σ (weight[MD lord] × overlap-years in 50–80) / Σ (overlap-
 <p>The full set carries an age gap (famous born ~1940, ordinary ~1987). Stripping it out by matching on era <em>and</em> geography is the real test:</p>
 <table>
   <tr><th>Cut</th><th>n (famous)</th><th>8-factor → 11-factor sum-AUC</th></tr>
-  <tr><td>Modern India-born, born ≥ 1940</td><td>84</td><td>0.666 → <b>0.695</b> — best clean cut</td></tr>
-  <tr><td>India-born, all</td><td>128</td><td>0.660 → 0.671</td></tr>
-  <tr><td>Modern India-born, born ≥ 1955</td><td>70</td><td>0.603 → 0.635 — tightest</td></tr>
+  <tr><td>Modern India-born, born ≥ 1940</td><td>84</td><td>0.666 → <b>0.708</b> — best clean cut</td></tr>
+  <tr><td>India-born, all</td><td>128</td><td>0.660 → 0.685</td></tr>
+  <tr><td>Modern India-born, born ≥ 1955</td><td>70</td><td>0.603 → 0.644 — tightest</td></tr>
 </table>
-<p>The signal <em>held</em> — and even ticked up — once age and geography were removed. That is the strongest evidence it is real astrology, not a demographic artifact. The <em>Moon bundle</em> lifted <em>every</em> cut (the biggest single jump of the study): this now lives in a <strong>~0.64–0.70 band</strong>, not a hard point.</p>
+<p>The signal <em>held</em> — and even ticked up — once age and geography were removed. That is the strongest evidence it is real astrology, not a demographic artifact. The <em>Moon bundle</em> lifted <em>every</em> cut (the biggest single jump of the study): this now lives in a <strong>~0.65–0.71 band</strong>, not a hard point.</p>
 
 <div class="callout">
-  <strong>Bottom line.</strong> These 11 factors are a genuine, confound-checked <em>fame-tilt</em> readout at <strong>AUC ≈ 0.68</strong> — the strongest honest result of the whole investigation, and every factor has a <em>reason</em>, not just a correlation. They are <em>not</em> a fame oracle (0.80+ is out of reach — most of fame lives outside the chart). Use them as a <em>chart-strength / worldly-potential</em> reading and for ranking auspicious birth-moments (Muhurta) by yoga quality — never as a verdict on a person. <strong>The famous strive; the chart maps the possibility, not the outcome.</strong>
+  <strong>Bottom line.</strong> These 11 factors are a genuine, confound-checked <em>fame-tilt</em> readout at <strong>AUC ≈ 0.69</strong> — the strongest honest result of the whole investigation, and every factor has a <em>reason</em>, not just a correlation. They are <em>not</em> a fame oracle (0.80+ is out of reach — most of fame lives outside the chart). Use them as a <em>chart-strength / worldly-potential</em> reading and for ranking auspicious birth-moments (Muhurta) by yoga quality — never as a verdict on a person. <strong>The famous strive; the chart maps the possibility, not the outcome.</strong>
 </div>
 
 <div class="foot">

@@ -18,7 +18,7 @@ The 11 factors (see ReadMe/methodology.html for the full write-up):
   7 Late Dhana-yoga activation (50-80)                    [wealth matures late]
   8 11th-house Ashtakavarga (gains)                        [reaping]
   9 Bright Moon (Shukla-7..Krishna-7, elongation 72-264°) [lunar strength]
- 10 Moon-sign dispositor in the 1st or 2nd house          [public persona]
+ 10 Moon-sign dispositor in the 1st/2nd/11th/12th house   [public persona]
  11 Moon-sign's own Sarvashtakavarga bindus               [weakest of the Moon 3]
 
 Reports per-factor lift, 5-fold cross-validated AUC (count + sum), and the
@@ -44,7 +44,7 @@ _DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
 _BAD = {3, 6, 8, 12}          # dusthana (dispositor / occupancy penalty)
 OCC = {3, 6, 10, 11}          # upachaya / growth-effort houses
 FEAT = ["rahu_prime", "d60_dignity", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
-        "bright_moon", "moon_disp_12", "moon_sav"]
+        "bright_moon", "moon_disp", "moon_sav"]
 
 
 def _yoga_weights(links):
@@ -110,12 +110,12 @@ def feats(dob, tob, lat, lon):
     ms = P["Moon"]["sign"]
     elong = (P["Moon"]["longitude"] - P["Sun"]["longitude"]) % 360
     bright_moon = 1.0 if 72 <= elong <= 264 else 0.0
-    moon_disp_12 = 1.0 if P[SIGN_LORDS[ms]]["house"] in (1, 2) else 0.0
+    moon_disp = 1.0 if P[SIGN_LORDS[ms]]["house"] in (1, 2, 11, 12) else 0.0
     moon_sav = tv[ms]
 
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
     return [rahu_prime, d60_dignity, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,
-            bright_moon, moon_disp_12, moon_sav], by, india
+            bright_moon, moon_disp, moon_sav], by, india
 
 
 def _bd(p):
