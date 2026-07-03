@@ -3,11 +3,11 @@ readout for a single chart.
 
 This is the productionised form of the fame-signal study (see
 ``ReadMe/methodology.html`` and ``ReadMe/scripts/fame_composite.py``): across
-225 famous vs 96 ordinary charts the 12 factors below reached a cross-validated
-AUC ≈ 0.70 (0.73 on the cleanest confound-free cut). It is a *faint* tilt, not
+225 famous vs 96 ordinary charts the 13 factors below reached a cross-validated
+AUC ≈ 0.72 (0.75 on the cleanest confound-free cut). It is a *faint* tilt, not
 a fame predictor — surface it as worldly-potential, never as destiny.
 
-Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 11 factors:
+Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 13 factors:
   1 rahu_prime  — Rahu Mahadasha years in ages 20-50 × clean-dispositor factor
   2 d60         — average dignity of the 7 classical planets in the D60
   3 av_10th     — Sarvashtakavarga bindus on the 10th (career) — the anchor
@@ -23,6 +23,12 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 11 factors:
  11 moon_sav    — the Moon-sign's own Sarvashtakavarga bindus (weakest of the three)
  12 sun_disp    — the Sun-sign's dispositor sits in the 1st quadrant (houses 1-4);
                   the 1st house alone is ~6× more common in famous (17.8% vs 3.1%)
+  ── argala (added 2026-07, a Jaimini intervention dimension) ──
+ 13 argala_pos  — positive (śubha) Shadbala-weighted argala on the 2nd/10th/12th
+                  houses from Lagna: benefics intervening (from the 2/4/5/11)
+                  on wealth/career/foreign houses, unobstructed by their virodha
+                  (12/10/9/3) counter. Solo AUC 0.60; lifts the composite
+                  0.70 -> 0.72 (nested-validated). Needs ``chart['shadbala']``.
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -39,6 +45,13 @@ _DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
        "Neutral Sign": 45, "Enemy Sign": 25, "Debilitated": 5}
 _BAD = {3, 6, 8, 12}        # dusthana — dispositor / occupancy penalty
 _OCC = {3, 6, 10, 11}       # upachaya / growth-effort houses
+# Argala (factor 13): all 9 grahas participate; benefics (J/V/Me, bright Moon)
+# intervene positively. ARG_PAIRS = (argala house Nth-from-R, its virodha Nth-from-R);
+# an argala is "effective" only if it outweighs its virodha counter. ARG_HOUSES
+# are the reference houses (from Lagna) the study isolated as fame-bearing.
+_ARG_PLANETS = _C + ["Rahu", "Ketu"]
+_ARG_PAIRS = ((2, 12), (4, 10), (5, 9), (11, 3))
+_ARG_HOUSES = (2, 10, 12)
 
 # Calibration snapshot from the 303-chart study (fame_composite.py):
 # factor -> (famous_mean, ordinary_mean, pooled_std over all 303 charts).
@@ -55,7 +68,9 @@ REF = {
     "moon_disp":    (0.4844, 0.3021, 0.4958),
     "moon_sav":     (27.5911, 27.1562, 4.7677),
     "sun_disp":     (0.4311, 0.2188, 0.4829),
+    "argala_pos":   (781.0587, 604.2046, 495.3215),
 }
+_ARGALA_MID = (REF["argala_pos"][0] + REF["argala_pos"][1]) / 2.0  # neutral fallback
 _SQUASH_K = 2.2  # logistic steepness: mean-z 0 -> 50, +0.5 -> ~75, -0.5 -> ~25. Tunable.
 
 NOTE = ("A faint statistical tilt (AUC ~0.63) toward markers seen in prominent "
@@ -84,8 +99,38 @@ def _activation(dashas: list[dict], birth_year: int, weights: dict, a: int, b: i
     return acc / tot if tot else 0.0
 
 
+def _positive_argala(chart: dict, bright_moon: float) -> float:
+    """Factor 13 — positive (śubha) Shadbala-weighted argala on the 2/10/12
+    houses from Lagna. Benefics (J/V/Me + bright Moon) in a house's 2/4/5/11
+    intervene on it; the intervention counts only if it outweighs the virodha
+    (12/10/9/3) counter. Returns the neutral REF midpoint if Shadbala is absent
+    (the weighting is what carries the signal — the count-only version is flat)."""
+    sb = chart.get("shadbala") or {}
+    if not sb:
+        return _ARGALA_MID
+    P = chart["planets"]
+    benefic = {"Jupiter": 1, "Venus": 1, "Mercury": 1, "Moon": (1 if bright_moon else -1),
+               "Sun": -1, "Mars": -1, "Saturn": -1, "Rahu": -1, "Ketu": -1}
+    svals = [sb[q]["total_shadbala"] for q in _C if q in sb]
+    avg = sum(svals) / len(svals) if svals else 1.0
+    wt = {q: (sb[q]["total_shadbala"] if q in sb else avg) for q in _ARG_PLANETS}
+    by_house: dict[int, list[str]] = {h: [] for h in range(1, 13)}
+    for p in _ARG_PLANETS:
+        by_house[P[p]["house"]].append(p)
+    total = 0.0
+    for R in _ARG_HOUSES:
+        for na, nv in _ARG_PAIRS:
+            A = ((R - 1 + na - 1) % 12) + 1
+            V = ((R - 1 + nv - 1) % 12) + 1
+            if sum(wt[p] for p in by_house[A]) > sum(wt[p] for p in by_house[V]):
+                s = sum(wt[p] * benefic[p] for p in by_house[A])
+                if s > 0:
+                    total += s
+    return total
+
+
 def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
-    """The 8 raw factor values for a chart. Pure; mirrors fame_composite.py."""
+    """The 13 raw factor values for a chart. Pure; mirrors fame_composite.py."""
     from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
     from app.services.kundli_calculator.divisional import calc_divisional_charts
     from app.services.kundli_calculator.raja_yoga import raja_yoga_score
@@ -134,11 +179,14 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     ss = P["Sun"]["sign"]
     sun_disp = 1.0 if P[SIGN_LORDS[ss]]["house"] in (1, 2, 3, 4) else 0.0
 
+    # 13 — positive Shadbala-weighted argala on the 2nd/10th/12th (fame houses)
+    argala_pos = _positive_argala(chart, bright_moon)
+
     return {"rahu_prime": rahu_prime, "d60": d60_dignity, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
             "dhana_late": dhana_late, "av_11th": av_11th,
             "bright_moon": bright_moon, "moon_disp": moon_disp, "moon_sav": moon_sav,
-            "sun_disp": sun_disp}
+            "sun_disp": sun_disp, "argala_pos": argala_pos}
 
 
 def worldly_potential(chart: dict) -> dict | None:
@@ -163,7 +211,7 @@ def worldly_potential(chart: dict) -> dict | None:
 
 
 def score_from_factors(raw: dict) -> dict:
-    """Map the 7 raw factor values to a 0-100 worldly-potential readout: z-score
+    """Map the 13 raw factor values to a 0-100 worldly-potential readout: z-score
     each against its REF midpoint, orient famous-positive, average, squash. Pure —
     the deterministic core, split out for testing."""
     zs = {}

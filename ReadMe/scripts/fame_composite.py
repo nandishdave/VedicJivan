@@ -1,4 +1,4 @@
-"""Verified 12-factor fame composite — reproduction script.
+"""Verified 13-factor fame composite — reproduction script.
 
 Run inside the API container (the Swiss-Ephemeris engine won't import on the host):
     docker cp ReadMe/scripts/fame_composite.py vedicjivan-api:/app/fame_composite.py
@@ -21,12 +21,14 @@ The 11 factors (see ReadMe/methodology.html for the full write-up):
  10 Moon-sign dispositor in the 1st/2nd/11th/12th house   [public persona]
  11 Moon-sign's own Sarvashtakavarga bindus               [weakest of the Moon 3]
  12 Sun-sign dispositor in the 1st quadrant (houses 1-4)  [self/status]
+ 13 Positive Shadbala-weighted argala on the 2/10/12 houses [Jaimini intervention]
 
 Reports per-factor lift, 5-fold cross-validated AUC (count + sum), and the
-confound-matched India-born cuts. Verified result: CV-AUC ~0.70 full set,
-0.73 on the cleanest cut (India-born, born >= 1940). The Moon bundle (9-11)
-lifted the 8-factor 0.644 -> 0.680; the Sun dispositor (12) 0.686 -> 0.703.
-D10 dignity was tested and rejected (solo AUC 0.506, hurt the composite).
+confound-matched India-born cuts. Verified result: CV-AUC ~0.72 full set,
+0.75 on the cleanest cut (India-born, born >= 1940). The Moon bundle (9-11)
+lifted the 8-factor 0.644 -> 0.680; the Sun dispositor (12) 0.686 -> 0.703;
+the positive argala (13) 0.703 -> 0.724 (nested-validated). D10 dignity, date
+numerology (Moolank/Bhagyank), and dasha-timing were tested and rejected.
 """
 import json
 import numpy as np
@@ -45,7 +47,37 @@ _DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
 _BAD = {3, 6, 8, 12}          # dusthana (dispositor / occupancy penalty)
 OCC = {3, 6, 10, 11}          # upachaya / growth-effort houses
 FEAT = ["rahu_prime", "d60_dignity", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
-        "bright_moon", "moon_disp", "moon_sav", "sun_disp"]
+        "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos"]
+
+# Factor 13 — positive Shadbala-weighted argala on the 2/10/12 houses (from Lagna)
+_ARG_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+_ARG_PAIRS = ((2, 12), (4, 10), (5, 9), (11, 3))   # (argala Nth-from-R, virodha Nth-from-R)
+_ARG_HOUSES = (2, 10, 12)
+
+
+def _positive_argala(P, shadbala, bright_moon):
+    """Śubha (benefic) argala on 2/10/12, Shadbala-weighted, effective only when
+    it outweighs the virodha counter (12/10/9/3)."""
+    if not shadbala:
+        return 0.0
+    benefic = {"Jupiter": 1, "Venus": 1, "Mercury": 1, "Moon": (1 if bright_moon else -1),
+               "Sun": -1, "Mars": -1, "Saturn": -1, "Rahu": -1, "Ketu": -1}
+    svals = [shadbala[q]["total_shadbala"] for q in _C if q in shadbala]
+    avg = sum(svals) / len(svals) if svals else 1.0
+    wt = {q: (shadbala[q]["total_shadbala"] if q in shadbala else avg) for q in _ARG_PLANETS}
+    by_house = {h: [] for h in range(1, 13)}
+    for p in _ARG_PLANETS:
+        by_house[P[p]["house"]].append(p)
+    total = 0.0
+    for R in _ARG_HOUSES:
+        for na, nv in _ARG_PAIRS:
+            A = ((R - 1 + na - 1) % 12) + 1
+            V = ((R - 1 + nv - 1) % 12) + 1
+            if sum(wt[p] for p in by_house[A]) > sum(wt[p] for p in by_house[V]):
+                s = sum(wt[p] * benefic[p] for p in by_house[A])
+                if s > 0:
+                    total += s
+    return total
 
 
 def _yoga_weights(links):
@@ -115,9 +147,12 @@ def feats(dob, tob, lat, lon):
     moon_sav = tv[ms]
     sun_disp = 1.0 if P[SIGN_LORDS[P["Sun"]["sign"]]]["house"] in (1, 2, 3, 4) else 0.0
 
+    # 13 — positive Shadbala-weighted argala on the 2nd/10th/12th houses
+    argala_pos = _positive_argala(P, c.get("shadbala", {}), bright_moon)
+
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
     return [rahu_prime, d60_dignity, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,
-            bright_moon, moon_disp, moon_sav, sun_disp], by, india
+            bright_moon, moon_disp, moon_sav, sun_disp, argala_pos], by, india
 
 
 def _bd(p):
@@ -163,7 +198,7 @@ for i, n in enumerate(FEAT):
     print(f"  {n:12} {F[:, i].mean():7.2f} {R[:, i].mean():7.2f}  {F[:, i].mean() - R[:, i].mean():+6.2f}")
 
 c, s = cv(F, R)
-print(f"\n8-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
+print(f"\n13-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
 
 print("\nconfound-matched India-born cuts (sum-AUC):")
 for yr in (0, 1940, 1955):
