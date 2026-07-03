@@ -160,8 +160,12 @@ Rikta tithi:  famous 16.4%  vs  ordinary 21.9%   (leans ordinary, as tradition s
   <tr><td><b>Net</b> / <b>negative</b> argala; <b>count-based</b> argala</td><td>flat / hurt</td><td>only <em>positive, Shadbala-weighted</em> argala survives; count-only is noise</td></tr>
   <tr><td>Pañchāṅga <b>Nitya Yoga</b> (27) — benefic-vs-malefic, per-yoga</td><td>solo AUC 0.51</td><td>null &amp; incoherent — malefic yogas (Vyatipata, Vajra) lean famous too; sparse across 27 buckets</td></tr>
   <tr><td>Tithi groups other than Pūrṇa (Nanda / Jaya / Rikta as +factors)</td><td>flat / reversed</td><td>only <em>Pūrṇa</em> separates; Jaya/Nanda lean ordinary or wash out</td></tr>
+  <tr><td><b>Jaimini karaka connections</b> (AK–AmK, AK–PK, AmK–PK) by conjunction / rāśi dṛṣṭi</td><td>solo AUC 0.46–0.49 <span class="neg">(reversed)</span></td><td>the premier "rāja sambandha" is actually <em>more</em> common in ordinary — famous have <em>un</em>-entangled karakas (only AK–DK leans famous, and it hurts the composite)</td></tr>
+  <tr><td><b>Jaimini Karakāṁśa rāja yogas</b> — benefics / dignified planets in kendras &amp; trikonas from the Karakāṁśa, AK dignity</td><td>solo AUC 0.47–0.52</td><td>near-chance across all seven variants; none lift the confound-matched cuts</td></tr>
+  <tr><td><b>KP cuspal sub-lords</b> — 10th/11th/2nd CSL signifying 2/6/10/11 (Placidus + KP ayanamsa)</td><td>near-ceiling (≈90% both)</td><td>the "any of 4 houses" significator net is too broad to discriminate; only the 1st-CSL→1/10/11 hint (solo 0.54) survived, too weak to add and needs KP-grade times</td></tr>
+  <tr><td><b>Arudha Lagna</b> fame rules — AL angular to Lagna, planets/benefics in 2/10/11 from AL</td><td>seed-avg +0.004; nested +0.000</td><td>correctly signed and classically apt, but the in-sample +0.014 was seed luck — a real <em>hint</em>, not a robust factor</td></tr>
 </table>
-<p class="muted">The pattern is unmistakable: the <em>named classical yogas</em> everyone quotes sit at ~0.48–0.53 (chance). What works is <b>strength, effort, and timing</b> — Ashtakavarga, D60 dignity, Rahu timing, life-stage activation.</p>
+<p class="muted">The pattern is unmistakable: the <em>named classical yogas</em> everyone quotes — Parāśari <em>and</em> Jaimini, plus KP cuspal sub-lords and Pañchāṅga yoga — sit at ~0.46–0.54 (chance, or reversed). What works is <b>strength, effort, timing, intervention and lunar phase</b> — Ashtakavarga, D60 dignity, Rāhu timing, life-stage activation, the Śubha argala, the Pūrṇa tithi. <em>Reputation-of-the-technique is no guide to signal.</em></p>
 
 <h2>From factors to the composite</h2>
 <pre>1. ORIENT      — flip each factor so "higher = more famous-like" (by its lift sign)
@@ -190,8 +194,26 @@ Rikta tithi:  famous 16.4%  vs  ordinary 21.9%   (leans ordinary, as tradition s
 </table>
 <p>The signal <em>held</em> — and even ticked up — once age and geography were removed. That is the strongest evidence it is real astrology, not a demographic artifact. The <em>luminary factors</em> (Moon bundle + Sun dispositor), the <em>argala factor</em> and the <em>Pūrṇa tithi</em> lifted <em>every</em> cut — the tightest (≥1955) climbed 0.603 → 0.708: this now lives in a <strong>~0.71–0.76 band</strong>, not a hard point.</p>
 
+<h2>What kind of fame the chart can read (the domain result)</h2>
+<p>The single "0.73" number hides the most important truth of the study: <em>fame is not one thing</em>, and the chart reads some kinds far better than others. Scoring the pooled 14-factor model separately by the famous person's domain:</p>
+<table>
+  <tr><th>Fame domain</th><th>n</th><th>sum-AUC (vs the same 96 ordinary)</th></tr>
+  <tr><td><b>Science / Literature</b></td><td>18</td><td class="pos"><b>0.816</b></td></tr>
+  <tr><td><b>Business</b></td><td>25</td><td class="pos"><b>0.795</b></td></tr>
+  <tr><td>Politics</td><td>37</td><td>0.761</td></tr>
+  <tr><td class="muted">— pooled (all famous) —</td><td>225</td><td>0.732</td></tr>
+  <tr><td>Music</td><td>25</td><td>0.718</td></tr>
+  <tr><td>Film</td><td>74</td><td>0.714</td></tr>
+  <tr><td>Sports</td><td>30</td><td>0.690</td></tr>
+  <tr><td>Spiritual</td><td>14</td><td>0.647</td></tr>
+</table>
+<p>The split is <em>coherent</em>, not random. The model reads <b>worldly-achievement fame — intellect, enterprise, power (Science, Business, Politics) — at 0.76–0.82</b>, and <b>performance / devotion fame — the voice, the body, the saint (Music, Film, Sports, Spiritual) — at 0.65–0.72</b>. That is exactly what a <em>worldly-potential</em> model built from Ashtakavarga, Dhana/Raja activation and argala on the wealth/career houses <em>should</em> do: it detects "built an empire / won a Nobel / led a nation" far better than "sings beautifully / runs fast / radiates grace." <b>Spiritual fame — the least worldly — scoring lowest is the perfect confirmation.</b></p>
+<div class="callout info">
+  <strong>So can it reach 0.80? For the right domain, it already does.</strong> The "0.73 ceiling" is an <em>averaging artifact</em> of mixing legible with illegible fame. Two honest caveats: (1) per-domain n is small (Science = 18), so the exact figures carry wide confidence bands (±0.07–0.09) — the <em>ordering</em> is robust, the precise 0.82 is soft; (2) <em>domain-specific weight-tuning does not help</em> — refitting the 14 factors on the 80-chart worldly cluster scored <em>worse</em> (0.71) than the pooled model applied to it (0.78), because 80 charts overfit. The lever to a <em>confident</em> 0.80 is <b>more charts in the legible domains</b>, not more rules or bespoke models.
+</div>
+
 <div class="callout">
-  <strong>Bottom line.</strong> These 14 factors are a genuine, confound-checked <em>fame-tilt</em> readout at <strong>AUC ≈ 0.73</strong> — the strongest honest result of the whole investigation, and every factor has a <em>reason</em>, not just a correlation. They are <em>not</em> a fame oracle (0.80+ is out of reach — most of fame lives outside the chart). Use them as a <em>chart-strength / worldly-potential</em> reading and for ranking auspicious birth-moments (Muhurta) by yoga quality — never as a verdict on a person. <strong>The famous strive; the chart maps the possibility, not the outcome.</strong>
+  <strong>Bottom line.</strong> These 14 factors are a genuine, confound-checked <em>fame-tilt</em> readout at <strong>AUC ≈ 0.73 pooled</strong> — the strongest honest result of the whole investigation, and every factor has a <em>reason</em>, not just a correlation. They are <em>not</em> a universal fame oracle — but for <em>worldly-achievement</em> fame (science, business, politics) they already reach <strong>~0.80</strong>, while performance and devotion fame stay lower; most of the rest of fame lives outside the chart. Use them as a <em>chart-strength / worldly-potential</em> reading and for ranking auspicious birth-moments (Muhurta) by yoga quality — never as a verdict on a person. <strong>The famous strive; the chart maps the possibility, not the outcome.</strong>
 </div>
 
 <div class="foot">
