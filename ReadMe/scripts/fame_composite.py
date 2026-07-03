@@ -1,4 +1,4 @@
-"""Verified 11-factor fame composite — reproduction script.
+"""Verified 12-factor fame composite — reproduction script.
 
 Run inside the API container (the Swiss-Ephemeris engine won't import on the host):
     docker cp ReadMe/scripts/fame_composite.py vedicjivan-api:/app/fame_composite.py
@@ -20,12 +20,13 @@ The 11 factors (see ReadMe/methodology.html for the full write-up):
   9 Bright Moon (Shukla-7..Krishna-7, elongation 72-264°) [lunar strength]
  10 Moon-sign dispositor in the 1st/2nd/11th/12th house   [public persona]
  11 Moon-sign's own Sarvashtakavarga bindus               [weakest of the Moon 3]
+ 12 Sun-sign dispositor in the 1st quadrant (houses 1-4)  [self/status]
 
 Reports per-factor lift, 5-fold cross-validated AUC (count + sum), and the
-confound-matched India-born cuts. Verified result: CV-AUC ~0.68 full set,
-0.695 on the cleanest cut (India-born, born >= 1940). The Moon bundle (9-11)
-lifted the prior 8-factor from 0.644 -> 0.680. D10 dignity was tested and
-rejected (solo AUC 0.506, hurt the composite).
+confound-matched India-born cuts. Verified result: CV-AUC ~0.70 full set,
+0.73 on the cleanest cut (India-born, born >= 1940). The Moon bundle (9-11)
+lifted the 8-factor 0.644 -> 0.680; the Sun dispositor (12) 0.686 -> 0.703.
+D10 dignity was tested and rejected (solo AUC 0.506, hurt the composite).
 """
 import json
 import numpy as np
@@ -44,7 +45,7 @@ _DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
 _BAD = {3, 6, 8, 12}          # dusthana (dispositor / occupancy penalty)
 OCC = {3, 6, 10, 11}          # upachaya / growth-effort houses
 FEAT = ["rahu_prime", "d60_dignity", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
-        "bright_moon", "moon_disp", "moon_sav"]
+        "bright_moon", "moon_disp", "moon_sav", "sun_disp"]
 
 
 def _yoga_weights(links):
@@ -112,10 +113,11 @@ def feats(dob, tob, lat, lon):
     bright_moon = 1.0 if 72 <= elong <= 264 else 0.0
     moon_disp = 1.0 if P[SIGN_LORDS[ms]]["house"] in (1, 2, 11, 12) else 0.0
     moon_sav = tv[ms]
+    sun_disp = 1.0 if P[SIGN_LORDS[P["Sun"]["sign"]]]["house"] in (1, 2, 3, 4) else 0.0
 
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
     return [rahu_prime, d60_dignity, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,
-            bright_moon, moon_disp, moon_sav], by, india
+            bright_moon, moon_disp, moon_sav, sun_disp], by, india
 
 
 def _bd(p):

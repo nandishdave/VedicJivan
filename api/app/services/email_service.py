@@ -322,6 +322,7 @@ _WP_LABELS = [
     ("av_10th", "10th-house AV"), ("av_11th", "11th-house AV"), ("av_1st", "1st-house AV"),
     ("upa_occ", "Upachaya dasha"), ("raja_late", "Late Raja"), ("dhana_late", "Late Dhana"),
     ("bright_moon", "Bright Moon"), ("moon_disp", "Moon-lord in 1/2/11/12"), ("moon_sav", "Moon-sign AV"),
+    ("sun_disp", "Sun-lord in 1st quadrant"),
 ]
 
 

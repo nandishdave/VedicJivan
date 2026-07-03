@@ -1,10 +1,10 @@
-"""Worldly-Potential — the validated 11-factor "fame-tilt" composite as a 0-100
+"""Worldly-Potential — the validated 12-factor "fame-tilt" composite as a 0-100
 readout for a single chart.
 
 This is the productionised form of the fame-signal study (see
 ``ReadMe/methodology.html`` and ``ReadMe/scripts/fame_composite.py``): across
-225 famous vs 96 ordinary charts the 11 factors below reached a cross-validated
-AUC ≈ 0.68 (0.695 on the cleanest confound-free cut). It is a *faint* tilt, not
+225 famous vs 96 ordinary charts the 12 factors below reached a cross-validated
+AUC ≈ 0.70 (0.73 on the cleanest confound-free cut). It is a *faint* tilt, not
 a fame predictor — surface it as worldly-potential, never as destiny.
 
 Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 11 factors:
@@ -21,6 +21,8 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 11 factors:
   9 bright_moon — Moon in the bright half (Shukla-7..Krishna-7 = elongation 72-264°)
  10 moon_disp   — the Moon-sign's dispositor sits in the 1st/2nd/11th/12th (public-presence)
  11 moon_sav    — the Moon-sign's own Sarvashtakavarga bindus (weakest of the three)
+ 12 sun_disp    — the Sun-sign's dispositor sits in the 1st quadrant (houses 1-4);
+                  the 1st house alone is ~6× more common in famous (17.8% vs 3.1%)
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -52,6 +54,7 @@ REF = {
     "bright_moon":  (0.5467, 0.4271, 0.5007),
     "moon_disp":    (0.4844, 0.3021, 0.4958),
     "moon_sav":     (27.5911, 27.1562, 4.7677),
+    "sun_disp":     (0.4311, 0.2188, 0.4829),
 }
 _SQUASH_K = 2.2  # logistic steepness: mean-z 0 -> 50, +0.5 -> ~75, -0.5 -> ~25. Tunable.
 
@@ -127,11 +130,15 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     bright_moon = 1.0 if 72 <= elong <= 264 else 0.0        # Shukla-7 .. Krishna-7 (bright half)
     moon_disp = 1.0 if P[SIGN_LORDS[ms]]["house"] in (1, 2, 11, 12) else 0.0  # Moon-lord in a public-presence house
     moon_sav = tv[ms]                                        # the Moon-sign's own SAV bindus
+    # 12 — Sun-sign dispositor in the first quadrant (self/valor/foundation houses)
+    ss = P["Sun"]["sign"]
+    sun_disp = 1.0 if P[SIGN_LORDS[ss]]["house"] in (1, 2, 3, 4) else 0.0
 
     return {"rahu_prime": rahu_prime, "d60": d60_dignity, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
             "dhana_late": dhana_late, "av_11th": av_11th,
-            "bright_moon": bright_moon, "moon_disp": moon_disp, "moon_sav": moon_sav}
+            "bright_moon": bright_moon, "moon_disp": moon_disp, "moon_sav": moon_sav,
+            "sun_disp": sun_disp}
 
 
 def worldly_potential(chart: dict) -> dict | None:
