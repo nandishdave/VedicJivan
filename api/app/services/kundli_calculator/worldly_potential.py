@@ -1,13 +1,13 @@
-"""Worldly-Potential — the validated 8-factor "fame-tilt" composite as a 0-100
+"""Worldly-Potential — the validated 11-factor "fame-tilt" composite as a 0-100
 readout for a single chart.
 
 This is the productionised form of the fame-signal study (see
 ``ReadMe/methodology.html`` and ``ReadMe/scripts/fame_composite.py``): across
-207 famous vs 96 ordinary charts the 8 factors below reached a cross-validated
-AUC ≈ 0.644 (0.666 on the cleanest confound-free cut). It is a *faint* tilt, not
+225 famous vs 96 ordinary charts the 11 factors below reached a cross-validated
+AUC ≈ 0.68 (0.695 on the cleanest confound-free cut). It is a *faint* tilt, not
 a fame predictor — surface it as worldly-potential, never as destiny.
 
-Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 8 factors:
+Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 11 factors:
   1 rahu_prime  — Rahu Mahadasha years in ages 20-50 × clean-dispositor factor
   2 d60         — average dignity of the 7 classical planets in the D60
   3 av_10th     — Sarvashtakavarga bindus on the 10th (career) — the anchor
@@ -16,8 +16,11 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 8 factors:
   5 upa_occ     — peak-years (20-50) under a dasha lord SITTING in 3/6/10/11
   6 raja_late   — years 50-80 under the Mahadasha of a Raja-yoga-forming planet
   7 dhana_late  — years 50-80 under the Mahadasha of a Dhana-yoga-forming planet
-  8 av_11th     — Sarvashtakavarga bindus on the 11th (gains) — 2nd-strongest,
-                  added 2026-07 (D10 dignity was tested alongside and rejected)
+  8 av_11th     — Sarvashtakavarga bindus on the 11th (gains) — 2nd-strongest
+  ── the Moon bundle (added 2026-07, a lunar dimension independent of the above) ──
+  9 bright_moon — Moon in the bright half (Shukla-7..Krishna-7 = elongation 72-264°)
+ 10 moon_disp_12— the Moon-sign's dispositor (rashi lord) sits in the 1st or 2nd
+ 11 moon_sav    — the Moon-sign's own Sarvashtakavarga bindus (weakest of the three)
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -46,6 +49,9 @@ REF = {
     "raja_late":  (1.7283, 1.4760, 1.7269),
     "dhana_late": (0.6001, 0.3574, 1.0889),
     "av_11th":    (32.4010, 30.8854, 4.4462),
+    "bright_moon":  (0.5467, 0.4271, 0.5007),
+    "moon_disp_12": (0.2933, 0.1562, 0.4350),
+    "moon_sav":     (27.5911, 27.1562, 4.7677),
 }
 _SQUASH_K = 2.2  # logistic steepness: mean-z 0 -> 50, +0.5 -> ~75, -0.5 -> ~25. Tunable.
 
@@ -115,9 +121,17 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     raja_late = _activation(dashas, birth_year, _pw(raja_yoga_score(chart)[1]), 50, 80)
     dhana_late = _activation(dashas, birth_year, _pw(dhana_yoga_score(chart)[1]), 50, 80)
 
+    # 9, 10, 11 — the Moon bundle (a lunar dimension, independent of the houses above)
+    ms = P["Moon"]["sign"]
+    elong = (P["Moon"]["longitude"] - P["Sun"]["longitude"]) % 360
+    bright_moon = 1.0 if 72 <= elong <= 264 else 0.0        # Shukla-7 .. Krishna-7 (bright half)
+    moon_disp_12 = 1.0 if P[SIGN_LORDS[ms]]["house"] in (1, 2) else 0.0  # Moon-sign lord in 1st/2nd
+    moon_sav = tv[ms]                                        # the Moon-sign's own SAV bindus
+
     return {"rahu_prime": rahu_prime, "d60": d60_dignity, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
-            "dhana_late": dhana_late, "av_11th": av_11th}
+            "dhana_late": dhana_late, "av_11th": av_11th,
+            "bright_moon": bright_moon, "moon_disp_12": moon_disp_12, "moon_sav": moon_sav}
 
 
 def worldly_potential(chart: dict) -> dict | None:
