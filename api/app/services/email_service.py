@@ -317,6 +317,53 @@ _MUHURTA_CELL = {
 }
 
 
+# ── Numerology (Moolank / Bhagyank) — display only ──────────────────────────
+# Classical number -> planet. Moolank = root number of the birth day; Bhagyank
+# = destiny number of the full date, each reduced to 1-9. Rahu(4)/Ketu(7) are
+# the shadow planets. NOTE: this is a display readout only. Tested against the
+# fame gold-set (Moolank/Bhagyank planet overlapping the functional benefics)
+# and found NOT predictive — famous charts sit at the random base rate — so it
+# is shown for interest and never enters any score.
+_NUM_PLANET = {1: "Sun", 2: "Moon", 3: "Jupiter", 4: "Rahu", 5: "Mercury",
+               6: "Venus", 7: "Ketu", 8: "Saturn", 9: "Mars"}
+
+
+def _digit_sum(n: int) -> int:
+    n = abs(int(n))
+    while n > 9:
+        n = sum(int(c) for c in str(n))
+    return n
+
+
+def _numerology(date_str: str) -> dict:
+    """Moolank (root, from the day) + Bhagyank (destiny, from the whole date),
+    each 1-9, with its ruling planet. ``date_str`` is ISO YYYY-MM-DD."""
+    day = int(date_str[8:10])
+    moolank = _digit_sum(day)
+    bhagyank = _digit_sum(sum(int(c) for c in date_str if c.isdigit()))
+    return {"moolank": moolank, "moolank_planet": _NUM_PLANET[moolank],
+            "bhagyank": bhagyank, "bhagyank_planet": _NUM_PLANET[bhagyank]}
+
+
+def _numerology_line(date_str: str) -> str:
+    """Compact inline text: Moolank N (Planet) · Bhagyank N (Planet)."""
+    nm = _numerology(date_str)
+    return (f'Moolank <strong>{nm["moolank"]}</strong> ({nm["moolank_planet"]}) '
+            f'&middot; Bhagyank <strong>{nm["bhagyank"]}</strong> ({nm["bhagyank_planet"]})')
+
+
+def _numerology_badge(date_str: str) -> str:
+    """A centred pill for a single-date email (muhurta / 1-day unshakable)."""
+    return (
+        '<div style="text-align:center;margin:0 0 18px;">'
+        '<span style="display:inline-block;background:#f7f5fb;border:1px solid #e7e2f0;'
+        'border-radius:20px;padding:6px 16px;font-size:12px;color:#4c1d95;">'
+        f'&#128302; {_numerology_line(date_str)}</span>'
+        '<div style="font-size:10px;color:#aaa;margin-top:4px;">Moolank = root number of the day '
+        '&middot; Bhagyank = destiny number of the full date</div></div>'
+    )
+
+
 _WP_LABELS = [
     ("rahu_prime", "Rahu prime-dasha"), ("d60", "D60 dignity"),
     ("av_10th", "10th-house AV"), ("av_11th", "11th-house AV"), ("av_1st", "1st-house AV"),
@@ -436,9 +483,10 @@ def _render_muhurta_html(result: dict) -> str:
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
         {_email_header()}
         <h2 style="color:#7c3aed;text-align:center;margin:0 0 4px;">Auspicious Birth-Time Analysis</h2>
-        <p style="text-align:center;color:#666;margin:0 0 20px;">
+        <p style="text-align:center;color:#666;margin:0 0 12px;">
             {result["date"]} &middot; {result["place_name"]}{prioritised}
         </p>
+        {_numerology_badge(result["date"])}
         <p style="color:#555;">Each row below is one rising ascendant (Lagna) for the day, ranked by overall
         strength. The coloured cells show how that Lagna favours each area of life. No Lagna is perfect —
         choose the window that best matches what your family values.</p>
@@ -503,6 +551,11 @@ def _u_chart_row(rank, c, bg, dated=False):
         bg = "#ede9fe"
     star = ' <span style="color:#7c3aed;">&#9733;</span>' if c.get("exceptional") else ""
     date_cell = f'<td style="padding:5px 6px;white-space:nowrap;">{c["date"]}</td>' if dated else ""
+    num_cell = ""
+    if dated:
+        nm = _numerology(c["date"])
+        num_cell = (f'<td style="padding:5px 6px;text-align:center;font-size:11px;color:#7c3aed;'
+                    f'white-space:nowrap;">{nm["moolank"]}&middot;{nm["bhagyank"]}</td>')
     stack = c.get("strength_stack") or {}
     if "count" in stack:
         names = "&middot;".join(_STACK_ABBR.get(s, s[:4]) for s in stack.get("strong", []))
@@ -515,7 +568,7 @@ def _u_chart_row(rank, c, bg, dated=False):
     return (
         f'<tr style="background:{bg};">'
         f'<td style="padding:5px 6px;font-weight:bold;color:#7c3aed;">{rank}</td>'
-        f'{date_cell}'
+        f'{date_cell}{num_cell}'
         f'<td style="padding:5px 6px;">{c["time"]}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;">{c["lagna"]}{star}</td>'
         f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{_potential_pct(c["score"])}%</td>'
@@ -528,7 +581,7 @@ def _u_chart_row(rank, c, bg, dated=False):
 
 
 def _u_table(charts, start_rank=1, dated=False):
-    date_h = f'<th style="{_U_TH}">Date</th>' if dated else ""
+    date_h = f'<th style="{_U_TH}">Date</th><th style="{_U_TH}">Num</th>' if dated else ""
     head = (f'<tr><th style="{_U_TH}">#</th>{date_h}<th style="{_U_TH}">Time</th><th style="{_U_TH}">Lagna</th>'
             f'<th style="{_U_TH}">Potential</th><th style="{_U_TH}">Stack</th>'
             f'<th style="{_U_TH}">S&middot;Y&middot;L&middot;F&middot;W</th><th style="{_U_TH}">Longevity</th></tr>')
@@ -578,6 +631,7 @@ def _render_unshakable_html(result: dict) -> str:
         charts = result["per_day"][0]["charts"] if result["per_day"] else []
         body = (
             f'{summary}'
+            f'{_numerology_badge(result["start_date"])}'
             '<h3 style="color:#7c3aed;margin:20px 0 8px;">Every Rising Lagna, Ranked</h3>'
             f'{_u_table(charts)}'
             f'{_u_positions(result)}'
@@ -585,7 +639,9 @@ def _render_unshakable_html(result: dict) -> str:
     elif result["days"] <= 7:
         sections = ""
         for day in result["per_day"]:
-            sections += (f'<h3 style="color:#7c3aed;margin:22px 0 6px;">{day["date"]} &mdash; top {len(day["charts"])}</h3>'
+            sections += (f'<h3 style="color:#7c3aed;margin:22px 0 6px;">{day["date"]} &mdash; top {len(day["charts"])} '
+                         f'<span style="font-size:12px;font-weight:normal;color:#7c3aed;">'
+                         f'&#128302; {_numerology_line(day["date"])}</span></h3>'
                          f'{_u_table(day["charts"])}')
         body = f'{summary}{sections}'
     else:
@@ -603,6 +659,7 @@ def _render_unshakable_html(result: dict) -> str:
              'Stack = how many of 8 strength factors are notably strong (Shadbala, Ashtakavarga, dignity, '
              'Lagna-lord, placement, Dhana, Prosperity, Raja) &mdash; the strong ones are named beneath the count. '
              'S&middot;Y&middot;L&middot;F&middot;W = Structural &middot; Yoga &middot; Longevity &middot; Fame &middot; Worldly-potential layer scores (0&ndash;100). '
+             'Num = Moolank&middot;Bhagyank (the date&rsquo;s root &amp; destiny numbers, 1&ndash;9). '
              f'Longevity = indicative Ayurdaya band (estimates only). &#9733; = genuinely strong (&ge; {bar_pct}% of potential).</p>')
 
     return f"""
