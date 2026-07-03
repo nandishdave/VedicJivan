@@ -1,0 +1,113 @@
+# Fame-Signal Experiment Ledger
+
+**The complete, authoritative record of every idea tested** in the "can a birth chart tell
+famous from ordinary?" investigation — what we kept, what we rejected, and *why*. This is
+the **don't-re-test registry**: if an idea is in the "Rejected" table below with a reason,
+it has already been tried and failed under honest validation. Add to this file; don't start
+a new one.
+
+- **Model as of this writing:** 14-factor `worldly_potential` composite, CV-AUC **≈ 0.73**
+  pooled (0.759 on the cleanest India ≥1940 cut). Reproduction: `ReadMe/scripts/fame_composite.py`.
+- **Data:** 225 famous (rated AA/A/B/C by birth-time reliability) vs 96 ordinary control.
+- **Scoring convention:** 5-fold cross-validated pairwise AUC; sign + scale learned on the
+  *train* fold only. Solo-AUC = a single factor alone. 0.50 = coin-flip; <0.50 = leans *ordinary*.
+- **Validation bars a factor must clear:** (a) correctly signed with an astrological reason,
+  (b) survives **nested** CV (feature re-selected inside each train fold — kills selection bias),
+  (c) holds on **confound-matched** cuts (India ≥1940 / ≥1955), (d) **seed-stable** across seeds.
+
+> ⚠️ The raw experiment scripts live in a **session temp scratchpad** and are **not** version-
+> controlled — they are ephemeral. This ledger is the durable record of what they found.
+
+---
+
+## A. Accepted — the 14 factors
+
+Each survived all four validation bars. Labels match `worldly_potential.py` / `_WP_LABELS`.
+
+| # | Factor | What it measures | Established in |
+|---|--------|------------------|----------------|
+| 1 | `rahu` | Rahu mahadāśā lived in prime (20–50) × dispositor not in 3/6/8/12 | compare_rahu, compare_rahu_natal, compare_rahu_composite |
+| 2 | `d60` | D60 (Ṣaṣṭiāṁśa) crude mean dignity of the 7 planets | fame_d10_av11, confirm_av11 |
+| 3 | `av10` | 10th-house Sarvāṣṭakavarga bindus | av_perhouse, winners5 |
+| 4 | `av1` | 1st-house SAV bindus | av_perhouse, winners5 |
+| 5 | `upa` | Peak (20–50) years under a dāśā lord *occupying* 3/6/10/11 | winners5, dasha_house |
+| 6 | `raja` | Late (50–80) Rāja-yoga dāśā activation (yoga-lord participation) | yoga_activation, late_window, winners7 |
+| 7 | `dhana` | Late (50–80) Dhana-yoga dāśā activation | yoga_activation, late_window, winners7 |
+| 8 | `av11` | 11th-house SAV bindus (added as the 8th factor) | fame_d10_av11, confirm_av11 |
+| 9 | `bright` | Bright (Śukla) Moon — Sun–Moon elongation 72–264° | moon_tests, eleven |
+| 10 | `moon_disp` | Moon-sign dispositor placed in {1,2,11,12} | moon_disp, moon_disp_houses, revalidate |
+| 11 | `moon_sav` | Moon-sign SAV bindus | moon_tests, eleven |
+| 12 | `sun_disp` | Sun-sign dispositor placed in {1,2,3,4} | sun_tests, sun_validate |
+| 13 | `argala_pos` | Positive (śubha) Shadbala-weighted Jaimini argala on 2/10/12 | argala_nested, final13 |
+| 14 | `purna_tithi` | Born in a Pūrṇa tithi (5th/10th/15th of either pakṣa) | tithi_nested, final14 |
+
+Milestone composite runs: final5 → final12 → final13 → final14; matched-cut checks in
+compare_matched, confirm_av11. Multivariate CV framework: multivariate, score_ranking, breakdown.
+
+---
+
+## B. Rejected — do NOT re-test
+
+Every row was tested and **failed** to earn a place under honest validation. Numbers are
+solo-AUC unless stated; "nested +x" = honest lift over the then-current composite.
+
+| Tested idea | Result | Why it failed | Script(s) |
+|-------------|--------|---------------|-----------|
+| **D10 (Dasāṁśa) — crude dignity** | 0.506 | coin-flip; hurt the composite | fame_d10_av11, superstar_calib2 |
+| **D10 — rich significators** (Lagna-lord & 10th-lord dignity + placement + **connection**, 10th occupants, career composite) | solo 0.44–0.52 | every reading coin-flip; the career-varga is silent on fame even though D60 (karma) works | d10_rich, d10_charts, neecha, neecha_strict |
+| **D10 — dāśā rules the D10 career houses** | no separation | year-weighted "MD rules D10 10th/kendra/trikoṇa" flat | dasha_d10houses |
+| **D10 — revival on accurate (AA/AA+A) times** | solo 0.45–0.52, **no C→AA gradient** | not birth-time-smeared; genuinely null even on clean charts | d10_byrating |
+| **Rich D60** — deity names, vargottama, D60-lagna condition, yoga-repeats | composite 0.452 | wrong-way; the deity rule is ~50/50 by construction | d60_rich |
+| **Static Dhana yoga** (classical, un-activated) | 0.515 | earned-wealth combos are everywhere | winners6_dhana, dhana_build |
+| **Static Rāja yoga** (classical, un-activated) | 0.529 | power combos don't mark fame | winners6_raja |
+| **Prosperity yoga (5th/9th)** | 0.478 (<0.5) | leans *ordinary* — grace ≠ fame | prosperity8 |
+| **Functional-benefic dāśā strength** (20–50) | lift −1.95 | negative once computed *functionally* (not natural benefics) | compare_fbdasha, dasha_now |
+| **3/6/10/11-*lord* dāśā** (by lordship) | 0.409 | reversed — bundles in the 6th-lord dusthāna | md_lagna, upachaya_cond |
+| **Lagna-link / strong-lagna-lord gating** on the above | softens, never predicts | the lagna filter can't flip a negative rule positive | md_lagna |
+| **Numerology** — Mūlāṅk/Bhāgyāṅk planet = a functional benefic | 0.40 (reversed) | famous sit at the random base rate; original gap was a control artifact | moolank_test |
+| **Numerology — house placement** {1,2,3,5,10} | nested +0.004 | real but tiny & redundant; AV factors already capture it (re-confirmed vs 14-factor) | moolank_house, moolank_rule, moolank_nested, numer_recheck |
+| **Numerology — Mahādaśā in prime** (20–50) | 0.48 | dāśā order is set by birth *nakṣatra*, independent of the calendar date | moolank_dasha |
+| **Net / negative / count-based argala** | flat / hurt | only *positive, Shadbala-weighted* argala survives; count-only is noise | argala, argala_allhouses |
+| **Pañchāṅga Nitya-Yoga (27)** — benefic-vs-malefic split | 0.51 | incoherent — malefic yogas (Vyatipāta, Vajra) lean famous too; sparse over 27 buckets | yogatithi |
+| **Tithi groups other than Pūrṇa** (Nanda/Jaya/Rikta as +factors) | flat / reversed | only Pūrṇa separates; the rest lean ordinary or wash out | yogatithi, tithi_nested |
+| **Jaimini karaka connections** (AK–AmK, AK–PK, AmK–PK by conjunction / rāśi dṛṣṭi) | 0.46–0.49 (reversed) | the premier "rāja sambandha" is *more* common in ordinary; famous have *un*-entangled karakas | jaimini_karaka, hyp_jaimini |
+| **Jaimini Kārakāṁśa rāja yogas** (benefics/dignified in kendras & trikoṇas from Kārakāṁśa, AK dignity) | 0.47–0.52 across 7 variants | near-chance; none lift the matched cuts | jaimini_karakamsa, hyp_jaimini |
+| **KP cuspal sub-lords** (10th/11th/2nd CSL signifying 2/6/10/11; Placidus + KP ayanāṁśa) | ≈90% both (near-ceiling) | the "any of 4 houses" net is too broad to discriminate; 1st-CSL→1/10/11 hint (0.54) too weak & needs KP-grade times | kp_analysis, kp_probe |
+| **Arudha Lagna fame rules** (AL angular to Lagna; benefics in 2/10/11 from AL) | seed-avg +0.004; nested +0.000 | correctly signed but the in-sample +0.014 was seed luck — a hint, not a factor | experiment23, al_nested |
+| **Neecha-bhaṅga** on the D10 10th-lord (cancelled debilitation) | no separation | cancellation doesn't mark fame | neecha, neecha_strict |
+| **Config yogas** — wealth (stellium, 2–11 exchange, 2nd-lord+Rahu…) & sports (6th-lord in lagna, debilitated in 6/8) | no separation vs base rate | classical "signatures" appear at the random rate | hyp_config |
+| **Trikoṇa-lord (1/5/9) sambandha** raja yoga | no lift | over-represented claim didn't hold | hyp_fb |
+| **1/2/10/11 house-lord sambandha** + Rahu/Ketu involvement | no usable lift | interconnection common in both groups | hyp_lords |
+| **Chandra Kundali** — the 8 factors recomputed from the Moon as lagna | no net gain | Moon-as-lagna doesn't out-read the Lagna; kept only the specific Moon factors (9–11) | moon_tests, moon_perfactor |
+| **Sun-as-lagna** — 8 factors from the Sun sign | no net gain | kept only `sun_disp` (factor 12) | sun_tests |
+| **Pairwise interaction terms / multiplicative synergy** | no gain over additive | a linear additive composite captures it; interactions overfit | compare_composite |
+| **Peak single-strongest combination** (breadth vs one activated yoga) | ~0.58, no better than breadth | the count/breadth composite already wins | compare_peak, compare_activated |
+| **Tatva of functional benefics + nakṣatra types** | no separation | element/nakṣatra typing doesn't discriminate | tatva_nak |
+| **Upachaya-*lord condition*** (dignity of 3/6/10/11 lords + dispositors) | no lift beyond occupancy | only the *occupancy* dāśā (factor 5) survived | upachaya_cond |
+
+### Structural findings (not single rules)
+- **Birth-time precision is NOT the ceiling.** AA/A charts score *lower* (0.68–0.70) than the
+  pooled model because Rodden rating is confounded with Western-vs-Indian geography. (experiment1, discarded_by_time)
+- **Discarded rules do not revive on accurate times.** No rejected rule shows a monotonic
+  C→AA lift — the signature of a real-but-time-smeared effect is absent everywhere. (discarded_by_time, d10_byrating)
+- **Domain heterogeneity — the key positive result.** The pooled 0.73 hides large variation:
+  worldly-achievement fame (Science 0.82, Business 0.80, Politics 0.76) reads far better than
+  performance/devotion (Music 0.72, Film 0.71, Sports 0.69, Spiritual 0.65). 0.80+ *is* reached
+  for the right domain. **Domain-specific weight-refitting HURTS** (small n overfits) — the lever
+  is more charts in legible domains, not more rules. (experiment2, experiment23, domain_sig)
+
+---
+
+## C. Framework, calibration & data-generation scripts (not hypotheses)
+
+Kept for reference; these build data or infrastructure rather than test a fame rule.
+
+- **CV / scoring framework:** multivariate, score_ranking, breakdown, rank_all, pattern_scan, calib, scan_scores
+- **Composite milestone runs:** final5, final12, final13, final14, confirm_av11, revalidate, compare_matched, compare_real, compare_all140, compare_celebs, compare_composite, compare_winners, compare_moved, late_window, winners5/6/7
+- **Per-chart diagnostics:** celeb_table, ordinary_table, shikha_diag, nandish_dhana, nandish_raja, d10_charts, av11_list, dasha_controls, rahu_behavior, dasha_now
+- **Data / HTML generation:** gen_celebrities, gen_normal, gen_reusable, gen_celeb_html, gen_ordinary_html, gen_charts_html, gen_charts_north, dump_charts, domain_sig, find_charts, find_new, append_* (batch/dhoni/kohli/famous/indian/indian2), dhoni, kohli
+- **Smoke tests:** smoke, smoke_u, smoke_pct, smoke_stack, smoke_mu, smoke_bd, smoke_recal, wp_smoke, num_smoke, kp_probe, ref_sun, superstar_calib, ali_d10, func_benefic, hyp_jaimini, prosperity8
+
+---
+
+*Last updated: 2026-07-03. Model = 14 factors, CV-AUC ≈ 0.73 (0.759 cleanest cut).*
