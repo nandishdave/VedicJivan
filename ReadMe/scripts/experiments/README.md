@@ -73,3 +73,9 @@ interactions — `compare_composite.py` · peak-vs-breadth — `compare_peak.py`
 `strength_D.py` (house-lord total Shadbala — rejected: it's *directional* strength specifically) ·
 `strength_E.py` (Indu/Sree Lagna — rejected) ·
 `strength_final.py` (combined A+C verification: 0.732→0.751 full, 0.759→**0.789** clean cut).
+
+**2026-07 strength sweep, round 2 (F–I; all NULL → strength axis saturated, model stays 15):**
+`strength_F.py` (Bhāva Dṛṣṭi Bala — aspects onto fame houses) ·
+`strength_H.py` (combustion) ·
+`strength_G.py` (Iṣṭa Phala √Uccha×Cheṣṭa) ·
+`strength_I.py` (Atmakāraka strength). Each nested-honest 0.72–0.74 &lt; 0.751 base.

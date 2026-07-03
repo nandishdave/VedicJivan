@@ -57,6 +57,13 @@ Nandish's intuition that *strength* was under-read. Tested one-by-one, each nest
 - **E · Indu / Sree Lagna** → rejected. `strength_E`
 - Combined A+C verification: full 0.732→0.751, ≥1940 0.759→**0.789**, ≥1955 0.708→0.753 (seed-stable). `strength_final`
 
+**Round 2 (F–I, tested vs the 15-factor base) — ALL NULL, model stays 15:**
+- **F · Bhāva Dṛṣṭi Bala** (aspects onto fame houses) → null 0.742. `strength_F`
+- **H · Combustion** → null 0.740. `strength_H`
+- **G · Iṣṭa Phala** (√Uccha×Cheṣṭa) → null 0.736. `strength_G`
+- **I · Atmakāraka strength** → null 0.723. `strength_I`
+- **Interpretation:** the *strength axis is saturated* — `vimsopaka` + `dig_lords` already captured what planetary strength offers for fame; every further strength measure is redundant or null. **15 factors is the honest stopping point.**
+
 ---
 
 ## B. Rejected — do NOT re-test
@@ -101,6 +108,10 @@ solo-AUC unless stated; "nested +x" = honest lift over the then-current composit
 | **House-lord *total* Shadbala** (1st/10th/11th lords, occupant strength) | solo 0.46–0.52; adds nothing beyond digbala | the sharp counter to factor 15 — it is the *directional* (dik) strength, not total strength, that marks fame | strength_D |
 | **Vargottama count** (planets in same D1 & D9 sign) | solo 0.449 (reversed) | ordinary have *more* vargottama (0.81 vs 0.67) — "fixed/repetitive" ≠ dynamic | strength_A |
 | **Indu Lagna & Sree Lagna** (Moon-based wealth/prosperity points) | nested-honest 0.718; several metrics reversed | one right-signed metric (benefics in K/T from Indu Lagna, 0.57) too weak; ordinary carry *more* support at the wealth point — a base-rate mirage | strength_E |
+| **Bhāva Dṛṣṭi Bala** (benefic-vs-malefic *aspects* onto the 1st/10th/11th, count + Shadbala-wt) | nested-honest 0.742 (<0.751) | the aspectual "weather" on the fame houses is net-malefic for everyone and barely differs; only the *lords'* strength marks fame, not who aspects the house | strength_F |
+| **Combustion (Astaṅgata)** — key benefics/lords free of the Sun's burning | nested-honest 0.740; direction mixed/reversed | combust = conjunct the Sun = also "close to power"; the two cancel, so combustion is silent on fame | strength_H |
+| **Iṣṭa Phala** — √(Uccha × Cheṣṭa bala) of the key lords / planets | nested-honest 0.736 | lagna-lord Iṣṭa leans right (0.53) but redundant with `dig_lords`+`vimsopaka`; mean/benefic Iṣṭa reversed | strength_G |
+| **Atmakāraka strength** (soul-planet's dignity / Vimśopaka / digbala / SAV / Shadbala) | nested-honest 0.723; all metrics 0.49–0.52 | a strong AK does not mark fame; already inside `vimsopaka` (mean over 7). We tested Kārakāṁśa *yogas* earlier (also null) | strength_I |
 
 ### Structural findings (not single rules)
 - **Birth-time precision is NOT the ceiling.** AA/A charts score *lower* (0.68–0.70) than the
