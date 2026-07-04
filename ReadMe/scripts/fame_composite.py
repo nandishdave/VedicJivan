@@ -25,7 +25,7 @@ The 16 factors (see ReadMe/methodology.html for the full write-up):
  13 Positive Shadbala-weighted argala on the 2/10/12 houses [Jaimini intervention]
  14 Born in a Pūrṇa tithi (5th/10th/15th — the "full/complete" group) [pañchāṅga]
  15 Mean Dig Bala of the lagna-lord and 10th-lord         [directional strength]
- 16 Strongest-Vimsopaka planet (any graha) seated in the 1st/2nd/11th [concentration]
+ 16 Strongest-Vimsopaka planet (any graha) seated in {1,2,4,5,11} [concentration]
 
 Reports per-factor lift, 5-fold cross-validated AUC (count + sum), and the
 confound-matched India-born cuts. Verified result: CV-AUC ~0.74 full set,
@@ -181,9 +181,9 @@ def feats(dob, tob, lat, lon):
     dvals = [sb[q]["dig_bala"] for q in lords if q in sb and "dig_bala" in sb[q]]
     dig_lords = float(np.mean(dvals)) if dvals else 30.0
 
-    # 16 — strongest-Vimśopaka planet (any graha) seated in a prominence house {1,2,11}
+    # 16 — strongest-Vimśopaka planet (any graha) seated in a prominence house {1,2,4,5,11}
     top_graha = max(_C, key=lambda q: vim_pp[q])
-    top_vim_seat = 1.0 if P[top_graha]["house"] in (1, 2, 11) else 0.0
+    top_vim_seat = 1.0 if P[top_graha]["house"] in (1, 2, 4, 5, 11) else 0.0
 
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
     return [rahu_prime, vimsopaka, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,

@@ -107,7 +107,8 @@ def compute_vimsopaka(dob: str, tob: str, lat: float, lon: float) -> dict:
             "planet": strongest,
             "vimsopaka": per_planet[strongest]["vimsopaka"],
             "house": planets[strongest]["house"],
-            "in_prominence_seat": planets[strongest]["house"] in (1, 2, 11),
+            # prominence seat = factor 16 of the worldly-potential model
+            "in_prominence_seat": planets[strongest]["house"] in (1, 2, 4, 5, 11),
         },
         "average": round(avg, 2),
     }

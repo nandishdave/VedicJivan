@@ -110,6 +110,23 @@ function Footer() {
                   </li>
                 ))}
               </ul>
+
+              {/* Free Calculators */}
+              <h3 className="mb-4 mt-8 font-heading text-lg font-semibold text-white">
+                Calculators
+              </h3>
+              <ul className="space-y-2.5">
+                {footerNav.calculators.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-sm transition-colors hover:text-gold-400"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* Newsletter + Social Column */}

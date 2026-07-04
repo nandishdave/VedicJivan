@@ -163,7 +163,7 @@ async def vimsopaka(
 
     Read-only, no DB write. Returns each classical planet's cross-divisional
     strength across the 16 Shodashavarga charts, its interpretation band, and the
-    single strongest planet + whether it sits in a prominence seat (1/2/11 —
+    single strongest planet + whether it sits in a prominence seat (1/2/4/5/11 —
     factor 16 of the worldly-potential model). Pass ``detail=true`` for the
     per-varga dignity breakdown.
     """
@@ -228,7 +228,7 @@ _VIMSOPAKA_PAGE = """<!doctype html><html lang="en"><head>
 </style></head><body><div class="wrap">
 <h1>Vimśopaka <em>Bala</em> Calculator</h1>
 <p class="sub">Per-planet cross-divisional strength (0–20) across the sixteen Shodashavarga charts.
-Enter a birth moment; the strongest planet's seat (1/2/11) is highlighted — that's factor 16 of the worldly-potential model.</p>
+Enter a birth moment; the strongest planet's seat (1/2/4/5/11) is highlighted — that's factor 16 of the worldly-potential model.</p>
 <form id="f">
  <label>Date<input type="date" id="dob" value="1988-11-11" required></label>
  <label>Time<input type="time" id="tob" value="12:55" required></label>
@@ -264,7 +264,7 @@ f.onsubmit=async e=>{
     out.innerHTML=`<div class="card"><table><thead><tr><th>Planet</th><th>Sign</th><th>House</th><th>Vimśopaka /20</th><th>Strength</th></tr></thead><tbody>${rows}</tbody></table>
       <p class="note">Lagna <b>${d.lagna}</b> · chart average <b>${d.average.toFixed(2)}</b>/20.
       Strongest planet: <b>${d.strongest.planet}</b> (${d.strongest.vimsopaka.toFixed(2)}) in house ${d.strongest.house} —
-      ${seat?'<b style="color:var(--g)">in a prominence seat (1/2/11)</b> ✓ (factor 16 active).':'not in a prominence seat (1/2/11).'}</p>
+      ${seat?'<b style="color:var(--g)">in a prominence seat (1/2/4/5/11)</b> ✓ (factor 16 active).':'not in a prominence seat (1/2/4/5/11).'}</p>
       <p class="note">Band (per planet): 15–20 very strong · 10–15 moderately strong · 5–10 weak · below 5 very weak.
       Add <code>&detail=true</code> to the API URL for the per-varga breakdown.</p></div>`;
   }catch(err){out.innerHTML=`<div class="card err">Could not compute: ${err.message}. Check the date/time/coordinates.</div>`;}

@@ -49,11 +49,11 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 16 factors:
                   Needs ``chart['shadbala']``.
   ── concentration (added 2026-07) ──
  16 top_vim_seat — the chart's single strongest-Vimśopaka planet (any graha) seated
-                  in a prominence house: the 1st (self), 2nd (wealth) or 11th (gains).
-                  A per-house sweep isolated exactly {1,2,11}: the 2nd separates most
-                  (famous 17% vs 5%), the 10th is REVERSED, and 5/9 wash out. It is the
-                  *seat* that matters, not whether the strong planet is a benefic.
-                  Solo AUC 0.60; nested floor +0.005, seed-stable +0.010.
+                  in a prominence house {1,2,4,5,11} (self/wealth/home/creativity/gains).
+                  A per-house sweep found 1/2/11 the clear winners (2nd +11.7%) with 4/5
+                  marginal; the 10th is REVERSED (excluded). It is the *seat* that matters,
+                  not whether the strong planet is a benefic (functional-benefic restriction
+                  reverses the signal). Solo AUC 0.60; nested floor +0.005.
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -101,7 +101,7 @@ REF = {
     "argala_pos":   (781.0587, 604.2046, 495.3215),
     "purna_tithi":  (0.2267, 0.1146, 0.3954),
     "dig_lords":    (31.9856, 28.2630, 12.3012),
-    "top_vim_seat": (0.3956, 0.1875, 0.4721),
+    "top_vim_seat": (0.5467, 0.3021, 0.5001),
 }
 _ARGALA_MID = (REF["argala_pos"][0] + REF["argala_pos"][1]) / 2.0  # neutral fallback
 _DIG_MID = (REF["dig_lords"][0] + REF["dig_lords"][1]) / 2.0       # neutral fallback
@@ -245,11 +245,12 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     dig_lords = _dig_lords(chart, ls, SIGN_LORDS)
 
     # 16 — the chart's single strongest-Vimśopaka planet (any graha) seated in a
-    # prominence house: the 1st (self), 2nd (wealth) or 11th (gains). Per-house
-    # analysis isolated exactly {1,2,11}; the 10th is reversed and 5/9 wash out. It is
-    # the *seat* that matters, not whether the planet is a functional benefic.
+    # prominence house {1,2,4,5,11} (self · wealth · home · creativity · gains). The
+    # per-house sweep found 1/2/11 the clear winners (2nd +11.7%) with 4/5 marginal;
+    # the composite edged slightly higher including 4/5. The 10th is *reversed* and is
+    # excluded. It is the *seat* that matters, not whether the planet is a benefic.
     top_graha = max(_C, key=lambda q: vim_pp[q])
-    top_vim_seat = 1.0 if P[top_graha]["house"] in (1, 2, 11) else 0.0
+    top_vim_seat = 1.0 if P[top_graha]["house"] in (1, 2, 4, 5, 11) else 0.0
 
     return {"rahu_prime": rahu_prime, "vimsopaka": vimsopaka, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,

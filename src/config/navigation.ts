@@ -10,14 +10,6 @@ export const mainNav: NavItem[] = [
   { label: "About", href: "/about" },
   { label: "Free Kundli", href: "/kundli" },
   {
-    label: "Muhurta",
-    href: "/muhurta",
-    children: [
-      { label: "Birth Muhurta", href: "/muhurta" },
-      { label: "Unshakable Charts", href: "/unshakable" },
-    ],
-  },
-  {
     label: "Services",
     href: "/services",
     children: [
@@ -46,6 +38,11 @@ export const mainNav: NavItem[] = [
 ];
 
 export const footerNav: Record<string, NavItem[]> = {
+  calculators: [
+    { label: "Vimśopaka Bala", href: "/calculators/vimsopaka" },
+    { label: "Birth Muhurta", href: "/muhurta" },
+    { label: "Unshakable Charts", href: "/unshakable" },
+  ],
   services: [
     { label: "Call Consultation", href: "/services/call-consultation" },
     { label: "Video Consultation", href: "/services/video-consultation" },

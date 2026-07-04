@@ -329,7 +329,38 @@ export const kundliApi = {
       method: "POST",
       body: data,
     }),
+
+  // Per-planet Vimśopaka Bala (0-20) — read-only, no email, no DB write.
+  vimsopaka: (data: { dob: string; tob: string; lat: number; lon: number }) => {
+    const q = new URLSearchParams({
+      dob: data.dob,
+      tob: data.tob,
+      lat: String(data.lat),
+      lon: String(data.lon),
+    });
+    return apiRequest<VimsopakaResult>(`/api/kundli/vimsopaka?${q.toString()}`);
+  },
 };
+
+// ── Vimśopaka Bala calculator ──
+export interface VimsopakaPlanet {
+  vimsopaka: number;
+  band: string;
+  house: number;
+  sign: string;
+}
+
+export interface VimsopakaResult {
+  lagna: string;
+  planets: Record<string, VimsopakaPlanet>;
+  strongest: {
+    planet: string;
+    vimsopaka: number;
+    house: number;
+    in_prominence_seat: boolean;
+  };
+  average: number;
+}
 
 // ── Muhurta (Auspicious Birth-Time) ──
 export type MuhurtaVerdict = "good" | "moderate" | "challenging";

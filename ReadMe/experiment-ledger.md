@@ -6,8 +6,8 @@ the **don't-re-test registry**: if an idea is in the "Rejected" table below with
 it has already been tried and failed under honest validation. Add to this file; don't start
 a new one.
 
-- **Model as of this writing:** 16-factor `worldly_potential` composite, CV-AUC **≈ 0.76**
-  pooled (0.793 on the cleanest India ≥1940 cut). Reproduction: `ReadMe/scripts/fame_composite.py`.
+- **Model as of this writing:** 16-factor `worldly_potential` composite, CV-AUC **≈ 0.77**
+  pooled (0.795 on the cleanest India ≥1940 cut). Reproduction: `ReadMe/scripts/fame_composite.py`.
 - **Data:** 225 famous (rated AA/A/B/C by birth-time reliability) vs 96 ordinary control.
 - **Scoring convention:** 5-fold cross-validated pairwise AUC; sign + scale learned on the
   *train* fold only. Solo-AUC = a single factor alone. 0.50 = coin-flip; <0.50 = leans *ordinary*.
@@ -23,7 +23,7 @@ a new one.
 ## A. Accepted — the 16 factors
 
 Each survived all four validation bars. Labels match `worldly_potential.py` / `_WP_LABELS`.
-**Model as of 2026-07: 16 factors, CV-AUC 0.761 full / 0.793 clean cut (≥1940).**
+**Model as of 2026-07: 16 factors, CV-AUC 0.766 full / 0.795 clean cut (≥1940).**
 
 | # | Factor | What it measures | Established in |
 |---|--------|------------------|----------------|
@@ -42,7 +42,7 @@ Each survived all four validation bars. Labels match `worldly_potential.py` / `_
 | 13 | `argala_pos` | Positive (śubha) Shadbala-weighted Jaimini argala on 2/10/12 | argala_nested, final13 |
 | 14 | `purna_tithi` | Born in a Pūrṇa tithi (5th/10th/15th of either pakṣa) | tithi_nested, final14 |
 | 15 | `dig_lords` | **Mean Dig Bala (directional strength) of the lagna-lord & 10th-lord.** Solo 0.57, ~zero corr with all others (orthogonal). **Added 2026-07** | strength_C, strength_final |
-| 16 | `top_vim_seat` | **Chart's strongest-Vimśopaka planet (any graha) seated in {1,2,11}.** Per-house sweep isolated {1,2,11}; 10th reversed, functional-benefic restriction reverses. Solo 0.60. **Added 2026-07** | vimsopaka_pattern, per_house |
+| 16 | `top_vim_seat` | **Chart's strongest-Vimśopaka planet (any graha) seated in {1,2,4,5,11}.** Per-house sweep: 1/2/11 clear winners, 4/5 marginal (edged composite higher), 10th reversed; functional-benefic restriction reverses. Solo 0.60. **Added 2026-07** | vimsopaka_pattern, per_house |
 
 Milestone composite runs: final5 → final12 → final13 → final14 → **strength_final** (the 15-factor
 verification); matched-cut checks in compare_matched, confirm_av11. Multivariate CV framework:
@@ -65,7 +65,7 @@ Nandish's intuition that *strength* was under-read. Tested one-by-one, each nest
 - **I · Atmakāraka strength** → null 0.723. `strength_I`
 - **Interpretation:** the *strength axis is saturated* — `vimsopaka` + `dig_lords` already captured what planetary strength offers for fame; every further strength *magnitude* is redundant or null.
 
-**Factor 16 (2026-07-04) — a different axis: WHERE the strongest planet sits.** `top_vim_seat` = the chart's single strongest-Vimśopaka planet (any graha) seated in {1,2,11}. Per-house sweep (`per_house`): 2nd +11.7%, 11th +4.9%, 1st +4.3%, **10th REVERSED −4.6%**, 5/9 wash out. Functional-benefic restriction *reverses* it (0.49) — it is the *seat*, not the planet's nature. Solo 0.60; nested (house-set re-derived per fold) +0.005 floor; seed-stable +0.010. REF `top_vim_seat=(0.3956, 0.1875, 0.4721)`. Lifted 0.751→0.761 full, 0.789→0.793 clean cut. Scripts `vimsopaka_pattern`, `per_house`, `refine_vimsopaka`.
+**Factor 16 (2026-07-04) — a different axis: WHERE the strongest planet sits.** `top_vim_seat` = the chart's single strongest-Vimśopaka planet (any graha) seated in **{1,2,4,5,11}**. Per-house sweep (`per_house`): 2nd +11.7%, 11th +4.9%, 1st +4.3% (clear winners), 4th +2.3%, 5th +1.3% (marginal), **10th REVERSED −4.6%**. Functional-benefic restriction *reverses* it (0.49) — it is the *seat*, not the planet's nature. **Combine-vs-separate tested** (`strength_combine`): merging Vimśopaka-magnitude + seat into ONE factor is WORSE (0.734 < 0.751 vim-mean-alone) — they're near-uncorrelated (r≈0.03–0.13), so keep SEPARATE. Seat house-set {1,2,4,5,11} edged {1,2,11} by +0.005 (within noise) — user chose {1,2,4,5,11}. Solo 0.60; nested +0.005 floor; seed-stable +0.010. REF `top_vim_seat=(0.5467, 0.3021, 0.5001)`. Lifted 0.751→0.766 full, 0.789→0.795 clean cut. Scripts `vimsopaka_pattern`, `per_house`, `refine_vimsopaka`, `strength_combine`, `seat_ref`.
 
 ---
 
@@ -142,4 +142,4 @@ Kept for reference; these build data or infrastructure rather than test a fame r
 
 ---
 
-*Last updated: 2026-07-04. Model = 16 factors, CV-AUC ≈ 0.76 pooled / 0.793 cleanest cut.*
+*Last updated: 2026-07-05. Model = 16 factors, CV-AUC ≈ 0.77 pooled / 0.795 cleanest cut.*
