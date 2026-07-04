@@ -9071,7 +9071,7 @@
   "rating": "C",
   "birth": {
    "date": "1981-07-07",
-   "time": "12:00",
+   "time": "11:15",
    "place": "Ranchi, Jharkhand, India",
    "lat": 23.3441,
    "lon": 85.3096
@@ -9085,28 +9085,28 @@
     "Sun": {
      "sign": "Gemini",
      "house": 10,
-     "deg": 21.46,
+     "deg": 21.43,
      "dignity": "Neutral Sign",
      "retro": false
     },
     "Moon": {
      "sign": "Virgo",
      "house": 1,
-     "deg": 0.58,
+     "deg": 0.19,
      "dignity": "Friendly Sign",
      "retro": false
     },
     "Mars": {
      "sign": "Taurus",
      "house": 9,
-     "deg": 28.85,
+     "deg": 28.82,
      "dignity": "Neutral Sign",
      "retro": false
     },
     "Mercury": {
      "sign": "Gemini",
      "house": 10,
-     "deg": 3.32,
+     "deg": 3.31,
      "dignity": "Own Sign",
      "retro": false
     },
@@ -9120,7 +9120,7 @@
     "Venus": {
      "sign": "Cancer",
      "house": 11,
-     "deg": 15.43,
+     "deg": 15.4,
      "dignity": "Enemy Sign",
      "retro": false
     },
@@ -9156,7 +9156,7 @@
     "Saturn": "Cancer",
     "Rahu": "Cancer",
     "Ketu": "Cancer",
-    "Lagna": "Leo"
+    "Lagna": "Cancer"
    },
    "D4": {
     "Sun": "Leo",
@@ -9168,7 +9168,7 @@
     "Saturn": "Capricorn",
     "Rahu": "Scorpio",
     "Ketu": "Taurus",
-    "Lagna": "Pisces"
+    "Lagna": "Capricorn"
    },
    "D9": {
     "Sun": "Aries",
@@ -9180,7 +9180,7 @@
     "Saturn": "Aries",
     "Rahu": "Virgo",
     "Ketu": "Pisces",
-    "Lagna": "Cancer"
+    "Lagna": "Aries"
    },
    "D10": {
     "Sun": "Capricorn",
@@ -9192,7 +9192,7 @@
     "Saturn": "Leo",
     "Rahu": "Taurus",
     "Ketu": "Scorpio",
-    "Lagna": "Sagittarius"
+    "Lagna": "Virgo"
    },
    "D11": {
     "Sun": "Capricorn",
@@ -9204,7 +9204,7 @@
     "Saturn": "Sagittarius",
     "Rahu": "Libra",
     "Ketu": "Aries",
-    "Lagna": "Taurus"
+    "Lagna": "Capricorn"
    },
    "D16": {
     "Sun": "Scorpio",
@@ -9216,7 +9216,7 @@
     "Saturn": "Taurus",
     "Rahu": "Leo",
     "Ketu": "Leo",
-    "Lagna": "Sagittarius"
+    "Lagna": "Gemini"
    },
    "D24": {
     "Sun": "Capricorn",
@@ -9228,11 +9228,11 @@
     "Saturn": "Pisces",
     "Rahu": "Capricorn",
     "Ketu": "Capricorn",
-    "Lagna": "Capricorn"
+    "Lagna": "Taurus"
    },
    "D60": {
     "Sun": "Sagittarius",
-    "Moon": "Libra",
+    "Moon": "Virgo",
     "Mars": "Aquarius",
     "Mercury": "Sagittarius",
     "Jupiter": "Pisces",
@@ -9240,70 +9240,70 @@
     "Saturn": "Taurus",
     "Rahu": "Scorpio",
     "Ketu": "Taurus",
-    "Lagna": "Gemini"
+    "Lagna": "Libra"
    }
   },
   "dasha": [
    {
     "planet": "Sun",
     "start": "1981-07-07",
-    "end": "1985-10-02",
+    "end": "1985-12-05",
     "age_start": 0,
     "age_end": 4
    },
    {
     "planet": "Moon",
-    "start": "1985-10-02",
-    "end": "1995-10-02",
+    "start": "1985-12-05",
+    "end": "1995-12-06",
     "age_start": 4,
     "age_end": 14
    },
    {
     "planet": "Mars",
-    "start": "1995-10-02",
-    "end": "2002-10-02",
+    "start": "1995-12-06",
+    "end": "2002-12-06",
     "age_start": 14,
     "age_end": 21
    },
    {
     "planet": "Rahu",
-    "start": "2002-10-02",
-    "end": "2020-10-01",
+    "start": "2002-12-06",
+    "end": "2020-12-05",
     "age_start": 21,
     "age_end": 39
    },
    {
     "planet": "Jupiter",
-    "start": "2020-10-01",
-    "end": "2036-10-01",
+    "start": "2020-12-05",
+    "end": "2036-12-05",
     "age_start": 39,
     "age_end": 55
    },
    {
     "planet": "Saturn",
-    "start": "2036-10-01",
-    "end": "2055-10-02",
+    "start": "2036-12-05",
+    "end": "2055-12-05",
     "age_start": 55,
     "age_end": 74
    },
    {
     "planet": "Mercury",
-    "start": "2055-10-02",
-    "end": "2072-10-01",
+    "start": "2055-12-05",
+    "end": "2072-12-05",
     "age_start": 74,
     "age_end": 91
    },
    {
     "planet": "Ketu",
-    "start": "2072-10-01",
-    "end": "2079-10-02",
+    "start": "2072-12-05",
+    "end": "2079-12-05",
     "age_start": 91,
     "age_end": 98
    },
    {
     "planet": "Venus",
-    "start": "2079-10-02",
-    "end": "2099-10-02",
+    "start": "2079-12-05",
+    "end": "2099-12-05",
     "age_start": 98,
     "age_end": 118
    }
