@@ -80,3 +80,8 @@ interactions — `compare_composite.py` · peak-vs-breadth — `compare_peak.py`
 `strength_G.py` (Iṣṭa Phala √Uccha×Cheṣṭa) ·
 `strength_I.py` (Atmakāraka strength) ·
 `strength_J.py` (D9/Navamsa functional-benefic strength, exchanges, D9-lagna house). Each nested-honest 0.72–0.74 &lt; 0.751 base.
+
+**Factor 16 — `top_vim_seat` (2026-07-04, the prominence-seat rule):**
+`vimsopaka_pattern.py` (per-planet Vimśopaka calculator core + which-planet / which-house pattern + nested acid test) ·
+`per_house.py` (per-house breakdown of the strongest planet: 2nd +11.7%, 10th reversed) ·
+`refine_vimsopaka.py` (house-set narrowing → {1,2,11}; any-planet vs functional-benefic → any wins). Result: strongest-Vimśopaka planet in {1,2,11} → **factor 16** (0.751→0.761 full, 0.789→0.793 clean).

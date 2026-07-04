@@ -1,13 +1,13 @@
-"""Worldly-Potential — the validated 15-factor "fame-tilt" composite as a 0-100
+"""Worldly-Potential — the validated 16-factor "fame-tilt" composite as a 0-100
 readout for a single chart.
 
 This is the productionised form of the fame-signal study (see
 ``ReadMe/methodology.html`` and ``ReadMe/scripts/fame_composite.py``): across
-225 famous vs 96 ordinary charts the 15 factors below reached a cross-validated
-AUC ≈ 0.74 (0.78 on the cleanest confound-free cut). It is a *faint* tilt, not
+225 famous vs 96 ordinary charts the 16 factors below reached a cross-validated
+AUC ≈ 0.75 (0.79 on the cleanest confound-free cut). It is a *faint* tilt, not
 a fame predictor — surface it as worldly-potential, never as destiny.
 
-Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 15 factors:
+Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 16 factors:
   1 rahu_prime  — Rahu Mahadasha years in ages 20-50 × clean-dispositor factor
   2 vimsopaka   — mean Vimśopaka bala of the 7 planets across the 16 Shodashavarga
                   divisionals (weights sum 20; D60/D1/D9 dominant). "Does the chart's
@@ -47,6 +47,13 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 15 factors:
                   the luminaries' OWN digbala (Sun/Mars) was REVERSED — it is the
                   *lords'* directional strength, not the karakas', that marks fame.
                   Needs ``chart['shadbala']``.
+  ── concentration (added 2026-07) ──
+ 16 top_vim_seat — the chart's single strongest-Vimśopaka planet (any graha) seated
+                  in a prominence house: the 1st (self), 2nd (wealth) or 11th (gains).
+                  A per-house sweep isolated exactly {1,2,11}: the 2nd separates most
+                  (famous 17% vs 5%), the 10th is REVERSED, and 5/9 wash out. It is the
+                  *seat* that matters, not whether the strong planet is a benefic.
+                  Solo AUC 0.60; nested floor +0.005, seed-stable +0.010.
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -94,6 +101,7 @@ REF = {
     "argala_pos":   (781.0587, 604.2046, 495.3215),
     "purna_tithi":  (0.2267, 0.1146, 0.3954),
     "dig_lords":    (31.9856, 28.2630, 12.3012),
+    "top_vim_seat": (0.3956, 0.1875, 0.4721),
 }
 _ARGALA_MID = (REF["argala_pos"][0] + REF["argala_pos"][1]) / 2.0  # neutral fallback
 _DIG_MID = (REF["dig_lords"][0] + REF["dig_lords"][1]) / 2.0       # neutral fallback
@@ -167,7 +175,7 @@ def _dig_lords(chart: dict, ls: int, sign_lords: list) -> float:
 
 
 def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
-    """The 15 raw factor values for a chart. Pure; mirrors fame_composite.py."""
+    """The 16 raw factor values for a chart. Pure; mirrors fame_composite.py."""
     from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
     from app.services.kundli_calculator.divisional import calc_divisional_charts
     from app.services.kundli_calculator.raja_yoga import raja_yoga_score
@@ -187,12 +195,14 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     # Shodashavarga vargas (weights sum 20). "D1" = the natal rasi sign. Replaces the
     # old crude single-varga D60 dignity — D60 remains the heaviest weight (4) within it.
     varga = chart.get("divisional") or calc_divisional_charts(P, lag)
-    vim_total = 0.0
+    vim_pp = {}  # per-planet Vimśopaka (0-20), reused for factor 16
     for p in _C:
+        tot_p = 0.0
         for vname, vw in _VARGA_W.items():
             vsign = P[p]["sign"] if vname == "D1" else varga[vname][p]
-            vim_total += vw * (_DP.get(_get_dignity(p, vsign), 45) / 100.0)
-    vimsopaka = vim_total / len(_C)
+            tot_p += vw * (_DP.get(_get_dignity(p, vsign), 45) / 100.0)
+        vim_pp[p] = tot_p
+    vimsopaka = sum(vim_pp.values()) / len(_C)
 
     # 3, 4, 8 — Ashtakavarga 10th (career) / 1st (self) / 11th (gains)
     tv = chart["ashtakavarga"]["totals"]
@@ -234,12 +244,19 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     # 15 — mean digbala of the lagna-lord and 10th-lord (rulers of self & career)
     dig_lords = _dig_lords(chart, ls, SIGN_LORDS)
 
+    # 16 — the chart's single strongest-Vimśopaka planet (any graha) seated in a
+    # prominence house: the 1st (self), 2nd (wealth) or 11th (gains). Per-house
+    # analysis isolated exactly {1,2,11}; the 10th is reversed and 5/9 wash out. It is
+    # the *seat* that matters, not whether the planet is a functional benefic.
+    top_graha = max(_C, key=lambda q: vim_pp[q])
+    top_vim_seat = 1.0 if P[top_graha]["house"] in (1, 2, 11) else 0.0
+
     return {"rahu_prime": rahu_prime, "vimsopaka": vimsopaka, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
             "dhana_late": dhana_late, "av_11th": av_11th,
             "bright_moon": bright_moon, "moon_disp": moon_disp, "moon_sav": moon_sav,
             "sun_disp": sun_disp, "argala_pos": argala_pos, "purna_tithi": purna_tithi,
-            "dig_lords": dig_lords}
+            "dig_lords": dig_lords, "top_vim_seat": top_vim_seat}
 
 
 def worldly_potential(chart: dict) -> dict | None:
@@ -264,7 +281,7 @@ def worldly_potential(chart: dict) -> dict | None:
 
 
 def score_from_factors(raw: dict) -> dict:
-    """Map the 15 raw factor values to a 0-100 worldly-potential readout: z-score
+    """Map the 16 raw factor values to a 0-100 worldly-potential readout: z-score
     each against its REF midpoint, orient famous-positive, average, squash. Pure —
     the deterministic core, split out for testing."""
     zs = {}

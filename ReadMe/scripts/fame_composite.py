@@ -1,4 +1,4 @@
-"""Verified 15-factor fame composite — reproduction script.
+"""Verified 16-factor fame composite — reproduction script.
 
 Run inside the API container (the Swiss-Ephemeris engine won't import on the host):
     docker cp ReadMe/scripts/fame_composite.py vedicjivan-api:/app/fame_composite.py
@@ -8,7 +8,7 @@ Reads two chart sets already staged in the container:
     /app/src_celebrities.json   — the 225 famous charts (== src/data/celebrities.json)
     /app/normal_people.json     — the 96 ordinary/control charts
 
-The 15 factors (see ReadMe/methodology.html for the full write-up):
+The 16 factors (see ReadMe/methodology.html for the full write-up):
   1 Rahu prime-dasha (20-50) x clean-dispositor factor   [meteoric rise]
   2 Vimśopaka bala — mean dignity of the 7 planets across the 16 Shodashavarga
      divisionals (weights sum 20; D60/D1/D9 dominant)     [cross-varga strength]
@@ -25,6 +25,7 @@ The 15 factors (see ReadMe/methodology.html for the full write-up):
  13 Positive Shadbala-weighted argala on the 2/10/12 houses [Jaimini intervention]
  14 Born in a Pūrṇa tithi (5th/10th/15th — the "full/complete" group) [pañchāṅga]
  15 Mean Dig Bala of the lagna-lord and 10th-lord         [directional strength]
+ 16 Strongest-Vimsopaka planet (any graha) seated in the 1st/2nd/11th [concentration]
 
 Reports per-factor lift, 5-fold cross-validated AUC (count + sum), and the
 confound-matched India-born cuts. Verified result: CV-AUC ~0.74 full set,
@@ -59,7 +60,8 @@ _VARGA_W = {"D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D
             "D12": 0.5, "D16": 2.0, "D20": 0.5, "D24": 0.5, "D27": 0.5, "D30": 1.0,
             "D40": 0.5, "D45": 0.5, "D60": 4.0}
 FEAT = ["rahu_prime", "vimsopaka", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
-        "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos", "purna_tithi", "dig_lords"]
+        "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos", "purna_tithi", "dig_lords",
+        "top_vim_seat"]
 
 # Factor 13 — positive Shadbala-weighted argala on the 2/10/12 houses (from Lagna)
 _ARG_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
@@ -128,12 +130,14 @@ def feats(dob, tob, lat, lon):
 
     # 2 — Vimśopaka bala: mean cross-divisional strength of the 7 planets over 16 vargas
     varga = calc_divisional_charts(P, lag)
-    vim_total = 0.0
+    vim_pp = {}
     for p in _C:
+        tot_p = 0.0
         for vname, vw in _VARGA_W.items():
             vsign = P[p]["sign"] if vname == "D1" else varga[vname][p]
-            vim_total += vw * (_DP.get(_get_dignity(p, vsign), 45) / 100.0)
-    vimsopaka = vim_total / len(_C)
+            tot_p += vw * (_DP.get(_get_dignity(p, vsign), 45) / 100.0)
+        vim_pp[p] = tot_p
+    vimsopaka = sum(vim_pp.values()) / len(_C)
 
     # 3, 4, 8 — Ashtakavarga 10th (career) / 1st (self) / 11th (gains)
     tv = c["ashtakavarga"]["totals"]
@@ -177,9 +181,14 @@ def feats(dob, tob, lat, lon):
     dvals = [sb[q]["dig_bala"] for q in lords if q in sb and "dig_bala" in sb[q]]
     dig_lords = float(np.mean(dvals)) if dvals else 30.0
 
+    # 16 — strongest-Vimśopaka planet (any graha) seated in a prominence house {1,2,11}
+    top_graha = max(_C, key=lambda q: vim_pp[q])
+    top_vim_seat = 1.0 if P[top_graha]["house"] in (1, 2, 11) else 0.0
+
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
     return [rahu_prime, vimsopaka, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,
-            bright_moon, moon_disp, moon_sav, sun_disp, argala_pos, purna_tithi, dig_lords], by, india
+            bright_moon, moon_disp, moon_sav, sun_disp, argala_pos, purna_tithi, dig_lords,
+            top_vim_seat], by, india
 
 
 def _bd(p):
@@ -225,7 +234,7 @@ for i, n in enumerate(FEAT):
     print(f"  {n:12} {F[:, i].mean():7.2f} {R[:, i].mean():7.2f}  {F[:, i].mean() - R[:, i].mean():+6.2f}")
 
 c, s = cv(F, R)
-print(f"\n15-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
+print(f"\n16-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
 
 print("\nconfound-matched India-born cuts (sum-AUC):")
 for yr in (0, 1940, 1955):
