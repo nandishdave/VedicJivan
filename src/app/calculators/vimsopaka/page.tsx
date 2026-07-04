@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Sparkles, Loader2, AlertCircle, Star } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PlaceOfBirthAutocomplete } from "@/components/booking/PlaceOfBirthAutocomplete";
-import { kundliApi, type VimsopakaResult } from "@/lib/api";
+import { kundliApi, type VimsopakaResult, type VimsopakaPlanet } from "@/lib/api";
 
 const PLANET_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
+const NODE_ORDER = ["Rahu", "Ketu"];
 
 const BAND_CLASS: Record<string, string> = {
   "Very strong": "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
@@ -14,6 +15,41 @@ const BAND_CLASS: Record<string, string> = {
   Weak: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
   "Very weak": "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
+
+function renderRow(name: string, x: VimsopakaPlanet | undefined, isTop: boolean, muted: boolean) {
+  if (!x) return null;
+  return (
+    <tr
+      key={name}
+      className={
+        "border-t border-gray-100 text-center dark:border-white/10 " +
+        (isTop ? "bg-primary-50 dark:bg-primary-900/20 " : "") +
+        (muted ? "opacity-70" : "")
+      }
+    >
+      <td className="px-4 py-2.5 text-left font-medium text-vedic-dark dark:text-white">
+        {name}
+        {isTop && <Star className="ml-1 inline h-3.5 w-3.5 fill-gold-400 text-gold-500" />}
+      </td>
+      <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{x.sign}</td>
+      <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{x.house}</td>
+      <td className="px-4 py-2.5">
+        <span className="font-bold text-vedic-dark dark:text-white">{x.vimsopaka.toFixed(2)}</span>
+        <span className="ml-2 inline-block h-2 w-16 overflow-hidden rounded-full bg-gray-100 align-middle dark:bg-white/10">
+          <span
+            className="block h-full bg-gradient-to-r from-primary-300 to-primary-600"
+            style={{ width: `${Math.min(100, (x.vimsopaka / 20) * 100)}%` }}
+          />
+        </span>
+      </td>
+      <td className="px-4 py-2.5">
+        <span className={"inline-block rounded px-2 py-0.5 text-xs font-semibold " + (BAND_CLASS[x.band] || "")}>
+          {x.band}
+        </span>
+      </td>
+    </tr>
+  );
+}
 
 export default function VimsopakaCalculatorPage() {
   const [date, setDate] = useState("1988-11-11");
@@ -137,40 +173,16 @@ export default function VimsopakaCalculatorPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {PLANET_ORDER.map((p) => {
-                      const x = result.planets[p];
-                      const isTop = p === result.strongest.planet;
-                      return (
-                        <tr
-                          key={p}
-                          className={
-                            "border-t border-gray-100 text-center dark:border-white/10 " +
-                            (isTop ? "bg-primary-50 dark:bg-primary-900/20" : "")
-                          }
-                        >
-                          <td className="px-4 py-2.5 text-left font-medium text-vedic-dark dark:text-white">
-                            {p}
-                            {isTop && <Star className="ml-1 inline h-3.5 w-3.5 fill-gold-400 text-gold-500" />}
-                          </td>
-                          <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{x.sign}</td>
-                          <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">{x.house}</td>
-                          <td className="px-4 py-2.5">
-                            <span className="font-bold text-vedic-dark dark:text-white">{x.vimsopaka.toFixed(2)}</span>
-                            <span className="ml-2 inline-block h-2 w-16 overflow-hidden rounded-full bg-gray-100 align-middle dark:bg-white/10">
-                              <span
-                                className="block h-full bg-gradient-to-r from-primary-300 to-primary-600"
-                                style={{ width: `${Math.min(100, (x.vimsopaka / 20) * 100)}%` }}
-                              />
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span className={"inline-block rounded px-2 py-0.5 text-xs font-semibold " + (BAND_CLASS[x.band] || "")}>
-                              {x.band}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {PLANET_ORDER.map((p) => renderRow(p, result.planets[p], p === result.strongest.planet, false))}
+                    <tr className="border-t border-gray-100 dark:border-white/10">
+                      <td
+                        colSpan={5}
+                        className="bg-gray-50 px-4 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:bg-white/5 dark:text-gray-500"
+                      >
+                        Nodes — reference only (Parāśara dignities; not in the average or the strongest pick)
+                      </td>
+                    </tr>
+                    {NODE_ORDER.map((p) => renderRow(p, result.planets[p], false, true))}
                   </tbody>
                 </table>
               </div>
@@ -193,6 +205,8 @@ export default function VimsopakaCalculatorPage() {
                 <p className="text-xs text-gray-500 dark:text-gray-500">
                   Band per planet: 15–20 very strong · 10–15 moderately strong · 5–10 weak · below 5 very weak.
                   Vimśopaka grades a planet&apos;s dignity across all sixteen divisional charts (D60/D1/D9 weighted most).
+                  Rāhu &amp; Ketu are shown for reference (Parāśara node dignities) — classical Vimśopaka is a 7-graha
+                  measure, so the nodes are excluded from the average and the strongest-planet pick.
                 </p>
               </div>
             </div>

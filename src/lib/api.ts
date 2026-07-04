@@ -348,6 +348,7 @@ export interface VimsopakaPlanet {
   band: string;
   house: number;
   sign: string;
+  is_node?: boolean; // Rāhu/Ketu — display only, excluded from average + strongest
 }
 
 export interface VimsopakaResult {

@@ -15,6 +15,8 @@ from app.services.kundli_calculator.vimsopaka import (
 )
 
 _CLASSICAL = {"Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"}
+_NODES = {"Rahu", "Ketu"}
+_ALL = _CLASSICAL | _NODES
 _DOB, _TOB, _LAT, _LON = "1988-11-11", "12:55", 21.7333, 70.6167
 
 
@@ -32,16 +34,20 @@ def test_band_thresholds():
 
 def test_compute_vimsopaka_shape_and_bounds():
     r = compute_vimsopaka(_DOB, _TOB, _LAT, _LON)
-    assert set(r["planets"]) == _CLASSICAL
+    # 7 classical grahas + Rāhu/Ketu (display only)
+    assert set(r["planets"]) == _ALL
     for v in r["planets"].values():
         assert 0.0 <= v["vimsopaka"] <= 20.0
         assert 1 <= v["house"] <= 12
         assert len(v["vargas"]) == len(VARGA_WEIGHTS)  # 16 vargas each
-    # strongest is the argmax and its flag is consistent with its house
+    assert r["planets"]["Rahu"]["is_node"] and not r["planets"]["Sun"]["is_node"]
+    # strongest + average use the 7 classical grahas only (nodes excluded)
     strongest = r["strongest"]["planet"]
-    assert r["planets"][strongest]["vimsopaka"] == max(v["vimsopaka"] for v in r["planets"].values())
-    assert r["strongest"]["in_prominence_seat"] == (r["strongest"]["house"] in (1, 2, 11))
-    assert 0.0 <= r["average"] <= 20.0
+    assert strongest in _CLASSICAL
+    assert r["planets"][strongest]["vimsopaka"] == max(r["planets"][p]["vimsopaka"] for p in _CLASSICAL)
+    assert r["strongest"]["in_prominence_seat"] == (r["strongest"]["house"] in (1, 2, 4, 5, 11))
+    expected_avg = round(sum(r["planets"][p]["vimsopaka"] for p in _CLASSICAL) / 7, 2)
+    assert r["average"] == pytest.approx(expected_avg, abs=0.01)
 
 
 @pytest.mark.asyncio
@@ -52,7 +58,8 @@ async def test_vimsopaka_endpoint_json(client):
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert set(body["planets"]) == _CLASSICAL
+    assert set(body["planets"]) == _ALL
+    assert body["strongest"]["planet"] in _CLASSICAL  # nodes excluded from the pick
     # default (detail=false) omits the per-varga breakdown
     assert "vargas" not in body["planets"]["Sun"]
     assert "strongest" in body and "average" in body

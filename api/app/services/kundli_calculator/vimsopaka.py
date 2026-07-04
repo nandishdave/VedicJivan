@@ -21,8 +21,14 @@ from app.services.kundli_calculator._core import (
 )
 from app.services.kundli_calculator.divisional import calc_divisional_charts
 
-# The seven classical grahas (Rāhu/Ketu have no varga dignity in this scheme).
+# The seven classical grahas — the strength framework (Shadbala/Vimśopaka) is planet-
+# centric, so the average and the strongest-planet pick use these seven only.
 _CLASSICAL = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+# Rāhu/Ketu are shown for reference using the Parāśara node-dignity scheme (Rāhu exalted
+# Gemini / own Aquarius, Ketu exalted Sagittarius / own Scorpio). They are NOT part of
+# classical 7-graha Vimśopaka and NOT part of the fame model — including them was tested
+# and does not help (it dilutes factor 2 and is neutral-to-reversed for factor 16).
+_NODES = ["Rahu", "Ketu"]
 
 # Shodashavarga weights (sum = 20). "D1" is the natal rāśi sign itself.
 VARGA_WEIGHTS: dict[str, float] = {
@@ -87,7 +93,8 @@ def compute_vimsopaka(dob: str, tob: str, lat: float, lon: float) -> dict:
     planets, lagna = pos["planets"], pos["lagna"]
     divisional = calc_divisional_charts(planets, lagna)
 
-    per_planet = {p: planet_vimsopaka(p, planets, divisional) for p in _CLASSICAL}
+    # Nodes computed for display only; average + strongest use the 7 classical grahas.
+    per_planet = {p: planet_vimsopaka(p, planets, divisional) for p in _CLASSICAL + _NODES}
     strongest = max(_CLASSICAL, key=lambda p: per_planet[p]["vimsopaka"])
     avg = sum(per_planet[p]["vimsopaka"] for p in _CLASSICAL) / len(_CLASSICAL)
 
@@ -99,9 +106,10 @@ def compute_vimsopaka(dob: str, tob: str, lat: float, lon: float) -> dict:
                 "band": per_planet[p]["band"],
                 "house": planets[p]["house"],
                 "sign": SIGN_NAMES[planets[p]["sign"]],
+                "is_node": p in _NODES,  # display-only; excluded from average + strongest
                 "vargas": per_planet[p]["vargas"],
             }
-            for p in _CLASSICAL
+            for p in _CLASSICAL + _NODES
         },
         "strongest": {
             "planet": strongest,
