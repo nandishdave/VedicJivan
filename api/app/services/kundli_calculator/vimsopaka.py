@@ -1,0 +1,113 @@
+"""Vimśopaka Bala calculator — per-planet cross-divisional strength (0-20).
+
+Vimśopaka bala grades a planet's dignity across the sixteen Shodashavarga
+divisional charts, weighted so the karma varga (D60), the rāśi (D1) and the
+navāṁśa (D9) dominate (the weights sum to 20). It is the classical answer to
+"does the planet's strength *hold up* across the vargas?" — a single strong
+placement in the D1 that collapses in the D9/D10 is flash, not depth.
+
+This module is the standalone calculator behind ``GET /api/kundli/vimsopaka``.
+It shares its weights and dignity scale with factor 2 of ``worldly_potential``
+(that factor is simply the mean of the seven values this returns).
+"""
+
+from __future__ import annotations
+
+from app.services.kundli_calculator._core import (
+    SIGN_NAMES,
+    _get_dignity,
+    calc_planet_positions,
+    get_julian_day,
+)
+from app.services.kundli_calculator.divisional import calc_divisional_charts
+
+# The seven classical grahas (Rāhu/Ketu have no varga dignity in this scheme).
+_CLASSICAL = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+
+# Shodashavarga weights (sum = 20). "D1" is the natal rāśi sign itself.
+VARGA_WEIGHTS: dict[str, float] = {
+    "D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D10": 0.5,
+    "D12": 0.5, "D16": 2.0, "D20": 0.5, "D24": 0.5, "D27": 0.5, "D30": 1.0,
+    "D40": 0.5, "D45": 0.5, "D60": 4.0,
+}
+
+# 7-tier dignity → fraction of the varga's weight (Nandish-confirmed scale).
+DIGNITY_PCT: dict[str, int] = {
+    "Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
+    "Neutral Sign": 45, "Enemy Sign": 25, "Debilitated": 5,
+}
+_DEFAULT_PCT = 45  # unknown dignity → neutral
+
+
+def _band(v: float) -> str:
+    """Interpretation band for a single planet's Vimśopaka (0-20)."""
+    if v >= 15.0:
+        return "Very strong"
+    if v >= 10.0:
+        return "Moderately strong"
+    if v >= 5.0:
+        return "Weak"
+    return "Very weak"
+
+
+def planet_vimsopaka(planet: str, planets: dict, divisional: dict) -> dict:
+    """Vimśopaka bala of one planet with its per-varga breakdown."""
+    total = 0.0
+    vargas = []
+    for vname, weight in VARGA_WEIGHTS.items():
+        sign = planets[planet]["sign"] if vname == "D1" else divisional[vname][planet]
+        dignity = _get_dignity(planet, sign)
+        pct = DIGNITY_PCT.get(dignity, _DEFAULT_PCT)
+        contribution = weight * pct / 100.0
+        total += contribution
+        vargas.append({
+            "varga": vname,
+            "sign": SIGN_NAMES[sign],
+            "dignity": dignity,
+            "weight": weight,
+            "contribution": round(contribution, 3),
+        })
+    return {
+        "vimsopaka": round(total, 2),
+        "max": 20.0,
+        "band": _band(total),
+        "vargas": vargas,
+    }
+
+
+def compute_vimsopaka(dob: str, tob: str, lat: float, lon: float) -> dict:
+    """Full per-planet Vimśopaka report for a birth moment.
+
+    Returns ``{"lagna", "planets": {name: {vimsopaka, band, vargas}}, "strongest",
+    "average"}``. ``strongest`` is the planet with the highest Vimśopaka and the
+    house it occupies (the basis of factor 16 in the worldly-potential model).
+    """
+    jd = get_julian_day(dob, tob, lat, lon)
+    pos = calc_planet_positions(jd, lat, lon)
+    planets, lagna = pos["planets"], pos["lagna"]
+    divisional = calc_divisional_charts(planets, lagna)
+
+    per_planet = {p: planet_vimsopaka(p, planets, divisional) for p in _CLASSICAL}
+    strongest = max(_CLASSICAL, key=lambda p: per_planet[p]["vimsopaka"])
+    avg = sum(per_planet[p]["vimsopaka"] for p in _CLASSICAL) / len(_CLASSICAL)
+
+    return {
+        "lagna": SIGN_NAMES[lagna["sign"]],
+        "planets": {
+            p: {
+                "vimsopaka": per_planet[p]["vimsopaka"],
+                "band": per_planet[p]["band"],
+                "house": planets[p]["house"],
+                "sign": SIGN_NAMES[planets[p]["sign"]],
+                "vargas": per_planet[p]["vargas"],
+            }
+            for p in _CLASSICAL
+        },
+        "strongest": {
+            "planet": strongest,
+            "vimsopaka": per_planet[strongest]["vimsopaka"],
+            "house": planets[strongest]["house"],
+            "in_prominence_seat": planets[strongest]["house"] in (1, 2, 11),
+        },
+        "average": round(avg, 2),
+    }
