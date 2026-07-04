@@ -78,4 +78,5 @@ interactions — `compare_composite.py` · peak-vs-breadth — `compare_peak.py`
 `strength_F.py` (Bhāva Dṛṣṭi Bala — aspects onto fame houses) ·
 `strength_H.py` (combustion) ·
 `strength_G.py` (Iṣṭa Phala √Uccha×Cheṣṭa) ·
-`strength_I.py` (Atmakāraka strength). Each nested-honest 0.72–0.74 &lt; 0.751 base.
+`strength_I.py` (Atmakāraka strength) ·
+`strength_J.py` (D9/Navamsa functional-benefic strength, exchanges, D9-lagna house). Each nested-honest 0.72–0.74 &lt; 0.751 base.

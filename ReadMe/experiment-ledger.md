@@ -112,6 +112,7 @@ solo-AUC unless stated; "nested +x" = honest lift over the then-current composit
 | **Combustion (Astaṅgata)** — key benefics/lords free of the Sun's burning | nested-honest 0.740; direction mixed/reversed | combust = conjunct the Sun = also "close to power"; the two cancel, so combustion is silent on fame | strength_H |
 | **Iṣṭa Phala** — √(Uccha × Cheṣṭa bala) of the key lords / planets | nested-honest 0.736 | lagna-lord Iṣṭa leans right (0.53) but redundant with `dig_lords`+`vimsopaka`; mean/benefic Iṣṭa reversed | strength_G |
 | **Atmakāraka strength** (soul-planet's dignity / Vimśopaka / digbala / SAV / Shadbala) | nested-honest 0.723; all metrics 0.49–0.52 | a strong AK does not mark fame; already inside `vimsopaka` (mean over 7). We tested Kārakāṁśa *yogas* earlier (also null) | strength_I |
+| **D9 (Navamsa) — functional-benefic specific**: trikoṇa lords strong in D9, parivartana among them in D9, D9-lagna in a good house {1,2,4,5,9,10,11} of D1 | nested-honest 0.732; all metrics 0.50–0.53 | D9 dignity is already inside `vimsopaka` (D9 = weight 3, third-heaviest varga); the FB-specific read re-counts it. **D9-lagna-in-good-house is a clean null (65% famous vs 66% ordinary)**; FB parivartana in D9 too rare (~6%) | strength_J |
 
 ### Structural findings (not single rules)
 - **Birth-time precision is NOT the ceiling.** AA/A charts score *lower* (0.68–0.70) than the
