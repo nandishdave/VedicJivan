@@ -93,3 +93,5 @@ interactions — `compare_composite.py` · peak-vs-breadth — `compare_peak.py`
 `strength_nakfactor.py` (tests A=Mṛidu, B=Mṛidu−Tikshna, A+B, C=Mṛidu+Swift, D=broad net) ·
 `nak_acid.py` (acid test for A: single Mṛidu fails, −0.004) ·
 `nak_acid_B.py` (acid test for B: survives at base, +0.001 — the penalty term backstops the reward). Result: **B (Mṛidu − Tikshna) → factor 17** (0.766→0.772 full, 0.795→**0.809** clean). Most marginal factor: acid-neutral, seed-stable clean cuts. `strength_navatara.py` (a *different* nakṣatra idea — Navatāra tāras from Janma — was rejected).
+
+**2nd-house Ashtakavarga test — `av2_test.py` (2026-07-05, REJECTED):** does SAV bindus on the 2nd (dhana) house earn an 18th slot? No — lift **−1.57** (reversed: famous carry *fewer* 2nd-house bindus), composite +0.001 full / **−0.002 mean on the ≥1940 clean cut** across 5 seeds. Fame lives on the career/gains axis (10th/11th, both already accepted), not the accumulated-wealth 2nd. Model stays 17. See the ledger's rejected table.
