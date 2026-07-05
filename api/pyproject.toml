@@ -1,0 +1,67 @@
+[tool.ruff]
+# Report-only quality gate: run in CI as a non-blocking signal (see
+# .github/workflows/test-backend.yml). Nothing here fails the build yet —
+# the point is to make lint + coverage *visible* so we can burn the list
+# down deliberately before turning any rule into a hard gate.
+target-version = "py312"
+line-length = 100
+extend-exclude = [".venv", "venv", "__pycache__"]
+
+[tool.ruff.lint]
+# Curated first pass: high-signal correctness rules, not a wall of style noise.
+#   F   pyflakes      — unused imports/vars, undefined names, f-string bugs
+#   E/W pycodestyle   — real syntax/whitespace issues (E501 line-length ignored below)
+#   I   isort         — import ordering
+#   B   bugbear       — likely bugs (mutable defaults, etc.)
+#   BLE blind-except  — the `except Exception: pass` sites the audit flagged
+#   C4  comprehensions— unnecessary list()/dict() calls
+#   UP  pyupgrade     — py312-modern syntax
+#   SIM flake8-simplify
+select = ["F", "E", "W", "I", "B", "BLE", "C4", "UP", "SIM"]
+ignore = [
+    "E501",    # line length — many long lines; revisit before enforcing
+    "E701",    # multiple statements (colon) — pervasive astro-math style
+    "E702",    # multiple statements (semicolon) — pervasive astro-math style
+    "E703",    # useless semicolon — same style
+    "E731",    # lambda assignment — minor
+    "E741",    # ambiguous names (l/I/O) — low value in astro math
+    "E401",    # multiple imports on one line — style
+    "E402",    # import not at top — intentional in a few script shims
+    "SIM108",  # if/else -> ternary — style preference
+    "SIM105",  # contextlib.suppress over try/except/pass — case by case
+    "UP038",   # isinstance tuple->union — cosmetic
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test files lean on pytest patterns ruff misreads as smells.
+"tests/*" = ["F811", "B011", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI's DI helpers are *designed* to be called in argument defaults —
+# that's the framework pattern, not the mutable-default bug B008 warns about.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Header",
+    "fastapi.Cookie",
+    "fastapi.File",
+    "fastapi.Form",
+    "fastapi.Security",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+# Report-only: show missing lines, don't fail under a threshold yet.
+show_missing = true
+skip_covered = false

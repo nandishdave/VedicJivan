@@ -55,9 +55,20 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements-test.txt
 
+      # Lint gate — REPORT-ONLY for now (continue-on-error). Ruff config lives
+      # in api/pyproject.toml. This surfaces quality signal (unused imports,
+      # blind excepts, bugbear findings) without blocking the build; once the
+      # backlog is burned down we can drop continue-on-error to make it a hard
+      # gate. --output-format=github annotates the PR diff inline.
+      - name: Lint (ruff, non-blocking)
+        continue-on-error: true
+        run: ruff check . --output-format=github
+
       # Tests use a mocked MongoDB (see tests/conftest.py), so no DB service is
       # needed. test_api_schemathesis.py is excluded: it fetches /openapi.json
       # from a LIVE API at import time (collection-time error when none is
       # running), so it is a separate live-only suite (run via docker compose).
+      # Coverage is measured (config in pyproject.toml [tool.coverage]) and
+      # printed as a term-missing summary — reported, not yet threshold-gated.
       - name: Run tests
-        run: pytest -q --ignore=tests/test_api_schemathesis.py
+        run: pytest -q --ignore=tests/test_api_schemathesis.py --cov --cov-report=term-missing
