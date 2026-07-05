@@ -5,7 +5,10 @@ Self-contained — only depends on swisseph, timezonefinder, and stdlib.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 
 def _get_local_tz(lat: float, lon: float):
@@ -50,4 +53,9 @@ def calc_sunrise_sunset(jd: float, lat: float, lon: float) -> dict:
 
         return {"sunrise": jd_to_local_hms(sr_jd), "sunset": jd_to_local_hms(ss_jd)}
     except Exception:
+        logger.warning(
+            "Sunrise/sunset calculation failed (jd=%s, lat=%s, lon=%s); "
+            "returning N/A — check pyswisseph rise_trans signature/ephemeris.",
+            jd, lat, lon, exc_info=True,
+        )
         return {"sunrise": "N/A", "sunset": "N/A"}

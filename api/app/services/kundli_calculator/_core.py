@@ -5,7 +5,10 @@ All calculations use Lahiri Ayanamsa (sidereal mode) — same as AstroSage.
 
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, time, timedelta, timezone
+
+logger = logging.getLogger(__name__)
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
@@ -500,6 +503,11 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
     try:
         kp_cusps = placidus_cusps(jd, lat, lon)
     except Exception:
+        logger.warning(
+            "Placidus cusp calculation failed (jd=%s, lat=%s, lon=%s); "
+            "KP sub-lords will fall back to sign-based cusps.",
+            jd, lat, lon, exc_info=True,
+        )
         kp_cusps = None
     kp = calc_kp(planets, kp_cusps, lagna["longitude"], moon_lon)
     jaimini = calc_jaimini_karakas(planets, lagna)
@@ -535,8 +543,16 @@ def build_chart(name: str, gender: str, dob: str, tob: str, lat: float, lon: flo
                 v["label"] = label
                 varshaphal.append(v)
             except Exception:
-                pass
+                logger.warning(
+                    "Varshaphal build failed for %s year %s; omitting that annual chart.",
+                    label, yr, exc_info=True,
+                )
     except Exception:
+        logger.warning(
+            "Varshaphal solar-return anchor failed for year %s; "
+            "no annual charts will be produced.",
+            current_year, exc_info=True,
+        )
         varshaphal = []
 
     # Ayanamsa value
