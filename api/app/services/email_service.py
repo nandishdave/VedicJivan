@@ -304,12 +304,12 @@ async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
 _MUHURTA_ASPECTS = [
     ("health", "Hth"), ("longevity", "Lng"), ("wealth", "Wth"),
     ("career", "Car"), ("property", "Prp"), ("marriage", "Mrg"),
-    ("children", "Chd"), ("family", "Fam"), ("education", "Edu"),
+    ("children", "Chd"), ("siblings", "Sib"), ("family", "Fam"), ("education", "Edu"),
     ("fortune", "Ftn"), ("foreign", "Frn"), ("spiritual", "Spr"),
 ]
 _MUHURTA_ASPECT_LEGEND = ("Hth Health &middot; Lng Longevity &middot; Wth Wealth &middot; Car Career &middot; "
-                          "Prp Property &middot; Mrg Marriage &middot; Chd Children &middot; Fam Family &middot; "
-                          "Edu Education &middot; Ftn Fortune &middot; Frn Foreign &middot; Spr Spiritual")
+                          "Prp Property &middot; Mrg Marriage &middot; Chd Children &middot; Sib Siblings &middot; "
+                          "Fam Family &middot; Edu Education &middot; Ftn Fortune &middot; Frn Foreign &middot; Spr Spiritual")
 _MUHURTA_CELL = {
     "good": ("#dcfce7", "#166534", "G"),
     "moderate": ("#fef9c3", "#854d0e", "M"),
@@ -410,21 +410,26 @@ def _render_muhurta_html(result: dict) -> str:
         star = ' <span style="color:#7c3aed;">&#9733;</span>' if hl else ""
         wp = w.get("worldly_potential")
         wp_cell = (
-            f'<td style="padding:4px 3px;text-align:center;color:#7c3aed;font-weight:bold;">{round(wp["score"])}</td>'
+            f'<td style="padding:4px 3px;text-align:center;color:#a16207;font-weight:bold;">{round(wp["score"])}</td>'
             if wp else '<td style="padding:4px 3px;text-align:center;color:#bbb;">&ndash;</td>'
+        )
+        bal = w.get("balanced_life") or {}
+        bal_cell = (
+            f'<td style="padding:4px 3px;text-align:center;color:#0f766e;font-weight:bold;">{round(bal["score"])}%</td>'
+            if "score" in bal else '<td style="padding:4px 3px;text-align:center;color:#bbb;">&ndash;</td>'
         )
         rows += (
             f'<tr style="{tr_style}"><td style="padding:4px 3px;font-weight:bold;color:#7c3aed;">{w["rank"]}</td>'
             f'<td style="padding:4px 4px;font-weight:bold;white-space:nowrap;">{w["lagna_name"]}{star}</td>'
             f'<td style="padding:4px 4px;white-space:nowrap;">{lord}</td>'
             f'<td style="padding:4px 4px;white-space:nowrap;font-size:11px;">{w["window"]["start"]}&ndash;{w["window"]["end"]}</td>'
-            f'<td style="padding:4px 3px;text-align:center;font-weight:bold;">{round(w["overall"])}</td>{wp_cell}{cells}</tr>'
+            f'<td style="padding:4px 3px;text-align:center;font-weight:bold;">{round(w["overall"])}</td>{bal_cell}{wp_cell}{cells}</tr>'
         )
     grid = (
         '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'
         '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;min-width:560px;">'
         f'<tr><th style="{th}">#</th><th style="{th}">Lagna</th><th style="{th}">Lord</th>'
-        f'<th style="{th}">Window</th><th style="{th}">Str</th><th style="{th}">Pot</th>{head_cells}</tr>{rows}</table>'
+        f'<th style="{th}">Window</th><th style="{th}">Str</th><th style="{th}">Life</th><th style="{th}">Pot</th>{head_cells}</tr>{rows}</table>'
         '</div>'
     )
     pos_rows = ""
@@ -481,6 +486,22 @@ def _render_muhurta_html(result: dict) -> str:
             f' &nbsp;<span style="color:#991b1b;">&#9660;</span> below</p>'
             f'<p style="font-size:12px;color:#444;margin:0;line-height:1.8;">{_worldly_breakdown(bwp)}</p></div>'
         )
+    # Balanced-Life reading + concern areas for the recommended pick (the second,
+    # orthogonal axis: a whole, rounded life vs. worldly prominence).
+    bbl = bw.get("balanced_life") if bw else None
+    balanced_block = ""
+    if bbl:
+        conc = ", ".join(bbl.get("concerns", []))
+        conc_html = (f'<span style="color:#b45309;font-weight:bold;">{conc}</span>' if conc
+                     else '<span style="color:#16a34a;font-weight:bold;">no notably weak area</span>')
+        balanced_block = (
+            '<div style="margin:10px 0 0;padding:10px 14px;background:#f0fdfa;border:1px solid #ccfbf1;border-radius:8px;">'
+            f'<p style="font-size:12px;color:#555;margin:0;"><strong>Balanced-Life reading</strong> &mdash; '
+            f'{bw["lagna_name"]}: <strong style="color:#0f766e;">{round(bbl["score"])}% &middot; {bbl["band"]}</strong>'
+            f' &mdash; a whole-life score across 13 areas (health, marriage, children, parents, siblings, wealth, '
+            f'career&hellip;). Judged by house + house-lord + significator + divisional chart. '
+            f'Areas of concern: {conc_html}.</p></div>'
+        )
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
         {_email_header()}
@@ -499,10 +520,13 @@ def _render_muhurta_html(result: dict) -> str:
             <span style="background:#dcfce7;color:#166534;font-weight:bold;padding:1px 6px;border-radius:8px;">G</span> Good
             &nbsp; <span style="background:#fef9c3;color:#854d0e;font-weight:bold;padding:1px 6px;border-radius:8px;">M</span> Moderate
             &nbsp; <span style="background:#fee2e2;color:#991b1b;font-weight:bold;padding:1px 6px;border-radius:8px;">W</span> Weak
-            &nbsp; &middot; (R) = Lagna-lord retrograde &middot; Str = overall strength 0&ndash;100 &middot; Pot = worldly-potential
+            &nbsp; &middot; (R) = Lagna-lord retrograde &middot; Str = overall auspiciousness 0&ndash;100
+            &middot; <span style="color:#0f766e;font-weight:bold;">Life</span> = Balanced-Life % (whole-life completeness across the 13 areas)
+            &middot; <span style="color:#a16207;font-weight:bold;">Pot</span> = Worldly-Prominence potential
         </p>
         <p style="font-size:11px;color:#888;margin:6px 0 0;">Aspect columns: {_MUHURTA_ASPECT_LEGEND}</p>
         {wp_note}
+        {balanced_block}
         {breakdown_block}
         <h3 style="color:#7c3aed;margin:28px 0 8px;">Planetary Positions ({result["date"]}, {pos_label})</h3>
         {positions}
@@ -538,15 +562,15 @@ def _potential_pct(score: float) -> int:
     return max(0, round((score - _POTENTIAL_FLOOR) / (_POTENTIAL_CEILING - _POTENTIAL_FLOOR) * 100))
 
 
-# Short labels for the 8 strength-stack factors, shown under the count.
-_STACK_ABBR = {"Shadbala": "Shad", "Ashtakavarga": "AV", "Dignity": "Dig",
-               "Lagna-lord": "LagL", "Placement": "Place", "Dhana": "Dhana",
-               "Prosperity": "Prosp", "Raja": "Raja"}
+def _short_domain(label: str) -> str:
+    """'Wealth & Finances' -> 'Wealth' — the first word, for the tiny concern line."""
+    return label.split(" & ")[0].split()[0]
 
 
 def _u_chart_row(rank, c, bg, dated=False):
-    """One ranked chart row (rank, [date], time, lagna, score, S·Y·L·F, longevity
-    band). Exceptional (>= bar) charts are starred + tinted."""
+    """One ranked chart row: rank, [date], time, lagna, Strength, Balanced-Life %
+    (+ concern areas), Worldly, longevity band. Exceptional (>= bar) charts are
+    starred + tinted."""
     L = c["layers"]
     ayu = c["ayurdaya"]
     if c.get("exceptional"):
@@ -558,15 +582,17 @@ def _u_chart_row(rank, c, bg, dated=False):
         nm = _numerology(c["date"])
         num_cell = (f'<td style="padding:5px 6px;text-align:center;font-size:11px;color:#7c3aed;'
                     f'white-space:nowrap;">{nm["moolank"]}&middot;{nm["bhagyank"]}</td>')
-    stack = c.get("strength_stack") or {}
-    if "count" in stack:
-        names = "&middot;".join(_STACK_ABBR.get(s, s[:4]) for s in stack.get("strong", []))
-        name_line = f'<br><span style="font-size:9px;color:#999;font-weight:normal;">{names}</span>' if names else ""
-        stack_txt = f'{stack["count"]}/{stack.get("of", 8)}{name_line}'
+    # Balanced-Life % + the weakest domains named beneath (the "concern areas").
+    bal = c.get("balanced_life") or {}
+    if "score" in bal:
+        conc = "&middot;".join(_short_domain(x) for x in bal.get("concerns", [])[:2])
+        conc_line = (f'<br><span style="font-size:9px;color:#b45309;font-weight:normal;">{conc}</span>'
+                     if conc else '<br><span style="font-size:9px;color:#16a34a;font-weight:normal;">rounded</span>')
+        bal_txt = f'{round(bal["score"])}%{conc_line}'
     else:
-        stack_txt = "&ndash;"
+        bal_txt = "&ndash;"
     w = L.get("worldly")
-    w_txt = round(w) if w is not None else "&ndash;"
+    w_txt = f'{round(w)}' if w is not None else "&ndash;"
     return (
         f'<tr style="background:{bg};">'
         f'<td style="padding:5px 6px;font-weight:bold;color:#7c3aed;">{rank}</td>'
@@ -574,9 +600,8 @@ def _u_chart_row(rank, c, bg, dated=False):
         f'<td style="padding:5px 6px;">{c["time"]}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;">{c["lagna"]}{star}</td>'
         f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{_potential_pct(c["score"])}%</td>'
-        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#7c3aed;">{stack_txt}</td>'
-        f'<td style="padding:5px 6px;text-align:center;color:#666;font-size:11px;">'
-        f'{round(L["structural"])}&middot;{round(L["yoga"])}&middot;{round(L["longevity"])}&middot;{round(L["fame"])}&middot;{w_txt}</td>'
+        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#7c3aed;">{bal_txt}</td>'
+        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#a16207;">{w_txt}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;font-size:11px;">{ayu["band"][0]}&ndash;{ayu["band"][1]} {ayu["label"].split()[0]}</td>'
         f'</tr>'
     )
@@ -585,8 +610,8 @@ def _u_chart_row(rank, c, bg, dated=False):
 def _u_table(charts, start_rank=1, dated=False):
     date_h = f'<th style="{_U_TH}">Date</th><th style="{_U_TH}">Num</th>' if dated else ""
     head = (f'<tr><th style="{_U_TH}">#</th>{date_h}<th style="{_U_TH}">Time</th><th style="{_U_TH}">Lagna</th>'
-            f'<th style="{_U_TH}">Potential</th><th style="{_U_TH}">Stack</th>'
-            f'<th style="{_U_TH}">S&middot;Y&middot;L&middot;F&middot;W</th><th style="{_U_TH}">Longevity</th></tr>')
+            f'<th style="{_U_TH}">Strength</th><th style="{_U_TH}">Balanced Life</th>'
+            f'<th style="{_U_TH}">Worldly</th><th style="{_U_TH}">Longevity</th></tr>')
     rows = "".join(_u_chart_row(start_rank + i, c, "#faf9ff" if i % 2 else "#ffffff", dated)
                    for i, c in enumerate(charts))
     return ('<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
@@ -655,14 +680,17 @@ def _render_unshakable_html(result: dict) -> str:
             f'{_u_table(top, dated=True)}'
         )
 
-    body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;">'
-             'Potential = strength as a % of the practical ceiling (calibrated from 300+ charts): ~59% is a '
-             'typical chart, ~80% top-decile, 100% the top ~1%; a rare chart exceeds 100%. '
-             'Stack = how many of 8 strength factors are notably strong (Shadbala, Ashtakavarga, dignity, '
-             'Lagna-lord, placement, Dhana, Prosperity, Raja) &mdash; the strong ones are named beneath the count. '
-             'S&middot;Y&middot;L&middot;F&middot;W = Structural &middot; Yoga &middot; Longevity &middot; Fame &middot; Worldly-potential layer scores (0&ndash;100). '
+    body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;line-height:1.6;">'
+             '<b>Strength</b> = overall chart strength as a % of the practical ceiling (calibrated from 300+ charts): '
+             '~59% is typical, ~80% top-decile, 100% the top ~1%; a rare chart exceeds 100%. This is what ranks the list. '
+             '<b>Balanced Life</b> = how <em>complete</em> a life the chart carries across 13 domains (health, marriage, '
+             'children, parents, siblings, wealth, career, longevity&hellip;) &mdash; one empty domain drags it down, so it '
+             'rewards <em>having enough of everything</em>. The <span style="color:#b45309;">amber</span> words beneath name '
+             'the 2 weakest domains (the areas of concern); <span style="color:#16a34a;">rounded</span> = no weak spot. '
+             '<b>Worldly</b> = Worldly-Prominence potential (fame/respect/wealth) &mdash; a <em>separate</em> axis: a chart '
+             'can be worldly-strong yet unbalanced, or balanced yet ordinary. '
              'Num = Moolank&middot;Bhagyank (the date&rsquo;s root &amp; destiny numbers, 1&ndash;9). '
-             f'Longevity = indicative Ayurdaya band (estimates only). &#9733; = genuinely strong (&ge; {bar_pct}% of potential).</p>')
+             f'Longevity = indicative Ayurdaya band (estimates only). &#9733; = genuinely strong (&ge; {bar_pct}% Strength).</p>')
 
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">

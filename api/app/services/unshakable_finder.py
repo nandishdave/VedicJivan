@@ -59,6 +59,8 @@ def _record(dob: str, tob: str, chart: dict, scored: dict, bar: float) -> dict:
         "prosperity": round(scored["prosperity"]["score"]),
         "raja": round(scored["raja"]["score"]),
         "strength_stack": scored["strength_stack"],
+        # Balanced-Life axis (whole-life completeness + concern areas).
+        "balanced_life": scored["balanced_life"],
     }
 
 

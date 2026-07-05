@@ -25,6 +25,8 @@ def _chart(time, lagna, score, exceptional=False):
         "dhana": 6, "prosperity": 3, "raja": 8,
         "strength_stack": {"count": 5, "of": 8,
                            "strong": ["Shadbala", "Ashtakavarga", "Dignity", "Lagna-lord", "Raja"]},
+        "balanced_life": {"score": 58.0, "band": "Well-rounded",
+                          "concerns": ["Wealth & Finances", "Fortune & Dharma"], "domains": {}},
     }
 
 
@@ -88,9 +90,9 @@ def test_email_renders_single_day_with_positions():
     assert "Every Rising Lagna" in html and "Planetary Positions" in html
     assert "Aries" in html and "115%" in html and "Gemini" in html  # score 76.1 -> 115% (above the ceiling); positions
     assert "No standout chart" in html  # exceptional_count == 0 -> the soft note
-    assert "Stack" in html and "5/8" in html  # composite strength-stack column + value
-    assert "Shad" in html and "Raja" in html  # the strong factors are named under the count
-    assert "S&middot;Y&middot;L&middot;F&middot;W" in html  # 5-layer scores incl. worldly
+    assert "Balanced Life" in html and "58%" in html  # whole-life column + value
+    assert "Wealth" in html and "Fortune" in html  # the concern areas are named under the %
+    assert "Worldly" in html and ">55<" in html  # the worldly-potential axis column + value
 
 
 def test_email_renders_multi_day_top_per_day():

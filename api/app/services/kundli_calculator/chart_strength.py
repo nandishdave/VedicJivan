@@ -153,6 +153,7 @@ def unshakable_score(chart: dict) -> dict:
     )
     from app.services.kundli_calculator.yoga_strength import yoga_strength
     from app.services.kundli_calculator.worldly_potential import worldly_potential
+    from app.services.kundli_calculator.life_domains import balanced_life
 
     s = structural_strength(chart)
     y = yoga_strength(chart)
@@ -169,6 +170,12 @@ def unshakable_score(chart: dict) -> dict:
     else:
         weights = LAYER_WEIGHTS
     score = sum(layers[k] * weights[k] for k in weights)
+
+    # Balanced-Life reading — the SECOND, orthogonal axis to worldly-potential:
+    # "does this chart carry a whole, rounded life?" (health, marriage, children,
+    # parents, siblings, wealth, career…), with the 2-3 weakest domains named as
+    # concern areas. Does not feed the unshakable score — it is a separate lens.
+    balanced = balanced_life(chart)
 
     # Graded classical yogas (separate from the tuned score) — shown per moment.
     dh_s, dh_l = dhana_yoga_score(chart)
@@ -199,6 +206,7 @@ def unshakable_score(chart: dict) -> dict:
         "raja": {"score": rj_s, "links": rj_l},
         "strength_stack": {"count": len(strong), "of": len(strength_factors), "strong": strong},
         "worldly_potential": wp,  # None when the chart has no birth date
+        "balanced_life": balanced,  # {score, band, concerns, domains} — the whole-life axis
     }
 
 

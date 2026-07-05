@@ -22,21 +22,34 @@ from app.services.kundli_calculator._core import (
 from app.services.kundli_calculator.aspects import calc_graha_drishti
 from app.services.kundli_calculator.ashtakavarga import calc_ashtakavarga
 from app.services.kundli_calculator.dhana_yoga import (
-    dhana_yoga_normalized,
     dhana_yoga_score,
-    prosperity_yoga_normalized,
     prosperity_yoga_score,
 )
 from app.services.kundli_calculator.divisional import calc_divisional_charts
 from app.services.kundli_calculator.worldly_potential import worldly_potential
-from app.services.kundli_calculator.raja_yoga import (
-    raja_yoga_normalized,
-    raja_yoga_score,
-)
+from app.services.kundli_calculator.raja_yoga import raja_yoga_score
 from app.services.kundli_calculator.nakshatra import calc_nakshatra
 from app.services.kundli_calculator.panchanga import calc_panchanga
 from app.services.kundli_calculator.shadbala import calc_shadbala
 from app.services.kundli_calculator.sunrise import calc_sunrise_sunset
+# The 13-domain life analysis + Balanced-Life score now live in one shared leaf
+# module (used by both this engine and the Unshakable finder). Re-exported here so
+# existing callers/tests keep importing them from ``app.services.muhurta``.
+from app.services.kundli_calculator.life_domains import (  # noqa: F401  (re-export)
+    LIFE_ASPECTS,
+    _AVG_SAV,
+    _DIGNITY_PTS,
+    _DUSTHANA,
+    _KENDRA,
+    _TRIKONA,
+    _aspect_score,
+    _house_strength,
+    _is_benefic,
+    _is_malefic,
+    _verdict,
+    balanced_life,
+    domain_scores,
+)
 
 
 def build_muhurta_chart(
@@ -88,40 +101,10 @@ def build_muhurta_chart(
         )
     return chart
 
-# ── Life aspects → (label, group, houses[primary first], karaka planets) ──────
-# Houses follow the consultation cheat-sheet mapping. Primary house is weighted
-# most; karaka strength (Shadbala) is a secondary modifier.
-LIFE_ASPECTS: list[tuple[str, str, str, list[int], list[str]]] = [
-    ("health",    "Health & Vitality",     "Self & Body",    [1, 6, 8],  ["Sun"]),
-    ("longevity", "Longevity",             "Self & Body",    [8, 1, 3],  ["Saturn"]),
-    ("wealth",    "Wealth & Finances",     "Material",       [2, 11],    ["Jupiter"]),
-    ("career",    "Career & Status",       "Material",       [10, 6],    ["Sun", "Saturn"]),
-    ("property",  "Property & Comforts",   "Material",       [4],        ["Mars", "Venus"]),
-    ("marriage",  "Marriage & Spouse",     "Relationships",  [7],        ["Venus"]),
-    ("children",  "Children & Progeny",    "Relationships",  [5],        ["Jupiter"]),
-    ("family",    "Family Harmony",        "Relationships",  [4, 2],     ["Moon", "Venus"]),
-    ("education", "Education & Intellect",  "Mind & Growth",  [4, 5, 9],  ["Mercury", "Jupiter"]),
-    ("fortune",   "Fortune & Dharma",      "Mind & Growth",  [9],        ["Jupiter", "Sun"]),
-    ("foreign",   "Foreign & Travel",      "Beyond",         [12, 9, 3], ["Rahu"]),
-    ("spiritual", "Spirituality",          "Beyond",         [12, 9, 5], ["Ketu", "Jupiter"]),
-]
-
 _CLASSICAL = ("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu")
-_BENEFICS = {"Jupiter", "Venus", "Mercury"}  # natural (kept for reference)
-_MALEFICS = {"Saturn", "Mars", "Sun", "Rahu", "Ketu"}  # natural (kept for reference)
-# Functional benefics are lagna-specific (two-group scheme). Applied to the 6
-# non-Moon classical planets; the Moon keeps its own waxing/waning (paksha) rule.
-_FB_A = {"Saturn", "Venus", "Mercury"}       # for Ta, Ge, Vi, Li, Cp, Aq lagnas
-_FB_B = {"Sun", "Moon", "Mars", "Jupiter"}   # for Ar, Cn, Le, Sc, Sg, Pi lagnas
-_FB_A_SIGNS = {1, 2, 5, 6, 9, 10}
-_KENDRA = {1, 4, 7, 10}
-_TRIKONA = {1, 5, 9}
-_DUSTHANA = {6, 8, 12}
-_DIGNITY_PTS = {
-    "Exalted": 20, "Moolatrikona": 16, "Own Sign": 14, "Friendly Sign": 7,
-    "Neutral Sign": 0, "Enemy Sign": -8, "Debilitated": -18,
-}
-_AVG_SAV = 28.0  # average Sarvashtakavarga bindus per sign (337/12)
+# The life-domain scoring constants (_DIGNITY_PTS, _AVG_SAV, _KENDRA/_TRIKONA/
+# _DUSTHANA, the functional-benefic scheme) + the aspect/house/verdict helpers now
+# live in kundli_calculator.life_domains and are imported at the top of this file.
 
 
 _DISPLAY_ORDER = [
@@ -210,111 +193,6 @@ def _lagna_windows(dob: str, lat: float, lon: float, step_min: int = 2) -> list[
     return [best[s] for s in sorted(best)]
 
 
-def _moon_waxing(chart: dict) -> bool:
-    phase = (chart["planets"]["Moon"]["longitude"] - chart["planets"]["Sun"]["longitude"]) % 360
-    return phase < 180
-
-
-def _functional_benefics(chart: dict) -> set:
-    """Functional benefics for this chart's ascendant (lagna-specific)."""
-    return _FB_A if chart["lagna"]["sign"] in _FB_A_SIGNS else _FB_B
-
-
-def _node_dispositor(chart: dict, node: str) -> str:
-    """Sign-lord of the node's sign — Rahu/Ketu rule no sign, so they take the
-    functional nature of their dispositor (the classical rule for the nodes)."""
-    return SIGN_LORDS[chart["planets"][node]["sign"]]
-
-
-def _is_benefic(chart: dict, p: str) -> bool:
-    # Hybrid: the Moon by paksha (waxing = benefic); the other 6 classical planets
-    # by their FUNCTIONAL nature for this lagna (a natural benefic like Jupiter is a
-    # functional malefic for Libra); Rahu/Ketu inherit their dispositor's nature.
-    if p == "Moon":
-        return _moon_waxing(chart)
-    if p in ("Rahu", "Ketu"):
-        return _is_benefic(chart, _node_dispositor(chart, p))
-    return p in _functional_benefics(chart)
-
-
-def _is_malefic(chart: dict, p: str) -> bool:
-    if p == "Moon":
-        return not _moon_waxing(chart)
-    if p in ("Rahu", "Ketu"):
-        return _is_malefic(chart, _node_dispositor(chart, p))
-    return p not in _functional_benefics(chart)
-
-
-def _house_strength(chart: dict, house: int) -> float:
-    """0–100 strength of one Whole-Sign house from real chart signals."""
-    lagna_sign = chart["lagna"]["sign"]
-    sign = (lagna_sign + house - 1) % 12
-    score = 50.0
-    # Sarvashtakavarga bindus for the sign (the strongest "is this house strong" signal).
-    sav = chart["ashtakavarga"]["totals"][sign]
-    score += (sav - _AVG_SAV) * 1.6
-    # House-lord dignity + placement — the key Lagna-specific signal (the sign
-    # in this house, and therefore its lord, changes with every ascendant).
-    lord = SIGN_LORDS[sign]
-    lp = chart["planets"].get(lord)
-    if lp:
-        score += _DIGNITY_PTS.get(lp["dignity"], 0) * 0.9
-        lh = lp["house"]
-        if lh in _TRIKONA:
-            score += 10
-        elif lh in _KENDRA:
-            score += 7
-        elif lh in _DUSTHANA:
-            score -= 12
-    # Occupants of the house.
-    for pname, pdata in chart["planets"].items():
-        if pname not in _CLASSICAL:
-            continue
-        if pdata["house"] == house:
-            if _is_benefic(chart, pname):
-                score += 8
-            elif _is_malefic(chart, pname):
-                score -= 8
-    # Graha-drishti onto the house.
-    for asp in chart["graha_drishti"]["house_aspected_by"].get(str(house), []):
-        if _is_benefic(chart, asp):
-            score += 4
-        elif _is_malefic(chart, asp):
-            score -= 4
-    return max(0.0, min(100.0, score))
-
-
-def _karaka_strength(chart: dict, karakas: list[str]) -> float:
-    """0–100 from Shadbala ratio (preferred) or dignity fallback."""
-    vals: list[float] = []
-    sb = chart.get("shadbala", {})
-    for k in karakas:
-        if k in sb and "ratio" in sb[k]:
-            vals.append(max(0.0, min(100.0, 50 + (sb[k]["ratio"] - 1.0) * 40)))
-        elif k in chart["planets"]:
-            vals.append(max(0.0, min(100.0, 50 + _DIGNITY_PTS.get(chart["planets"][k]["dignity"], 0))))
-    return sum(vals) / len(vals) if vals else 50.0
-
-
-def _aspect_score(chart: dict, houses: list[int], karakas: list[str]) -> float:
-    # Bhava + bhava-lord dominate (they vary by Lagna → the per-window signal);
-    # the karaka is the SAME across all 12 Lagnas, so it's only a light day-level
-    # modifier — heavy karaka weight would wrongly flatten a whole column.
-    h_scores = [_house_strength(chart, h) for h in houses]
-    primary = h_scores[0]
-    secondary = sum(h_scores[1:]) / len(h_scores[1:]) if len(h_scores) > 1 else primary
-    karaka = _karaka_strength(chart, karakas)
-    return round(primary * 0.62 + secondary * 0.23 + karaka * 0.15, 1)
-
-
-def _verdict(score: float) -> str:
-    if score >= 60:
-        return "good"
-    if score >= 45:
-        return "moderate"
-    return "challenging"
-
-
 def _overall_score(chart: dict) -> float:
     """Overall Lagna strength — driven by Lagna-lord Shadbala + Lagna Ashtakavarga."""
     lagna = chart["lagna"]
@@ -389,24 +267,13 @@ def analyze_birth_muhurta(
         dy_score, dy_links = dhana_yoga_score(chart)
         pr_score, pr_links = prosperity_yoga_score(chart)
         rj_score, rj_links = raja_yoga_score(chart)
-        dy_norm = dhana_yoga_normalized(chart)
-        pr_norm = prosperity_yoga_normalized(chart)
-        rj_norm = raja_yoga_normalized(chart)
-        aspects = {}
-        for key, label, group, houses, karakas in LIFE_ASPECTS:
-            sc = _aspect_score(chart, houses, karakas)
-            # Each verdict blends its house/karaka strength with the relevant graded
-            # yoga — the yoga, not the houses in isolation, is what makes it real.
-            # Wealth←Dhana(1/2/11), Fortune←Prosperity(5/9), Career/status←Raja(kendra/trikona).
-            if key == "wealth":
-                sc = round(sc * 0.65 + dy_norm * 0.35, 1)
-            elif key == "fortune":
-                sc = round(sc * 0.65 + pr_norm * 0.35, 1)
-            elif key == "career":
-                sc = round(sc * 0.65 + rj_norm * 0.35, 1)
-            aspects[key] = {
-                "label": label, "group": group, "score": sc, "verdict": _verdict(sc),
-            }
+        # The 13-domain life reading (shared with the Unshakable finder) — each
+        # domain 0-100 with the wealth/fortune/career graded-yoga blends applied.
+        aspects = domain_scores(chart)
+        # Roll the 13 domains into ONE "how complete is this life" % (weakest-links)
+        # + the 2-3 weakest domains as concern areas. Passing the same `aspects`
+        # keeps the % consistent with the per-domain columns shown to the user.
+        balanced = balanced_life(chart, aspects)
         overall = _overall_score(chart)
         # Validated worldly-potential readout (0-100) for this Lagna — a faint
         # (~0.63 AUC) tilt toward prominence markers. Display always; optionally
@@ -434,6 +301,7 @@ def analyze_birth_muhurta(
             "overall": overall,
             "rank_score": rank_score,
             "worldly_potential": wp,
+            "balanced_life": balanced,
             "dhana_yoga": {"score": dy_score, "links": dy_links},
             "prosperity_yoga": {"score": pr_score, "links": pr_links},
             "raja_yoga": {"score": rj_score, "links": rj_links},
@@ -463,7 +331,7 @@ def analyze_birth_muhurta(
         "highlight_lagna": SIGN_NAMES[highlight_sign] if highlight_sign is not None else None,
         "aspects_config": [
             {"key": k, "label": label, "group": group}
-            for k, label, group, _h, _kar in LIFE_ASPECTS
+            for k, label, group, _h, _kar, _v in LIFE_ASPECTS
         ],
         "windows": results,
     }
