@@ -1,0 +1,10 @@
+# Test environment variables — copy to test.tfvars and fill in real values.
+# test.tfvars is gitignored (it holds the test-site basic-auth secret); this
+# template documents the shape without the secret.
+#
+# ACM certificate is created by Terraform for vedicjivan-test.nandishdave.world
+# (acm_certificate_arn is intentionally left empty).
+
+# Basic auth protection for the test site (staging preview).
+test_site_username = "vedicjivan"
+test_site_password = "CHANGE_ME"   # set a strong value locally; never commit it
