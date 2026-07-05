@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "gen:index": "node scripts/build-list-index.mjs",
+    "predev": "node scripts/build-list-index.mjs",
+    "prebuild": "node scripts/build-list-index.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

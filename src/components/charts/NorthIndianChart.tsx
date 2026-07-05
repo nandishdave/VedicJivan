@@ -1,4 +1,4 @@
-import { ABBR, PLANET_COLOR, type HouseData } from "@/lib/celebrities";
+import { ABBR, PLANET_COLOR, type HouseData } from "@/lib/chart-people";
 
 // North-Indian house polygons on a 0-4 grid (House 1 = top-centre diamond).
 const POLY: Record<number, [number, number][]> = {

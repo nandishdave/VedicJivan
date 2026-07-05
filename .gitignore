@@ -61,7 +61,11 @@ api/.env
 api/.coverage
 api/.hypothesis/
 nul
-/scripts/
+# Ignore scratch scripts, but keep the list-index generator (npm prebuild hook).
+# Must glob the contents, not the dir itself — a negation can't re-include a
+# file whose parent directory is excluded.
+/scripts/*
+!/scripts/build-list-index.mjs
 
 # claude
 .claude/

@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { User } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { indexLetter } from "@/lib/celebrities";
-import { ordinary } from "@/lib/ordinary";
+import { indexLetter } from "@/lib/chart-people";
+import { ordinaryIndex as ordinary } from "@/lib/list-index";
 
 const LETTERS = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 
@@ -68,7 +68,7 @@ export default function OrdinaryPage() {
             <div className="min-w-0">
               <div className="truncate font-semibold text-gray-900 dark:text-white">{p.name}</div>
               <div className="truncate text-sm text-gray-500 dark:text-gray-400">
-                {p.sex} &middot; {p.lagna} Lagna &middot; {p.birth.date}
+                {p.sex} &middot; {p.lagna} Lagna &middot; {p.date}
               </div>
             </div>
           </Link>

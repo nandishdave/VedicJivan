@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { celebrities, indexLetter } from "@/lib/celebrities";
+import { indexLetter } from "@/lib/chart-people";
+import { celebritiesIndex as celebrities } from "@/lib/list-index";
 
 const LETTERS = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 
