@@ -59,7 +59,7 @@ FAM = json.load(open("/app/src_celebrities.json", encoding="utf-8"))
 ORDD = json.load(open("/app/normal_people.json", encoding="utf-8"))
 FEAT = ["rahu_prime", "vimsopaka", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
         "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos", "purna_tithi", "dig_lords",
-        "top_vim_seat", "nak_mridu_net"]
+        "top_vim_seat", "nak_mridu_net", "poison_net"]
 
 
 def feats(dob, tob, lat, lon):
@@ -116,7 +116,7 @@ for i, n in enumerate(FEAT):
     print(f"  {n:12} {F[:, i].mean():7.2f} {R[:, i].mean():7.2f}  {F[:, i].mean() - R[:, i].mean():+6.2f}")
 
 c, s = cv(F, R)
-print(f"\n17-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
+print(f"\n18-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
 
 print("\nconfound-matched India-born cuts (sum-AUC):")
 for yr in (0, 1940, 1955):

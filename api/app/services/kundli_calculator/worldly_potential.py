@@ -1,13 +1,13 @@
-"""Worldly-Potential — the validated 17-factor "fame-tilt" composite as a 0-100
+"""Worldly-Potential — the validated 18-factor "fame-tilt" composite as a 0-100
 readout for a single chart.
 
 This is the productionised form of the fame-signal study (see
 ``ReadMe/methodology.html`` and ``ReadMe/scripts/fame_composite.py``): across
-225 famous vs 96 ordinary charts the 17 factors below reached a cross-validated
-AUC ≈ 0.76 (0.81 on the cleanest confound-free cut). It is a *faint* tilt, not
+225 famous vs 96 ordinary charts the 18 factors below reached a cross-validated
+AUC ≈ 0.77 (0.82 on the cleanest confound-free cut). It is a *faint* tilt, not
 a fame predictor — surface it as worldly-potential, never as destiny.
 
-Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 17 factors:
+Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 18 factors:
   1 rahu_prime  — Rahu Mahadasha years in ages 20-50 × clean-dispositor factor
   2 vimsopaka   — mean Vimśopaka bala of the 7 planets across the 16 Shodashavarga
                   divisionals (weights sum 20; D60/D1/D9 dominant). "Does the chart's
@@ -62,6 +62,14 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 17 factors:
                   0.62 clean cut). The most marginal factor: acid-test-neutral (+0.001), but
                   seed-stable on the confound-matched cuts (+0.013). The two-sided net is
                   more robust than Mṛidu alone (the penalty term backstops the reward term).
+  ── poison degrees (added 2026-07) ──
+ 18 poison_net    — how many of the 9 grahas + the Ascendant fall on a "poison" degree:
+                  in the sign's Vish Navāṁśa OR within ±1° of the body's Mṛtyu-Bhāga (fatal)
+                  degree (the sign-varying classical table). Famous carry FEWER (1.64 vs 2.01)
+                  — a "cleaner" chart, the strive-not-blessed theme again; oriented famous-
+                  negative. Solo AUC 0.57, 0.577 clean cut; lifts the composite 0.809 → 0.816
+                  (seed-stable, all 5 seeds +). Mṛtyu-Bhāga carries it; Vish adds a little. The
+                  auspicious counterparts (Pushkara Navāṁśa/Bhāga) were tested and are noise.
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -119,6 +127,7 @@ REF = {
     "dig_lords":    (31.9856, 28.2630, 12.3012),
     "top_vim_seat": (0.5467, 0.3021, 0.5001),
     "nak_mridu_net": (0.0400, -0.3438, 1.6319),
+    "poison_net": (1.6444, 2.0104, 1.2274),
 }
 _ARGALA_MID = (REF["argala_pos"][0] + REF["argala_pos"][1]) / 2.0  # neutral fallback
 _DIG_MID = (REF["dig_lords"][0] + REF["dig_lords"][1]) / 2.0       # neutral fallback
@@ -199,6 +208,7 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     from app.services.kundli_calculator.divisional import calc_divisional_charts
     from app.services.kundli_calculator.raja_yoga import raja_yoga_score
     from app.services.kundli_calculator.dhana_yoga import dhana_yoga_score
+    from app.services.kundli_calculator.poison_degrees import poison_degree_count
 
     P, lag = chart["planets"], chart["lagna"]
     ls = lag["sign"]
@@ -282,13 +292,18 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
         elif ni in _TIKSHNA_NAK:
             nak_mridu_net -= 1.0
 
+    # 18 — poison-degree count: how many of the 9 grahas + Ascendant sit in a Vish
+    # Navāṁśa or within 1° of their Mṛtyu-Bhāga (fatal) degree. Famous carry FEWER
+    # (1.64 vs 2.01) — a "cleaner" chart; oriented famous-negative by the REF.
+    poison_net = poison_degree_count(chart)
+
     return {"rahu_prime": rahu_prime, "vimsopaka": vimsopaka, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
             "dhana_late": dhana_late, "av_11th": av_11th,
             "bright_moon": bright_moon, "moon_disp": moon_disp, "moon_sav": moon_sav,
             "sun_disp": sun_disp, "argala_pos": argala_pos, "purna_tithi": purna_tithi,
             "dig_lords": dig_lords, "top_vim_seat": top_vim_seat,
-            "nak_mridu_net": nak_mridu_net}
+            "nak_mridu_net": nak_mridu_net, "poison_net": poison_net}
 
 
 def worldly_potential(chart: dict) -> dict | None:

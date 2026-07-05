@@ -84,7 +84,7 @@ _GOLDEN = {
     "upa_occ": 0.6, "raja_late": 6.384333, "dhana_late": 0.0, "av_11th": 36,
     "bright_moon": 0.0, "moon_disp": 0.0, "moon_sav": 23, "sun_disp": 0.0,
     "argala_pos": 92.6, "purna_tithi": 0.0, "dig_lords": 23.49,
-    "top_vim_seat": 0.0, "nak_mridu_net": 2.0,
+    "top_vim_seat": 0.0, "nak_mridu_net": 2.0, "poison_net": 2.0,
 }
 
 
