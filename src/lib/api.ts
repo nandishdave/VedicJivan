@@ -340,6 +340,17 @@ export const kundliApi = {
     });
     return apiRequest<VimsopakaResult>(`/api/kundli/vimsopaka?${q.toString()}`);
   },
+
+  // Auspicious/poison degree analysis — Pushkara/Vish Navāṁśa + Pushkara/Mṛtyu Bhāga.
+  degreeAnalysis: (data: { dob: string; tob: string; lat: number; lon: number }) => {
+    const q = new URLSearchParams({
+      dob: data.dob,
+      tob: data.tob,
+      lat: String(data.lat),
+      lon: String(data.lon),
+    });
+    return apiRequest<DegreeAnalysisResult>(`/api/kundli/degree-analysis?${q.toString()}`);
+  },
 };
 
 // ── Vimśopaka Bala calculator ──
@@ -361,6 +372,28 @@ export interface VimsopakaResult {
     in_prominence_seat: boolean;
   };
   average: number;
+}
+
+// ── Auspicious/poison degree calculator ──
+export interface DegreeBody {
+  body: string;
+  sign: string;
+  degree: number;
+  navamsa: number;
+  pushkara_navamsa: boolean;
+  pushkara_bhaga: boolean;
+  vish_navamsa: boolean;
+  mrityu_bhaga: boolean | null; // null for the outer planets (no classical table)
+}
+
+export interface DegreeAnalysisResult {
+  bodies: DegreeBody[];
+  totals: {
+    pushkara_navamsa: number;
+    pushkara_bhaga: number;
+    vish_navamsa: number;
+    mrityu_bhaga: number;
+  };
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──
