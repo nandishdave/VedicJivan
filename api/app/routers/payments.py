@@ -12,8 +12,8 @@ import stripe
 from fastapi import APIRouter, Depends, Request
 
 from app.config import settings
-from app.database import get_db
 from app.dependencies import (
+    get_availability_repository,
     get_booking_repository,
     get_payment_repository,
     get_processed_event_repository,
@@ -23,6 +23,7 @@ from app.models.payment import (
     PaymentCreateCheckout,
     PaymentResponse,
 )
+from app.repositories.availability_repository import AvailabilityRepository
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.repositories.processed_event_repository import ProcessedEventRepository
@@ -59,12 +60,13 @@ def _process_stripe_webhook_use_case(
     processed_event_repo: ProcessedEventRepository = Depends(
         get_processed_event_repository
     ),
+    availability_repo: AvailabilityRepository = Depends(get_availability_repository),
 ) -> ProcessStripeWebhook:
     return ProcessStripeWebhook(
         payment_repo=payment_repo,
         booking_repo=booking_repo,
         processed_event_repo=processed_event_repo,
-        db=get_db(),
+        availability_repo=availability_repo,
         webhook_secret=settings.STRIPE_WEBHOOK_SECRET,
         send_confirmation=send_booking_confirmation,
         send_admin_notification=send_admin_booking_notification,

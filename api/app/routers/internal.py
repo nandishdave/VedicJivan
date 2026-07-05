@@ -1,48 +1,33 @@
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from app.config import settings
-from app.database import get_db
-from app.dependencies import block_during_maintenance
-from app.infrastructure.logging import get_logger
-from app.services.email_service import send_booking_reminder
 
-logger = get_logger(__name__)
+from app.config import settings
+from app.dependencies import block_during_maintenance, get_booking_repository
+from app.repositories.booking_repository import BookingRepository
+from app.services.email_service import send_booking_reminder
+from app.use_cases.bookings import SendBookingReminders
 
 router = APIRouter(prefix="/api/internal", tags=["internal"])
 
 
+def _send_reminders_use_case(
+    repo: BookingRepository = Depends(get_booking_repository),
+) -> SendBookingReminders:
+    # Email sender wired at the boundary, mirroring routers/payments.py — the
+    # use case stays free of the email import and is fully unit-testable.
+    return SendBookingReminders(repo, send_booking_reminder)
+
+
 @router.post("/send-reminders", dependencies=[Depends(block_during_maintenance)])
-async def send_reminders(x_internal_secret: str = Header(default="")):
+async def send_reminders(
+    x_internal_secret: str = Header(default=""),
+    use_case: SendBookingReminders = Depends(_send_reminders_use_case),
+):
     """Send 24h reminder emails for tomorrow's confirmed bookings."""
     if not settings.INTERNAL_SECRET or x_internal_secret != settings.INTERNAL_SECRET:
         raise HTTPException(status_code=403, detail="Forbidden")
 
-    db = get_db()
     tomorrow = (date.today() + timedelta(days=1)).isoformat()
-
-    cursor = db.bookings.find(
-        {"status": "confirmed", "date": tomorrow, "reminder_sent": {"$ne": True}}
-    )
-    bookings = await cursor.to_list(length=None)
-
-    sent = 0
-    for booking in bookings:
-        try:
-            await send_booking_reminder(
-                to_email=booking["user_email"],
-                user_name=booking["user_name"],
-                service_title=booking["service_title"],
-                date=booking["date"],
-                time_slot=booking["time_slot"],
-                duration_minutes=booking["duration_minutes"],
-                booking_id=str(booking["_id"]),
-            )
-            await db.bookings.update_one(
-                {"_id": booking["_id"]}, {"$set": {"reminder_sent": True}}
-            )
-            sent += 1
-        except Exception as e:
-            logger.error("Reminder send failed for booking_id=%s: %s", booking["_id"], e)
-
+    sent = await use_case.execute(tomorrow)
     return {"sent": sent, "date": tomorrow}

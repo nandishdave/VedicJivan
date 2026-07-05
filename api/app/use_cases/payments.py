@@ -28,6 +28,7 @@ from app.domain.exceptions import (
 from app.infrastructure.logging import get_logger
 from app.models.booking import BookingStatus
 from app.models.payment import PaymentInDB
+from app.repositories.availability_repository import AvailabilityRepository
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.payment_repository import PaymentRepository
 from app.repositories.processed_event_repository import ProcessedEventRepository
@@ -138,7 +139,7 @@ class ProcessStripeWebhook:
         payment_repo: PaymentRepository,
         booking_repo: BookingRepository,
         processed_event_repo: ProcessedEventRepository,
-        db: Any,
+        availability_repo: AvailabilityRepository,
         webhook_secret: str,
         send_confirmation,
         send_admin_notification,
@@ -147,7 +148,7 @@ class ProcessStripeWebhook:
         self._payment_repo = payment_repo
         self._booking_repo = booking_repo
         self._processed_event_repo = processed_event_repo
-        self._db = db
+        self._availability_repo = availability_repo
         self._webhook_secret = webhook_secret
         self._send_confirmation = send_confirmation
         self._send_admin_notification = send_admin_notification
@@ -208,14 +209,12 @@ class ProcessStripeWebhook:
         if not booking:
             return
 
-        # Slot-booked flag on the legacy `availability` collection. This is a
-        # different collection from `unavailability` (the admin holiday/block
-        # store, which does have a repository). The schema here predates the
-        # clean-architecture pass and is kept for back-compat with the
-        # frontend availability lookup until the slots are unified.
-        await self._db.availability.update_one(
-            {"date": booking["date"], "slots.start": booking["time_slot"]},
-            {"$set": {"slots.$.booked": True}},
+        # Slot-booked flag on the legacy `availability` collection (a different
+        # collection from `unavailability`, kept for back-compat with the
+        # frontend slot lookup). Routed through its repository so the use case
+        # holds no Mongo handle.
+        await self._availability_repo.mark_slot_booked(
+            booking["date"], booking["time_slot"]
         )
 
         try:
@@ -250,10 +249,7 @@ class ProcessStripeWebhook:
         try:
             event_id = self._create_calendar_event({**booking, "booking_id": booking_id})
             if event_id:
-                await self._db.bookings.update_one(
-                    {"_id": ObjectId(booking_id)},
-                    {"$set": {"google_event_id": event_id}},
-                )
+                await self._booking_repo.set_google_event_id(booking_id, event_id)
         except Exception as e:
             logger.error("Calendar event sync failed: %s", e)
 

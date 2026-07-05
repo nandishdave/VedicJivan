@@ -329,3 +329,43 @@ class RescheduleBooking:
             logger.error("Reschedule email failed for booking_id=%s: %s", booking_id, e)
 
         return await self._repo.find_by_id(oid)
+
+
+# ── SendBookingReminders ────────────────────────────────────────────────────
+
+
+class SendBookingReminders:
+    """Send 24h reminder emails for a day's confirmed, un-reminded bookings.
+
+    The email sender is injected (the router wires the real
+    `send_booking_reminder`) so tests can pass a fake and assert on calls
+    without SMTP. A single bad address logs and is skipped — one failure must
+    not abort the batch or leave the whole day un-reminded.
+    """
+
+    def __init__(self, booking_repo: BookingRepository, send_reminder) -> None:
+        self._repo = booking_repo
+        self._send_reminder = send_reminder
+
+    async def execute(self, booking_date: str) -> int:
+        """Return the count of reminders successfully sent for `booking_date`."""
+        bookings = await self._repo.list_pending_reminders(booking_date)
+        sent = 0
+        for booking in bookings:
+            try:
+                await self._send_reminder(
+                    to_email=booking["user_email"],
+                    user_name=booking["user_name"],
+                    service_title=booking["service_title"],
+                    date=booking["date"],
+                    time_slot=booking["time_slot"],
+                    duration_minutes=booking["duration_minutes"],
+                    booking_id=str(booking["_id"]),
+                )
+                await self._repo.mark_reminder_sent(booking["_id"])
+                sent += 1
+            except Exception as e:
+                logger.error(
+                    "Reminder send failed for booking_id=%s: %s", booking["_id"], e
+                )
+        return sent

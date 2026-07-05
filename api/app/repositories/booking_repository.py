@@ -62,6 +62,14 @@ class BookingRepository(Protocol):
         duration_minutes: int,
     ) -> int: ...
 
+    async def set_google_event_id(
+        self, booking_id: str | ObjectId, event_id: str
+    ) -> int: ...
+
+    async def list_pending_reminders(self, booking_date: str) -> list[dict]: ...
+
+    async def mark_reminder_sent(self, booking_id: str | ObjectId) -> int: ...
+
     async def find_active_on_date(
         self,
         booking_date: str,
@@ -167,6 +175,29 @@ class MongoBookingRepository:
                 "duration_minutes": duration_minutes,
                 "reminder_sent": False,
             }},
+        )
+        return result.modified_count
+
+    async def set_google_event_id(
+        self, booking_id: str | ObjectId, event_id: str
+    ) -> int:
+        result = await self._bookings.update_one(
+            {"_id": _to_object_id(booking_id)},
+            {"$set": {"google_event_id": event_id}},
+        )
+        return result.modified_count
+
+    async def list_pending_reminders(self, booking_date: str) -> list[dict]:
+        """Confirmed bookings on `booking_date` with no reminder sent yet."""
+        cursor = self._bookings.find(
+            {"status": "confirmed", "date": booking_date, "reminder_sent": {"$ne": True}}
+        )
+        return [doc async for doc in cursor]
+
+    async def mark_reminder_sent(self, booking_id: str | ObjectId) -> int:
+        result = await self._bookings.update_one(
+            {"_id": _to_object_id(booking_id)},
+            {"$set": {"reminder_sent": True}},
         )
         return result.modified_count
 

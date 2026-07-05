@@ -4,6 +4,10 @@ from app.config import settings
 from app.database import get_db
 from app.infrastructure.queue import MessageQueue, SqsMessageQueue
 from app.models.user import UserRole
+from app.repositories.availability_repository import (
+    AvailabilityRepository,
+    MongoAvailabilityRepository,
+)
 from app.repositories.booking_repository import (
     BookingRepository,
     MongoBookingRepository,
@@ -103,6 +107,10 @@ def get_booking_repository() -> BookingRepository:
 
 def get_payment_repository() -> PaymentRepository:
     return MongoPaymentRepository(get_db())
+
+
+def get_availability_repository() -> AvailabilityRepository:
+    return MongoAvailabilityRepository(get_db())
 
 
 def get_processed_event_repository() -> ProcessedEventRepository:
