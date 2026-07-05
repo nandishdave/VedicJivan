@@ -22,6 +22,28 @@ from app.services.kundli_calculator.dignity import (
     DIGNITY_PCT as _DIGNITY_PTS,
 )
 
+# Greatness-layer scorers. These were function-local (cycle avoidance) until the
+# dignity de-dup removed the real cycles — none of these modules import back into
+# chart_strength, so they lift cleanly to module level.
+from app.services.kundli_calculator.dhana_yoga import (
+    dhana_yoga_normalized,
+    dhana_yoga_score,
+    prosperity_yoga_normalized,
+    prosperity_yoga_score,
+)
+from app.services.kundli_calculator.fame import fame, upper_bound as _fame_ub
+from app.services.kundli_calculator.life_domains import balanced_life
+from app.services.kundli_calculator.longevity import longevity, upper_bound as _lon_ub
+from app.services.kundli_calculator.raja_yoga import (
+    raja_yoga_normalized,
+    raja_yoga_score,
+)
+from app.services.kundli_calculator.worldly_potential import worldly_potential
+from app.services.kundli_calculator.yoga_strength import (
+    upper_bound as _yoga_ub,
+    yoga_strength,
+)
+
 _CLASSICAL = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
 _BENEFICS = {"Jupiter", "Venus", "Mercury"}  # natural benefics (kept for reference)
 
@@ -141,19 +163,6 @@ def unshakable_score(chart: dict) -> dict:
     the Layer-2 greatness markers (yoga power, longevity strength, fame). Returns
     the blended score, the per-layer scores, and the display extras (Ayurdaya
     band, Balarishta flags, detected yogas, Atmakaraka)."""
-    from app.services.kundli_calculator.dhana_yoga import (
-        dhana_yoga_normalized, dhana_yoga_score,
-        prosperity_yoga_normalized, prosperity_yoga_score,
-    )
-    from app.services.kundli_calculator.fame import fame
-    from app.services.kundli_calculator.longevity import longevity
-    from app.services.kundli_calculator.raja_yoga import (
-        raja_yoga_normalized, raja_yoga_score,
-    )
-    from app.services.kundli_calculator.yoga_strength import yoga_strength
-    from app.services.kundli_calculator.worldly_potential import worldly_potential
-    from app.services.kundli_calculator.life_domains import balanced_life
-
     s = structural_strength(chart)
     y = yoga_strength(chart)
     lon = longevity(chart)
@@ -213,10 +222,6 @@ def unshakable_upper_bound(chart: dict) -> float:
     """Admissible upper bound for ``unshakable_score`` from a *cheap* chart (no
     Shadbala): each layer is bounded with a perfect Shadbala, so the composite
     bound is always >= the true composite score. Below the bar -> safe to skip."""
-    from app.services.kundli_calculator.fame import upper_bound as _fame_ub
-    from app.services.kundli_calculator.longevity import upper_bound as _lon_ub
-    from app.services.kundli_calculator.yoga_strength import upper_bound as _yoga_ub
-
     # Match the weight scheme the real score will use: if the chart has a birth
     # date, the worldly layer is present, so the bound must include it (bounded by
     # its max of 100 — we don't compute it here, to keep the pre-filter cheap).

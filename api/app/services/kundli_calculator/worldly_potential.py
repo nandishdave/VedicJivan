@@ -88,6 +88,15 @@ from app.services.kundli_calculator.dignity import (
     VARGA_WEIGHTS as _VARGA_W,
 )
 
+# Factor inputs. Were function-local (cycle avoidance) until the dignity de-dup
+# removed the real cycles — none of these import back into worldly_potential.
+from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
+from app.services.kundli_calculator.dhana_yoga import dhana_yoga_score
+from app.services.kundli_calculator.divisional import calc_divisional_charts
+from app.services.kundli_calculator.poison_degrees import poison_degree_count
+from app.services.kundli_calculator.raja_yoga import raja_yoga_score
+from app.services.kundli_calculator.vimshottari import calc_vimshottari_dasha
+
 _C = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
 _BAD = {3, 6, 8, 12}        # dusthana — dispositor / occupancy penalty
 _OCC = {3, 6, 10, 11}       # upachaya / growth-effort houses
@@ -204,12 +213,6 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     """The 17 raw factor values for a chart. Pure, and the SINGLE source of truth
     for the factor math — ``ReadMe/scripts/fame_composite.py`` imports and calls
     this (rather than reimplementing it) so the study and production can't drift."""
-    from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
-    from app.services.kundli_calculator.divisional import calc_divisional_charts
-    from app.services.kundli_calculator.raja_yoga import raja_yoga_score
-    from app.services.kundli_calculator.dhana_yoga import dhana_yoga_score
-    from app.services.kundli_calculator.poison_degrees import poison_degree_count
-
     P, lag = chart["planets"], chart["lagna"]
     ls = lag["sign"]
 
@@ -321,7 +324,6 @@ def worldly_potential(chart: dict) -> dict | None:
     birth_year = int(dob[:4])
     dashas = chart.get("dashas")
     if dashas is None:
-        from app.services.kundli_calculator.vimshottari import calc_vimshottari_dasha
         dashas = calc_vimshottari_dasha(chart["planets"]["Moon"]["longitude"], dob, chart.get("tob", "12:00"))["dashas"]
 
     return score_from_factors(factor_values(chart, dashas, birth_year))
