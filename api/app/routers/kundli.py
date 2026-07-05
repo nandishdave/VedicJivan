@@ -32,6 +32,7 @@ from app.models.kundli import KundliRequest
 # globals.
 from app.repositories.kundli_repository import KundliRepository
 from app.services.kundli_calculator import build_chart
+from app.services.kundli_calculator.degree_calculator import degree_analysis
 from app.services.kundli_calculator.vimsopaka import compute_vimsopaka
 from app.services.kundli_pdf import generate_pdf
 from app.services.report_sections import load_report_sections
@@ -270,6 +271,129 @@ f.onsubmit=async e=>{
       ${seat?'<b style="color:var(--g)">in a prominence seat (1/2/4/5/11)</b> ✓ (factor 16 active).':'not in a prominence seat (1/2/4/5/11).'}</p>
       <p class="note">Band (per planet): 15–20 very strong · 10–15 moderately strong · 5–10 weak · below 5 very weak.
       Add <code>&detail=true</code> to the API URL for the per-varga breakdown.</p></div>`;
+  }catch(err){out.innerHTML=`<div class="card err">Could not compute: ${err.message}. Check the date/time/coordinates.</div>`;}
+};
+f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit"));
+</script></div></body></html>"""
+
+
+@router.get("/degree-analysis")
+async def degree_analysis_endpoint(
+    dob: str = Query(..., description="Birth date YYYY-MM-DD"),
+    tob: str = Query("12:00", description="Birth time HH:MM (24h)"),
+    lat: float = Query(..., description="Birth latitude"),
+    lon: float = Query(..., description="Birth longitude"),
+):
+    """Per-body auspicious/poison degree analysis for a birth moment — Pushkara
+    Navāṁśa & Bhāga (auspicious) and Vish Navāṁśa & Mṛtyu Bhāga (poison) for the 9
+    grahas + Uranus/Neptune/Pluto + the Ascendant. Read-only, no DB write. Mṛtyu
+    Bhāga is null for the outer planets (no classical table)."""
+    from app.services.muhurta import build_muhurta_chart
+    try:
+        # CPU-bound ephemeris build — off the event loop.
+        chart = await run_in_threadpool(
+            build_muhurta_chart, dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=False
+        )
+        return degree_analysis(chart)
+    except Exception as e:
+        logger.exception("degree-analysis failed")
+        raise HTTPException(status_code=422, detail=f"Could not compute: {str(e)[:200]}")
+
+
+@router.get("/degree-analysis/page", response_class=HTMLResponse)
+async def degree_analysis_page():
+    """Self-contained calculator page for the degree-analysis endpoint — enter a
+    birth moment and see each body's Pushkara/Vish Navāṁśa + Pushkara/Mṛtyu Bhāga."""
+    return HTMLResponse(_DEGREE_PAGE)
+
+
+_DEGREE_PAGE = """<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auspicious &amp; Poison Degrees — VedicJivan</title>
+<style>
+ :root{--accent:#6d3a9e;--ink:#221a2e;--muted:#6b6478;--line:#e7e2f0;--panel:#fff;--bg:#f7f5fb;
+   --good:#1f6b45;--good-bg:#dcf0e2;--bad:#a03443;--bad-bg:#f7dfe2;--none:#b9b3c4;}
+ *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);
+   font:15px/1.55 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-variant-numeric:tabular-nums}
+ .wrap{max-width:900px;margin:0 auto;padding:34px 20px 80px}
+ h1{font-size:clamp(24px,4vw,36px);margin:0 0 6px;letter-spacing:-.01em}
+ h1 em{color:var(--accent);font-style:italic}
+ .sub{color:var(--muted);margin:0 0 22px;max-width:66ch}
+ form{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:var(--panel);
+   border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+ label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:4px}
+ input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:14px inherit;background:#fff;color:var(--ink)}
+ input.coord{width:110px}
+ button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 18px;font:600 14px inherit;cursor:pointer}
+ button:hover{background:#7c46b0}
+ .presets{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 20px;font-size:12px;color:var(--muted);align-items:center}
+ .presets button{background:#efe7f6;color:var(--accent);padding:4px 10px;font-weight:600}
+ .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px;overflow-x:auto}
+ table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px;min-width:640px}
+ th,td{padding:7px 8px;text-align:center;border-top:1px solid var(--line)}
+ th{background:var(--accent);color:#fff;font-weight:600;font-size:12px}
+ th:first-child,td:first-child{text-align:left;white-space:nowrap}
+ thead th:first-child{border-top-left-radius:8px} thead th:last-child{border-top-right-radius:8px}
+ .b{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:2px 9px;min-width:26px}
+ .yes-good{background:var(--good-bg);color:var(--good)} .yes-bad{background:var(--bad-bg);color:var(--bad)}
+ .no{color:var(--none)} .na{color:var(--none);font-style:italic}
+ .asc td{background:#f3ecfa}
+ .tot{font-weight:700}
+ .note{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:12px}
+ .err{color:var(--bad);font-size:13px}
+ code{background:#efe7f6;border-radius:4px;padding:1px 5px;font-size:12.5px}
+</style></head><body><div class="wrap">
+<h1>Auspicious &amp; <em>Poison</em> Degrees</h1>
+<p class="sub">For a birth moment, each of the 9 grahas + the three outer planets + the Ascendant is checked against four
+classical degree categories &mdash; <b style="color:var(--good)">Pushkara Navāṁśa</b> &amp; <b style="color:var(--good)">Pushkara Bhāga</b>
+(auspicious) and <b style="color:var(--bad)">Vish Navāṁśa</b> &amp; <b style="color:var(--bad)">Mṛtyu Bhāga</b> (poison).</p>
+<form id="f">
+ <label>Date<input type="date" id="dob" value="1988-11-11" required></label>
+ <label>Time<input type="time" id="tob" value="12:55" required></label>
+ <label>Latitude<input class="coord" type="number" step="0.0001" id="lat" value="21.7333" required></label>
+ <label>Longitude<input class="coord" type="number" step="0.0001" id="lon" value="70.6167" required></label>
+ <button type="submit">Calculate</button>
+</form>
+<div class="presets"><span>Quick city:</span>
+ <button data-lat="28.6139" data-lon="77.2090">Delhi</button>
+ <button data-lat="19.0760" data-lon="72.8777">Mumbai</button>
+ <button data-lat="13.0827" data-lon="80.2707">Chennai</button>
+ <button data-lat="22.5726" data-lon="88.3639">Kolkata</button>
+ <button data-lat="21.7333" data-lon="70.6167">Jetpur</button>
+</div>
+<div id="out"></div>
+<script>
+const f=document.getElementById("f"), out=document.getElementById("out");
+document.querySelectorAll(".presets button").forEach(b=>b.onclick=e=>{
+  e.preventDefault(); lat.value=b.dataset.lat; lon.value=b.dataset.lon;});
+function goodCell(v){return v?'<span class="b yes-good">Yes</span>':'<span class="b no">&ndash;</span>';}
+function badCell(v){if(v===null||v===undefined)return '<span class="na">n/a</span>';
+  return v?'<span class="b yes-bad">Yes</span>':'<span class="b no">&ndash;</span>';}
+f.onsubmit=async e=>{
+  e.preventDefault(); out.innerHTML='<div class="card">Calculating…</div>';
+  const q=new URLSearchParams({dob:dob.value,tob:tob.value,lat:lat.value,lon:lon.value});
+  try{
+    const r=await fetch("/api/kundli/degree-analysis?"+q); if(!r.ok) throw new Error((await r.json()).detail||r.status);
+    const d=await r.json();
+    let rows=d.bodies.map(x=>`<tr class="${x.body==='Ascendant'?'asc':''}"><td>${x.body}</td><td>${x.sign}</td>`+
+      `<td>${x.degree.toFixed(2)}&deg;</td><td>${x.navamsa}</td>`+
+      `<td>${goodCell(x.pushkara_navamsa)}</td><td>${goodCell(x.pushkara_bhaga)}</td>`+
+      `<td>${badCell(x.vish_navamsa)}</td><td>${badCell(x.mrityu_bhaga)}</td></tr>`).join("");
+    const t=d.totals;
+    out.innerHTML=`<div class="card"><table>
+      <thead><tr><th>Body</th><th>Sign</th><th>Degree</th><th>Navāṁśa</th>
+      <th>Pushkara<br>Navāṁśa</th><th>Pushkara<br>Bhāga</th><th>Vish<br>Navāṁśa</th><th>Mṛtyu<br>Bhāga</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr class="tot"><td colspan="4" style="text-align:right">Totals</td>
+        <td style="color:var(--good)">${t.pushkara_navamsa}</td><td style="color:var(--good)">${t.pushkara_bhaga}</td>
+        <td style="color:var(--bad)">${t.vish_navamsa}</td><td style="color:var(--bad)">${t.mrityu_bhaga}</td></tr></tfoot>
+      </table>
+      <p class="note"><b style="color:var(--good)">Auspicious:</b> Pushkara Navāṁśa (2 nourishing navamsas per sign, by element) ·
+      Pushkara Bhāga (one auspicious degree per sign, &plusmn;1&deg;). <b style="color:var(--bad)">Poison:</b> Vish Navāṁśa
+      (the poison navamsa per sign) · Mṛtyu Bhāga (the fatal degree per body per sign, &plusmn;1&deg;). Mṛtyu Bhāga has no
+      classical table for the outer planets (shown <span class="na">n/a</span>). Vish Navāṁśa + Mṛtyu Bhāga are factor 18 of
+      the worldly-potential model (fewer poison degrees leans famous); the Pushkara pair are shown for completeness (tested
+      as fame-noise). Guidance only &mdash; consult an astrologer.</p></div>`;
   }catch(err){out.innerHTML=`<div class="card err">Could not compute: ${err.message}. Check the date/time/coordinates.</div>`;}
 };
 f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit"));
