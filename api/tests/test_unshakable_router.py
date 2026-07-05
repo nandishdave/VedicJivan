@@ -88,10 +88,10 @@ def test_email_renders_single_day_with_positions():
     html = _render_unshakable_html(_RESULT)
     assert "Unshakable Birth-Time Search" in html
     assert "Every Rising Lagna" in html and "Planetary Positions" in html
-    assert "Aries" in html and "115%" in html and "Gemini" in html  # score 76.1 -> 115% (above the ceiling); positions
+    assert "Aries" in html and "100%" in html and "Gemini" in html  # score 76.1 -> capped at 100% (was 115); positions
     assert "No standout chart" in html  # exceptional_count == 0 -> the soft note
-    assert "Balanced Life" in html and "58%" in html  # whole-life column + value
-    assert "Wealth" in html and "Fortune" in html  # the concern areas are named under the %
+    assert "Balanced Life" in html and "58%" in html  # aggregate whole-life column + value
+    assert "Concern" not in html  # we deliberately do NOT name weak life-areas to the reader
     assert "Worldly" in html and ">55<" in html  # the worldly-potential axis column + value
 
 

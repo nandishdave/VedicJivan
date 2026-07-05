@@ -317,6 +317,23 @@ _MUHURTA_CELL = {
 }
 
 
+def _area_cell(score):
+    """One life-area cell: the 0-100 strength, background = band (green/amber/red).
+    ``None`` -> a neutral dash. Shared by the muhurta grid + the unshakable table so
+    both show per-area strength identically; the reader interprets the numbers."""
+    if score is None:
+        return ('<td style="text-align:center;color:#ccc;padding:5px 0;border:1px solid #fff;'
+                'font-size:11px;">&ndash;</td>')
+    if score >= 60:
+        bg, fg = "#dcfce7", "#166534"
+    elif score >= 45:
+        bg, fg = "#fef9c3", "#854d0e"
+    else:
+        bg, fg = "#fee2e2", "#991b1b"
+    return (f'<td style="background:{bg};color:{fg};text-align:center;font-weight:bold;'
+            f'padding:5px 0;border:1px solid #fff;font-size:11px;">{round(score)}</td>')
+
+
 # ── Numerology (Moolank / Bhagyank) — display only ──────────────────────────
 # Classical number -> planet. Moolank = root number of the birth day; Bhagyank
 # = destiny number of the full date, each reduced to 1-9. Rahu(4)/Ketu(7) are
@@ -399,18 +416,15 @@ def _render_muhurta_html(result: dict) -> str:
     head_cells = "".join(f'<th style="{ath}">{short}</th>' for _k, short in _MUHURTA_ASPECTS)
     rows = ""
     for w in result["windows"]:
-        cells = ""
-        for key, _short in _MUHURTA_ASPECTS:
-            v = w["aspects"].get(key, {}).get("verdict", "moderate")
-            bg, fg, ltr = _MUHURTA_CELL[v]
-            cells += f'<td style="background:{bg};color:{fg};text-align:center;font-weight:bold;padding:5px 0;border:1px solid #fff;font-size:11px;">{ltr}</td>'
+        # Each life-area cell = its 0-100 strength, colour-coded; the reader interprets.
+        cells = "".join(_area_cell(w["aspects"].get(key, {}).get("score")) for key, _short in _MUHURTA_ASPECTS)
         lord = w["lagna_lord"] + (" (R)" if w.get("lord_retrograde") else "")
         hl = w.get("highlighted")
         tr_style = "background:#ede9fe;" if hl else ""
         star = ' <span style="color:#7c3aed;">&#9733;</span>' if hl else ""
         wp = w.get("worldly_potential")
         wp_cell = (
-            f'<td style="padding:4px 3px;text-align:center;color:#a16207;font-weight:bold;">{round(wp["score"])}</td>'
+            f'<td style="padding:4px 3px;text-align:center;color:#7c3aed;font-weight:bold;">{round(wp["score"])}</td>'
             if wp else '<td style="padding:4px 3px;text-align:center;color:#bbb;">&ndash;</td>'
         )
         bal = w.get("balanced_life") or {}
@@ -491,16 +505,13 @@ def _render_muhurta_html(result: dict) -> str:
     bbl = bw.get("balanced_life") if bw else None
     balanced_block = ""
     if bbl:
-        conc = ", ".join(bbl.get("concerns", []))
-        conc_html = (f'<span style="color:#b45309;font-weight:bold;">{conc}</span>' if conc
-                     else '<span style="color:#16a34a;font-weight:bold;">no notably weak area</span>')
         balanced_block = (
             '<div style="margin:10px 0 0;padding:10px 14px;background:#f0fdfa;border:1px solid #ccfbf1;border-radius:8px;">'
-            f'<p style="font-size:12px;color:#555;margin:0;"><strong>Balanced-Life reading</strong> &mdash; '
+            f'<p style="font-size:12px;color:#555;margin:0;"><strong>Balanced-Life</strong> &mdash; '
             f'{bw["lagna_name"]}: <strong style="color:#0f766e;">{round(bbl["score"])}% &middot; {bbl["band"]}</strong>'
-            f' &mdash; a whole-life score across 13 areas (health, marriage, children, parents, siblings, wealth, '
-            f'career&hellip;). Judged by house + house-lord + significator + divisional chart. '
-            f'Areas of concern: {conc_html}.</p></div>'
+            f' &mdash; a single whole-life number: the average of all 13 life-areas, each judged by house + house-lord '
+            f'+ significator + divisional chart. The per-area strengths are the coloured numbers in the table above &mdash; '
+            f'read them for yourself.</p></div>'
         )
     return f"""
     <div style="font-family: sans-serif; max-width: 760px; margin: 0 auto; background:#ffffff;">
@@ -517,12 +528,14 @@ def _render_muhurta_html(result: dict) -> str:
         <h3 style="color:#7c3aed;margin:20px 0 8px;">Rising Lagna Windows</h3>
         {grid}
         <p style="font-size:12px;color:#777;margin:8px 0 0;">
-            <span style="background:#dcfce7;color:#166534;font-weight:bold;padding:1px 6px;border-radius:8px;">G</span> Good
-            &nbsp; <span style="background:#fef9c3;color:#854d0e;font-weight:bold;padding:1px 6px;border-radius:8px;">M</span> Moderate
-            &nbsp; <span style="background:#fee2e2;color:#991b1b;font-weight:bold;padding:1px 6px;border-radius:8px;">W</span> Weak
-            &nbsp; &middot; (R) = Lagna-lord retrograde &middot; Str = overall auspiciousness 0&ndash;100
-            &middot; <span style="color:#0f766e;font-weight:bold;">Life</span> = Balanced-Life % (whole-life completeness across the 13 areas)
-            &middot; <span style="color:#a16207;font-weight:bold;">Pot</span> = Worldly-Prominence potential
+            Each life-area cell shows that area&rsquo;s strength <b>0&ndash;100</b> &mdash;
+            <span style="background:#dcfce7;color:#166534;font-weight:bold;padding:1px 6px;border-radius:8px;">&ge;60</span> stronger
+            &nbsp; <span style="background:#fef9c3;color:#854d0e;font-weight:bold;padding:1px 6px;border-radius:8px;">45&ndash;59</span> middling
+            &nbsp; <span style="background:#fee2e2;color:#991b1b;font-weight:bold;padding:1px 6px;border-radius:8px;">&lt;45</span> weaker.
+            The numbers are a guide &mdash; read them for yourself.
+            <br>(R) = Lagna-lord retrograde &middot; Str = overall auspiciousness 0&ndash;100
+            &middot; <span style="color:#0f766e;font-weight:bold;">Life</span> = Balanced-Life % (whole-life average of the 13 areas)
+            &middot; <span style="color:#7c3aed;font-weight:bold;">Pot</span> = Worldly-Prominence potential
         </p>
         <p style="font-size:11px;color:#888;margin:6px 0 0;">Aspect columns: {_MUHURTA_ASPECT_LEGEND}</p>
         {wp_note}
@@ -559,12 +572,10 @@ _POTENTIAL_CEILING = 72.0
 
 
 def _potential_pct(score: float) -> int:
-    return max(0, round((score - _POTENTIAL_FLOOR) / (_POTENTIAL_CEILING - _POTENTIAL_FLOOR) * 100))
-
-
-def _short_domain(label: str) -> str:
-    """'Wealth & Finances' -> 'Wealth' — the first word, for the tiny concern line."""
-    return label.split(" & ")[0].split()[0]
+    # Capped 0-100: a % that reads over 100 looks like an error to a reader, and it
+    # keeps this consistent with the muhurta "Str" (also 0-100). The top ~1% of
+    # charts sit at 100%. (The exceptional-star test still uses raw score-space.)
+    return max(0, min(100, round((score - _POTENTIAL_FLOOR) / (_POTENTIAL_CEILING - _POTENTIAL_FLOOR) * 100)))
 
 
 def _u_chart_row(rank, c, bg, dated=False):
@@ -582,17 +593,18 @@ def _u_chart_row(rank, c, bg, dated=False):
         nm = _numerology(c["date"])
         num_cell = (f'<td style="padding:5px 6px;text-align:center;font-size:11px;color:#7c3aed;'
                     f'white-space:nowrap;">{nm["moolank"]}&middot;{nm["bhagyank"]}</td>')
-    # Balanced-Life % + the weakest domains named beneath (the "concern areas").
+    # Balanced-Life % (teal) with its band beneath — the aggregate whole-life
+    # number only; we deliberately do NOT name weak life-areas (see below).
     bal = c.get("balanced_life") or {}
-    if "score" in bal:
-        conc = "&middot;".join(_short_domain(x) for x in bal.get("concerns", [])[:2])
-        conc_line = (f'<br><span style="font-size:9px;color:#b45309;font-weight:normal;">{conc}</span>'
-                     if conc else '<br><span style="font-size:9px;color:#16a34a;font-weight:normal;">rounded</span>')
-        bal_txt = f'{round(bal["score"])}%{conc_line}'
-    else:
-        bal_txt = "&ndash;"
+    bal_txt = (f'{round(bal["score"])}%'
+               f'<br><span style="font-size:9px;color:#999;font-weight:normal;">{bal.get("band", "")}</span>'
+               if "score" in bal else "&ndash;")
     w = L.get("worldly")
     w_txt = f'{round(w)}' if w is not None else "&ndash;"
+    # Per-life-area strengths (0-100, colour-coded) — same transparent view as the
+    # muhurta grid; the reader interprets. Absent domains render as neutral dashes.
+    doms = bal.get("domains") or {}
+    area_cells = "".join(_area_cell(doms.get(k)) for k, _s in _MUHURTA_ASPECTS)
     return (
         f'<tr style="background:{bg};">'
         f'<td style="padding:5px 6px;font-weight:bold;color:#7c3aed;">{rank}</td>'
@@ -600,22 +612,25 @@ def _u_chart_row(rank, c, bg, dated=False):
         f'<td style="padding:5px 6px;">{c["time"]}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;">{c["lagna"]}{star}</td>'
         f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{_potential_pct(c["score"])}%</td>'
-        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#7c3aed;">{bal_txt}</td>'
-        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#a16207;">{w_txt}</td>'
+        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#0f766e;">{bal_txt}</td>'
+        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#7c3aed;">{w_txt}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;font-size:11px;">{ayu["band"][0]}&ndash;{ayu["band"][1]} {ayu["label"].split()[0]}</td>'
+        f'{area_cells}'
         f'</tr>'
     )
 
 
 def _u_table(charts, start_rank=1, dated=False):
     date_h = f'<th style="{_U_TH}">Date</th><th style="{_U_TH}">Num</th>' if dated else ""
+    area_h = "".join(f'<th style="{_U_TH}">{short}</th>' for _k, short in _MUHURTA_ASPECTS)
     head = (f'<tr><th style="{_U_TH}">#</th>{date_h}<th style="{_U_TH}">Time</th><th style="{_U_TH}">Lagna</th>'
             f'<th style="{_U_TH}">Strength</th><th style="{_U_TH}">Balanced Life</th>'
-            f'<th style="{_U_TH}">Worldly</th><th style="{_U_TH}">Longevity</th></tr>')
+            f'<th style="{_U_TH}">Worldly</th><th style="{_U_TH}">Longevity</th>{area_h}</tr>')
     rows = "".join(_u_chart_row(start_rank + i, c, "#faf9ff" if i % 2 else "#ffffff", dated)
                    for i, c in enumerate(charts))
-    return ('<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;">'
-            f'{head}{rows}</table>')
+    return ('<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'
+            '<table style="width:100%;border-collapse:collapse;font-family:sans-serif;font-size:12px;min-width:640px;">'
+            f'{head}{rows}</table></div>')
 
 
 def _u_positions(result):
@@ -683,12 +698,14 @@ def _render_unshakable_html(result: dict) -> str:
     body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;line-height:1.6;">'
              '<b>Strength</b> = overall chart strength as a % of the practical ceiling (calibrated from 300+ charts): '
              '~59% is typical, ~80% top-decile, 100% the top ~1%; a rare chart exceeds 100%. This is what ranks the list. '
-             '<b>Balanced Life</b> = how <em>complete</em> a life the chart carries across 13 domains (health, marriage, '
-             'children, parents, siblings, wealth, career, longevity&hellip;) &mdash; one empty domain drags it down, so it '
-             'rewards <em>having enough of everything</em>. The <span style="color:#b45309;">amber</span> words beneath name '
-             'the 2 weakest domains (the areas of concern); <span style="color:#16a34a;">rounded</span> = no weak spot. '
-             '<b>Worldly</b> = Worldly-Prominence potential (fame/respect/wealth) &mdash; a <em>separate</em> axis: a chart '
-             'can be worldly-strong yet unbalanced, or balanced yet ordinary. '
+             '<b style="color:#0f766e;">Balanced Life</b> = a single whole-life number: the average of the 13 life-areas, '
+             'each judged by house + house-lord + significator + divisional chart. The 13 coloured cells to the right show '
+             'each area&rsquo;s strength <b>0&ndash;100</b> (<span style="color:#166534;">&ge;60</span> / '
+             '<span style="color:#854d0e;">45&ndash;59</span> / <span style="color:#991b1b;">&lt;45</span>) &mdash; a guide '
+             'to read for yourself. '
+             f'Areas: {_MUHURTA_ASPECT_LEGEND}. '
+             '<b style="color:#7c3aed;">Worldly</b> = Worldly-Prominence potential (fame/respect/wealth) &mdash; a '
+             '<em>separate</em> axis: a chart can be worldly-strong yet unbalanced, or balanced yet ordinary. '
              'Num = Moolank&middot;Bhagyank (the date&rsquo;s root &amp; destiny numbers, 1&ndash;9). '
              f'Longevity = indicative Ayurdaya band (estimates only). &#9733; = genuinely strong (&ge; {bar_pct}% Strength).</p>')
 
