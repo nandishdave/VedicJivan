@@ -1,0 +1,47 @@
+{
+  "_about": "Degree tables for the auspicious/poison-degree fame experiment. Sign keys 0-indexed (0=Aries..11=Pisces). Navamsa numbers 1-9 (each 3 deg 20 min). Bhaga degrees are within-sign (0-30). Confirmed by Nandish 2026-07-05.",
+
+  "pushkara_navamsa": {
+    "_comment": "0-indexed sign -> list of Pushkara (benefic) navamsa numbers. Element-based.",
+    "_element_key": "Fire[0,4,8]=7,9 ; Earth[1,5,9]=3,5 ; Air[2,6,10]=6,8 ; Water[3,7,11]=1,3",
+    "0": [7, 9], "4": [7, 9], "8": [7, 9],
+    "1": [3, 5], "5": [3, 5], "9": [3, 5],
+    "2": [6, 8], "6": [6, 8], "10": [6, 8],
+    "3": [1, 3], "7": [1, 3], "11": [1, 3]
+  },
+
+  "vish_navamsa": {
+    "_comment": "0-indexed sign -> the single Vish (poison) navamsa number.",
+    "_group_key": "{Ar,Ta,Vi,Sg}=1 ; {Ge,Le,Li,Aq}=5 ; {Cn,Sc,Cp,Pi}=9",
+    "0": 1, "1": 1, "5": 1, "8": 1,
+    "2": 5, "4": 5, "6": 5, "10": 5,
+    "3": 9, "7": 9, "9": 9, "11": 9
+  },
+
+  "pushkara_bhaga": {
+    "_comment": "0-indexed sign -> the auspicious degree within the sign (any body within tolerance_deg counts). Confirmed Nandish 2026-07-05.",
+    "tolerance_deg": 1.0,
+    "degrees": {
+      "0": 21, "1": 14, "2": 18, "3": 8, "4": 19, "5": 9,
+      "6": 24, "7": 11, "8": 23, "9": 14, "10": 19, "11": 9
+    }
+  },
+
+  "mrityu_bhaga": {
+    "_comment": "Sign-varying classical Mrityu Bhaga (planet x sign), from the user's image 2026-07-05. body -> [12 within-sign degrees, sign order Aries..Pisces]. Ascendant uses 'Lagna'. Mandi is the upagraha (NOT scored yet — we don't compute Mandi). A body within tolerance_deg of its (sign-specific) degree counts. TRANSCRIBED FROM IMAGE — verify.",
+    "tolerance_deg": 1.0,
+    "degrees": {
+      "Sun":     [20, 9, 12, 6, 8, 24, 16, 17, 22, 2, 3, 23],
+      "Moon":    [26, 12, 13, 25, 24, 11, 26, 14, 13, 25, 5, 12],
+      "Mars":    [19, 28, 25, 23, 29, 28, 14, 21, 2, 15, 11, 6],
+      "Mercury": [15, 14, 13, 12, 8, 18, 20, 10, 21, 22, 7, 5],
+      "Jupiter": [19, 29, 11, 27, 6, 4, 13, 6, 17, 11, 15, 28],
+      "Venus":   [28, 15, 11, 17, 10, 13, 4, 19, 27, 12, 29, 19],
+      "Saturn":  [10, 4, 7, 9, 12, 16, 3, 18, 28, 14, 13, 15],
+      "Rahu":    [14, 13, 12, 11, 24, 23, 22, 21, 10, 10, 18, 8],
+      "Ketu":    [8, 18, 20, 10, 21, 22, 23, 24, 11, 10, 13, 14],
+      "Mandi":   [23, 24, 11, 12, 13, 8, 8, 18, 20, 20, 21, 20],
+      "Lagna":   [1, 9, 22, 22, 25, 4, 4, 23, 18, 20, 24, 10]
+    }
+  }
+}
