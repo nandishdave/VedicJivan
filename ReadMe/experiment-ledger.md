@@ -6,8 +6,8 @@ the **don't-re-test registry**: if an idea is in the "Rejected" table below with
 it has already been tried and failed under honest validation. Add to this file; don't start
 a new one.
 
-- **Model as of this writing:** 16-factor `worldly_potential` composite, CV-AUC **≈ 0.77**
-  pooled (0.795 on the cleanest India ≥1940 cut). Reproduction: `ReadMe/scripts/fame_composite.py`.
+- **Model as of this writing:** 17-factor `worldly_potential` composite, CV-AUC **≈ 0.77**
+  pooled (0.809 on the cleanest India ≥1940 cut; all-India crosses 0.80). Reproduction: `ReadMe/scripts/fame_composite.py`.
 - **Data:** 225 famous (rated AA/A/B/C by birth-time reliability) vs 96 ordinary control.
 - **Scoring convention:** 5-fold cross-validated pairwise AUC; sign + scale learned on the
   *train* fold only. Solo-AUC = a single factor alone. 0.50 = coin-flip; <0.50 = leans *ordinary*.
@@ -20,10 +20,10 @@ a new one.
 
 ---
 
-## A. Accepted — the 16 factors
+## A. Accepted — the 17 factors
 
-Each survived all four validation bars. Labels match `worldly_potential.py` / `_WP_LABELS`.
-**Model as of 2026-07: 16 factors, CV-AUC 0.766 full / 0.795 clean cut (≥1940).**
+Each survived the validation bars (factor 17 is the marginal exception — acid-neutral; see note). Labels match `worldly_potential.py` / `_WP_LABELS`.
+**Model as of 2026-07: 17 factors, CV-AUC 0.772 full / 0.809 clean cut (≥1940), 0.801 all-India.**
 
 | # | Factor | What it measures | Established in |
 |---|--------|------------------|----------------|
@@ -43,6 +43,7 @@ Each survived all four validation bars. Labels match `worldly_potential.py` / `_
 | 14 | `purna_tithi` | Born in a Pūrṇa tithi (5th/10th/15th of either pakṣa) | tithi_nested, final14 |
 | 15 | `dig_lords` | **Mean Dig Bala (directional strength) of the lagna-lord & 10th-lord.** Solo 0.57, ~zero corr with all others (orthogonal). **Added 2026-07** | strength_C, strength_final |
 | 16 | `top_vim_seat` | **Chart's strongest-Vimśopaka planet (any graha) seated in {1,2,4,5,11}.** Per-house sweep: 1/2/11 clear winners, 4/5 marginal (edged composite higher), 10th reversed; functional-benefic restriction reverses. Solo 0.60. **Added 2026-07** | vimsopaka_pattern, per_house |
+| 17 | `nak_mridu_net` | **(# of 9 bodies in a Mṛidu nakṣatra) − (# in a Tikshna one).** Mṛidu {Mṛigaśira, Chitra, Anurādhā, Revatī} favors famous; Tikshna {Ārdrā, Āśleṣā, Jyeṣṭhā, Mūla} favors ordinary. Solo 0.62 (clean cut), STRENGTHENS under era-matching. **Most marginal factor** — acid-neutral (+0.001), seed-stable clean-cut +0.013. **Added 2026-07** | nakquality, strength_nakfactor, nak_acid_B |
 
 Milestone composite runs: final5 → final12 → final13 → final14 → **strength_final** (the 15-factor
 verification); matched-cut checks in compare_matched, confirm_av11. Multivariate CV framework:
@@ -144,4 +145,4 @@ Kept for reference; these build data or infrastructure rather than test a fame r
 
 ---
 
-*Last updated: 2026-07-05. Model = 16 factors, CV-AUC ≈ 0.77 pooled / 0.795 cleanest cut.*
+*Last updated: 2026-07-05. Model = 17 factors, CV-AUC ≈ 0.77 pooled / 0.809 cleanest cut.*

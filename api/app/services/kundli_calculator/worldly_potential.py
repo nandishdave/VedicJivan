@@ -1,13 +1,13 @@
-"""Worldly-Potential — the validated 16-factor "fame-tilt" composite as a 0-100
+"""Worldly-Potential — the validated 17-factor "fame-tilt" composite as a 0-100
 readout for a single chart.
 
 This is the productionised form of the fame-signal study (see
 ``ReadMe/methodology.html`` and ``ReadMe/scripts/fame_composite.py``): across
-225 famous vs 96 ordinary charts the 16 factors below reached a cross-validated
-AUC ≈ 0.75 (0.79 on the cleanest confound-free cut). It is a *faint* tilt, not
+225 famous vs 96 ordinary charts the 17 factors below reached a cross-validated
+AUC ≈ 0.76 (0.81 on the cleanest confound-free cut). It is a *faint* tilt, not
 a fame predictor — surface it as worldly-potential, never as destiny.
 
-Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 16 factors:
+Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 17 factors:
   1 rahu_prime  — Rahu Mahadasha years in ages 20-50 × clean-dispositor factor
   2 vimsopaka   — mean Vimśopaka bala of the 7 planets across the 16 Shodashavarga
                   divisionals (weights sum 20; D60/D1/D9 dominant). "Does the chart's
@@ -54,6 +54,14 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 16 factors:
                   marginal; the 10th is REVERSED (excluded). It is the *seat* that matters,
                   not whether the strong planet is a benefic (functional-benefic restriction
                   reverses the signal). Solo AUC 0.60; nested floor +0.005.
+  ── nakṣatra quality (added 2026-07) ──
+ 17 nak_mridu_net  — (# of the 9 bodies in a Mṛidu/tender nakṣatra) − (# in a Tikshna/
+                  dreadful one). Mṛidu = Mṛigaśira/Chitra/Anurādhā/Revatī (gentle, artistic);
+                  Tikshna = Ārdrā/Āśleṣā/Jyeṣṭhā/Mūla (sharp, severing). Famous lean Mṛidu,
+                  ordinary lean Tikshna — the signal STRENGTHENS under era-matching (solo
+                  0.62 clean cut). The most marginal factor: acid-test-neutral (+0.001), but
+                  seed-stable on the confound-matched cuts (+0.013). The two-sided net is
+                  more robust than Mṛidu alone (the penalty term backstops the reward term).
 
 Because the composite is a *relative* (z-scored) model, we bake the 303-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
@@ -82,6 +90,12 @@ _VARGA_W = {"D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D
 _ARG_PLANETS = _C + ["Rahu", "Ketu"]
 _ARG_PAIRS = ((2, 12), (4, 10), (5, 9), (11, 3))
 _ARG_HOUSES = (2, 10, 12)
+# Factor 17 (nakṣatra quality): net Mṛidu (tender) − Tikshna (dreadful) nakṣatra count
+# over the 9 bodies. Mṛidu = Mṛigaśira/Chitra/Anurādhā/Revatī; Tikshna = Ārdrā/Āśleṣā/
+# Jyeṣṭhā/Mūla (0-indexed among the 27). Nakṣatra = longitude ÷ (360/27).
+_NAK_ARC = 360.0 / 27.0
+_MRIDU_NAK = {4, 13, 16, 26}
+_TIKSHNA_NAK = {5, 8, 17, 18}
 
 # Calibration snapshot from the 303-chart study (fame_composite.py):
 # factor -> (famous_mean, ordinary_mean, pooled_std over all 303 charts).
@@ -102,12 +116,13 @@ REF = {
     "purna_tithi":  (0.2267, 0.1146, 0.3954),
     "dig_lords":    (31.9856, 28.2630, 12.3012),
     "top_vim_seat": (0.5467, 0.3021, 0.5001),
+    "nak_mridu_net": (0.0400, -0.3438, 1.6319),
 }
 _ARGALA_MID = (REF["argala_pos"][0] + REF["argala_pos"][1]) / 2.0  # neutral fallback
 _DIG_MID = (REF["dig_lords"][0] + REF["dig_lords"][1]) / 2.0       # neutral fallback
 _SQUASH_K = 2.2  # logistic steepness: mean-z 0 -> 50, +0.5 -> ~75, -0.5 -> ~25. Tunable.
 
-NOTE = ("A faint statistical tilt (cross-validated AUC ~0.74, ~0.78 on the cleanest "
+NOTE = ("A faint statistical tilt (cross-validated AUC ~0.76, ~0.81 on the cleanest "
         "cut) toward markers seen in prominent charts — most of worldly success lives "
         "outside the chart. Treat as potential, not destiny.")
 
@@ -175,7 +190,7 @@ def _dig_lords(chart: dict, ls: int, sign_lords: list) -> float:
 
 
 def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
-    """The 16 raw factor values for a chart. Pure; mirrors fame_composite.py."""
+    """The 17 raw factor values for a chart. Pure; mirrors fame_composite.py."""
     from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
     from app.services.kundli_calculator.divisional import calc_divisional_charts
     from app.services.kundli_calculator.raja_yoga import raja_yoga_score
@@ -252,12 +267,24 @@ def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
     top_graha = max(_C, key=lambda q: vim_pp[q])
     top_vim_seat = 1.0 if P[top_graha]["house"] in (1, 2, 4, 5, 11) else 0.0
 
+    # 17 — nakṣatra quality: (# of the 9 bodies in a Mṛidu/tender nakṣatra) minus (# in a
+    # Tikshna/dreadful one). Famous carry more Mṛidu (gentle/artistic) stars, fewer Tikshna
+    # (sharp/severing); the signal strengthens under era-matching (solo 0.62 on the clean cut).
+    nak_mridu_net = 0.0
+    for p in _ARG_PLANETS:
+        ni = int((P[p]["longitude"] % 360) / _NAK_ARC)
+        if ni in _MRIDU_NAK:
+            nak_mridu_net += 1.0
+        elif ni in _TIKSHNA_NAK:
+            nak_mridu_net -= 1.0
+
     return {"rahu_prime": rahu_prime, "vimsopaka": vimsopaka, "av_10th": av_10th,
             "av_1st": av_1st, "upa_occ": upa_occ, "raja_late": raja_late,
             "dhana_late": dhana_late, "av_11th": av_11th,
             "bright_moon": bright_moon, "moon_disp": moon_disp, "moon_sav": moon_sav,
             "sun_disp": sun_disp, "argala_pos": argala_pos, "purna_tithi": purna_tithi,
-            "dig_lords": dig_lords, "top_vim_seat": top_vim_seat}
+            "dig_lords": dig_lords, "top_vim_seat": top_vim_seat,
+            "nak_mridu_net": nak_mridu_net}
 
 
 def worldly_potential(chart: dict) -> dict | None:
@@ -282,7 +309,7 @@ def worldly_potential(chart: dict) -> dict | None:
 
 
 def score_from_factors(raw: dict) -> dict:
-    """Map the 16 raw factor values to a 0-100 worldly-potential readout: z-score
+    """Map the 17 raw factor values to a 0-100 worldly-potential readout: z-score
     each against its REF midpoint, orient famous-positive, average, squash. Pure —
     the deterministic core, split out for testing."""
     zs = {}

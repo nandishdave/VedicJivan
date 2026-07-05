@@ -1,4 +1,4 @@
-"""Verified 16-factor fame composite — reproduction script.
+"""Verified 17-factor fame composite — reproduction script.
 
 Run inside the API container (the Swiss-Ephemeris engine won't import on the host):
     docker cp ReadMe/scripts/fame_composite.py vedicjivan-api:/app/fame_composite.py
@@ -8,7 +8,7 @@ Reads two chart sets already staged in the container:
     /app/src_celebrities.json   — the 225 famous charts (== src/data/celebrities.json)
     /app/normal_people.json     — the 96 ordinary/control charts
 
-The 16 factors (see ReadMe/methodology.html for the full write-up):
+The 17 factors (see ReadMe/methodology.html for the full write-up):
   1 Rahu prime-dasha (20-50) x clean-dispositor factor   [meteoric rise]
   2 Vimśopaka bala — mean dignity of the 7 planets across the 16 Shodashavarga
      divisionals (weights sum 20; D60/D1/D9 dominant)     [cross-varga strength]
@@ -26,6 +26,7 @@ The 16 factors (see ReadMe/methodology.html for the full write-up):
  14 Born in a Pūrṇa tithi (5th/10th/15th — the "full/complete" group) [pañchāṅga]
  15 Mean Dig Bala of the lagna-lord and 10th-lord         [directional strength]
  16 Strongest-Vimsopaka planet (any graha) seated in {1,2,4,5,11} [concentration]
+ 17 (# of 9 bodies in a Mridu nakshatra) - (# in a Tikshna nakshatra) [nakshatra quality]
 
 Reports per-factor lift, 5-fold cross-validated AUC (count + sum), and the
 confound-matched India-born cuts. Verified result: CV-AUC ~0.74 full set,
@@ -61,7 +62,10 @@ _VARGA_W = {"D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D
             "D40": 0.5, "D45": 0.5, "D60": 4.0}
 FEAT = ["rahu_prime", "vimsopaka", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
         "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos", "purna_tithi", "dig_lords",
-        "top_vim_seat"]
+        "top_vim_seat", "nak_mridu_net"]
+# Factor 17 (nakṣatra quality): Mṛidu (tender) vs Tikshna (dreadful) nakṣatras, 0-indexed.
+_MRIDU_NAK = {4, 13, 16, 26}      # Mṛigaśira, Chitra, Anurādhā, Revatī
+_TIKSHNA_NAK = {5, 8, 17, 18}     # Ārdrā, Āśleṣā, Jyeṣṭhā, Mūla
 
 # Factor 13 — positive Shadbala-weighted argala on the 2/10/12 houses (from Lagna)
 _ARG_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
@@ -185,10 +189,19 @@ def feats(dob, tob, lat, lon):
     top_graha = max(_C, key=lambda q: vim_pp[q])
     top_vim_seat = 1.0 if P[top_graha]["house"] in (1, 2, 4, 5, 11) else 0.0
 
+    # 17 — nakṣatra quality: (# of 9 bodies in a Mṛidu nakṣatra) − (# in a Tikshna one)
+    nak_mridu_net = 0.0
+    for q in _ARG_PLANETS:
+        ni = int((P[q]["longitude"] % 360) / (360.0 / 27.0))
+        if ni in _MRIDU_NAK:
+            nak_mridu_net += 1.0
+        elif ni in _TIKSHNA_NAK:
+            nak_mridu_net -= 1.0
+
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
     return [rahu_prime, vimsopaka, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,
             bright_moon, moon_disp, moon_sav, sun_disp, argala_pos, purna_tithi, dig_lords,
-            top_vim_seat], by, india
+            top_vim_seat, nak_mridu_net], by, india
 
 
 def _bd(p):
@@ -234,7 +247,7 @@ for i, n in enumerate(FEAT):
     print(f"  {n:12} {F[:, i].mean():7.2f} {R[:, i].mean():7.2f}  {F[:, i].mean() - R[:, i].mean():+6.2f}")
 
 c, s = cv(F, R)
-print(f"\n16-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
+print(f"\n17-factor composite   count-AUC={c:.3f}  sum-AUC={s:.3f}")
 
 print("\nconfound-matched India-born cuts (sum-AUC):")
 for yr in (0, 1940, 1955):

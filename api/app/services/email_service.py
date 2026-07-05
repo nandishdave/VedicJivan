@@ -371,7 +371,7 @@ _WP_LABELS = [
     ("bright_moon", "Bright Moon"), ("moon_disp", "Moon-lord in 1/2/11/12"), ("moon_sav", "Moon-sign AV"),
     ("sun_disp", "Sun-lord in 1st quadrant"), ("argala_pos", "Śubha argala on 2/10/12"),
     ("purna_tithi", "Pūrṇa tithi (5/10/15)"), ("dig_lords", "Digbala of lagna/10th lords"),
-    ("top_vim_seat", "Strongest planet in 1/2/11"),
+    ("top_vim_seat", "Strongest planet in 1/2/4/5/11"), ("nak_mridu_net", "Mṛidu − Tikshna nakṣatras"),
 ]
 
 

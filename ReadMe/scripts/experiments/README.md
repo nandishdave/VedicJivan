@@ -87,3 +87,9 @@ interactions — `compare_composite.py` · peak-vs-breadth — `compare_peak.py`
 `refine_vimsopaka.py` (house-set narrowing; any-planet vs functional-benefic → any wins) ·
 `strength_combine.py` (combine-vs-separate: merging magnitude+seat into ONE factor is WORSE — keep separate) ·
 `seat_ref.py` (REF for the {1,2,4,5,11} seat). Result: strongest-Vimśopaka planet in **{1,2,4,5,11}** → **factor 16** (0.751→0.766 full, 0.789→0.795 clean). Kept SEPARATE from Vimśopaka-magnitude (they're near-uncorrelated).
+
+**Factor 17 — `nak_mridu_net` (2026-07-05, nakṣatra quality):**
+`nakquality.py` (per-quality famous-vs-ordinary; the Violent signal is an era/node confound that EVAPORATES under matching, while Mṛidu STRENGTHENS) ·
+`strength_nakfactor.py` (tests A=Mṛidu, B=Mṛidu−Tikshna, A+B, C=Mṛidu+Swift, D=broad net) ·
+`nak_acid.py` (acid test for A: single Mṛidu fails, −0.004) ·
+`nak_acid_B.py` (acid test for B: survives at base, +0.001 — the penalty term backstops the reward). Result: **B (Mṛidu − Tikshna) → factor 17** (0.766→0.772 full, 0.795→**0.809** clean). Most marginal factor: acid-neutral, seed-stable clean cuts. `strength_navatara.py` (a *different* nakṣatra idea — Navatāra tāras from Janma — was rejected).
