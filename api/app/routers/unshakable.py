@@ -12,23 +12,37 @@ import os
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
-from app.dependencies import get_message_queue
+from app.config import settings
+from app.dependencies import get_message_queue, get_rate_limit_repository
 from app.infrastructure.logging import get_logger
 from app.infrastructure.queue import MessageQueue
 from app.models.unshakable import UnshakableRequest
+from app.repositories.rate_limit_repository import RateLimitRepository
 from app.services.unshakable_finder import find_unshakable
+from app.use_cases.rate_limit import EnforceEmailRateLimit
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/unshakable", tags=["Unshakable"])
 
 
+def _rate_limit(
+    repo: RateLimitRepository = Depends(get_rate_limit_repository),
+) -> EnforceEmailRateLimit:
+    return EnforceEmailRateLimit(
+        repo, action="unshakable",
+        max_per_window=settings.MAX_UNSHAKABLE_PER_EMAIL_PER_DAY,
+    )
+
+
 @router.post("/find", status_code=202)
 async def find_endpoint(
     req: UnshakableRequest,
     queue: MessageQueue = Depends(get_message_queue),
+    rate_limit: EnforceEmailRateLimit = Depends(_rate_limit),
 ) -> dict:
     """Queue a week-scale unshakable search; the worker emails the ranked results."""
+    await rate_limit.execute(req.email)  # per-email daily cap → 429 over limit
     await queue.send({"type": "unshakable", **req.model_dump()})
     return {
         "message": (

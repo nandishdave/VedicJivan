@@ -157,6 +157,26 @@ async def test_birth_endpoint_requires_email(client, fake_queue):
         app.dependency_overrides.pop(get_message_queue, None)
 
 
+async def test_birth_endpoint_rate_limited(client, mock_db, fake_queue):
+    """Over the per-email daily cap → 429, and NO SQS work is enqueued."""
+    from unittest.mock import AsyncMock
+
+    mock_db.rate_limits.count_documents = AsyncMock(return_value=999)  # already at cap
+    app.dependency_overrides[get_message_queue] = lambda: fake_queue
+    try:
+        resp = await client.post(
+            "/api/muhurta/birth",
+            json={
+                "date": "2026-06-20", "lat": 21.7333, "lon": 70.6167,
+                "place_name": "Jetpur", "email": "spammer@example.com",
+            },
+        )
+        assert resp.status_code == 429
+        assert len(fake_queue.sent) == 0
+    finally:
+        app.dependency_overrides.pop(get_message_queue, None)
+
+
 async def test_lambda_routes_muhurta_message(mocker):
     """The shared Kundli Lambda routes a `type: muhurta` SQS message to the
     muhurta worker (and kundli messages, which have no type, are untouched)."""

@@ -19,6 +19,7 @@ from __future__ import annotations
 import os
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, Response
 
 from app.dependencies import get_kundli_repository, get_message_queue
@@ -168,7 +169,9 @@ async def vimsopaka(
     per-varga dignity breakdown.
     """
     try:
-        report = compute_vimsopaka(dob, tob, lat, lon)
+        # compute_vimsopaka is CPU-heavy (16 divisional charts); run it off the
+        # event loop so it doesn't stall the 0.25-vCPU async worker under load.
+        report = await run_in_threadpool(compute_vimsopaka, dob, tob, lat, lon)
     except Exception as e:
         logger.exception("Vimsopaka calculation failed")
         raise HTTPException(status_code=422, detail=f"Could not compute: {str(e)[:200]}")

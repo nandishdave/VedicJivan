@@ -14,25 +14,38 @@ import os
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import get_message_queue
+from app.config import settings
+from app.dependencies import get_message_queue, get_rate_limit_repository
 from app.infrastructure.logging import get_logger
 from app.infrastructure.queue import MessageQueue
 from app.models.muhurta import BirthMuhurtaRequest
+from app.repositories.rate_limit_repository import RateLimitRepository
 # Module-scope so tests can patch these on `app.routers.muhurta`.
 from app.services.muhurta import analyze_birth_muhurta, build_muhurta_chart
 from app.use_cases.muhurta import AnalyzeBirthMuhurta
+from app.use_cases.rate_limit import EnforceEmailRateLimit
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/muhurta", tags=["Muhurta"])
 
 
+def _rate_limit(
+    repo: RateLimitRepository = Depends(get_rate_limit_repository),
+) -> EnforceEmailRateLimit:
+    return EnforceEmailRateLimit(
+        repo, action="muhurta", max_per_window=settings.MAX_MUHURTA_PER_EMAIL_PER_DAY
+    )
+
+
 @router.post("/birth", status_code=202)
 async def birth_muhurta(
     req: BirthMuhurtaRequest,
     queue: MessageQueue = Depends(get_message_queue),
+    rate_limit: EnforceEmailRateLimit = Depends(_rate_limit),
 ) -> dict:
     """Queue the full birth-muhurta analysis; the worker emails the result."""
+    await rate_limit.execute(req.email)  # per-email daily cap → 429 over limit
     await queue.send({"type": "muhurta", **req.model_dump()})
     return {
         "message": (

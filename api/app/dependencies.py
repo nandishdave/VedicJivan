@@ -12,6 +12,10 @@ from app.repositories.kundli_repository import (
     KundliRepository,
     MongoKundliRepository,
 )
+from app.repositories.rate_limit_repository import (
+    MongoRateLimitRepository,
+    RateLimitRepository,
+)
 from app.repositories.payment_repository import (
     MongoPaymentRepository,
     PaymentRepository,
@@ -107,6 +111,10 @@ def get_processed_event_repository() -> ProcessedEventRepository:
 
 def get_kundli_repository() -> KundliRepository:
     return MongoKundliRepository(get_db())
+
+
+def get_rate_limit_repository() -> RateLimitRepository:
+    return MongoRateLimitRepository(get_db())
 
 
 def get_unavailability_repository() -> UnavailabilityRepository:

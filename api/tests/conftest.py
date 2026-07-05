@@ -147,6 +147,7 @@ def mock_db():
     db.availability = _make_mock_collection()
     db.settings = _make_mock_collection()
     db.kundlis = _make_mock_collection()
+    db.rate_limits = _make_mock_collection()
     db.services = _make_mock_collection()
     db.stripe_events = _make_mock_collection()
     # `db.command(...)` is used by the readiness probe to ping Mongo.

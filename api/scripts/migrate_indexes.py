@@ -32,6 +32,7 @@ from app.repositories.payment_repository import MongoPaymentRepository
 from app.repositories.processed_event_repository import (
     MongoProcessedEventRepository,
 )
+from app.repositories.rate_limit_repository import MongoRateLimitRepository
 from app.repositories.service_repository import MongoServiceRepository
 from app.repositories.unavailability_repository import (
     MongoUnavailabilityRepository,
@@ -51,6 +52,7 @@ def _repo_targets(db) -> list[tuple[str, Callable[[], Awaitable[None]]]]:
         ("bookings", MongoBookingRepository(db).ensure_indexes),
         ("payments", MongoPaymentRepository(db).ensure_indexes),
         ("kundlis", MongoKundliRepository(db).ensure_indexes),
+        ("rate_limits", MongoRateLimitRepository(db).ensure_indexes),
         ("unavailability", MongoUnavailabilityRepository(db).ensure_indexes),
         ("services", MongoServiceRepository(db).ensure_indexes),
         ("users", MongoUserRepository(db).ensure_indexes),

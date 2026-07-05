@@ -76,6 +76,14 @@ class Settings(BaseSettings):
     MAX_KUNDLI_PER_EMAIL_PER_DAY: int = Field(default=10, ge=1, le=1000)
     KUNDLI_RATE_LIMIT_WINDOW_HOURS: int = Field(default=24, ge=1, le=720)
 
+    # ── Async-analysis per-email daily caps (muhurta / unshakable) ──
+    # These endpoints are public + unauthenticated and each enqueues real
+    # compute onto SQS, so they carry the same per-email cap as Kundli (counted
+    # in Mongo over KUNDLI_RATE_LIMIT_WINDOW_HOURS). Unshakable is far heavier
+    # (a full range scan), so its cap is lower.
+    MAX_MUHURTA_PER_EMAIL_PER_DAY: int = Field(default=10, ge=1, le=1000)
+    MAX_UNSHAKABLE_PER_EMAIL_PER_DAY: int = Field(default=5, ge=1, le=1000)
+
     # ── Admin analytics ──
     # Days of trailing data to surface in /api/admin/stats.
     ADMIN_DAILY_SERIES_DAYS: int = Field(default=30, ge=1, le=365)
