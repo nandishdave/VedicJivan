@@ -73,16 +73,18 @@ from __future__ import annotations
 
 import math
 
+# Shared with vimsopaka / chart_strength / fame_composite — one source of truth
+# (see dignity.py) so the fame calibration and the strength scores can't drift apart.
+from app.services.kundli_calculator.dignity import (
+    DIGNITY_PCT as _DP,
+    VARGA_WEIGHTS as _VARGA_W,
+)
+
 _C = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
-_DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
-       "Neutral Sign": 45, "Enemy Sign": 25, "Debilitated": 5}
 _BAD = {3, 6, 8, 12}        # dusthana — dispositor / occupancy penalty
 _OCC = {3, 6, 10, 11}       # upachaya / growth-effort houses
-# Factor 2 (Vimśopaka bala): the 16 Shodashavarga divisionals with their classical
-# weights (sum = 20). "D1" = the natal rasi sign itself. D60/D1/D9 carry the most.
-_VARGA_W = {"D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D10": 0.5,
-            "D12": 0.5, "D16": 2.0, "D20": 0.5, "D24": 0.5, "D27": 0.5, "D30": 1.0,
-            "D40": 0.5, "D45": 0.5, "D60": 4.0}
+# Factor 2 (Vimśopaka bala) uses the 16 Shodashavarga divisionals + their classical
+# weights (_VARGA_W, sum 20; D60/D1/D9 dominant) and the 0-100 dignity scale (_DP).
 # Argala (factor 13): all 9 grahas participate; benefics (J/V/Me, bright Moon)
 # intervene positively. ARG_PAIRS = (argala house Nth-from-R, its virodha Nth-from-R);
 # an argala is "effective" only if it outweighs its virodha counter. ARG_HOUSES
@@ -190,7 +192,9 @@ def _dig_lords(chart: dict, ls: int, sign_lords: list) -> float:
 
 
 def factor_values(chart: dict, dashas: list[dict], birth_year: int) -> dict:
-    """The 17 raw factor values for a chart. Pure; mirrors fame_composite.py."""
+    """The 17 raw factor values for a chart. Pure, and the SINGLE source of truth
+    for the factor math — ``ReadMe/scripts/fame_composite.py`` imports and calls
+    this (rather than reimplementing it) so the study and production can't drift."""
     from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
     from app.services.kundli_calculator.divisional import calc_divisional_charts
     from app.services.kundli_calculator.raja_yoga import raja_yoga_score

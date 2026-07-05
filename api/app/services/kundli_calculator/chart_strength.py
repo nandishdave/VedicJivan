@@ -16,6 +16,12 @@ sign), ``planets`` (each with ``dignity``/``house``) and ``lagna`` (``sign`` +
 """
 from __future__ import annotations
 
+# Shared 0-100 dignity scale + average-SAV constant — one source of truth (dignity.py).
+from app.services.kundli_calculator.dignity import (
+    AVG_SAV as _AVG_SAV,
+    DIGNITY_PCT as _DIGNITY_PTS,
+)
+
 _CLASSICAL = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
 _BENEFICS = {"Jupiter", "Venus", "Mercury"}  # natural benefics (kept for reference)
 
@@ -35,14 +41,7 @@ _KENDRA = {1, 4, 7, 10}
 _TRIKONA = {1, 5, 9}
 _DUSTHANA = {6, 8, 12}
 _UPACHAYA = {3, 6, 10, 11}
-_AVG_SAV = 28.0  # average Sarvashtakavarga bindus per sign (337 / 12 ≈ 28)
-
-# Dignity → 0-100 strength points (classification strings from `_get_dignity`).
-_DIGNITY_PTS = {
-    "Exalted": 100.0, "Moolatrikona": 85.0, "Own Sign": 75.0,
-    "Friendly Sign": 55.0, "Neutral Sign": 45.0, "Enemy Sign": 25.0,
-    "Debilitated": 5.0,
-}
+# _AVG_SAV (28.0) and _DIGNITY_PTS (0-100 dignity scale) are imported from dignity.py.
 
 # Component weights — must sum to 1.0. First-pass; tune freely.
 WEIGHTS = {

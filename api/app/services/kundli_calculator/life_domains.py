@@ -31,6 +31,11 @@ finder so both read life-completeness identically.
 from __future__ import annotations
 
 from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
+# Shared 0-100 dignity scale + average-SAV — one source of truth (dignity.py).
+from app.services.kundli_calculator.dignity import (
+    AVG_SAV as _AVG_SAV,
+    DIGNITY_PCT as _DIG100,
+)
 
 # ── Functional-benefic scheme (lagna-specific two-group) ─────────────────────
 # The Moon is judged by paksha (waxing = benefic); the 6 other classical planets
@@ -49,12 +54,7 @@ _DIGNITY_PTS = {
     "Exalted": 20, "Moolatrikona": 16, "Own Sign": 14, "Friendly Sign": 7,
     "Neutral Sign": 0, "Enemy Sign": -8, "Debilitated": -18,
 }
-# 0–100 dignity ladder used by the four-fold scorer (lord + varga dignities).
-_DIG100 = {
-    "Exalted": 100.0, "Moolatrikona": 85.0, "Own Sign": 75.0, "Friendly Sign": 55.0,
-    "Neutral Sign": 45.0, "Enemy Sign": 25.0, "Debilitated": 5.0,
-}
-_AVG_SAV = 28.0  # average Sarvashtakavarga bindus per sign (337/12)
+# _DIG100 (0-100 dignity ladder) and _AVG_SAV are imported from dignity.py above.
 
 # Four-fold weights (must sum to 1.0). Bhāveśa & Varga lead; Kāraka is the light
 # day-level modifier (it is the SAME across all 12 muhurta Lagnas).

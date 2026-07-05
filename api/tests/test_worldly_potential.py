@@ -3,11 +3,13 @@ integration into unshakable_score. Behaviour, not magic numbers."""
 import pytest
 
 from app.services.kundli_calculator.worldly_potential import (
-    NOTE, REF, score_from_factors, worldly_potential,
+    NOTE, REF, _ARGALA_MID, _DIG_MID, factor_values, score_from_factors,
+    worldly_potential,
 )
 from app.services.kundli_calculator.chart_strength import (
     LAYER_WEIGHTS, LAYER_WEIGHTS_WORLDLY, unshakable_score,
 )
+from app.services.kundli_calculator.vimshottari import calc_vimshottari_dasha
 from app.services.muhurta import build_muhurta_chart
 
 # A real, valid birth moment (M.S. Dhoni — Ranchi). Any valid moment works.
@@ -71,6 +73,46 @@ def test_worldly_on_real_chart():
     assert 0.0 <= wp["score"] <= 100.0
     assert set(wp["factors"]) == set(REF)
     assert wp["note"] == NOTE
+
+
+# ── factor_values() characterisation — pins every raw factor ─────────────────
+# Golden 17 raw values for the fixed Dhoni chart, captured 2026-07-05. These lock
+# factor_values() exactly, so the M1/M2 refactor (unify with fame_composite.py,
+# hoist shared constants) provably cannot change any number the calibration rests on.
+_GOLDEN = {
+    "rahu_prime": 18.0, "vimsopaka": 10.357143, "av_10th": 31, "av_1st": 23,
+    "upa_occ": 0.6, "raja_late": 6.384333, "dhana_late": 0.0, "av_11th": 36,
+    "bright_moon": 0.0, "moon_disp": 0.0, "moon_sav": 23, "sun_disp": 0.0,
+    "argala_pos": 92.6, "purna_tithi": 0.0, "dig_lords": 23.49,
+    "top_vim_seat": 0.0, "nak_mridu_net": 2.0,
+}
+
+
+def _dhoni_factors(chart=None):
+    chart = chart or build_muhurta_chart(dob=_DOB, tob=_TOB, lat=_LAT, lon=_LON)
+    dashas = calc_vimshottari_dasha(
+        chart["planets"]["Moon"]["longitude"], _DOB, _TOB
+    )["dashas"]
+    return chart, factor_values(chart, dashas, int(_DOB[:4]))
+
+
+def test_factor_values_golden():
+    """Every one of the 17 raw factor values is pinned to a known number —
+    guards the fame calibration against any silent drift in factor_values()."""
+    _chart, fv = _dhoni_factors()
+    assert set(fv) == set(REF)
+    for k, want in _GOLDEN.items():
+        assert fv[k] == pytest.approx(want, abs=1e-4), f"{k}: got {fv[k]}, want {want}"
+
+
+def test_factor_values_shadbala_absent_fallbacks():
+    """The two Shadbala-dependent factors fall back to their REF midpoints when
+    a chart carries no shadbala (the cheap pre-filter chart) — not 0, not a crash."""
+    chart = build_muhurta_chart(dob=_DOB, tob=_TOB, lat=_LAT, lon=_LON)
+    chart.pop("shadbala", None)
+    _chart, fv = _dhoni_factors(chart)
+    assert fv["argala_pos"] == pytest.approx(_ARGALA_MID, abs=1e-6)
+    assert fv["dig_lords"] == pytest.approx(_DIG_MID, abs=1e-6)
 
 
 def test_unshakable_includes_worldly_with_dob():

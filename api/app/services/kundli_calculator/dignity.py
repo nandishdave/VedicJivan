@@ -53,6 +53,31 @@ _COMPOUND_DIGNITY = {
 }
 
 
+# ── Shared fame-model / strength tables ──────────────────────────────────────
+# Single source of truth for constants that were previously copied byte-for-byte
+# across worldly_potential, vimsopaka, chart_strength, life_domains and
+# fame_composite. Importing them from here keeps the fame calibration and the
+# strength scores from silently drifting apart.
+
+# 7-tier dignity → 0-100 strength percent (Nandish-confirmed scale). Used for
+# Vimśopaka bala (factor 2) and the various dignity sub-scores.
+DIGNITY_PCT: dict[str, int] = {
+    "Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
+    "Neutral Sign": 45, "Enemy Sign": 25, "Debilitated": 5,
+}
+
+# Shodashavarga weights (sum = 20) for Vimśopaka bala. "D1" is the natal rāśi
+# sign itself; D60/D1/D9 carry the most.
+VARGA_WEIGHTS: dict[str, float] = {
+    "D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D10": 0.5,
+    "D12": 0.5, "D16": 2.0, "D20": 0.5, "D24": 0.5, "D27": 0.5, "D30": 1.0,
+    "D40": 0.5, "D45": 0.5, "D60": 4.0,
+}
+
+# Average Sarvashtakavarga bindus per sign (337 / 12 ≈ 28).
+AVG_SAV = 28.0
+
+
 def _compound_relationships(planets: dict) -> dict:
     """Compute Panchadha (5-fold compound) relationships between all classical planet pairs.
 

@@ -8,6 +8,13 @@ Reads two chart sets already staged in the container:
     /app/src_celebrities.json   — the 225 famous charts (== src/data/celebrities.json)
     /app/normal_people.json     — the 96 ordinary/control charts
 
+SINGLE SOURCE OF TRUTH (M1, 2026-07-05): the 17-factor math lives ONLY in
+``worldly_potential.factor_values`` — this script imports and calls it rather than
+reimplementing the factors (the two copies used to be hand-kept in lockstep and
+could silently drift, invalidating the baked REF calibration). This file is now
+just the CV harness (per-factor lift, 5-fold cross-validated AUC, confound-matched
+cuts) running on top of the production factor values.
+
 The 17 factors (see ReadMe/methodology.html for the full write-up):
   1 Rahu prime-dasha (20-50) x clean-dispositor factor   [meteoric rise]
   2 Vimśopaka bala — mean dignity of the 7 planets across the 16 Shodashavarga
@@ -43,165 +50,27 @@ dasha-timing, and the Pañchāṅga Nitya-yoga were rejected earlier.
 import json
 import numpy as np
 from app.services.muhurta import build_muhurta_chart
-from app.services.kundli_calculator._core import SIGN_LORDS, _get_dignity
 from app.services.kundli_calculator.vimshottari import calc_vimshottari_dasha
-from app.services.kundli_calculator.divisional import calc_divisional_charts
-from app.services.kundli_calculator.raja_yoga import raja_yoga_score
-from app.services.kundli_calculator.dhana_yoga import dhana_yoga_score
+# The 17-factor math — the ONE source of truth (see module docstring). This script
+# no longer reimplements the factors; it sources them from production.
+from app.services.kundli_calculator.worldly_potential import factor_values
 
 FAM = json.load(open("/app/src_celebrities.json", encoding="utf-8"))
 ORDD = json.load(open("/app/normal_people.json", encoding="utf-8"))
-_C = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
-_DP = {"Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
-       "Neutral Sign": 45, "Enemy Sign": 25, "Debilitated": 5}
-_BAD = {3, 6, 8, 12}          # dusthana (dispositor / occupancy penalty)
-OCC = {3, 6, 10, 11}          # upachaya / growth-effort houses
-# Factor 2 (Vimśopaka bala) — the 16 Shodashavarga vargas with classical weights (sum 20).
-_VARGA_W = {"D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D10": 0.5,
-            "D12": 0.5, "D16": 2.0, "D20": 0.5, "D24": 0.5, "D27": 0.5, "D30": 1.0,
-            "D40": 0.5, "D45": 0.5, "D60": 4.0}
 FEAT = ["rahu_prime", "vimsopaka", "av_10th", "av_1st", "upa_occ", "raja_late", "dhana_late", "av_11th",
         "bright_moon", "moon_disp", "moon_sav", "sun_disp", "argala_pos", "purna_tithi", "dig_lords",
         "top_vim_seat", "nak_mridu_net"]
-# Factor 17 (nakṣatra quality): Mṛidu (tender) vs Tikshna (dreadful) nakṣatras, 0-indexed.
-_MRIDU_NAK = {4, 13, 16, 26}      # Mṛigaśira, Chitra, Anurādhā, Revatī
-_TIKSHNA_NAK = {5, 8, 17, 18}     # Ārdrā, Āśleṣā, Jyeṣṭhā, Mūla
-
-# Factor 13 — positive Shadbala-weighted argala on the 2/10/12 houses (from Lagna)
-_ARG_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
-_ARG_PAIRS = ((2, 12), (4, 10), (5, 9), (11, 3))   # (argala Nth-from-R, virodha Nth-from-R)
-_ARG_HOUSES = (2, 10, 12)
-
-
-def _positive_argala(P, shadbala, bright_moon):
-    """Śubha (benefic) argala on 2/10/12, Shadbala-weighted, effective only when
-    it outweighs the virodha counter (12/10/9/3)."""
-    if not shadbala:
-        return 0.0
-    benefic = {"Jupiter": 1, "Venus": 1, "Mercury": 1, "Moon": (1 if bright_moon else -1),
-               "Sun": -1, "Mars": -1, "Saturn": -1, "Rahu": -1, "Ketu": -1}
-    svals = [shadbala[q]["total_shadbala"] for q in _C if q in shadbala]
-    avg = sum(svals) / len(svals) if svals else 1.0
-    wt = {q: (shadbala[q]["total_shadbala"] if q in shadbala else avg) for q in _ARG_PLANETS}
-    by_house = {h: [] for h in range(1, 13)}
-    for p in _ARG_PLANETS:
-        by_house[P[p]["house"]].append(p)
-    total = 0.0
-    for R in _ARG_HOUSES:
-        for na, nv in _ARG_PAIRS:
-            A = ((R - 1 + na - 1) % 12) + 1
-            V = ((R - 1 + nv - 1) % 12) + 1
-            if sum(wt[p] for p in by_house[A]) > sum(wt[p] for p in by_house[V]):
-                s = sum(wt[p] * benefic[p] for p in by_house[A])
-                if s > 0:
-                    total += s
-    return total
-
-
-def _yoga_weights(links):
-    """planet -> summed link score, for the planets FORMING a yoga."""
-    w = {}
-    for lk in links:
-        for p in lk.get("planets", []):
-            w[p] = w.get(p, 0.0) + lk["score"]
-    return w
-
-
-def _activation(dashas, birth_year, weights, a, b):
-    """Year-weighted mean of weights[MD-lord] over the [a, b] age window."""
-    tot = acc = 0.0
-    for d in dashas:
-        ov = max(0, min(int(d["end_date"][:4]) - birth_year, b) - max(int(d["start_date"][:4]) - birth_year, a))
-        if ov <= 0:
-            continue
-        tot += ov
-        acc += weights.get(d["planet"], 0.0) * ov
-    return acc / tot if tot else 0.0
 
 
 def feats(dob, tob, lat, lon):
+    """The 17 factor values for one chart, sourced from worldly_potential (the
+    single source of truth), plus the birth year and the India-born flag."""
     c = build_muhurta_chart(dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=True)
-    P, lag = c["planets"], c["lagna"]
-    ls = lag["sign"]
     by = int(dob[:4])
-    dl = calc_vimshottari_dasha(P["Moon"]["longitude"], dob, tob)["dashas"]
-
-    # 1 — Rahu prime-dasha (20-50) x clean dispositor
-    ra = next(((int(d["start_date"][:4]) - by, int(d["end_date"][:4]) - by) for d in dl if d["planet"] == "Rahu"), None)
-    rahu_years = max(0, min(ra[1], 50) - max(ra[0], 20)) if ra else 0
-    dispf = 1.0 if P[SIGN_LORDS[P["Rahu"]["sign"]]]["house"] not in _BAD else 0.4
-    rahu_prime = rahu_years * dispf
-
-    # 2 — Vimśopaka bala: mean cross-divisional strength of the 7 planets over 16 vargas
-    varga = calc_divisional_charts(P, lag)
-    vim_pp = {}
-    for p in _C:
-        tot_p = 0.0
-        for vname, vw in _VARGA_W.items():
-            vsign = P[p]["sign"] if vname == "D1" else varga[vname][p]
-            tot_p += vw * (_DP.get(_get_dignity(p, vsign), 45) / 100.0)
-        vim_pp[p] = tot_p
-    vimsopaka = sum(vim_pp.values()) / len(_C)
-
-    # 3, 4, 8 — Ashtakavarga 10th (career) / 1st (self) / 11th (gains)
-    tv = c["ashtakavarga"]["totals"]
-    av_10th = tv[(ls + 9) % 12]
-    av_1st = tv[ls]
-    av_11th = tv[(ls + 10) % 12]
-
-    # 5 — upachaya OCCUPANCY dasha in the peak (20-50)
-    tot = occ = 0.0
-    for d in dl:
-        ov = max(0, min(int(d["end_date"][:4]) - by, 50) - max(int(d["start_date"][:4]) - by, 20))
-        if ov <= 0:
-            continue
-        tot += ov
-        if P[d["planet"]]["house"] in OCC:
-            occ += ov
-    upa_occ = occ / tot if tot else 0.0
-
-    # 6, 7 — late (50-80) Raja / Dhana yoga activation by dasha
-    raja_late = _activation(dl, by, _yoga_weights(raja_yoga_score(c)[1]), 50, 80)
-    dhana_late = _activation(dl, by, _yoga_weights(dhana_yoga_score(c)[1]), 50, 80)
-
-    # 9, 10, 11 — the Moon bundle (lunar dimension, independent of the houses above)
-    ms = P["Moon"]["sign"]
-    elong = (P["Moon"]["longitude"] - P["Sun"]["longitude"]) % 360
-    bright_moon = 1.0 if 72 <= elong <= 264 else 0.0
-    moon_disp = 1.0 if P[SIGN_LORDS[ms]]["house"] in (1, 2, 11, 12) else 0.0
-    moon_sav = tv[ms]
-    sun_disp = 1.0 if P[SIGN_LORDS[P["Sun"]["sign"]]]["house"] in (1, 2, 3, 4) else 0.0
-
-    # 13 — positive Shadbala-weighted argala on the 2nd/10th/12th houses
-    argala_pos = _positive_argala(P, c.get("shadbala", {}), bright_moon)
-
-    # 14 — born in a Pūrṇa tithi (5th/10th/15th of either paksha)
-    tithi = int(((P["Moon"]["longitude"] - P["Sun"]["longitude"]) % 360) / 12) + 1
-    purna_tithi = 1.0 if (tithi - 1) % 5 == 4 else 0.0
-
-    # 15 — mean Dig Bala of the lagna-lord and 10th-lord (rulers of self & career)
-    sb = c.get("shadbala", {})
-    lords = (SIGN_LORDS[ls], SIGN_LORDS[(ls + 9) % 12])
-    dvals = [sb[q]["dig_bala"] for q in lords if q in sb and "dig_bala" in sb[q]]
-    dig_lords = float(np.mean(dvals)) if dvals else 30.0
-
-    # 16 — strongest-Vimśopaka planet (any graha) seated in a prominence house {1,2,4,5,11}
-    top_graha = max(_C, key=lambda q: vim_pp[q])
-    top_vim_seat = 1.0 if P[top_graha]["house"] in (1, 2, 4, 5, 11) else 0.0
-
-    # 17 — nakṣatra quality: (# of 9 bodies in a Mṛidu nakṣatra) − (# in a Tikshna one)
-    nak_mridu_net = 0.0
-    for q in _ARG_PLANETS:
-        ni = int((P[q]["longitude"] % 360) / (360.0 / 27.0))
-        if ni in _MRIDU_NAK:
-            nak_mridu_net += 1.0
-        elif ni in _TIKSHNA_NAK:
-            nak_mridu_net -= 1.0
-
+    dl = calc_vimshottari_dasha(c["planets"]["Moon"]["longitude"], dob, tob)["dashas"]
+    fv = factor_values(c, dl, by)
     india = (68 <= lon <= 98 and 6 <= lat <= 37)
-    return [rahu_prime, vimsopaka, av_10th, av_1st, upa_occ, raja_late, dhana_late, av_11th,
-            bright_moon, moon_disp, moon_sav, sun_disp, argala_pos, purna_tithi, dig_lords,
-            top_vim_seat, nak_mridu_net], by, india
+    return [fv[k] for k in FEAT], by, india
 
 
 def _bd(p):

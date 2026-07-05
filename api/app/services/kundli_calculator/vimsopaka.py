@@ -19,6 +19,12 @@ from app.services.kundli_calculator._core import (
     calc_planet_positions,
     get_julian_day,
 )
+# Shared weights + dignity scale — one source of truth (dignity.py). Re-exported
+# here so existing `from ...vimsopaka import VARGA_WEIGHTS/DIGNITY_PCT` still work.
+from app.services.kundli_calculator.dignity import (  # noqa: F401  (re-export)
+    DIGNITY_PCT,
+    VARGA_WEIGHTS,
+)
 from app.services.kundli_calculator.divisional import calc_divisional_charts
 
 # The seven classical grahas — the strength framework (Shadbala/Vimśopaka) is planet-
@@ -30,18 +36,6 @@ _CLASSICAL = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
 # and does not help (it dilutes factor 2 and is neutral-to-reversed for factor 16).
 _NODES = ["Rahu", "Ketu"]
 
-# Shodashavarga weights (sum = 20). "D1" is the natal rāśi sign itself.
-VARGA_WEIGHTS: dict[str, float] = {
-    "D1": 3.5, "D2": 1.0, "D3": 1.0, "D4": 0.5, "D7": 0.5, "D9": 3.0, "D10": 0.5,
-    "D12": 0.5, "D16": 2.0, "D20": 0.5, "D24": 0.5, "D27": 0.5, "D30": 1.0,
-    "D40": 0.5, "D45": 0.5, "D60": 4.0,
-}
-
-# 7-tier dignity → fraction of the varga's weight (Nandish-confirmed scale).
-DIGNITY_PCT: dict[str, int] = {
-    "Exalted": 100, "Moolatrikona": 85, "Own Sign": 75, "Friendly Sign": 55,
-    "Neutral Sign": 45, "Enemy Sign": 25, "Debilitated": 5,
-}
 _DEFAULT_PCT = 45  # unknown dignity → neutral
 
 
