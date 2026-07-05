@@ -18,7 +18,7 @@ from app.domain.exceptions import (
 )
 from app.models.service import Service
 from app.repositories.service_repository import ServiceRepository
-from app.services.default_services import price_from_service
+from app.services.default_services import resolve_price
 
 
 # ── GetServicePrice ───────────────────────────────────────────────────────
@@ -40,14 +40,9 @@ class GetServicePrice:
         service = await self._repo.find_by_slug(service_slug)
         if not service:
             raise BookingValidationError(f"Unknown service: {service_slug}")
-        try:
-            return price_from_service(service, duration_minutes)
-        except Exception as e:
-            # price_from_service raises BadRequestError(HTTPException) on
-            # mismatch; rewrap as a domain exception so the router maps to
-            # the same 400 via the DomainError handler instead of bubbling
-            # an HTTP exception out of a use case.
-            raise BookingValidationError(str(e.detail) if hasattr(e, "detail") else str(e))
+        # resolve_price raises BookingValidationError (domain) directly — no
+        # HTTP exception ever enters this layer.
+        return resolve_price(service, duration_minutes)
 
 
 # ── ListServices ──────────────────────────────────────────────────────────

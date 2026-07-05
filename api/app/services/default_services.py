@@ -16,6 +16,7 @@ test-baseline only.
 
 from __future__ import annotations
 
+from app.domain.exceptions import BookingValidationError
 from app.models.service import Service, ServiceDuration
 from app.utils.exceptions import BadRequestError
 
@@ -109,13 +110,13 @@ SERVICE_PRICES_EUR: dict[str, dict[str, int]] = {
 }
 
 
-def price_from_service(
-    service: Service, duration_minutes: int
-) -> tuple[int, int]:
+def resolve_price(service: Service, duration_minutes: int) -> tuple[int, int]:
     """Return (inr, eur) for a duration; falls back to the report `0` slot
     if the exact duration isn't sold.
 
-    Raises BadRequestError when no match exists. Pure — no DB access.
+    Pure — no DB, no HTTP. Raises the domain `BookingValidationError` on no
+    match so use cases can call it without catching an HTTP exception. The
+    router's DomainError handler maps that to a 400.
     """
     by_duration = {d.duration_minutes: d for d in service.durations}
     if duration_minutes in by_duration:
@@ -127,10 +128,25 @@ def price_from_service(
     available = ", ".join(
         f"{d.duration_minutes} min" for d in service.durations if d.duration_minutes != 0
     )
-    raise BadRequestError(
+    raise BookingValidationError(
         f"Duration {duration_minutes} min not available for this service. "
         f"Options: {available}"
     )
+
+
+def price_from_service(
+    service: Service, duration_minutes: int
+) -> tuple[int, int]:
+    """Sync/HTTP-facing wrapper around `resolve_price`.
+
+    Kept for the back-compat `get_price` path (and its tests), which expect a
+    400-mapped `BadRequestError`. Production use cases call `resolve_price`
+    directly and let the domain exception propagate.
+    """
+    try:
+        return resolve_price(service, duration_minutes)
+    except BookingValidationError as e:
+        raise BadRequestError(str(e))
 
 
 def get_price(service_slug: str, duration_minutes: int) -> tuple[int, int]:
