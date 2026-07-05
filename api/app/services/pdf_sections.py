@@ -7,11 +7,10 @@ and `SECTION_BUILDERS` because tests do
 that pattern only works when the patched name lives in the module that
 gets monkeypatched.
 
-Constants (`LOGO_URL`, `BRAND`, `SIGN_ABBR`, `SIGN_NAMES`, `SIGN_LORDS`,
-`PLANET_ABBR`, `_HOUSE_TEXT_POS`, `CHART_DESCRIPTIONS`) are imported
-back from `kundli_pdf` — they're defined at the top of that module
-before the `from .pdf_sections import ...` line fires, so the
-back-import resolves cleanly.
+Shared constants (`LOGO_URL`, `BRAND`, `SIGN_ABBR`, `SIGN_NAMES`,
+`SIGN_LORDS`, `PLANET_ABBR`, `_HOUSE_TEXT_POS`, `CHART_DESCRIPTIONS`) live in
+the dependency-free leaf `pdf_constants`; both this module and `kundli_pdf`
+import them from there, so there is no circular import between the two.
 """
 
 from __future__ import annotations
@@ -47,10 +46,9 @@ try:
 except ImportError:
     LAL_KITAB_DATA = {}
 
-# Back-import shared constants from the facade. Resolved at call time so the
-# circular reference is fine — kundli_pdf.py defines these at the top of the
-# module before its `from .pdf_sections import ...` line fires.
-from app.services.kundli_pdf import (  # noqa: E402
+# Shared constants come from the dependency-free leaf module — no back-import
+# from the facade, so there is no circular reference to reason about.
+from app.services.pdf_constants import (
     BRAND,
     CHART_DESCRIPTIONS,
     LOGO_URL,
