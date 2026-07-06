@@ -1,16 +1,40 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+// Abort a request that stalls past this, so the UI never hangs forever on a
+// dropped connection. Overridable per call via RequestOptions.timeoutMs.
+const DEFAULT_TIMEOUT_MS = 15000;
+const RETRY_DELAY_MS = 400;
+
 interface RequestOptions {
   method?: string;
   body?: unknown;
   token?: string;
+  timeoutMs?: number;
+}
+
+const _delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const _isAbort = (err: unknown) => err instanceof DOMException && err.name === "AbortError";
+
+/** One fetch attempt with an AbortController-backed timeout. */
+async function _fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { method = "GET", body, token } = options;
+  const { method = "GET", body, token, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -20,14 +44,40 @@ export async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const url = `${API_URL}${endpoint}`;
+  const init: RequestInit = {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
-  });
+  };
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "Request failed" }));
+  // Retry transport failures (network drop / timeout) once — but only for GET,
+  // which is idempotent. A server that DID respond (any status, incl. 5xx) is
+  // handled below without a retry, so non-idempotent writes never double-fire.
+  const maxAttempts = method === "GET" ? 2 : 1;
+
+  let response: Response | undefined;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      response = await _fetchWithTimeout(url, init, timeoutMs);
+      break;
+    } catch (err) {
+      if (attempt < maxAttempts) {
+        await _delay(RETRY_DELAY_MS);
+        continue;
+      }
+      throw new Error(
+        _isAbort(err)
+          ? "Request timed out. Please try again."
+          : "Network error. Please check your connection and try again."
+      );
+    }
+  }
+  // maxAttempts >= 1, so the loop either assigned `response` or threw above.
+  const res = response as Response;
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: "Request failed" }));
     let message: string;
     if (typeof error.detail === "string") {
       message = error.detail;
@@ -35,12 +85,12 @@ export async function apiRequest<T>(
       // FastAPI validation errors: [{loc, msg, type}, ...]
       message = error.detail.map((e: { msg?: string }) => e.msg || "Validation error").join("; ");
     } else {
-      message = error.message || `HTTP ${response.status}`;
+      message = error.message || `HTTP ${res.status}`;
     }
     throw new Error(message);
   }
 
-  return response.json();
+  return res.json();
 }
 
 // ── Auth ──

@@ -119,6 +119,56 @@ describe("apiRequest", () => {
     const callArgs = fetchMock.mock.calls[0][1];
     expect(callArgs.body).toBeUndefined();
   });
+
+  it("passes an AbortSignal so the request can time out", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({}),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiRequest("/api/test");
+
+    const callArgs = fetchMock.mock.calls[0][1];
+    expect(callArgs.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("retries an idempotent GET once on a network error, then succeeds", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({ data: "ok" }) });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await apiRequest<{ data: string }>("/api/test");
+    expect(result).toEqual({ data: "ok" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("throws a friendly network message after a GET's retry also fails", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(apiRequest("/api/test")).rejects.toThrow("Network error");
+    expect(fetchMock).toHaveBeenCalledTimes(2); // GET retried once
+  });
+
+  it("does NOT retry a non-idempotent POST on a network error", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      apiRequest("/api/test", { method: "POST", body: { a: 1 } })
+    ).rejects.toThrow("Network error");
+    expect(fetchMock).toHaveBeenCalledTimes(1); // writes never double-fire
+  });
+
+  it("surfaces an aborted (timed-out) request as a friendly message", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new DOMException("aborted", "AbortError"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(apiRequest("/api/test")).rejects.toThrow("timed out");
+  });
 });
 
 describe("authApi", () => {
