@@ -529,3 +529,62 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
         result[p]["rank"] = rank
 
     return result
+
+
+# ── Display transform for the calculator ────────────────────────────────────
+_SB_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+
+
+def _rupa(virupa: float) -> float:
+    """Virūpa (Ṣaṣṭiāṁśa) → Rūpa. 1 Rūpa = 60 Virūpas."""
+    return round(virupa / 60.0, 2)
+
+
+def shadbala_table(chart: dict) -> dict:
+    """The six-fold strength per planet for the calculator, from the chart's
+    ``shadbala`` block. All values in Rūpas (the six balas sum to Total, which
+    is compared to the classical minimum requirement). Returns
+    ``{planets: [{planet, rank, balas{sthana,dig,kala,cheshta,naisargika,drik},
+      total, required, ratio, sufficient, sthana_parts{...}, kala_parts{...}}]}``.
+    """
+    sb = chart.get("shadbala") or {}
+    planets = []
+    for p in _SB_ORDER:
+        d = sb.get(p)
+        if not d:
+            continue
+        planets.append({
+            "planet": p,
+            "rank": d.get("rank"),
+            "balas": {
+                "sthana": _rupa(d["sthan_bala"]),
+                "dig": _rupa(d["dig_bala"]),
+                "kala": _rupa(d["kala_bala"]),
+                "cheshta": _rupa(d["chesta_bala"]),
+                "naisargika": _rupa(d["naisargeka_bala"]),
+                "drik": _rupa(d["drik_bala"]),
+            },
+            "total": d["shadbala_rupas"],
+            "required": d["min_requirement"],
+            "ratio": d["ratio"],
+            "sufficient": d["ratio"] >= 1.0,
+            "sthana_parts": {
+                "Uccha (exaltation)": _rupa(d["ochcha_bala"]),
+                "Saptavargaja (dignity)": _rupa(d["saptavargaja_bala"]),
+                "Ojayugma (odd/even)": _rupa(d["ojayugma_bala"]),
+                "Kendradi (angularity)": _rupa(d["kendra_bala"]),
+                "Drekkana (decanate)": _rupa(d["drekkana_bala"]),
+            },
+            "kala_parts": {
+                "Nathonnatha (day/night)": _rupa(d["nathonnatha_bala"]),
+                "Paksha (fortnight)": _rupa(d["paksha_bala"]),
+                "Tribhaga (day-third)": _rupa(d["thribhaga_bala"]),
+                "Abda (year lord)": _rupa(d["abda_bala"]),
+                "Masa (month lord)": _rupa(d["masa_bala"]),
+                "Vara (weekday lord)": _rupa(d["vara_bala"]),
+                "Hora (hour lord)": _rupa(d["hora_bala"]),
+                "Ayana (declination)": _rupa(d["ayana_bala"]),
+                "Yuddha (planetary war)": _rupa(d["yuddha_bala"]),
+            },
+        })
+    return {"planets": planets}

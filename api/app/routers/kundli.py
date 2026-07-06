@@ -35,6 +35,7 @@ from app.services.kundli_calculator import build_chart
 from app.services.kundli_calculator.argala import argala_analysis
 from app.services.kundli_calculator.ashtakavarga import ashtakavarga_table
 from app.services.kundli_calculator.degree_calculator import degree_analysis
+from app.services.kundli_calculator.shadbala import shadbala_table
 from app.services.kundli_calculator.vimsopaka import compute_vimsopaka
 from app.services.kundli_pdf import generate_pdf
 from app.services.report_sections import load_report_sections
@@ -280,6 +281,31 @@ f.onsubmit=async e=>{
 };
 f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit"));
 </script></div></body></html>"""
+
+
+@router.get("/shadbala")
+async def shadbala_endpoint(
+    dob: str = Query(..., description="Birth date YYYY-MM-DD"),
+    tob: str = Query("12:00", description="Birth time HH:MM (24h)"),
+    lat: float = Query(..., description="Birth latitude"),
+    lon: float = Query(..., description="Birth longitude"),
+):
+    """Shadbala (six-fold planetary strength) for a birth moment: Sthana, Dig,
+    Kala, Cheshta, Naisargika and Drik bala per planet (in Rupas), the total vs
+    the classical minimum requirement, and the ratio. Read-only, no DB write."""
+    from app.services.muhurta import build_muhurta_chart
+    try:
+        # Shadbala IS the point here — build the full chart with it.
+        chart = await run_in_threadpool(
+            build_muhurta_chart, dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=True
+        )
+        return shadbala_table(chart)
+    except Exception:
+        logger.exception("shadbala failed")
+        raise HTTPException(
+            status_code=422,
+            detail="Could not compute for these birth details. Please check the inputs.",
+        )
 
 
 @router.get("/ashtakavarga")

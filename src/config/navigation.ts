@@ -43,6 +43,7 @@ export const footerNav: Record<string, NavItem[]> = {
     { label: "Auspicious / Poison Degrees", href: "/calculators/degree-analysis" },
     { label: "Argala (Intervention)", href: "/calculators/argala" },
     { label: "Ashtakavarga", href: "/calculators/ashtakavarga" },
+    { label: "Shadbala", href: "/calculators/shadbala" },
     { label: "Birth Muhurta", href: "/muhurta" },
     { label: "Unshakable Charts", href: "/unshakable" },
   ],

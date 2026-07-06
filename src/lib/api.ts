@@ -421,6 +421,16 @@ export const kundliApi = {
     });
     return apiRequest<AshtakavargaResult>(`/api/kundli/ashtakavarga?${q.toString()}`);
   },
+
+  shadbala: (data: { dob: string; tob: string; lat: number; lon: number }) => {
+    const q = new URLSearchParams({
+      dob: data.dob,
+      tob: data.tob,
+      lat: String(data.lat),
+      lon: String(data.lon),
+    });
+    return apiRequest<ShadbalaResult>(`/api/kundli/shadbala?${q.toString()}`);
+  },
 };
 
 // ── Vimśopaka Bala calculator ──
@@ -554,6 +564,32 @@ export interface AshtakavargaResult {
   houses: AvHouse[];
   bav: AvBav[];
   prasthar: AvPrasthar[];
+}
+
+// ── Shadbala calculator ──
+export interface SbBalas {
+  sthana: number;
+  dig: number;
+  kala: number;
+  cheshta: number;
+  naisargika: number;
+  drik: number;
+}
+
+export interface SbPlanet {
+  planet: string;
+  rank: number;
+  balas: SbBalas; // the six balas, in Rupas
+  total: number; // Rupas (sum of the six)
+  required: number; // classical minimum, Rupas
+  ratio: number; // total / required
+  sufficient: boolean; // ratio >= 1
+  sthana_parts: Record<string, number>; // 5 sub-balas of Sthana
+  kala_parts: Record<string, number>; // 9 sub-balas of Kala
+}
+
+export interface ShadbalaResult {
+  planets: SbPlanet[];
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──
