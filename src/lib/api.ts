@@ -401,6 +401,16 @@ export const kundliApi = {
     });
     return apiRequest<DegreeAnalysisResult>(`/api/kundli/degree-analysis?${q.toString()}`);
   },
+
+  argalaAnalysis: (data: { dob: string; tob: string; lat: number; lon: number }) => {
+    const q = new URLSearchParams({
+      dob: data.dob,
+      tob: data.tob,
+      lat: String(data.lat),
+      lon: String(data.lon),
+    });
+    return apiRequest<ArgalaResult>(`/api/kundli/argala-analysis?${q.toString()}`);
+  },
 };
 
 // ── Vimśopaka Bala calculator ──
@@ -444,6 +454,22 @@ export interface DegreeAnalysisResult {
     vish_navamsa: number;
     mrityu_bhaga: number;
   };
+}
+
+// ── Argala (Jaimini intervention) calculator ──
+export interface ArgalaHouse {
+  house: number;
+  strength: number; // -100..+100; sign drives the colour (green +, red -)
+  positive: string[]; // benefics giving effective (śubha) argala
+  negative: string[]; // malefics giving effective (pāpa) argala
+  pos_weight: number;
+  neg_weight: number;
+}
+
+export interface ArgalaResult {
+  houses: ArgalaHouse[];
+  moon_bright: boolean;
+  shadbala_used: boolean;
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──

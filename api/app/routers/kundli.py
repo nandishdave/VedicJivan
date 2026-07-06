@@ -32,6 +32,7 @@ from app.models.kundli import KundliRequest
 # globals.
 from app.repositories.kundli_repository import KundliRepository
 from app.services.kundli_calculator import build_chart
+from app.services.kundli_calculator.argala import argala_analysis
 from app.services.kundli_calculator.degree_calculator import degree_analysis
 from app.services.kundli_calculator.vimsopaka import compute_vimsopaka
 from app.services.kundli_pdf import generate_pdf
@@ -300,6 +301,33 @@ async def degree_analysis_endpoint(
         return degree_analysis(chart)
     except Exception:
         logger.exception("degree-analysis failed")
+        raise HTTPException(
+            status_code=422,
+            detail="Could not compute for these birth details. Please check the inputs.",
+        )
+
+
+@router.get("/argala-analysis")
+async def argala_analysis_endpoint(
+    dob: str = Query(..., description="Birth date YYYY-MM-DD"),
+    tob: str = Query("12:00", description="Birth time HH:MM (24h)"),
+    lat: float = Query(..., description="Birth latitude"),
+    lon: float = Query(..., description="Birth longitude"),
+):
+    """Per-house Argala (Jaimini intervention) table for a birth moment. For each
+    of the 12 houses: the Shadbala-weighted signed strength % (green when net
+    benefic, red when net malefic), and the planets giving positive (śubha) vs
+    negative (pāpa) argala — counting only argalas that outweigh their virodha
+    counter. Read-only, no DB write."""
+    from app.services.muhurta import build_muhurta_chart
+    try:
+        # Shadbala is needed for the weighting — CPU-bound, off the event loop.
+        chart = await run_in_threadpool(
+            build_muhurta_chart, dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=True
+        )
+        return argala_analysis(chart)
+    except Exception:
+        logger.exception("argala-analysis failed")
         raise HTTPException(
             status_code=422,
             detail="Could not compute for these birth details. Please check the inputs.",
