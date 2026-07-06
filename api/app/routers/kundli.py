@@ -291,15 +291,31 @@ async def shadbala_endpoint(
     lon: float = Query(..., description="Birth longitude"),
 ):
     """Shadbala (six-fold planetary strength) for a birth moment: Sthana, Dig,
-    Kala, Cheshta, Naisargika and Drik bala per planet (in Rupas), the total vs
-    the classical minimum requirement, and the ratio. Read-only, no DB write."""
+    Kala, Cheshta, Naisargika and Drik bala per body (in Rupas), the total vs
+    the classical minimum requirement, and the ratio. Covers the 7 classical
+    planets, the 3 outer planets, and Rahu/Ketu (dispositor method — scored as
+    the sign-lord in its own sign at the node's house). Read-only, no DB write."""
     from app.services.muhurta import build_muhurta_chart
+    from app.services.kundli_calculator._core import get_julian_day
+    from app.services.kundli_calculator.shadbala import dispositor_shadbala
+
+    def _compute():
+        chart = build_muhurta_chart(dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=True)
+        # Rahu/Ketu via the dispositor method (extra shadbala runs, CPU-bound).
+        jd = get_julian_day(dob, tob, lat, lon)
+        sun_sunset = {"sunrise": chart.get("sunrise"), "sunset": chart.get("sunset")}
+        sb = dict(chart["shadbala"])
+        node_via = {}
+        for node in ("Rahu", "Ketu"):
+            lord, row = dispositor_shadbala(
+                chart["planets"], chart["lagna"], jd, dob, tob, node, sun_sunset
+            )
+            sb[node] = row
+            node_via[node] = lord
+        return shadbala_table({**chart, "shadbala": sb}, node_via=node_via)
+
     try:
-        # Shadbala IS the point here — build the full chart with it.
-        chart = await run_in_threadpool(
-            build_muhurta_chart, dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=True
-        )
-        return shadbala_table(chart)
+        return await run_in_threadpool(_compute)
     except Exception:
         logger.exception("shadbala failed")
         raise HTTPException(

@@ -190,7 +190,13 @@ export default function ShadbalaCalculatorPage() {
                           >
                             <td className="px-3 py-2 text-left font-semibold text-vedic-dark dark:text-white">
                               {p.planet}
-                              <span className="ml-1.5 text-xs font-normal text-gray-400">#{p.rank}</span>
+                              <span className="ml-1.5 text-xs font-normal text-gray-400">
+                                {p.method === "dispositor"
+                                  ? `via ${p.via}`
+                                  : p.method === "adapted"
+                                  ? "outer"
+                                  : `#${p.rank}`}
+                              </span>
                             </td>
                             {BALAS.map((b) => (
                               <td
@@ -240,8 +246,12 @@ export default function ShadbalaCalculatorPage() {
                 balas sum to the Total; <span className="font-semibold">Ratio = Total ÷ Required</span> —{" "}
                 <span className="font-semibold text-green-700 dark:text-green-400">green ≥ 1</span> is strong,{" "}
                 <span className="font-semibold text-red-700 dark:text-red-400">red &lt; 1</span> is weak. Dṛk
-                (aspect) bala can be negative when malefics aspect the planet. #rank is the strength order.
-                Guidance only — consult an astrologer.
+                (aspect) bala can be negative when malefics aspect the planet.{" "}
+                <span className="font-semibold">Rāhu/Ketu</span> use the dispositor method —{" "}
+                <span className="italic">via {"{"}lord{"}"}</span> means scored as the lord of the node&rsquo;s
+                sign, placed in its own sign at the node&rsquo;s house (Rāhu in Aquarius → Saturn, Ketu in Leo →
+                Sun). The three <span className="font-semibold">outer</span> planets use the engine&rsquo;s
+                adapted parameters. Guidance only — consult an astrologer.
               </p>
             </div>
           )}

@@ -5,6 +5,7 @@ import pytest
 from app.services.kundli_calculator.shadbala import shadbala_table
 
 _7 = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+_12 = _7 + ["Rahu", "Ketu", "Uranus", "Neptune", "Pluto"]
 
 
 def _planet(rupas=5.7, req=5.0, ratio=1.14, rank=1):
@@ -44,6 +45,15 @@ def test_planets_in_classical_order():
     assert [p["planet"] for p in out["planets"]] == _7
 
 
+def test_method_tags_classical_adapted_dispositor():
+    sb = {p: _planet() for p in _7 + ["Rahu", "Uranus"]}
+    out = shadbala_table({"shadbala": sb}, node_via={"Rahu": "Saturn"})
+    by = {p["planet"]: p for p in out["planets"]}
+    assert by["Sun"]["method"] == "classical" and by["Sun"]["via"] is None
+    assert by["Uranus"]["method"] == "adapted" and by["Uranus"]["via"] is None
+    assert by["Rahu"]["method"] == "dispositor" and by["Rahu"]["via"] == "Saturn"
+
+
 # ── endpoint (real ephemeris chart) ──
 _DOB, _TOB, _LAT, _LON = "1988-11-11", "12:55", 21.7333, 70.6167
 
@@ -56,12 +66,17 @@ async def test_shadbala_endpoint(client):
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert [p["planet"] for p in body["planets"]] == _7
+    assert [p["planet"] for p in body["planets"]] == _12  # 7 + nodes + 3 outer
+    by = {p["planet"]: p for p in body["planets"]}
+    # Rahu/Ketu via the dispositor method; outer planets adapted; rest classical.
+    assert by["Rahu"]["method"] == "dispositor" and by["Rahu"]["via"] in _7
+    assert by["Ketu"]["method"] == "dispositor" and by["Ketu"]["via"] in _7
+    assert by["Uranus"]["method"] == "adapted"
+    assert by["Sun"]["method"] == "classical"
     for p in body["planets"]:
         # the six balas should sum to the total (within rounding)
         assert abs(sum(p["balas"].values()) - p["total"]) < 0.6
         assert isinstance(p["sufficient"], bool)
-        assert 1 <= p["rank"] <= 7
         assert p["ratio"] == round(p["total"] / p["required"], 2)
 
 

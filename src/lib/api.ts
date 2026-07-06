@@ -578,6 +578,8 @@ export interface SbBalas {
 
 export interface SbPlanet {
   planet: string;
+  method: "classical" | "adapted" | "dispositor";
+  via: string | null; // dispositor lord for Rahu/Ketu (else null)
   rank: number;
   balas: SbBalas; // the six balas, in Rupas
   total: number; // Rupas (sum of the six)

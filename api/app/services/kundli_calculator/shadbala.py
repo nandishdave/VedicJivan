@@ -532,7 +532,15 @@ def calc_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
 
 
 # ── Display transform for the calculator ────────────────────────────────────
-_SB_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+_SB_ORDER = [
+    "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn",
+    "Rahu", "Ketu", "Uranus", "Neptune", "Pluto",
+]
+# Local sign-lord table (importing SIGN_LORDS from _core would be a cycle).
+_SIGN_LORDS_LOCAL = [
+    "Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury",
+    "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter",
+]
 
 
 def _rupa(virupa: float) -> float:
@@ -540,21 +548,57 @@ def _rupa(virupa: float) -> float:
     return round(virupa / 60.0, 2)
 
 
-def shadbala_table(chart: dict) -> dict:
-    """The six-fold strength per planet for the calculator, from the chart's
-    ``shadbala`` block. All values in Rūpas (the six balas sum to Total, which
-    is compared to the classical minimum requirement). Returns
-    ``{planets: [{planet, rank, balas{sthana,dig,kala,cheshta,naisargika,drik},
-      total, required, ratio, sufficient, sthana_parts{...}, kala_parts{...}}]}``.
+def dispositor_shadbala(planets: dict, lagna: dict, jd: float, dob: str, tob: str,
+                        node_body: str, sun_sunset: dict | None = None):
+    """Shadbala of a node (Rāhu/Ketu) by the DISPOSITOR method: the lord of the
+    node's sign, placed IN that sign (so always its own sign) at the node's house
+    and degree. Re-runs the engine with the lord relocated so its Sthāna
+    (own-sign), Dig (node's house), Saptavargaja and Dṛk reflect the node's
+    position, while Kāla/Cheṣṭā/Naisargika stay the lord's. Returns
+    ``(lord_name, shadbala_row)``.
     """
+    from app.services.kundli_calculator.divisional import calc_divisional_charts
+
+    node = planets[node_body]
+    lord = _SIGN_LORDS_LOCAL[node["sign"]]
+    moved = {p: dict(v) for p, v in planets.items()}
+    moved[lord] = {
+        **moved[lord],
+        "longitude": node["longitude"],
+        "sign": node["sign"],
+        "degree_in_sign": node["degree_in_sign"],
+        "house": node["house"],
+    }
+    div = calc_divisional_charts(moved, lagna)
+    sb = calc_shadbala(moved, lagna, jd, dob, tob, div, sun_sunset=sun_sunset)
+    return lord, sb[lord]
+
+
+def shadbala_table(chart: dict, node_via: dict | None = None) -> dict:
+    """The six-fold strength per body for the calculator, from the chart's
+    ``shadbala`` block. All values in Rūpas. Covers the 7 classical planets, the
+    3 outer planets (engine's adapted method), and Rāhu/Ketu. ``node_via`` maps a
+    node → its dispositor lord when the node row was computed by the dispositor
+    method (so the row is that lord's shadbala at the node's position); tag it
+    ``method="dispositor", via=<lord>``. Outer planets → ``method="adapted"``.
+    """
+    node_via = node_via or {}
     sb = chart.get("shadbala") or {}
     planets = []
     for p in _SB_ORDER:
         d = sb.get(p)
         if not d:
             continue
+        if p in node_via:
+            method, via = "dispositor", node_via[p]
+        elif p in ("Uranus", "Neptune", "Pluto"):
+            method, via = "adapted", None
+        else:
+            method, via = "classical", None
         planets.append({
             "planet": p,
+            "method": method,
+            "via": via,
             "rank": d.get("rank"),
             "balas": {
                 "sthana": _rupa(d["sthan_bala"]),
