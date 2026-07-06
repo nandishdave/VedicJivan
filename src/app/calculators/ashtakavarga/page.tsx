@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, ChevronDown } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PlaceOfBirthAutocomplete } from "@/components/booking/PlaceOfBirthAutocomplete";
-import { kundliApi, type AshtakavargaResult } from "@/lib/api";
+import { kundliApi, type AshtakavargaResult, type AvPrasthar } from "@/lib/api";
 
 const ORD = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th"];
 const PLANET_ABBR: Record<string, string> = {
@@ -31,6 +31,50 @@ function bavCell(v: number): string {
   return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
 }
 
+function PrastharTable({ pr, signs }: { pr: AvPrasthar; signs: string[] }) {
+  const total = pr.column_totals.reduce((a, b) => a + b, 0);
+  return (
+    <div className="overflow-x-auto px-3 py-2">
+      <table className="w-full text-center text-xs tabular-nums">
+        <thead>
+          <tr className="text-gray-500 dark:text-gray-400">
+            <th className="px-1.5 py-1 text-left font-medium">From</th>
+            {signs.map((s) => (
+              <th key={s} className="px-1 py-1 font-medium">{s}</th>
+            ))}
+            <th className="px-1.5 py-1 font-medium">ToT</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pr.rows.map((r) => (
+            <tr key={r.contributor} className="border-t border-gray-100 dark:border-white/5">
+              <td className="px-1.5 py-0.5 text-left font-semibold text-vedic-dark dark:text-white">
+                {r.contributor}
+              </td>
+              {r.cells.map((v, i) => (
+                <td
+                  key={i}
+                  className={`px-1 py-0.5 ${v ? "font-semibold text-green-700 dark:text-green-400" : "text-gray-300 dark:text-gray-600"}`}
+                >
+                  {v}
+                </td>
+              ))}
+              <td className="px-1.5 py-0.5 font-bold text-gray-600 dark:text-gray-300">{r.total}</td>
+            </tr>
+          ))}
+          <tr className="border-t border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5">
+            <td className="px-1.5 py-0.5 text-left text-[11px] font-bold uppercase text-gray-500">Total</td>
+            {pr.column_totals.map((v, i) => (
+              <td key={i} className="px-1 py-0.5 font-bold text-primary-600 dark:text-primary-400">{v}</td>
+            ))}
+            <td className="px-1.5 py-0.5 font-bold text-gray-600 dark:text-gray-300">{total}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function AshtakavargaCalculatorPage() {
   const [date, setDate] = useState("1988-11-11");
   const [time, setTime] = useState("12:55");
@@ -43,8 +87,17 @@ export default function AshtakavargaCalculatorPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<AshtakavargaResult | null>(null);
+  const [openPr, setOpenPr] = useState<Set<string>>(new Set());
 
   const canSubmit = !!date && !!time && !!place && !loading;
+
+  const togglePr = (planet: string) =>
+    setOpenPr((prev) => {
+      const next = new Set(prev);
+      if (next.has(planet)) next.delete(planet);
+      else next.add(planet);
+      return next;
+    });
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,6 +289,49 @@ export default function AshtakavargaCalculatorPage() {
                   tends to give better results where that house holds{" "}
                   <span className="font-semibold text-green-700 dark:text-green-400">more of its own bindus</span>{" "}
                   (and the Sarva score is high). Guidance only — consult an astrologer.
+                </p>
+              </div>
+
+              {/* Prastharashtakavarga */}
+              <div className="mt-6 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-dark-surface-card">
+                <div className="border-b border-gray-100 px-4 py-3 dark:border-white/10">
+                  <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Prastharashtakavarga{" "}
+                    <span className="font-normal normal-case">(who grants each bindu — tap a planet)</span>
+                  </h2>
+                </div>
+                <div className="divide-y divide-gray-100 dark:divide-white/10">
+                  {result.prasthar.map((pr) => {
+                    const open = openPr.has(pr.planet);
+                    const total = pr.column_totals.reduce((a, b) => a + b, 0);
+                    return (
+                      <div key={pr.planet}>
+                        <button
+                          type="button"
+                          onClick={() => togglePr(pr.planet)}
+                          aria-expanded={open}
+                          className="flex w-full items-center justify-between px-4 py-2.5 text-left hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:hover:bg-white/5"
+                        >
+                          <span className="font-semibold text-vedic-dark dark:text-white">{pr.planet}</span>
+                          <span className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                            total {total}
+                            <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+                          </span>
+                        </button>
+                        {open && (
+                          <div className="bg-gray-50/60 dark:bg-white/5">
+                            <PrastharTable pr={pr} signs={result.signs} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="border-t border-gray-100 px-4 py-4 text-xs leading-relaxed text-gray-500 dark:border-white/10 dark:text-gray-400">
+                  Each cell is <span className="font-semibold">1</span> if that contributor (row) grants
+                  a bindu to the planet in that sign (column, Aries→Pisces). The bottom{" "}
+                  <span className="font-semibold">Total</span> row is the planet&rsquo;s
+                  Bhinnashtakavarga by sign — it sums to the planet&rsquo;s fixed total (Sun 48 … Saturn 39).
                 </p>
               </div>
             </>

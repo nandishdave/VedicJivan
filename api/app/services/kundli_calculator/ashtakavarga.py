@@ -106,7 +106,13 @@ _SIGN_NAMES = [
     "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
     "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
 ]
+_SIGN_ABBR = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"]
 _AV_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+# The 8 contributors (7 planets + Lagna) with the short labels the tables print.
+_CONTRIB_ABBR = [
+    ("Sun", "Su"), ("Moon", "Mo"), ("Mars", "Ma"), ("Mercury", "Me"),
+    ("Jupiter", "Ju"), ("Venus", "Ve"), ("Saturn", "Sa"), ("Lagna", "As"),
+]
 
 
 def ashtakavarga_table(chart: dict) -> dict:
@@ -139,9 +145,26 @@ def ashtakavarga_table(chart: dict) -> dict:
             "total": sum(row),
             "per_house": [row[sign_of(h)] for h in range(1, 13)],
         })
+
+    # Prastharashtakavarga — the per-planet 8×12 audit matrix (by SIGN, the
+    # classical layout): rows = the 8 contributors, columns = Aries…Pisces.
+    prasthar_src = av.get("prasthar", {})
+    prasthar = []
+    for planet in _AV_PLANETS:
+        pdata = prasthar_src.get(planet, {})
+        rows = []
+        col_totals = [0] * 12
+        for contrib, abbr in _CONTRIB_ABBR:
+            cells = pdata.get(contrib, [0] * 12)
+            rows.append({"contributor": abbr, "cells": cells, "total": sum(cells)})
+            col_totals = [col_totals[i] + cells[i] for i in range(12)]
+        prasthar.append({"planet": planet, "rows": rows, "column_totals": col_totals})
+
     return {
         "lagna_sign": lagna_sign,
         "grand_total": av.get("grand_total", sum(totals)),
+        "signs": _SIGN_ABBR,
         "houses": houses,
         "bav": bav,
+        "prasthar": prasthar,
     }

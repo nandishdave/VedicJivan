@@ -39,6 +39,22 @@ def test_bav_totals_are_the_fixed_classical_values():
         assert all(0 <= x <= 8 for x in b["per_house"])  # a planet's BAV cell is 0..8
 
 
+def test_prasthar_matrix_shape_and_invariants():
+    planets = {p: {"sign": i} for i, p in enumerate(_7)}
+    av = calc_ashtakavarga(planets, lagna_sign=0)
+    out = ashtakavarga_table({"lagna": {"sign": 0}, "ashtakavarga": av})
+    assert out["signs"] == ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"]
+    assert len(out["prasthar"]) == 7
+    for pr in out["prasthar"]:
+        assert len(pr["rows"]) == 8  # 7 planets + Lagna ("As")
+        assert [r["contributor"] for r in pr["rows"]] == ["Su", "Mo", "Ma", "Me", "Ju", "Ve", "Sa", "As"]
+        for r in pr["rows"]:
+            assert all(v in (0, 1) for v in r["cells"])  # each cell is a single bindu
+            assert r["total"] == sum(r["cells"])
+        # each column total is the planet's BAV for that sign; they sum to the total
+        assert sum(pr["column_totals"]) == _EXPECTED[pr["planet"]]
+
+
 # ── endpoint (real ephemeris chart) ──
 _DOB, _TOB, _LAT, _LON = "1988-11-11", "12:55", 21.7333, 70.6167
 

@@ -535,11 +535,25 @@ export interface AvBav {
   per_house: number[]; // Bhinnashtakavarga bindus per house 1..12 (each 0–8)
 }
 
+export interface AvPrastharRow {
+  contributor: string; // Su/Mo/Ma/Me/Ju/Ve/Sa/As
+  cells: number[]; // 0/1 per sign (Aries…Pisces)
+  total: number; // row sum
+}
+
+export interface AvPrasthar {
+  planet: string;
+  rows: AvPrastharRow[]; // 8 contributor rows
+  column_totals: number[]; // = this planet's BAV by sign
+}
+
 export interface AshtakavargaResult {
   lagna_sign: number;
   grand_total: number; // 337
+  signs: string[]; // sign abbreviations for the Prastara columns
   houses: AvHouse[];
   bav: AvBav[];
+  prasthar: AvPrasthar[];
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──
