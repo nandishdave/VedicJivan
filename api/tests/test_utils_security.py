@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from jose import jwt
+import jwt
 
 from app.config import settings
 from app.utils.security import (

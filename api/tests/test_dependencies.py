@@ -60,7 +60,7 @@ async def test_get_current_user_invalid_token():
 
 async def test_get_current_user_expired_token():
     from datetime import datetime, timedelta, timezone
-    from jose import jwt
+    import jwt
     from app.config import settings
 
     data = {
