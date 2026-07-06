@@ -406,8 +406,12 @@ export default function ArgalaCalculatorPage() {
                 <span className="font-semibold">neutralises</span> it, and a stronger counter{" "}
                 <span className="font-semibold">reverses</span> it (a defeated benefic argala becomes a
                 loss, a defeated malefic argala becomes relief). Each argala then scores{" "}
-                <span className="font-semibold">Dignity</span> toward the house (Exalted +2 · Own +1.5 ·
-                Friend +1 · Enemy −1, or +0.5 if a functional benefic · Debilitated −2) plus{" "}
+                <span className="font-semibold">Dignity</span> toward the house — own/exalted/debilitated
+                are fixed (+1.5/+2/−2); the friend/enemy tier uses the chart&rsquo;s{" "}
+                <span className="font-semibold">compound (panchadha)</span> friendship with the
+                sign-lord — the same table the report shows (Best Friend +1.5 · Friend +1 · Neutral 0
+                · Enemy −1 · Bitter Enemy −1.5; enemy softened to +0.5 for a functional benefic) —
+                plus{" "}
                 <span className="font-semibold">Role-fit</span> (benefic on kendra/trikona/2/11, or
                 malefic on upachaya 3/6/10/11, +1; malefic on 8/12, −1), weighted by{" "}
                 <span className="font-semibold">Shadbala</span>. A strong exalted malefic on a career

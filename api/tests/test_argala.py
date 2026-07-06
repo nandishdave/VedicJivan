@@ -7,19 +7,53 @@ Virodha counter (survive fraction). Unit tests assert at the argala-row level
 """
 import pytest
 
-from app.services.kundli_calculator.argala import argala_analysis, planet_positions
+from app.services.kundli_calculator.argala import (
+    _dignity_score,
+    argala_analysis,
+    planet_positions,
+)
 
 _ALL9 = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
 
 
 def _chart(house_of: dict, lagna_sign: int = 0, paksha: str = "Shukla",
            shadbala: dict | None = None, default_house: int = 1) -> dict:
-    planets = {p: {"house": house_of.get(p, default_house)} for p in _ALL9}
+    # whole-sign: sign = (lagna_sign + house - 1) % 12 — set so calc_friendships
+    # (used for the compound-dignity tier) has positions to work with.
+    planets = {}
+    for p in _ALL9:
+        h = house_of.get(p, default_house)
+        planets[p] = {"house": h, "sign": (lagna_sign + h - 1) % 12}
     chart = {"planets": planets, "panchanga": {"paksha": paksha},
              "lagna": {"sign": lagna_sign}}
     if shadbala is not None:
         chart["shadbala"] = {p: {"total_shadbala": v} for p, v in shadbala.items()}
     return chart
+
+
+# ── dignity scoring (pure, deterministic) ──
+def test_dignity_uses_compound_friendship_not_natural():
+    # Mercury in Aquarius (lord Saturn): naturally NEUTRAL, but the chart's
+    # compound says Friend -> the argala dignity follows the compound (+1).
+    assert _dignity_score("Mercury", 10, {"Mercury": {"Saturn": "Friend"}}, set()) == ("Friend", 1.0)
+
+
+def test_dignity_five_level_scale():
+    cmp = lambda label: {"Mercury": {"Saturn": label}}  # Aquarius lord = Saturn
+    assert _dignity_score("Mercury", 10, cmp("Best Friend"), set()) == ("Best Friend", 1.5)
+    assert _dignity_score("Mercury", 10, cmp("Bitter Enemy"), set()) == ("Bitter Enemy", -1.5)
+
+
+def test_dignity_functional_benefic_softens_enemy_tier():
+    # Saturn (a functional benefic for Taurus) in an enemy-tier compound sign
+    # is softened to +0.5 instead of the full negative.
+    label, score = _dignity_score("Saturn", 4, {"Saturn": {"Sun": "Bitter Enemy"}}, {"Saturn"})
+    assert score == 0.5
+
+
+def test_dignity_fixed_overrides_compound():
+    # Saturn exalted in Libra (6) -> fixed +2, compound ignored.
+    assert _dignity_score("Saturn", 6, {"Saturn": {"Venus": "Bitter Enemy"}}, set()) == ("Exalted", 2.0)
 
 
 def _house(out: dict, n: int) -> dict:
@@ -61,15 +95,6 @@ def test_malefic_role_fit_by_house_type():
     assert _arg_row(on_upachaya, 11, "Saturn")["role_fit"] == 1.0
 
 
-def test_functional_benefic_in_enemy_sign_softens_to_positive():
-    # Taurus lagna (Saturn is a functional benefic); Saturn in the 2nd throws
-    # (11th-)argala on the 4th (Leo, Saturn's enemy) -> dignity +0.5 not -1.
-    out = argala_analysis(_chart({"Saturn": 2}, lagna_sign=1, shadbala={"Saturn": 2.0}))
-    row = _arg_row(out, 4, "Saturn")
-    assert row is not None
-    assert row["dignity"] == "Enemy Sign" and row["dignity_score"] == 0.5
-
-
 def test_virodha_overpower_reverses_to_negative():
     # Jupiter in the 11th throws a POSITIVE argala on the 1st, but Saturn in the
     # 3rd (its virodha) is 3x stronger -> survive -1 -> the argala REVERSES:
@@ -87,17 +112,19 @@ def test_virodha_overpower_reverses_to_negative():
     assert "Jupiter" in h1["negative"] and h1["verdict"] == "negative"
 
 
-def test_defeated_malefic_reverses_to_relief():
-    # A MALEFIC argala that is overpowered flips to POSITIVE (the harm is
-    # blocked). Saturn in the 1st throws (2nd-)argala on the 12th (dusthana ->
-    # role_fit -1 -> negative polarity); Mars in the 11th (its virodha) is
-    # stronger -> survive -1 -> Saturn's contribution flips positive.
-    out = argala_analysis(_chart({"Saturn": 1, "Mars": 11}, lagna_sign=0,
+def test_defeated_negative_argala_reverses_to_relief():
+    # A NEGATIVE argala (Debilitated Jupiter -> polarity -1) that is overpowered
+    # flips to POSITIVE. Aries lagna: Jupiter in the 11th throws (2nd-)argala on
+    # the 10th (Capricorn, where Jupiter is DEBILITATED); a stronger counter in
+    # the 9th (its virodha) reverses it. Debilitation is fixed, so the compound
+    # tier can't perturb this.
+    out = argala_analysis(_chart({"Jupiter": 11, "Saturn": 9}, lagna_sign=0,
                                  default_house=5,
-                                 shadbala={"Saturn": 1.0, "Mars": 3.0}))
-    row = _arg_row(out, 12, "Saturn")
+                                 shadbala={"Jupiter": 1.0, "Saturn": 3.0}))
+    row = _arg_row(out, 10, "Jupiter")
     assert row is not None
-    assert row["polarity"] < 0 and row["contribution"] > 0  # malefic argala -> relief
+    assert row["dignity"] == "Debilitated" and row["polarity"] < 0
+    assert row["contribution"] > 0  # negative argala defeated -> relief
 
 
 def test_no_argala_is_null():

@@ -18,9 +18,11 @@ argala becomes relief (positive).
 
 Quality of each surviving argala (planet G on house H, sign S) — a signed
 polarity, magnitude = Shadbala × survive:
-  (1) Dignity toward the house — dignity(G, S): Exalted +2 · Own/Moola +1.5 ·
-      Friend +1 · Neutral 0 · Debilitated -2 · Enemy +0.5 if G a functional
-      benefic else -1.
+  (1) Dignity toward the house — dignity(G, S): Own/exalted/moola/debilitated
+      are fixed (+1.5/+2/+1.5/-2); the friend/neutral/enemy tier uses the
+      chart's 5-fold COMPOUND (panchadha) relationship with the sign-lord
+      (Best Friend +1.5 · Friend +1 · Neutral 0 · Enemy -1 · Bitter Enemy -1.5),
+      with enemy-tier softened to +0.5 for a functional benefic.
   (2) Role-fit — natural nature × house type: natural benefic on
       kendra/trikona/2/11 +1, on 8/12 neutral; natural malefic on upachaya
       (3/6/10/11) +1, on 8/12 -1.
@@ -32,7 +34,12 @@ zero) · positive · negative.
 
 from __future__ import annotations
 
-from app.services.kundli_calculator._core import SIGN_NAMES, _get_dignity
+from app.services.kundli_calculator._core import (
+    SIGN_LORDS,
+    SIGN_NAMES,
+    _get_dignity,
+    calc_friendships,
+)
 
 _ARG_PLANETS = [
     "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu",
@@ -53,14 +60,28 @@ _UPACHAYA = {3, 6, 10, 11}
 _DUSTHANA = {8, 12}
 _GOOD_FOR_BENEFIC = _KENDRA | _TRIKONA | {2, 11}
 
-_DIGNITY_SCORE = {
+# Fixed positional dignities (chart-independent) — highest priority.
+_FIXED_DIGNITY = {
     "Exalted": 2.0,
     "Moolatrikona": 1.5,
     "Own Sign": 1.5,
-    "Friendly Sign": 1.0,
-    "Neutral Sign": 0.0,
-    "Enemy Sign": -1.0,
     "Debilitated": -2.0,
+}
+# The friend/neutral/enemy tier uses the chart's 5-fold COMPOUND (panchadha)
+# relationship with the sign-lord — same table the report's friendship section
+# shows — so it reflects natural + temporary friendship, not natural alone.
+_COMPOUND_DIGNITY = {
+    "Best Friend": 1.5,
+    "Friend": 1.0,
+    "Neutral": 0.0,
+    "Enemy": -1.0,
+    "Bitter Enemy": -1.5,
+}
+# Fallback for Rāhu/Ketu, which aren't in the compound matrix: map natural.
+_NAT_TO_COMPOUND = {
+    "Friendly Sign": "Friend",
+    "Neutral Sign": "Neutral",
+    "Enemy Sign": "Enemy",
 }
 
 
@@ -70,6 +91,22 @@ def _functional_benefics(lagna_sign: int) -> set:
 
 def _house_from(reference: int, n: int) -> int:
     return ((reference - 1 + n - 1) % 12) + 1
+
+
+def _dignity_score(planet: str, sign: int, compound: dict, fb: set) -> tuple[str, float]:
+    """(label, score) for a planet in a sign. Own/exalted/moola/debilitated are
+    fixed positional dignities; the friend/neutral/enemy tier uses the chart's
+    5-fold COMPOUND (panchadha) relationship with the sign-lord (natural +
+    temporary), softened to +0.5 for a functional benefic in an enemy-tier sign.
+    Rāhu/Ketu (absent from the compound matrix) fall back to the natural tier."""
+    base = _get_dignity(planet, sign)
+    if base in _FIXED_DIGNITY:
+        return base, _FIXED_DIGNITY[base]
+    lord = SIGN_LORDS[sign]
+    label = compound.get(planet, {}).get(lord) or _NAT_TO_COMPOUND.get(base, "Neutral")
+    if label in ("Enemy", "Bitter Enemy") and planet in fb:
+        return label, 0.5  # functional-benefic softening (layers 3-4)
+    return label, _COMPOUND_DIGNITY.get(label, 0.0)
 
 
 def planet_positions(chart: dict) -> list[dict]:
@@ -123,10 +160,12 @@ def argala_analysis(chart: dict) -> dict:
             return -1.0
         return 0.0
 
-    def dignity_score(planet: str, dignity: str) -> float:
-        if dignity == "Enemy Sign":
-            return 0.5 if planet in fb else -1.0
-        return _DIGNITY_SCORE.get(dignity, 0.0)
+    # Chart's 5-fold compound (panchadha) friendship — the same matrix the
+    # report's friendship section shows. Used for the friend/neutral/enemy tier.
+    try:
+        compound = calc_friendships(P).get("compound", {})
+    except Exception:
+        compound = {}
 
     sb = chart.get("shadbala") or {}
     classical = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
@@ -165,8 +204,7 @@ def argala_analysis(chart: dict) -> dict:
 
             argala_rows = []
             for p in arg_planets:
-                dig = _get_dignity(p, ref_sign)
-                d = dignity_score(p, dig)
+                dig, d = _dignity_score(p, ref_sign, compound, fb)
                 r = role_fit(p, reference)
                 polarity = d + r
                 contribution = wt[p] * polarity * survive
