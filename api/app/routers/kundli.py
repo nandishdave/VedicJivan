@@ -148,9 +148,9 @@ async def preview_kundli(
                 )
             },
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Kundli preview failed")
-        raise HTTPException(status_code=500, detail=f"Preview failed: {str(e)[:200]}")
+        raise HTTPException(status_code=500, detail="Preview failed. Please try again.")
 
 
 @router.get("/vimsopaka")
@@ -173,9 +173,12 @@ async def vimsopaka(
         # compute_vimsopaka is CPU-heavy (16 divisional charts); run it off the
         # event loop so it doesn't stall the 0.25-vCPU async worker under load.
         report = await run_in_threadpool(compute_vimsopaka, dob, tob, lat, lon)
-    except Exception as e:
+    except Exception:
         logger.exception("Vimsopaka calculation failed")
-        raise HTTPException(status_code=422, detail=f"Could not compute: {str(e)[:200]}")
+        raise HTTPException(
+            status_code=422,
+            detail="Could not compute for these birth details. Please check the inputs.",
+        )
     if not detail:
         for p in report["planets"].values():
             p.pop("vargas", None)
@@ -295,9 +298,12 @@ async def degree_analysis_endpoint(
             build_muhurta_chart, dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=False
         )
         return degree_analysis(chart)
-    except Exception as e:
+    except Exception:
         logger.exception("degree-analysis failed")
-        raise HTTPException(status_code=422, detail=f"Could not compute: {str(e)[:200]}")
+        raise HTTPException(
+            status_code=422,
+            detail="Could not compute for these birth details. Please check the inputs.",
+        )
 
 
 @router.get("/degree-analysis/page", response_class=HTMLResponse)

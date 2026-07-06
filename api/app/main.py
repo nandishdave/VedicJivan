@@ -64,7 +64,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins(),
-    allow_credentials=True,
+    # Auth is Bearer-token in the Authorization header, never cookies, so
+    # credentialed (cookie) CORS is unnecessary — and enabling it forbids the
+    # "*" origin fallback. Keep it off to shrink the CSRF surface.
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -1,3 +1,4 @@
+import hmac
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -25,7 +26,11 @@ async def send_reminders(
     use_case: SendBookingReminders = Depends(_send_reminders_use_case),
 ):
     """Send 24h reminder emails for tomorrow's confirmed bookings."""
-    if not settings.INTERNAL_SECRET or x_internal_secret != settings.INTERNAL_SECRET:
+    # Constant-time compare so a timing side-channel can't be used to recover
+    # the secret byte-by-byte. Short-circuit if the server has no secret set.
+    if not settings.INTERNAL_SECRET or not hmac.compare_digest(
+        x_internal_secret, settings.INTERNAL_SECRET
+    ):
         raise HTTPException(status_code=403, detail="Forbidden")
 
     tomorrow = (date.today() + timedelta(days=1)).isoformat()

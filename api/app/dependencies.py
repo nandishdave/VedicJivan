@@ -60,8 +60,16 @@ async def get_current_user(authorization: str = Header(...)):
 
     db = get_db()
     from bson import ObjectId
+    from bson.errors import InvalidId
 
-    user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
+    # A syntactically-valid but malformed `sub` (or a missing one) must be a
+    # 401, not an unguarded ObjectId() crash surfacing as a 500.
+    try:
+        oid = ObjectId(payload.get("sub"))
+    except (InvalidId, TypeError):
+        raise UnauthorizedError("Invalid or expired token")
+
+    user = await db.users.find_one({"_id": oid})
     if not user:
         raise UnauthorizedError("User not found")
 

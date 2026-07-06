@@ -44,7 +44,8 @@ async def test_preview_disabled_in_production(client):
 
 @pytest.mark.asyncio
 async def test_preview_returns_500_when_calculation_fails(client):
-    """A swisseph or PDF failure surfaces as a 500 with the error truncated."""
+    """A swisseph or PDF failure surfaces as a generic 500 — the raw exception
+    text is logged server-side, never echoed to the client."""
     with (
         patch.dict(os.environ, {"APP_ENV": "staging"}),
         patch("app.routers.kundli.build_chart", side_effect=ValueError("bad lat 999")),
@@ -52,7 +53,9 @@ async def test_preview_returns_500_when_calculation_fails(client):
     ):
         resp = await client.get("/api/kundli/preview")
     assert resp.status_code == 500
-    assert "bad lat 999" in resp.json()["detail"]
+    detail = resp.json()["detail"]
+    assert "bad lat 999" not in detail  # no internal-detail leak
+    assert "Preview failed" in detail
 
 
 @pytest.mark.asyncio

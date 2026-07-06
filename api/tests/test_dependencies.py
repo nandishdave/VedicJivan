@@ -79,6 +79,14 @@ async def test_get_current_user_refresh_token_rejected():
         await get_current_user(f"Bearer {token}")
 
 
+async def test_get_current_user_malformed_sub_is_401_not_500():
+    # A signed access token whose `sub` is not a valid ObjectId must raise
+    # UnauthorizedError (401), not crash ObjectId() into a 500.
+    token = create_access_token({"sub": "not-a-valid-objectid"})
+    with pytest.raises(UnauthorizedError):
+        await get_current_user(f"Bearer {token}")
+
+
 async def test_get_current_user_user_not_in_db():
     token = create_access_token({"sub": str(USER_ID)})
     mock_db = MagicMock()
