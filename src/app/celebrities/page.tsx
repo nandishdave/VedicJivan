@@ -26,10 +26,15 @@ export default function CelebritiesPage() {
       </div>
 
       {/* A–Z bar */}
-      <div className="mb-8 flex flex-wrap justify-center gap-1.5">
+      <div
+        className="mb-8 flex flex-wrap justify-center gap-1.5"
+        role="group"
+        aria-label="Filter by first letter of surname"
+      >
         <button
           onClick={() => setLetter(null)}
-          className={`rounded-md px-3 py-1.5 text-sm font-semibold ${
+          aria-pressed={letter === null}
+          className={`rounded-md px-3 py-1.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
             letter === null ? "bg-primary-600 text-white" : "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300"
           }`}
         >
@@ -42,7 +47,9 @@ export default function CelebritiesPage() {
               key={l}
               disabled={!on}
               onClick={() => setLetter(l)}
-              className={`h-8 w-8 rounded-md text-sm font-semibold ${
+              aria-pressed={letter === l}
+              aria-label={`Filter by surnames starting with ${l}`}
+              className={`h-8 w-8 rounded-md text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
                 letter === l
                   ? "bg-primary-600 text-white"
                   : on
