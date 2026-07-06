@@ -27,25 +27,47 @@ _ARG_PLANETS = [
 _ARG_PAIRS = ((2, 12), (4, 10), (5, 9), (11, 3))
 _NATURAL_BENEFIC = {"Jupiter", "Venus", "Mercury"}
 
+# Functional (lagna-specific) benefics — the two-group scheme also used by the
+# fame model (chart_strength._functional_benefics): for the ascendants
+# Ta/Ge/Vi/Li/Cp/Aq, Saturn/Venus/Mercury are the functional benefics; for the
+# other six, Sun/Moon/Mars/Jupiter. Rāhu/Ketu are in neither -> malefic.
+_FB_A = {"Saturn", "Venus", "Mercury"}
+_FB_B = {"Sun", "Moon", "Mars", "Jupiter"}
+_FB_A_SIGNS = {1, 2, 5, 6, 9, 10}  # Taurus, Gemini, Virgo, Libra, Capricorn, Aquarius
+
+
+def _functional_benefics(lagna_sign: int) -> set:
+    return _FB_A if lagna_sign in _FB_A_SIGNS else _FB_B
+
 
 def _house_from(reference: int, n: int) -> int:
     """The house that is ``n``-th (1-indexed) from ``reference`` (whole-sign)."""
     return ((reference - 1 + n - 1) % 12) + 1
 
 
-def argala_analysis(chart: dict) -> dict:
+def argala_analysis(chart: dict, functional: bool = False) -> dict:
     """Per-house argala table. Returns
     ``{"houses": [{house, strength, positive, negative, pos_weight, neg_weight}],
-       "moon_bright": bool, "shadbala_used": bool}``.
+       "moon_bright": bool, "shadbala_used": bool, "functional": bool}``.
+
+    ``functional=False`` (default) classifies interveners by NATURAL benefic/
+    malefic nature (Jup/Ven/Mer + bright-fortnight Moon). ``functional=True``
+    uses the lagna-specific functional-benefic scheme (paksha-independent).
     """
     P = chart["planets"]
     paksha = (chart.get("panchanga") or {}).get("paksha", "")
     moon_bright = paksha == "Shukla"
 
-    def is_benefic(planet: str) -> bool:
-        if planet == "Moon":
-            return moon_bright
-        return planet in _NATURAL_BENEFIC
+    if functional:
+        fb = _functional_benefics((chart.get("lagna") or {}).get("sign", 0))
+
+        def is_benefic(planet: str) -> bool:
+            return planet in fb
+    else:
+        def is_benefic(planet: str) -> bool:
+            if planet == "Moon":
+                return moon_bright
+            return planet in _NATURAL_BENEFIC
 
     # Shadbala weight per planet. Fall back to the classical average (or 1.0)
     # for any body without a Shadbala entry (Rahu/Ketu, or a cheap chart).
@@ -93,4 +115,5 @@ def argala_analysis(chart: dict) -> dict:
         "houses": houses,
         "moon_bright": moon_bright,
         "shadbala_used": bool(sb),
+        "functional": functional,
     }

@@ -70,14 +70,14 @@ export default function ArgalaCalculatorPage() {
     lon: 70.6167,
   });
   const [placeInput, setPlaceInput] = useState("Jetpur, Gujarat, India");
+  const [mode, setMode] = useState<"natural" | "functional">("natural");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ArgalaResult | null>(null);
 
   const canSubmit = !!date && !!time && !!place && !loading;
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const run = async (m: "natural" | "functional") => {
     if (!place) {
       setError("Please choose a birth place.");
       return;
@@ -85,7 +85,13 @@ export default function ArgalaCalculatorPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await kundliApi.argalaAnalysis({ dob: date, tob: time, lat: place.lat, lon: place.lon });
+      const res = await kundliApi.argalaAnalysis({
+        dob: date,
+        tob: time,
+        lat: place.lat,
+        lon: place.lon,
+        functional: m === "functional",
+      });
       setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not calculate. Check the inputs.");
@@ -93,6 +99,17 @@ export default function ArgalaCalculatorPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    run(mode);
+  };
+
+  // Toggling re-runs immediately when a result is already on screen.
+  const onMode = (m: "natural" | "functional") => {
+    setMode(m);
+    if (result && !loading) run(m);
   };
 
   return (
@@ -154,6 +171,39 @@ export default function ArgalaCalculatorPage() {
                 }}
               />
             </div>
+            {/* Benefic/malefic scheme toggle */}
+            <div className="sm:col-span-2">
+              <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Benefic / malefic scheme
+              </span>
+              <div
+                role="group"
+                aria-label="Benefic and malefic classification scheme"
+                className="inline-flex rounded-lg border border-gray-200 p-0.5 dark:border-white/10"
+              >
+                {(["natural", "functional"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => onMode(m)}
+                    aria-pressed={mode === m}
+                    className={`rounded-md px-3.5 py-1.5 text-sm font-semibold capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+                      mode === m
+                        ? "bg-primary-600 text-white"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                {mode === "natural"
+                  ? "Natural: Jupiter, Venus, Mercury (+ bright-fortnight Moon) are benefic."
+                  : "Functional: benefic/malefic by your ascendant group (lagna-specific)."}
+              </p>
+            </div>
+
             <div className="sm:col-span-2">
               <button
                 type="submit"
@@ -220,10 +270,13 @@ export default function ArgalaCalculatorPage() {
                 interveners, so <span className="font-semibold text-green-700 dark:text-green-400">+100%</span> means
                 every effective argala is a strong benefic and{" "}
                 <span className="font-semibold text-red-700 dark:text-red-400">−100%</span> every one a strong
-                malefic. Only argalas that outweigh their Virodha (counter) house are counted; the Moon is
-                treated as benefic only in the bright (Shukla) fortnight
-                {result.moon_bright ? " — bright here" : " — waning here"}. Guidance only — consult an
-                astrologer.
+                malefic. Only argalas that outweigh their Virodha (counter) house are counted.{" "}
+                {result.functional
+                  ? "Benefic/malefic here follows the lagna-specific functional scheme."
+                  : `Natural benefics — the Moon counts as benefic only in the bright (Shukla) fortnight${
+                      result.moon_bright ? " — bright here" : " — waning here"
+                    }.`}{" "}
+                Guidance only — consult an astrologer.
               </p>
             </div>
           )}

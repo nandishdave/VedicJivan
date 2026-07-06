@@ -402,12 +402,19 @@ export const kundliApi = {
     return apiRequest<DegreeAnalysisResult>(`/api/kundli/degree-analysis?${q.toString()}`);
   },
 
-  argalaAnalysis: (data: { dob: string; tob: string; lat: number; lon: number }) => {
+  argalaAnalysis: (data: {
+    dob: string;
+    tob: string;
+    lat: number;
+    lon: number;
+    functional?: boolean;
+  }) => {
     const q = new URLSearchParams({
       dob: data.dob,
       tob: data.tob,
       lat: String(data.lat),
       lon: String(data.lon),
+      functional: String(!!data.functional),
     });
     return apiRequest<ArgalaResult>(`/api/kundli/argala-analysis?${q.toString()}`);
   },
@@ -470,6 +477,7 @@ export interface ArgalaResult {
   houses: ArgalaHouse[];
   moon_bright: boolean;
   shadbala_used: boolean;
+  functional: boolean; // false = natural benefics, true = lagna-specific functional
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──

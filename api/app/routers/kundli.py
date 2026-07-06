@@ -313,19 +313,23 @@ async def argala_analysis_endpoint(
     tob: str = Query("12:00", description="Birth time HH:MM (24h)"),
     lat: float = Query(..., description="Birth latitude"),
     lon: float = Query(..., description="Birth longitude"),
+    functional: bool = Query(
+        False, description="Classify by lagna-specific functional benefics/malefics instead of natural"
+    ),
 ):
     """Per-house Argala (Jaimini intervention) table for a birth moment. For each
     of the 12 houses: the Shadbala-weighted signed strength % (green when net
     benefic, red when net malefic), and the planets giving positive (śubha) vs
     negative (pāpa) argala — counting only argalas that outweigh their virodha
-    counter. Read-only, no DB write."""
+    counter. ``functional=true`` switches benefic/malefic from natural to the
+    lagna-specific functional scheme. Read-only, no DB write."""
     from app.services.muhurta import build_muhurta_chart
     try:
         # Shadbala is needed for the weighting — CPU-bound, off the event loop.
         chart = await run_in_threadpool(
             build_muhurta_chart, dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=True
         )
-        return argala_analysis(chart)
+        return argala_analysis(chart, functional=functional)
     except Exception:
         logger.exception("argala-analysis failed")
         raise HTTPException(

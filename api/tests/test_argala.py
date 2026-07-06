@@ -8,11 +8,14 @@ from app.services.kundli_calculator.argala import argala_analysis
 _ALL9 = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
 
 
-def _chart(house_of: dict, paksha: str = "Shukla", shadbala: dict | None = None) -> dict:
+def _chart(house_of: dict, paksha: str = "Shukla", shadbala: dict | None = None,
+           lagna_sign: int = 0) -> dict:
     """Every graha defaults to house 1 (out of the way for a house-1 reference,
-    which draws argala only from houses 2/4/5/11). Override placements + weights."""
+    which draws argala only from houses 2/4/5/11). Override placements + weights.
+    lagna_sign defaults to Aries (0) — in the Sun/Moon/Mars/Jupiter functional group."""
     planets = {p: {"house": house_of.get(p, 1)} for p in _ALL9}
-    chart = {"planets": planets, "panchanga": {"paksha": paksha}}
+    chart = {"planets": planets, "panchanga": {"paksha": paksha},
+             "lagna": {"sign": lagna_sign}}
     if shadbala is not None:
         chart["shadbala"] = {p: {"total_shadbala": v} for p, v in shadbala.items()}
     return chart
@@ -73,6 +76,23 @@ def test_tilt_mixes_benefic_and_malefic_by_weight():
     # (2.0 - 1.0) / (2.0 + 1.0) * 100 = 33.3
     assert h1["strength"] == 33.3
     assert h1["positive"] == ["Jupiter"] and h1["negative"] == ["Sun"]
+
+
+def test_functional_mode_flips_benefic_by_lagna():
+    # Jupiter in the 11th from house 1. Natural: Jupiter is benefic (+100%).
+    # Functional for a Libra lagna (sign 6, in the Sat/Ven/Mer group): Jupiter is
+    # a functional malefic -> the same placement becomes -100%.
+    placement = {"Jupiter": 11}
+    sb = {"Jupiter": 2.0}
+    natural = argala_analysis(_chart(placement, shadbala=sb, lagna_sign=6))
+    functional = argala_analysis(
+        _chart(placement, shadbala=sb, lagna_sign=6), functional=True
+    )
+    assert _house(natural, 1)["strength"] == 100.0
+    assert _house(natural, 1)["positive"] == ["Jupiter"]
+    assert _house(functional, 1)["strength"] == -100.0
+    assert _house(functional, 1)["negative"] == ["Jupiter"]
+    assert functional["functional"] is True and natural["functional"] is False
 
 
 # ── endpoint (real ephemeris chart) ──
