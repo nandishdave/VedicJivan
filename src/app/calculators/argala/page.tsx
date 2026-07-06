@@ -124,19 +124,21 @@ function PlanetChips({ names, tone }: { names: string[]; tone: "pos" | "neg" }) 
 
 function Pair({ pair }: { pair: ArgalaPair }) {
   const survivePct = Math.round(pair.survive * 100);
+  const surviveLabel =
+    survivePct > 0 ? `survives ${survivePct}%` : survivePct < 0 ? `reversed ${-survivePct}%` : "neutralised";
+  const surviveColor =
+    survivePct > 0
+      ? "text-green-700 dark:text-green-400"
+      : survivePct < 0
+      ? "text-red-700 dark:text-red-400"
+      : "text-gray-400 dark:text-gray-500";
   return (
     <div className="overflow-hidden rounded-lg border border-gray-100 dark:border-white/10">
       <div className="flex items-center justify-between gap-2 border-b border-gray-100 bg-gray-50 px-3 py-1.5 text-xs dark:border-white/10 dark:bg-white/5">
         <span className="font-medium text-gray-600 dark:text-gray-300">
           Argala from the {ord(pair.argala_from)} · counter (virodha) from the {ord(pair.virodha_from)}
         </span>
-        <span
-          className={`font-bold tabular-nums ${
-            survivePct > 0 ? "text-green-700 dark:text-green-400" : "text-gray-400 dark:text-gray-500"
-          }`}
-        >
-          survives {survivePct}%
-        </span>
+        <span className={`font-bold tabular-nums ${surviveColor}`}>{surviveLabel}</span>
       </div>
 
       {pair.argala.length > 0 && (
@@ -398,10 +400,12 @@ export default function ArgalaCalculatorPage() {
                 </table>
               </div>
               <p className="border-t border-gray-100 px-4 py-4 text-xs leading-relaxed text-gray-500 dark:border-white/10 dark:text-gray-400">
-                Each argala&rsquo;s strength is reduced by its Virodha counter —{" "}
+                Each argala is scaled by its Virodha counter —{" "}
                 <span className="font-semibold">survives = (argala − counter) ÷ argala</span> of the
-                Shadbala — so a matched counter leaves the house <span className="font-semibold">neutral</span>
-                rather than dropping the argala. Each surviving argala then scores{" "}
+                Shadbala: unopposed it survives fully, a matched counter{" "}
+                <span className="font-semibold">neutralises</span> it, and a stronger counter{" "}
+                <span className="font-semibold">reverses</span> it (a defeated benefic argala becomes a
+                loss, a defeated malefic argala becomes relief). Each argala then scores{" "}
                 <span className="font-semibold">Dignity</span> toward the house (Exalted +2 · Own +1.5 ·
                 Friend +1 · Enemy −1, or +0.5 if a functional benefic · Debilitated −2) plus{" "}
                 <span className="font-semibold">Role-fit</span> (benefic on kendra/trikona/2/11, or

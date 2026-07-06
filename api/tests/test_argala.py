@@ -70,20 +70,34 @@ def test_functional_benefic_in_enemy_sign_softens_to_positive():
     assert row["dignity"] == "Enemy Sign" and row["dignity_score"] == 0.5
 
 
-def test_virodha_obstruction_neutralises_not_drops():
-    # Jupiter in the 11th throws argala on the 1st, but Saturn in the 3rd (its
-    # virodha) is stronger -> survive 0 -> the pair still APPEARS, Jupiter's
-    # contribution is 0, and the house verdict is NEUTRAL (not dropped/null).
+def test_virodha_overpower_reverses_to_negative():
+    # Jupiter in the 11th throws a POSITIVE argala on the 1st, but Saturn in the
+    # 3rd (its virodha) is 3x stronger -> survive -1 -> the argala REVERSES:
+    # Jupiter's contribution flips negative and the house verdict is negative.
     out = argala_analysis(_chart({"Jupiter": 11, "Saturn": 3}, lagna_sign=0,
                                  default_house=7,
                                  shadbala={"Jupiter": 1.0, "Saturn": 3.0}))
     h1 = _house(out, 1)
     row = _arg_row(out, 1, "Jupiter")
-    assert row is not None and row["contribution"] == 0.0  # obstructed, still shown
+    assert row is not None
     pair = next(p for p in h1["pairs"] if p["argala_from"] == 11)
-    assert pair["survive"] == 0.0
+    assert pair["survive"] == -1.0
     assert any(v["planet"] == "Saturn" for v in pair["virodha"])  # counter is visible
-    assert h1["verdict"] == "neutral" and h1["strength"] == 0.0
+    assert row["polarity"] > 0 and row["contribution"] < 0  # positive argala flipped negative
+    assert "Jupiter" in h1["negative"] and h1["verdict"] == "negative"
+
+
+def test_defeated_malefic_reverses_to_relief():
+    # A MALEFIC argala that is overpowered flips to POSITIVE (the harm is
+    # blocked). Saturn in the 1st throws (2nd-)argala on the 12th (dusthana ->
+    # role_fit -1 -> negative polarity); Mars in the 11th (its virodha) is
+    # stronger -> survive -1 -> Saturn's contribution flips positive.
+    out = argala_analysis(_chart({"Saturn": 1, "Mars": 11}, lagna_sign=0,
+                                 default_house=5,
+                                 shadbala={"Saturn": 1.0, "Mars": 3.0}))
+    row = _arg_row(out, 12, "Saturn")
+    assert row is not None
+    assert row["polarity"] < 0 and row["contribution"] > 0  # malefic argala -> relief
 
 
 def test_no_argala_is_null():

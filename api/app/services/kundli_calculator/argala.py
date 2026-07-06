@@ -6,13 +6,15 @@ vs its Virodha (counter).
 
 Geometry (shared with worldly_potential factor 13): planets in the 2nd/4th/5th/
 11th from a house give it argala; each is countered by its Virodha (12th/10th/
-9th/3rd). Rather than dropping an obstructed argala, we keep BOTH sides and let
-the counter reduce the argala's magnitude:
+9th/3rd). Rather than dropping an obstructed argala, we keep BOTH sides and let the
+counter scale the argala:
 
-  survive = clamp((argala_shadbala - virodha_shadbala) / argala_shadbala, 0, 1)
+  survive = clamp((argala_shadbala - virodha_shadbala) / argala_shadbala, -1, 1)
 
-so an unopposed argala survives fully, and one matched/beaten by its counter
-survives at 0 (obstructed -> neutral, still shown).
+so an unopposed argala survives fully (+1), a matched counter neutralises it
+(0), and a STRONGER counter REVERSES it (down to -1): a defeated argala flips
+sign — a blocked benefic argala becomes a loss (negative), a blocked malefic
+argala becomes relief (positive).
 
 Quality of each surviving argala (planet G on house H, sign S) — a signed
 polarity, magnitude = Shadbala × survive:
@@ -157,7 +159,9 @@ def argala_analysis(chart: dict) -> dict:
 
             arg_sb = sum(wt[p] for p in arg_planets)
             vir_sb = sum(wt[p] for p in vir_planets)
-            survive = 0.0 if arg_sb <= 0 else max(0.0, min(1.0, (arg_sb - vir_sb) / arg_sb))
+            # +1 unopposed … 0 matched … -1 when the counter overpowers it (a
+            # defeated argala reverses sign, not just neutralises).
+            survive = 0.0 if arg_sb <= 0 else max(-1.0, min(1.0, (arg_sb - vir_sb) / arg_sb))
 
             argala_rows = []
             for p in arg_planets:
