@@ -8,11 +8,30 @@ from __future__ import annotations
 
 import pytest
 
+from app.services.kundli_calculator.dignity import DIGNITY_PCT
 from app.services.kundli_calculator.vimsopaka import (
     VARGA_WEIGHTS,
     _band,
     compute_vimsopaka,
+    planet_vimsopaka,
 )
+
+
+def test_planet_vimsopaka_contribution_is_weight_times_pct():
+    """Each varga's contribution is exactly weight * dignity_pct / 100, and the
+    total is their sum. Previously only the bounds/sum were checked — this pins
+    the per-varga contribution field itself. Pure: synthetic sign maps."""
+    # Sun placed in the same sign across every varga -> one dignity throughout.
+    planets = {"Sun": {"sign": 4}}
+    divisional = {v: {"Sun": 4} for v in VARGA_WEIGHTS}
+    out = planet_vimsopaka("Sun", planets, divisional)
+    total = 0.0
+    for row in out["vargas"]:
+        expected = round(row["weight"] * DIGNITY_PCT[row["dignity"]] / 100.0, 3)
+        assert row["contribution"] == expected
+        total += row["weight"] * DIGNITY_PCT[row["dignity"]] / 100.0
+    assert out["vimsopaka"] == round(total, 2)
+    assert out["max"] == 20.0
 
 _CLASSICAL = {"Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"}
 _NODES = {"Rahu", "Ketu"}

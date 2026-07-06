@@ -90,6 +90,15 @@ def test_verdict_bands():
     assert _verdict(30) == "challenging"
 
 
+def test_verdict_boundaries():
+    """Pin the exact cut-points (>=60 good, >=45 moderate) — the bands above
+    only sample the interiors, so an off-by-one in the thresholds slips through."""
+    assert _verdict(60) == "good"          # lower edge of "good" is inclusive
+    assert _verdict(59.9) == "moderate"
+    assert _verdict(45) == "moderate"      # lower edge of "moderate" is inclusive
+    assert _verdict(44.9) == "challenging"
+
+
 def test_house_strength_tracks_ashtakavarga():
     lo = make_chart(totals=[18] + [28] * 11)  # sign 0 weak
     hi = make_chart(totals=[40] + [28] * 11)  # sign 0 strong
@@ -255,3 +264,16 @@ def test_worldly_potential_present_and_prominence_blends_ranking():
         assert w["rank_score"] == expected
     scores = [w["rank_score"] for w in prom["windows"]]
     assert scores == sorted(scores, reverse=True)
+
+
+def test_priorities_rank_uses_mean_of_picked_aspects():
+    """With `priorities`, the (non-prominence) rank is the mean of just those
+    aspect scores — not the overall score. Exercises the priorities branch."""
+    common = dict(dob="2026-06-20", lat=21.7333, lon=70.6167, place_name="Jetpur",
+                  chart_fn=build_muhurta_chart)
+    keys = list(analyze_birth_muhurta(**common)["windows"][0]["aspects"].keys())[:2]
+    res = analyze_birth_muhurta(**common, priorities=keys)
+    assert res["priorities"] == keys
+    for w in res["windows"]:
+        picked = [w["aspects"][k]["score"] for k in keys]
+        assert w["rank_score"] == round(sum(picked) / len(picked), 1)

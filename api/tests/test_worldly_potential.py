@@ -75,6 +75,24 @@ def test_worldly_on_real_chart():
     assert wp["note"] == NOTE
 
 
+def test_worldly_reuses_precomputed_dashas(mocker):
+    """When the chart already carries `dashas`, worldly_potential reuses them
+    instead of recomputing — and the reuse path yields the same score as the
+    recompute path. Covers the dashas reuse-vs-recompute branch."""
+    chart = build_muhurta_chart(dob=_DOB, tob=_TOB, lat=_LAT, lon=_LON)
+    baseline = worldly_potential(chart)  # no dashas on chart -> recompute path
+
+    chart["dashas"] = calc_vimshottari_dasha(
+        chart["planets"]["Moon"]["longitude"], _DOB, _TOB
+    )["dashas"]
+    spy = mocker.patch(
+        "app.services.kundli_calculator.worldly_potential.calc_vimshottari_dasha"
+    )
+    reused = worldly_potential(chart)  # dashas present -> reuse path
+    spy.assert_not_called()             # must NOT recompute
+    assert reused["score"] == baseline["score"]
+
+
 # ── factor_values() characterisation — pins every raw factor ─────────────────
 # Golden 17 raw values for the fixed Dhoni chart, captured 2026-07-05. These lock
 # factor_values() exactly, so the M1/M2 refactor (unify with fame_composite.py,
