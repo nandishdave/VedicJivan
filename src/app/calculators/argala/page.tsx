@@ -4,7 +4,13 @@ import { Fragment, useState } from "react";
 import { Sparkles, Loader2, AlertCircle, ChevronDown } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PlaceOfBirthAutocomplete } from "@/components/booking/PlaceOfBirthAutocomplete";
-import { kundliApi, type ArgalaResult, type ArgalaHouse, type ArgalaPair } from "@/lib/api";
+import {
+  kundliApi,
+  type ArgalaResult,
+  type ArgalaHouse,
+  type ArgalaPair,
+  type ArgalaPosition,
+} from "@/lib/api";
 
 const ORDINAL = [
   "1st", "2nd", "3rd", "4th", "5th", "6th",
@@ -46,6 +52,55 @@ function Verdict({ h }: { h: ArgalaHouse }) {
       >
         {signed(h.strength)}%
       </span>
+    </div>
+  );
+}
+
+function PositionsTable({ rows }: { rows: ArgalaPosition[] }) {
+  return (
+    <div className="mt-8 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-dark-surface-card">
+      <div className="border-b border-gray-100 px-4 py-3 dark:border-white/10">
+        <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          Planetary Positions
+        </h2>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-2 text-left font-medium">Body</th>
+              <th className="px-4 py-2 text-left font-medium">Sign</th>
+              <th className="px-4 py-2 text-right font-medium">Degree</th>
+              <th className="px-4 py-2 text-right font-medium">House</th>
+            </tr>
+          </thead>
+          <tbody className="tabular-nums">
+            {rows.map((r) => (
+              <tr
+                key={r.body}
+                className={
+                  "border-t border-gray-100 dark:border-white/10 " +
+                  (r.body === "Ascendant" ? "bg-primary-50/50 dark:bg-primary-900/20" : "")
+                }
+              >
+                <td className="px-4 py-1.5 font-medium text-vedic-dark dark:text-white">
+                  {r.body}
+                  {r.retrograde && (
+                    <span className="ml-1 text-xs font-semibold text-red-500" title="Retrograde">
+                      ℞
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-1.5 text-gray-600 dark:text-gray-400">{r.sign}</td>
+                <td className="px-4 py-1.5 text-right text-gray-600 dark:text-gray-400">
+                  {r.degree.toFixed(2)}°
+                </td>
+                <td className="px-4 py-1.5 text-right text-gray-600 dark:text-gray-400">{r.house}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -260,12 +315,20 @@ export default function ArgalaCalculatorPage() {
 
           {/* Result */}
           {result && (
-            <div className="mt-8 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-dark-surface-card">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-primary-600 text-white">
-                      <th className="px-4 py-3 text-left font-semibold">House</th>
+            <>
+              <PositionsTable rows={result.positions} />
+
+              <div className="mt-6 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-dark-surface-card">
+                <div className="border-b border-gray-100 px-4 py-3 dark:border-white/10">
+                  <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Argala by House
+                  </h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-primary-600 text-white">
+                        <th className="px-4 py-3 text-left font-semibold">House</th>
                       <th className="px-4 py-3 text-left font-semibold">Net Argala</th>
                       <th className="px-4 py-3 text-left font-semibold text-green-100">Helps (+)</th>
                       <th className="px-4 py-3 text-left font-semibold text-red-100">Harms (−)</th>
@@ -346,7 +409,8 @@ export default function ArgalaCalculatorPage() {
                 <span className="font-semibold">Shadbala</span>. A strong exalted malefic on a career
                 house reads green, not red. Guidance only — consult an astrologer.
               </p>
-            </div>
+              </div>
+            </>
           )}
         </div>
       </Container>

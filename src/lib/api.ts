@@ -497,7 +497,16 @@ export interface ArgalaHouse {
   pairs: ArgalaPair[];
 }
 
+export interface ArgalaPosition {
+  body: string; // Ascendant + 9 grahas + Uranus/Neptune/Pluto
+  sign: string;
+  degree: number; // degree within the sign
+  house: number;
+  retrograde: boolean;
+}
+
 export interface ArgalaResult {
+  positions: ArgalaPosition[];
   houses: ArgalaHouse[];
   shadbala_used: boolean;
   lagna_sign: number;

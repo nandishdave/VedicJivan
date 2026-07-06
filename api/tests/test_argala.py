@@ -7,7 +7,7 @@ Virodha counter (survive fraction). Unit tests assert at the argala-row level
 """
 import pytest
 
-from app.services.kundli_calculator.argala import argala_analysis
+from app.services.kundli_calculator.argala import argala_analysis, planet_positions
 
 _ALL9 = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
 
@@ -101,6 +101,18 @@ def test_contribution_is_shadbala_times_polarity_times_survive():
     assert row["contribution"] == round(row["shadbala"] * row["polarity"] * pair["survive"], 3)
 
 
+def test_planet_positions_ascendant_plus_twelve_bodies():
+    bodies = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn",
+              "Rahu", "Ketu", "Uranus", "Neptune", "Pluto"]
+    planets = {b: {"sign_name": "Aries", "degree_in_sign": 10.0, "house": 1,
+                   "retrograde": False} for b in bodies}
+    chart = {"planets": planets, "lagna": {"sign_name": "Aries", "degree": 5.0}}
+    rows = planet_positions(chart)
+    assert rows[0]["body"] == "Ascendant"
+    assert [r["body"] for r in rows[1:]] == bodies  # 9 grahas + 3 outer, in order
+    assert all({"body", "sign", "degree", "house", "retrograde"} <= set(r) for r in rows)
+
+
 # ── endpoint (real ephemeris chart) ──
 _DOB, _TOB, _LAT, _LON = "1988-11-11", "12:55", 21.7333, 70.6167
 
@@ -113,6 +125,10 @@ async def test_argala_endpoint_json(client):
     )
     assert resp.status_code == 200
     body = resp.json()
+    pos_bodies = [r["body"] for r in body["positions"]]
+    assert pos_bodies[0] == "Ascendant"
+    for b in ["Sun", "Saturn", "Rahu", "Ketu", "Uranus", "Neptune", "Pluto"]:
+        assert b in pos_bodies
     assert [h["house"] for h in body["houses"]] == list(range(1, 13))
     for h in body["houses"]:
         assert -100.0 <= h["strength"] <= 100.0

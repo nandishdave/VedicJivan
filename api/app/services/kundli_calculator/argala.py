@@ -35,6 +35,8 @@ from app.services.kundli_calculator._core import SIGN_NAMES, _get_dignity
 _ARG_PLANETS = [
     "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu",
 ]
+# Display order for the raw positions table: 9 grahas + the 3 outer planets.
+_POSITION_ORDER = _ARG_PLANETS + ["Uranus", "Neptune", "Pluto"]
 # (argala house Nth-from-reference, its virodha/counter house Nth-from-reference).
 _ARG_PAIRS = ((2, 12), (4, 10), (5, 9), (11, 3))
 
@@ -66,6 +68,35 @@ def _functional_benefics(lagna_sign: int) -> set:
 
 def _house_from(reference: int, n: int) -> int:
     return ((reference - 1 + n - 1) % 12) + 1
+
+
+def planet_positions(chart: dict) -> list[dict]:
+    """Raw positions behind the argala table: the Ascendant + the 9 grahas +
+    the 3 outer planets, each with its own sign, degree-in-sign, whole-sign
+    house and retrograde flag. (The 'sign' shown INSIDE the argala breakdown is
+    the sign of the house being locked — not the planet's own sign, which is
+    here.)"""
+    P = chart["planets"]
+    lag = chart.get("lagna") or {}
+    rows = [{
+        "body": "Ascendant",
+        "sign": lag.get("sign_name", ""),
+        "degree": round(lag.get("degree", 0.0), 2),
+        "house": 1,
+        "retrograde": False,
+    }]
+    for name in _POSITION_ORDER:
+        p = P.get(name)
+        if not p:
+            continue
+        rows.append({
+            "body": name,
+            "sign": p.get("sign_name", ""),
+            "degree": round(p.get("degree_in_sign", 0.0), 2),
+            "house": p.get("house"),
+            "retrograde": bool(p.get("retrograde", False)),
+        })
+    return rows
 
 
 def argala_analysis(chart: dict) -> dict:
@@ -185,4 +216,9 @@ def argala_analysis(chart: dict) -> dict:
             "pairs": pairs,
         })
 
-    return {"houses": houses, "shadbala_used": bool(sb), "lagna_sign": lagna_sign}
+    return {
+        "positions": planet_positions(chart),
+        "houses": houses,
+        "shadbala_used": bool(sb),
+        "lagna_sign": lagna_sign,
+    }
