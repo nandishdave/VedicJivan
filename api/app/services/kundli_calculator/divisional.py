@@ -180,3 +180,53 @@ def _calc_varga_sign(sign: int, degree: float, chart_type: str) -> int:
         return (starts_d45.get(sign_type, 0) + part) % 12
 
     return sign
+
+
+# ── Display transform for the calculator ────────────────────────────────────
+# Local sign names so this stays a leaf module (_core imports this module).
+_DIV_SIGN_ABBR = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"]
+_VARGA_ORDER = [
+    "D1", "D2", "D3", "D4", "D6", "D7", "D8", "D9", "D10",
+    "D11", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60",
+]
+_VARGA_NAME = {
+    "D1": "Rāśi (body/life)", "D2": "Horā (wealth)", "D3": "Drekkāṇa (siblings)",
+    "D4": "Chaturthāṁśa (fortune)", "D6": "Ṣaṣṭhāṁśa (health)", "D7": "Saptāṁśa (children)",
+    "D8": "Aṣṭāṁśa (longevity)", "D9": "Navāṁśa (spouse/dharma)", "D10": "Daśāṁśa (career)",
+    "D11": "Rudrāṁśa (gains)", "D12": "Dvādaśāṁśa (parents)", "D16": "Ṣoḍaśāṁśa (vehicles)",
+    "D20": "Viṁśāṁśa (spiritual)", "D24": "Chaturviṁśāṁśa (learning)", "D27": "Bhāṁśa (strengths)",
+    "D30": "Triṁśāṁśa (misfortune)", "D40": "Khavedāṁśa (maternal)", "D45": "Akṣavedāṁśa (paternal)",
+    "D60": "Ṣaṣṭyāṁśa (past karma)",
+}
+_DIV_BODY_ORDER = [
+    "Ascendant", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn",
+    "Rahu", "Ketu", "Uranus", "Neptune", "Pluto",
+]
+
+
+def divisional_table(planets: dict, lagna: dict, divisional: dict | None = None) -> dict:
+    """Each body's sign across the 16 Ṣoḍaśavarga divisionals (+ D6/D8/D11) for the
+    calculator: D1 is the natal sign; the rest come from ``calc_divisional_charts``.
+    Returns ``{vargas: [{key, name}], bodies: [{body, signs: [sign-abbr per varga]}]}``.
+    """
+    div = divisional or calc_divisional_charts(planets, lagna)
+
+    def sign_of(body: str, varga: str) -> int | None:
+        if varga == "D1":
+            return lagna["sign"] if body == "Ascendant" else planets[body]["sign"]
+        key = "Lagna" if body == "Ascendant" else body
+        return div.get(varga, {}).get(key)
+
+    bodies = []
+    for body in _DIV_BODY_ORDER:
+        if body != "Ascendant" and body not in planets:
+            continue
+        signs = []
+        for v in _VARGA_ORDER:
+            s = sign_of(body, v)
+            signs.append(_DIV_SIGN_ABBR[s] if s is not None else "")
+        bodies.append({"body": body, "signs": signs})
+    return {
+        "vargas": [{"key": v, "name": _VARGA_NAME[v]} for v in _VARGA_ORDER],
+        "bodies": bodies,
+    }

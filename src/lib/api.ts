@@ -431,6 +431,16 @@ export const kundliApi = {
     });
     return apiRequest<ShadbalaResult>(`/api/kundli/shadbala?${q.toString()}`);
   },
+
+  divisionalCharts: (data: { dob: string; tob: string; lat: number; lon: number }) => {
+    const q = new URLSearchParams({
+      dob: data.dob,
+      tob: data.tob,
+      lat: String(data.lat),
+      lon: String(data.lon),
+    });
+    return apiRequest<DivisionalResult>(`/api/kundli/divisional-charts?${q.toString()}`);
+  },
 };
 
 // ── Vimśopaka Bala calculator ──
@@ -593,6 +603,22 @@ export interface SbPlanet {
 
 export interface ShadbalaResult {
   planets: SbPlanet[];
+}
+
+// ── Divisional Charts calculator ──
+export interface DvVarga {
+  key: string; // D1, D2, … D60
+  name: string; // e.g. "Navāṁśa (spouse/dharma)"
+}
+
+export interface DvBody {
+  body: string; // Ascendant + grahas + outer
+  signs: string[]; // sign abbreviation per varga (aligned with vargas[])
+}
+
+export interface DivisionalResult {
+  vargas: DvVarga[];
+  bodies: DvBody[];
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──
