@@ -457,26 +457,44 @@ export interface DegreeAnalysisResult {
 }
 
 // ── Argala (Jaimini intervention) calculator ──
-export interface ArgalaIntervener {
+export interface ArgalaArgRow {
   planet: string;
   from_house: number; // sits in the 2/4/5/11 from the reference house
   sign: string; // sign of the house it locks
   dignity: string; // dignity of the planet in that sign
   dignity_score: number; // +2 exalted … −2 debilitated (layers 1–5)
   role_fit: number; // +1 / 0 / −1 by natural nature × house type (layers 6–9)
-  shadbala: number; // magnitude weight
+  shadbala: number;
   polarity: number; // dignity_score + role_fit
-  contribution: number; // shadbala × polarity
+  contribution: number; // shadbala × polarity × survive
 }
+
+export interface ArgalaVirodha {
+  planet: string;
+  shadbala: number;
+}
+
+export interface ArgalaPair {
+  argala_from: number; // 2/4/5/11
+  virodha_from: number; // 12/10/9/3
+  argala_shadbala: number;
+  virodha_shadbala: number;
+  survive: number; // 0..1 — fraction of the argala left after the counter
+  argala: ArgalaArgRow[];
+  virodha: ArgalaVirodha[];
+}
+
+export type ArgalaVerdict = "null" | "neutral" | "positive" | "negative";
 
 export interface ArgalaHouse {
   house: number;
   strength: number; // -100..+100; sign drives the colour (green +, red -)
-  positive: string[]; // planets whose net argala helps the house
-  negative: string[]; // planets whose net argala harms the house
+  verdict: ArgalaVerdict;
+  positive: string[]; // planets whose surviving argala helps the house
+  negative: string[]; // planets whose surviving argala harms the house
   pos_weight: number;
   neg_weight: number;
-  interveners: ArgalaIntervener[];
+  pairs: ArgalaPair[];
 }
 
 export interface ArgalaResult {
