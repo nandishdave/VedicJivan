@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { Fragment, useState } from "react";
+import { Sparkles, Loader2, AlertCircle, ChevronDown } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PlaceOfBirthAutocomplete } from "@/components/booking/PlaceOfBirthAutocomplete";
-import { kundliApi, type ArgalaResult } from "@/lib/api";
+import { kundliApi, type ArgalaResult, type ArgalaIntervener } from "@/lib/api";
 
 const ORDINAL = [
   "1st", "2nd", "3rd", "4th", "5th", "6th",
@@ -15,14 +15,16 @@ const HOUSE_MEANING = [
   "Children & mind", "Health & debts", "Partner", "Longevity & change",
   "Fortune & dharma", "Career & status", "Gains & network", "Loss & moksha",
 ];
+const ord = (n: number) => ORDINAL[n - 1] ?? `${n}th`;
+const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 
 function StrengthBar({ v }: { v: number }) {
   const neutral = v === 0;
   const pos = v > 0;
   const width = Math.min(100, Math.abs(v));
   return (
-    <div className="flex items-center justify-center gap-2">
-      <div className="h-2.5 w-24 overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+    <div className="flex items-center gap-2">
+      <div className="h-2.5 w-20 overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
         <div
           className={`h-full rounded-full ${pos ? "bg-green-500" : "bg-red-500"}`}
           style={{ width: `${width}%` }}
@@ -37,8 +39,7 @@ function StrengthBar({ v }: { v: number }) {
             : "text-red-700 dark:text-red-400"
         }`}
       >
-        {v > 0 ? "+" : ""}
-        {v}%
+        {signed(v)}%
       </span>
     </div>
   );
@@ -61,6 +62,54 @@ function PlanetChips({ names, tone }: { names: string[]; tone: "pos" | "neg" }) 
   );
 }
 
+function Breakdown({ rows }: { rows: ArgalaIntervener[] }) {
+  if (!rows.length) {
+    return (
+      <p className="px-6 py-3 text-xs italic text-gray-400 dark:text-gray-500">
+        No effective argala on this house (none, or all obstructed by their virodha).
+      </p>
+    );
+  }
+  return (
+    <div className="overflow-x-auto px-2 py-2">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-gray-500 dark:text-gray-400">
+            <th className="px-2 py-1 text-left font-medium">Planet</th>
+            <th className="px-2 py-1 text-left font-medium">From</th>
+            <th className="px-2 py-1 text-left font-medium">Sign</th>
+            <th className="px-2 py-1 text-left font-medium">Dignity</th>
+            <th className="px-2 py-1 text-right font-medium">Dignity</th>
+            <th className="px-2 py-1 text-right font-medium">Role-fit</th>
+            <th className="px-2 py-1 text-right font-medium">Shadbala</th>
+            <th className="px-2 py-1 text-right font-medium">Contribution</th>
+          </tr>
+        </thead>
+        <tbody className="tabular-nums">
+          {rows.map((r, i) => (
+            <tr key={`${r.planet}-${i}`} className="border-t border-gray-100 dark:border-white/5">
+              <td className="px-2 py-1 font-semibold text-vedic-dark dark:text-white">{r.planet}</td>
+              <td className="px-2 py-1 text-gray-500 dark:text-gray-400">{ord(r.from_house)}</td>
+              <td className="px-2 py-1 text-gray-500 dark:text-gray-400">{r.sign}</td>
+              <td className="px-2 py-1 text-gray-500 dark:text-gray-400">{r.dignity}</td>
+              <td className={`px-2 py-1 text-right ${r.dignity_score >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
+                {signed(r.dignity_score)}
+              </td>
+              <td className={`px-2 py-1 text-right ${r.role_fit >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
+                {signed(r.role_fit)}
+              </td>
+              <td className="px-2 py-1 text-right text-gray-500 dark:text-gray-400">{r.shadbala.toFixed(1)}</td>
+              <td className={`px-2 py-1 text-right font-semibold ${r.contribution >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
+                {signed(Math.round(r.contribution))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function ArgalaCalculatorPage() {
   const [date, setDate] = useState("1988-11-11");
   const [time, setTime] = useState("12:55");
@@ -70,28 +119,33 @@ export default function ArgalaCalculatorPage() {
     lon: 70.6167,
   });
   const [placeInput, setPlaceInput] = useState("Jetpur, Gujarat, India");
-  const [mode, setMode] = useState<"natural" | "functional">("natural");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ArgalaResult | null>(null);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const canSubmit = !!date && !!time && !!place && !loading;
 
-  const run = async (m: "natural" | "functional") => {
+  const toggleRow = (house: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(house)) next.delete(house);
+      else next.add(house);
+      return next;
+    });
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!place) {
       setError("Please choose a birth place.");
       return;
     }
     setLoading(true);
     setError("");
+    setExpanded(new Set());
     try {
-      const res = await kundliApi.argalaAnalysis({
-        dob: date,
-        tob: time,
-        lat: place.lat,
-        lon: place.lon,
-        functional: m === "functional",
-      });
+      const res = await kundliApi.argalaAnalysis({ dob: date, tob: time, lat: place.lat, lon: place.lon });
       setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not calculate. Check the inputs.");
@@ -99,17 +153,6 @@ export default function ArgalaCalculatorPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    run(mode);
-  };
-
-  // Toggling re-runs immediately when a result is already on screen.
-  const onMode = (m: "natural" | "functional") => {
-    setMode(m);
-    if (result && !loading) run(m);
   };
 
   return (
@@ -124,13 +167,12 @@ export default function ArgalaCalculatorPage() {
               Argala Calculator
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-sm text-gray-600 dark:text-gray-400">
-              Argala (अर्गला, &ldquo;the bolt&rdquo;) is the Jaimini intervention on a house by
-              planets in its 2nd, 4th, 5th and 11th — countered by their Virodha (12th, 10th,
-              9th, 3rd). For each house you get the Shadbala-weighted{" "}
-              <span className="font-semibold text-green-700 dark:text-green-400">benefic (śubha)</span>{" "}
-              vs{" "}
-              <span className="font-semibold text-red-700 dark:text-red-400">malefic (pāpa)</span>{" "}
-              tilt — counting only argalas that outweigh their counter.
+              Argala (अर्गला, &ldquo;the bolt&rdquo;) is the Jaimini intervention on a house by planets
+              in its 2nd, 4th, 5th and 11th — countered by their Virodha (12th, 10th, 9th, 3rd). Each
+              house is scored on whether the intervention actually <em>helps</em> it:{" "}
+              <span className="font-semibold text-green-700 dark:text-green-400">green helps</span>,{" "}
+              <span className="font-semibold text-red-700 dark:text-red-400">red harms</span>. Tap a
+              row to see why.
             </p>
           </div>
 
@@ -171,39 +213,6 @@ export default function ArgalaCalculatorPage() {
                 }}
               />
             </div>
-            {/* Benefic/malefic scheme toggle */}
-            <div className="sm:col-span-2">
-              <span className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Benefic / malefic scheme
-              </span>
-              <div
-                role="group"
-                aria-label="Benefic and malefic classification scheme"
-                className="inline-flex rounded-lg border border-gray-200 p-0.5 dark:border-white/10"
-              >
-                {(["natural", "functional"] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => onMode(m)}
-                    aria-pressed={mode === m}
-                    className={`rounded-md px-3.5 py-1.5 text-sm font-semibold capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
-                      mode === m
-                        ? "bg-primary-600 text-white"
-                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
-                {mode === "natural"
-                  ? "Natural: Jupiter, Venus, Mercury (+ bright-fortnight Moon) are benefic."
-                  : "Functional: benefic/malefic by your ascendant group (lagna-specific)."}
-              </p>
-            </div>
-
             <div className="sm:col-span-2">
               <button
                 type="submit"
@@ -235,48 +244,77 @@ export default function ArgalaCalculatorPage() {
                   <thead>
                     <tr className="bg-primary-600 text-white">
                       <th className="px-4 py-3 text-left font-semibold">House</th>
-                      <th className="px-4 py-3 font-semibold">Argala Strength</th>
-                      <th className="px-4 py-3 text-left font-semibold text-green-100">Planets (+)</th>
-                      <th className="px-4 py-3 text-left font-semibold text-red-100">Planets (−)</th>
+                      <th className="px-4 py-3 text-left font-semibold">Argala Strength</th>
+                      <th className="px-4 py-3 text-left font-semibold text-green-100">Helps (+)</th>
+                      <th className="px-4 py-3 text-left font-semibold text-red-100">Harms (−)</th>
+                      <th className="px-2 py-3" aria-label="Expand" />
                     </tr>
                   </thead>
                   <tbody>
-                    {result.houses.map((h) => (
-                      <tr key={h.house} className="border-t border-gray-100 dark:border-white/10">
-                        <td className="px-4 py-2.5">
-                          <div className="font-semibold text-vedic-dark dark:text-white">
-                            {ORDINAL[h.house - 1]}
-                          </div>
-                          <div className="text-xs text-gray-400 dark:text-gray-500">
-                            {HOUSE_MEANING[h.house - 1]}
-                          </div>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <StrengthBar v={h.strength} />
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <PlanetChips names={h.positive} tone="pos" />
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <PlanetChips names={h.negative} tone="neg" />
-                        </td>
-                      </tr>
-                    ))}
+                    {result.houses.map((h) => {
+                      const open = expanded.has(h.house);
+                      return (
+                        <Fragment key={h.house}>
+                          <tr
+                            onClick={() => toggleRow(h.house)}
+                            className="cursor-pointer border-t border-gray-100 hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/5"
+                          >
+                            <td className="px-4 py-2.5">
+                              <div className="font-semibold text-vedic-dark dark:text-white">
+                                {ord(h.house)}
+                              </div>
+                              <div className="text-xs text-gray-400 dark:text-gray-500">
+                                {HOUSE_MEANING[h.house - 1]}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <StrengthBar v={h.strength} />
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <PlanetChips names={h.positive} tone="pos" />
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <PlanetChips names={h.negative} tone="neg" />
+                            </td>
+                            <td className="px-2 py-2.5 text-right">
+                              <button
+                                type="button"
+                                aria-expanded={open}
+                                aria-label={`${open ? "Hide" : "Show"} breakdown for the ${ord(h.house)} house`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleRow(h.house);
+                                }}
+                                className="rounded p-1 text-gray-400 hover:text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                              >
+                                <ChevronDown
+                                  className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+                                />
+                              </button>
+                            </td>
+                          </tr>
+                          {open && (
+                            <tr className="bg-gray-50/60 dark:bg-white/5">
+                              <td colSpan={5} className="p-0">
+                                <Breakdown rows={h.interveners} />
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
               <p className="border-t border-gray-100 px-4 py-4 text-xs leading-relaxed text-gray-500 dark:border-white/10 dark:text-gray-400">
-                Strength % = (benefic − malefic) ÷ (benefic + malefic) of the Shadbala-weighted
-                interveners, so <span className="font-semibold text-green-700 dark:text-green-400">+100%</span> means
-                every effective argala is a strong benefic and{" "}
-                <span className="font-semibold text-red-700 dark:text-red-400">−100%</span> every one a strong
-                malefic. Only argalas that outweigh their Virodha (counter) house are counted.{" "}
-                {result.functional
-                  ? "Benefic/malefic here follows the lagna-specific functional scheme."
-                  : `Natural benefics — the Moon counts as benefic only in the bright (Shukla) fortnight${
-                      result.moon_bright ? " — bright here" : " — waning here"
-                    }.`}{" "}
-                Guidance only — consult an astrologer.
+                Each intervener scores <span className="font-semibold">Dignity</span> toward the house
+                it locks (Exalted +2 · Own +1.5 · Friend +1 · Enemy −1, or +0.5 if it is a functional
+                benefic · Debilitated −2) plus <span className="font-semibold">Role-fit</span> (a
+                benefic on a kendra/trikona/2nd/11th, or a malefic on an upachaya 3/6/10/11, adds +1;
+                a malefic on the 8th/12th subtracts 1), weighted by its{" "}
+                <span className="font-semibold">Shadbala</span>. So a strong exalted malefic — like
+                Saturn on a career house — reads green, not red. Only argalas that outweigh their
+                Virodha counter count. Guidance only — consult an astrologer.
               </p>
             </div>
           )}

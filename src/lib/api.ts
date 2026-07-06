@@ -402,19 +402,12 @@ export const kundliApi = {
     return apiRequest<DegreeAnalysisResult>(`/api/kundli/degree-analysis?${q.toString()}`);
   },
 
-  argalaAnalysis: (data: {
-    dob: string;
-    tob: string;
-    lat: number;
-    lon: number;
-    functional?: boolean;
-  }) => {
+  argalaAnalysis: (data: { dob: string; tob: string; lat: number; lon: number }) => {
     const q = new URLSearchParams({
       dob: data.dob,
       tob: data.tob,
       lat: String(data.lat),
       lon: String(data.lon),
-      functional: String(!!data.functional),
     });
     return apiRequest<ArgalaResult>(`/api/kundli/argala-analysis?${q.toString()}`);
   },
@@ -464,20 +457,32 @@ export interface DegreeAnalysisResult {
 }
 
 // ── Argala (Jaimini intervention) calculator ──
+export interface ArgalaIntervener {
+  planet: string;
+  from_house: number; // sits in the 2/4/5/11 from the reference house
+  sign: string; // sign of the house it locks
+  dignity: string; // dignity of the planet in that sign
+  dignity_score: number; // +2 exalted … −2 debilitated (layers 1–5)
+  role_fit: number; // +1 / 0 / −1 by natural nature × house type (layers 6–9)
+  shadbala: number; // magnitude weight
+  polarity: number; // dignity_score + role_fit
+  contribution: number; // shadbala × polarity
+}
+
 export interface ArgalaHouse {
   house: number;
   strength: number; // -100..+100; sign drives the colour (green +, red -)
-  positive: string[]; // benefics giving effective (śubha) argala
-  negative: string[]; // malefics giving effective (pāpa) argala
+  positive: string[]; // planets whose net argala helps the house
+  negative: string[]; // planets whose net argala harms the house
   pos_weight: number;
   neg_weight: number;
+  interveners: ArgalaIntervener[];
 }
 
 export interface ArgalaResult {
   houses: ArgalaHouse[];
-  moon_bright: boolean;
   shadbala_used: boolean;
-  functional: boolean; // false = natural benefics, true = lagna-specific functional
+  lagna_sign: number;
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──

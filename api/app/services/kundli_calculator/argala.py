@@ -1,39 +1,61 @@
 """Argala (Jaimini "intervention/bolt") per-house analysis for the calculator.
 
-For each of the 12 houses this reports the Shadbala-weighted Śubha (benefic)
-vs Pāpa (malefic) argala that is *effective* — i.e. the intervening house
-outweighs its Virodha (counter) house — the signed strength %, and the
-planets contributing on each side.
+For each of the 12 houses this reports a SIGNED quality score — not just the
+benefic/malefic nature of the interveners, but whether the intervention
+actually helps that house — plus a per-planet breakdown.
 
-Shares its geometry with worldly_potential factor 13 (``_positive_argala``):
-  ARG_PAIRS = (argala house Nth-from-reference, its virodha Nth-from-reference).
-Factor 13 restricts the reference to the fame houses {2, 10, 12}; this
-calculator sweeps ALL 12 houses so a reader can inspect any bhāva.
+Geometry (shared with worldly_potential factor 13): planets in the 2nd/4th/5th/
+11th from a house give it argala; an argala counts only if its house outweighs
+its Virodha counter (12th/10th/9th/3rd). Restricted to the fame houses in the
+fame model; here we sweep all 12.
 
-Positive vs negative is the planet's natural benefic/malefic nature, with the
-Moon benefic only in the bright (Shukla) fortnight. Strength % is the
-Shadbala tilt: (pos − neg) / (pos + neg) × 100, so +100 = every intervener a
-strong benefic, −100 = every intervener a strong malefic, 0 = balanced/none.
+Quality of each planet G's effective argala on house H (sign S) — a signed
+polarity × the giver's Shadbala magnitude:
+
+  (1) Dignity toward the house it locks — dignity(G, S):
+        Exalted +2 · Own/Moolatrikona +1.5 · Friend +1 · Neutral 0 ·
+        Debilitated -2 · Enemy: +0.5 if G is a functional benefic else -1.
+  (2) Role-fit — natural nature × the house type of H:
+        natural benefic on kendra/trikona/2/11 +1, on 8/12 neutral (0);
+        natural malefic on upachaya (3/6/10/11) +1, on 8/12 -1.
+  polarity = (1) + (2);  contribution = Shadbala(G) × polarity.
+
+House strength % = Shadbala-and-polarity-weighted tilt of all contributions.
 """
 
 from __future__ import annotations
+
+from app.services.kundli_calculator._core import SIGN_NAMES, _get_dignity
 
 # All nine grahas can throw argala.
 _ARG_PLANETS = [
     "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu",
 ]
 # (argala house Nth-from-reference, its virodha/counter house Nth-from-reference).
-# 11th (primary) is countered by the 3rd; 2nd/4th/5th by 12th/10th/9th.
 _ARG_PAIRS = ((2, 12), (4, 10), (5, 9), (11, 3))
-_NATURAL_BENEFIC = {"Jupiter", "Venus", "Mercury"}
 
-# Functional (lagna-specific) benefics — the two-group scheme also used by the
-# fame model (chart_strength._functional_benefics): for the ascendants
-# Ta/Ge/Vi/Li/Cp/Aq, Saturn/Venus/Mercury are the functional benefics; for the
-# other six, Sun/Moon/Mars/Jupiter. Rāhu/Ketu are in neither -> malefic.
+_NATURAL_BENEFIC = {"Jupiter", "Venus", "Mercury"}
+# Functional (lagna-specific) benefics — the two-group scheme the fame model uses.
 _FB_A = {"Saturn", "Venus", "Mercury"}
 _FB_B = {"Sun", "Moon", "Mars", "Jupiter"}
-_FB_A_SIGNS = {1, 2, 5, 6, 9, 10}  # Taurus, Gemini, Virgo, Libra, Capricorn, Aquarius
+_FB_A_SIGNS = {1, 2, 5, 6, 9, 10}  # Ta, Ge, Vi, Li, Cp, Aq
+
+# House-type groups (house numbers 1..12 from the lagna).
+_KENDRA = {1, 4, 7, 10}
+_TRIKONA = {1, 5, 9}
+_UPACHAYA = {3, 6, 10, 11}
+_DUSTHANA = {8, 12}
+_GOOD_FOR_BENEFIC = _KENDRA | _TRIKONA | {2, 11}
+
+_DIGNITY_SCORE = {
+    "Exalted": 2.0,
+    "Moolatrikona": 1.5,
+    "Own Sign": 1.5,
+    "Friendly Sign": 1.0,
+    "Neutral Sign": 0.0,
+    "Enemy Sign": -1.0,   # overridden by functional nature below
+    "Debilitated": -2.0,
+}
 
 
 def _functional_benefics(lagna_sign: int) -> set:
@@ -41,36 +63,42 @@ def _functional_benefics(lagna_sign: int) -> set:
 
 
 def _house_from(reference: int, n: int) -> int:
-    """The house that is ``n``-th (1-indexed) from ``reference`` (whole-sign)."""
     return ((reference - 1 + n - 1) % 12) + 1
 
 
-def argala_analysis(chart: dict, functional: bool = False) -> dict:
-    """Per-house argala table. Returns
-    ``{"houses": [{house, strength, positive, negative, pos_weight, neg_weight}],
-       "moon_bright": bool, "shadbala_used": bool, "functional": bool}``.
-
-    ``functional=False`` (default) classifies interveners by NATURAL benefic/
-    malefic nature (Jup/Ven/Mer + bright-fortnight Moon). ``functional=True``
-    uses the lagna-specific functional-benefic scheme (paksha-independent).
-    """
+def argala_analysis(chart: dict) -> dict:
+    """Per-house argala quality table with a per-planet breakdown. Returns
+    ``{"houses": [{house, strength, positive, negative, pos_weight, neg_weight,
+    interveners:[...]}], "shadbala_used": bool, "lagna_sign": int}``."""
     P = chart["planets"]
+    lagna_sign = (chart.get("lagna") or {}).get("sign", 0)
     paksha = (chart.get("panchanga") or {}).get("paksha", "")
-    moon_bright = paksha == "Shukla"
+    moon_benefic = paksha == "Shukla"
+    fb = _functional_benefics(lagna_sign)
 
-    if functional:
-        fb = _functional_benefics((chart.get("lagna") or {}).get("sign", 0))
+    def is_natural_benefic(planet: str) -> bool:
+        if planet == "Moon":
+            return moon_benefic
+        return planet in _NATURAL_BENEFIC
 
-        def is_benefic(planet: str) -> bool:
-            return planet in fb
-    else:
-        def is_benefic(planet: str) -> bool:
-            if planet == "Moon":
-                return moon_bright
-            return planet in _NATURAL_BENEFIC
+    def role_fit(planet: str, house: int) -> float:
+        if is_natural_benefic(planet):
+            if house in _GOOD_FOR_BENEFIC:
+                return 1.0
+            return 0.0  # incl. neutral on 8/12 (layer 9)
+        # natural malefic
+        if house in _UPACHAYA:
+            return 1.0
+        if house in _DUSTHANA:
+            return -1.0
+        return 0.0
 
-    # Shadbala weight per planet. Fall back to the classical average (or 1.0)
-    # for any body without a Shadbala entry (Rahu/Ketu, or a cheap chart).
+    def dignity_score(planet: str, dignity: str) -> float:
+        if dignity == "Enemy Sign":
+            return 0.5 if planet in fb else -1.0
+        return _DIGNITY_SCORE.get(dignity, 0.0)
+
+    # Shadbala magnitude (fallback to the classical average / 1.0 when absent).
     sb = chart.get("shadbala") or {}
     classical = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
     svals = [sb[q]["total_shadbala"] for q in classical if q in sb]
@@ -83,37 +111,44 @@ def argala_analysis(chart: dict, functional: bool = False) -> dict:
 
     houses = []
     for reference in range(1, 13):
-        pos = neg = 0.0
-        positive: list[str] = []
-        negative: list[str] = []
+        ref_sign = (lagna_sign + reference - 1) % 12
+        interveners = []
         for na, nv in _ARG_PAIRS:
             argala_house = _house_from(reference, na)
             virodha_house = _house_from(reference, nv)
             argala_wt = sum(wt[p] for p in by_house[argala_house])
             virodha_wt = sum(wt[p] for p in by_house[virodha_house])
-            # An argala counts only if it outweighs its virodha counter.
-            if argala_wt > virodha_wt:
-                for p in by_house[argala_house]:
-                    if is_benefic(p):
-                        pos += wt[p]
-                        positive.append(p)
-                    else:
-                        neg += wt[p]
-                        negative.append(p)
+            if argala_wt <= virodha_wt:
+                continue  # obstructed by its virodha
+            for p in by_house[argala_house]:
+                dig = _get_dignity(p, ref_sign)
+                d = dignity_score(p, dig)
+                r = role_fit(p, reference)
+                polarity = d + r
+                interveners.append({
+                    "planet": p,
+                    "from_house": na,           # sits in the 2/4/5/11 from here
+                    "sign": SIGN_NAMES[ref_sign],
+                    "dignity": dig,
+                    "dignity_score": round(d, 2),
+                    "role_fit": round(r, 2),
+                    "shadbala": round(wt[p], 3),
+                    "polarity": round(polarity, 2),
+                    "contribution": round(wt[p] * polarity, 3),
+                })
+
+        pos = sum(iv["contribution"] for iv in interveners if iv["polarity"] > 0)
+        neg = sum(-iv["contribution"] for iv in interveners if iv["polarity"] < 0)
         denom = pos + neg
         strength = round((pos - neg) / denom * 100, 1) if denom > 0 else 0.0
         houses.append({
             "house": reference,
-            "strength": strength,           # −100..+100; sign drives the colour
-            "positive": positive,           # benefic effective interveners
-            "negative": negative,           # malefic effective interveners
+            "strength": strength,
+            "positive": [iv["planet"] for iv in interveners if iv["polarity"] > 0],
+            "negative": [iv["planet"] for iv in interveners if iv["polarity"] < 0],
             "pos_weight": round(pos, 3),
             "neg_weight": round(neg, 3),
+            "interveners": interveners,
         })
 
-    return {
-        "houses": houses,
-        "moon_bright": moon_bright,
-        "shadbala_used": bool(sb),
-        "functional": functional,
-    }
+    return {"houses": houses, "shadbala_used": bool(sb), "lagna_sign": lagna_sign}
