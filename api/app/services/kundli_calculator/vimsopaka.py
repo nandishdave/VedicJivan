@@ -35,6 +35,7 @@ _CLASSICAL = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
 # classical 7-graha Vimśopaka and NOT part of the fame model — including them was tested
 # and does not help (it dilutes factor 2 and is neutral-to-reversed for factor 16).
 _NODES = ["Rahu", "Ketu"]
+_OUTER = ["Uranus", "Neptune", "Pluto"]
 
 _DEFAULT_PCT = 45  # unknown dignity → neutral
 
@@ -87,8 +88,10 @@ def compute_vimsopaka(dob: str, tob: str, lat: float, lon: float) -> dict:
     planets, lagna = pos["planets"], pos["lagna"]
     divisional = calc_divisional_charts(planets, lagna)
 
-    # Nodes computed for display only; average + strongest use the 7 classical grahas.
-    per_planet = {p: planet_vimsopaka(p, planets, divisional) for p in _CLASSICAL + _NODES}
+    # Nodes + outer planets are display-only; the average + strongest use the 7
+    # classical grahas (the Vimśopaka is a classical 7-planet measure).
+    _display = _CLASSICAL + _NODES + _OUTER
+    per_planet = {p: planet_vimsopaka(p, planets, divisional) for p in _display}
     strongest = max(_CLASSICAL, key=lambda p: per_planet[p]["vimsopaka"])
     avg = sum(per_planet[p]["vimsopaka"] for p in _CLASSICAL) / len(_CLASSICAL)
 
@@ -101,9 +104,10 @@ def compute_vimsopaka(dob: str, tob: str, lat: float, lon: float) -> dict:
                 "house": planets[p]["house"],
                 "sign": SIGN_NAMES[planets[p]["sign"]],
                 "is_node": p in _NODES,  # display-only; excluded from average + strongest
+                "is_outer": p in _OUTER,  # display-only; excluded from average + strongest
                 "vargas": per_planet[p]["vargas"],
             }
-            for p in _CLASSICAL + _NODES
+            for p in _display
         },
         "strongest": {
             "planet": strongest,

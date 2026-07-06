@@ -440,6 +440,7 @@ export interface VimsopakaPlanet {
   house: number;
   sign: string;
   is_node?: boolean; // Rāhu/Ketu — display only, excluded from average + strongest
+  is_outer?: boolean; // Uranus/Neptune/Pluto — display only, excluded too
 }
 
 export interface VimsopakaResult {

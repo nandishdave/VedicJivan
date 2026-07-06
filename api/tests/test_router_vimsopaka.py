@@ -35,7 +35,8 @@ def test_planet_vimsopaka_contribution_is_weight_times_pct():
 
 _CLASSICAL = {"Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"}
 _NODES = {"Rahu", "Ketu"}
-_ALL = _CLASSICAL | _NODES
+_OUTER = {"Uranus", "Neptune", "Pluto"}
+_ALL = _CLASSICAL | _NODES | _OUTER
 _DOB, _TOB, _LAT, _LON = "1988-11-11", "12:55", 21.7333, 70.6167
 
 
@@ -77,8 +78,12 @@ async def test_vimsopaka_endpoint_json(client):
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert set(body["planets"]) == _ALL
-    assert body["strongest"]["planet"] in _CLASSICAL  # nodes excluded from the pick
+    assert set(body["planets"]) == _ALL  # 7 classical + nodes + 3 outer
+    assert body["strongest"]["planet"] in _CLASSICAL  # nodes/outer excluded from the pick
+    # nodes + outer planets are flagged display-only
+    assert all(body["planets"][p]["is_node"] for p in _NODES)
+    assert all(body["planets"][p]["is_outer"] for p in _OUTER)
+    assert not body["planets"]["Sun"]["is_node"] and not body["planets"]["Sun"]["is_outer"]
     # default (detail=false) omits the per-varga breakdown
     assert "vargas" not in body["planets"]["Sun"]
     assert "strongest" in body and "average" in body

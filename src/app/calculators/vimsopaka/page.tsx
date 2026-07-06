@@ -8,6 +8,7 @@ import { kundliApi, type VimsopakaResult, type VimsopakaPlanet } from "@/lib/api
 
 const PLANET_ORDER = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"];
 const NODE_ORDER = ["Rahu", "Ketu"];
+const OUTER_ORDER = ["Uranus", "Neptune", "Pluto"];
 
 const BAND_CLASS: Record<string, string> = {
   "Very strong": "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
@@ -187,6 +188,19 @@ export default function VimsopakaCalculatorPage() {
                       </td>
                     </tr>
                     {NODE_ORDER.map((p) => renderRow(p, result.planets[p], false, true))}
+                    {OUTER_ORDER.every((p) => result.planets[p]) && (
+                      <>
+                        <tr className="border-t border-gray-100 dark:border-white/10">
+                          <td
+                            colSpan={5}
+                            className="bg-gray-50 px-4 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:bg-white/5 dark:text-gray-500"
+                          >
+                            Outer planets — reference only (modern rulerships; not in the average or the strongest pick)
+                          </td>
+                        </tr>
+                        {OUTER_ORDER.map((p) => renderRow(p, result.planets[p], false, true))}
+                      </>
+                    )}
                   </tbody>
                 </table>
               </div>
