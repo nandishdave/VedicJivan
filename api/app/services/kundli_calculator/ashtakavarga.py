@@ -97,3 +97,51 @@ def calc_ashtakavarga(planets: dict, lagna_sign: int) -> dict:
         "totals": totals,
         "grand_total": grand_total,
     }
+
+
+# ── Display transform for the calculator ────────────────────────────────────
+# Local SIGN_NAMES so this stays a leaf module (_core imports calc_ashtakavarga,
+# so importing SIGN_NAMES from _core here would be a cycle).
+_SIGN_NAMES = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+]
+_AV_PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"]
+
+
+def ashtakavarga_table(chart: dict) -> dict:
+    """House-based Sarva + Bhinna Ashtakavarga for the calculator, from the
+    chart's already-computed ``ashtakavarga`` block. The engine keys bindus by
+    SIGN (Aries=0); here we re-key by HOUSE from the lagna so a reader sees
+    which *house* each score lands on.
+
+    Returns ``{lagna_sign, grand_total,
+      houses: [{house, sign, sav}],                       # Sarvashtakavarga
+      bav:    [{planet, total, per_house: [b1..b12]}]}``  # Bhinnashtakavarga
+    """
+    av = chart.get("ashtakavarga") or {}
+    totals = av.get("totals") or [0] * 12
+    bindus = av.get("bindus") or {}
+    lagna_sign = (chart.get("lagna") or {}).get("sign", 0)
+
+    def sign_of(house: int) -> int:
+        return (lagna_sign + house - 1) % 12
+
+    houses = [
+        {"house": h, "sign": _SIGN_NAMES[sign_of(h)], "sav": totals[sign_of(h)]}
+        for h in range(1, 13)
+    ]
+    bav = []
+    for planet in _AV_PLANETS:
+        row = bindus.get(planet, [0] * 12)
+        bav.append({
+            "planet": planet,
+            "total": sum(row),
+            "per_house": [row[sign_of(h)] for h in range(1, 13)],
+        })
+    return {
+        "lagna_sign": lagna_sign,
+        "grand_total": av.get("grand_total", sum(totals)),
+        "houses": houses,
+        "bav": bav,
+    }

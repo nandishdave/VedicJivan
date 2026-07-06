@@ -33,6 +33,7 @@ from app.models.kundli import KundliRequest
 from app.repositories.kundli_repository import KundliRepository
 from app.services.kundli_calculator import build_chart
 from app.services.kundli_calculator.argala import argala_analysis
+from app.services.kundli_calculator.ashtakavarga import ashtakavarga_table
 from app.services.kundli_calculator.degree_calculator import degree_analysis
 from app.services.kundli_calculator.vimsopaka import compute_vimsopaka
 from app.services.kundli_pdf import generate_pdf
@@ -279,6 +280,31 @@ f.onsubmit=async e=>{
 };
 f.requestSubmit?f.requestSubmit():f.dispatchEvent(new Event("submit"));
 </script></div></body></html>"""
+
+
+@router.get("/ashtakavarga")
+async def ashtakavarga_endpoint(
+    dob: str = Query(..., description="Birth date YYYY-MM-DD"),
+    tob: str = Query("12:00", description="Birth time HH:MM (24h)"),
+    lat: float = Query(..., description="Birth latitude"),
+    lon: float = Query(..., description="Birth longitude"),
+):
+    """Ashtakavarga for a birth moment: Sarvashtakavarga (total bindus per house,
+    baseline 28) and each planet's Bhinnashtakavarga (bindus per house, 0-8).
+    Read-only, no DB write."""
+    from app.services.muhurta import build_muhurta_chart
+    try:
+        # Ashtakavarga doesn't need Shadbala — skip it (much faster).
+        chart = await run_in_threadpool(
+            build_muhurta_chart, dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=False
+        )
+        return ashtakavarga_table(chart)
+    except Exception:
+        logger.exception("ashtakavarga failed")
+        raise HTTPException(
+            status_code=422,
+            detail="Could not compute for these birth details. Please check the inputs.",
+        )
 
 
 @router.get("/degree-analysis")

@@ -411,6 +411,16 @@ export const kundliApi = {
     });
     return apiRequest<ArgalaResult>(`/api/kundli/argala-analysis?${q.toString()}`);
   },
+
+  ashtakavarga: (data: { dob: string; tob: string; lat: number; lon: number }) => {
+    const q = new URLSearchParams({
+      dob: data.dob,
+      tob: data.tob,
+      lat: String(data.lat),
+      lon: String(data.lon),
+    });
+    return apiRequest<AshtakavargaResult>(`/api/kundli/ashtakavarga?${q.toString()}`);
+  },
 };
 
 // ── Vimśopaka Bala calculator ──
@@ -510,6 +520,26 @@ export interface ArgalaResult {
   houses: ArgalaHouse[];
   shadbala_used: boolean;
   lagna_sign: number;
+}
+
+// ── Ashtakavarga calculator ──
+export interface AvHouse {
+  house: number;
+  sign: string;
+  sav: number; // Sarvashtakavarga bindus for this house (baseline 28)
+}
+
+export interface AvBav {
+  planet: string;
+  total: number; // fixed classical total (Sun 48, Moon 49, …)
+  per_house: number[]; // Bhinnashtakavarga bindus per house 1..12 (each 0–8)
+}
+
+export interface AshtakavargaResult {
+  lagna_sign: number;
+  grand_total: number; // 337
+  houses: AvHouse[];
+  bav: AvBav[];
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──
