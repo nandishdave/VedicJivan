@@ -432,14 +432,31 @@ export const kundliApi = {
     return apiRequest<ShadbalaResult>(`/api/kundli/shadbala?${q.toString()}`);
   },
 
-  divisionalCharts: (data: { dob: string; tob: string; lat: number; lon: number }) => {
+  divisionalCharts: (data: {
+    dob: string;
+    tob: string;
+    lat: number;
+    lon: number;
+    upagrahas?: boolean;
+  }) => {
     const q = new URLSearchParams({
       dob: data.dob,
       tob: data.tob,
       lat: String(data.lat),
       lon: String(data.lon),
     });
+    if (data.upagrahas) q.set("upagrahas", "true");
     return apiRequest<DivisionalResult>(`/api/kundli/divisional-charts?${q.toString()}`);
+  },
+
+  upagraha: (data: { dob: string; tob: string; lat: number; lon: number }) => {
+    const q = new URLSearchParams({
+      dob: data.dob,
+      tob: data.tob,
+      lat: String(data.lat),
+      lon: String(data.lon),
+    });
+    return apiRequest<UpagrahaResult>(`/api/kundli/upagraha?${q.toString()}`);
   },
 };
 
@@ -612,13 +629,33 @@ export interface DvVarga {
 }
 
 export interface DvBody {
-  body: string; // Ascendant + grahas + outer
+  body: string; // Ascendant + grahas + outer (+ upagrahas when toggled)
   signs: string[]; // sign abbreviation per varga (aligned with vargas[])
+  is_upagraha?: boolean; // true for the folded-in sub-planet rows
 }
 
 export interface DivisionalResult {
   vargas: DvVarga[];
   bodies: DvBody[];
+}
+
+// ── Upagrahas (sub-planets) ──
+export interface UpagrahaRow {
+  name: string;
+  label: string;
+  abbr: string;
+  sign: number;
+  sign_abbr: string;
+  degree: number;
+  dms: string;
+  nakshatra: string;
+  pada: number;
+}
+
+export interface UpagrahaResult {
+  upagrahas: UpagrahaRow[];
+  by_sign: Record<string, string[]>;
+  lagna_sign: number;
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──

@@ -290,16 +290,26 @@ async def divisional_charts_endpoint(
     tob: str = Query("12:00", description="Birth time HH:MM (24h)"),
     lat: float = Query(..., description="Birth latitude"),
     lon: float = Query(..., description="Birth longitude"),
+    upagrahas: bool = Query(False, description="Also fold the 11 upagrahas into every varga"),
 ):
     """Each body's sign across the divisional charts (D1 Rāśi … D60 Ṣaṣṭyāṁśa) —
-    the Ascendant + 9 grahas + 3 outer planets. Read-only, no DB write."""
+    the Ascendant + 9 grahas + 3 outer planets. When ``upagrahas=true`` the 11
+    sub-planets are added to every varga too. Read-only, no DB write."""
     from app.services.muhurta import build_muhurta_chart
-    try:
+
+    def _compute():
         # Divisionals don't need Shadbala — skip it (much faster).
-        chart = await run_in_threadpool(
-            build_muhurta_chart, dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=False
-        )
-        return divisional_table(chart["planets"], chart["lagna"])
+        chart = build_muhurta_chart(dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=False)
+        ups = None
+        if upagrahas:
+            from app.services.kundli_calculator._core import get_julian_day
+            from app.services.kundli_calculator.upagraha import calc_upagrahas
+            jd = get_julian_day(dob, tob, lat, lon)
+            ups = calc_upagrahas(jd, dob, lat, lon, chart["planets"]["Sun"]["longitude"])
+        return divisional_table(chart["planets"], chart["lagna"], upagrahas=ups)
+
+    try:
+        return await run_in_threadpool(_compute)
     except Exception:
         logger.exception("divisional-charts failed")
         raise HTTPException(
@@ -422,6 +432,38 @@ async def argala_analysis_endpoint(
         return argala_analysis(chart)
     except Exception:
         logger.exception("argala-analysis failed")
+        raise HTTPException(
+            status_code=422,
+            detail="Could not compute for these birth details. Please check the inputs.",
+        )
+
+
+@router.get("/upagraha")
+async def upagraha_endpoint(
+    dob: str = Query(..., description="Birth date YYYY-MM-DD"),
+    tob: str = Query("12:00", description="Birth time HH:MM (24h)"),
+    lat: float = Query(..., description="Birth latitude"),
+    lon: float = Query(..., description="Birth longitude"),
+):
+    """The 11 upagrahas (sub-planets): 5 Sun-derived (Dhūma, Vyatīpāta, Parivesha,
+    Indrachāpa, Upaketu) + 6 time-based (Kāla, Mṛtyu, Arthaprahāra, Yamaghaṇṭaka,
+    Māndi, Gulika), each with sign / longitude / nakṣatra / pada, plus a per-sign
+    grouping for the North-Indian chart and the lagna sign. Read-only, no DB write."""
+    from app.services.muhurta import build_muhurta_chart
+    from app.services.kundli_calculator._core import get_julian_day
+    from app.services.kundli_calculator.upagraha import upagraha_table
+
+    def _compute():
+        chart = build_muhurta_chart(dob=dob, tob=tob, lat=lat, lon=lon, with_shadbala=False)
+        jd = get_julian_day(dob, tob, lat, lon)
+        return upagraha_table(
+            jd, dob, lat, lon, chart["planets"]["Sun"]["longitude"], chart["lagna"]["sign"]
+        )
+
+    try:
+        return await run_in_threadpool(_compute)
+    except Exception:
+        logger.exception("upagraha failed")
         raise HTTPException(
             status_code=422,
             detail="Could not compute for these birth details. Please check the inputs.",

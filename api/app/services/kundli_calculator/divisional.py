@@ -204,11 +204,34 @@ _DIV_BODY_ORDER = [
 ]
 
 
-def divisional_table(planets: dict, lagna: dict, divisional: dict | None = None) -> dict:
+def divisional_table(planets: dict, lagna: dict, divisional: dict | None = None,
+                     upagrahas: dict | None = None) -> dict:
     """Each body's sign across the 16 Ṣoḍaśavarga divisionals (+ D6/D8/D11) for the
     calculator: D1 is the natal sign; the rest come from ``calc_divisional_charts``.
     Returns ``{vargas: [{key, name}], bodies: [{body, signs: [sign-abbr per varga]}]}``.
+
+    When ``upagrahas`` (a ``{name: longitude}`` map) is supplied, each sub-planet is
+    folded in as an extra body (run through the same varga math) and its rows are
+    appended after the grahas, tagged ``is_upagraha`` for the UI.
     """
+    planets = dict(planets)  # don't mutate the caller's chart
+    extra_order: list[str] = []
+    labels: dict[str, str] = {}
+    if upagrahas:
+        from app.services.kundli_calculator.upagraha import (
+            _UPAGRAHA_ORDER, _UPAGRAHA_LABEL,
+        )
+        for name in _UPAGRAHA_ORDER:
+            if name not in upagrahas:
+                continue
+            lon = upagrahas[name] % 360
+            planets[name] = {
+                "sign": int(lon // 30), "degree_in_sign": lon % 30, "longitude": lon,
+            }
+            extra_order.append(name)
+            labels[name] = _UPAGRAHA_LABEL[name]
+        divisional = None  # recompute with the upagrahas included
+
     div = divisional or calc_divisional_charts(planets, lagna)
 
     def sign_of(body: str, varga: str) -> int | None:
@@ -218,14 +241,17 @@ def divisional_table(planets: dict, lagna: dict, divisional: dict | None = None)
         return div.get(varga, {}).get(key)
 
     bodies = []
-    for body in _DIV_BODY_ORDER:
+    for body in _DIV_BODY_ORDER + extra_order:
         if body != "Ascendant" and body not in planets:
             continue
         signs = []
         for v in _VARGA_ORDER:
             s = sign_of(body, v)
             signs.append(_DIV_SIGN_ABBR[s] if s is not None else "")
-        bodies.append({"body": body, "signs": signs})
+        row = {"body": labels.get(body, body), "signs": signs}
+        if body in labels:
+            row["is_upagraha"] = True
+        bodies.append(row)
     return {
         "vargas": [{"key": v, "name": _VARGA_NAME[v]} for v in _VARGA_ORDER],
         "bodies": bodies,

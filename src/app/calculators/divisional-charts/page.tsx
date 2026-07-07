@@ -23,11 +23,11 @@ export default function DivisionalChartsCalculatorPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<DivisionalResult | null>(null);
+  const [showUpagrahas, setShowUpagrahas] = useState(false);
 
   const canSubmit = !!date && !!time && !!place && !loading;
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchCharts = async (withUpagrahas: boolean) => {
     if (!place) {
       setError("Please choose a birth place.");
       return;
@@ -35,7 +35,13 @@ export default function DivisionalChartsCalculatorPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await kundliApi.divisionalCharts({ dob: date, tob: time, lat: place.lat, lon: place.lon });
+      const res = await kundliApi.divisionalCharts({
+        dob: date,
+        tob: time,
+        lat: place.lat,
+        lon: place.lon,
+        upagrahas: withUpagrahas,
+      });
       setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not calculate. Check the inputs.");
@@ -43,6 +49,16 @@ export default function DivisionalChartsCalculatorPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchCharts(showUpagrahas);
+  };
+
+  const onToggleUpagrahas = (checked: boolean) => {
+    setShowUpagrahas(checked);
+    if (result) fetchCharts(checked); // live-refresh when a result is already shown
   };
 
   return (
@@ -102,6 +118,15 @@ export default function DivisionalChartsCalculatorPage() {
                 }}
               />
             </div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={showUpagrahas}
+                onChange={(e) => onToggleUpagrahas(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              Include the 11 upagrahas (sub-planets) in every varga
+            </label>
             <div className="sm:col-span-2">
               <button
                 type="submit"
@@ -144,25 +169,35 @@ export default function DivisionalChartsCalculatorPage() {
                   <tbody>
                     {result.bodies.map((b) => {
                       const isAsc = b.body === "Ascendant";
+                      const isUpa = b.is_upagraha;
+                      const rowBg = isAsc
+                        ? "bg-primary-50/60 dark:bg-primary-900/20"
+                        : isUpa
+                          ? "bg-amber-50/60 dark:bg-amber-900/10"
+                          : "";
                       return (
-                        <tr
-                          key={b.body}
-                          className={
-                            "border-t border-gray-100 dark:border-white/10 " +
-                            (isAsc ? "bg-primary-50/60 dark:bg-primary-900/20" : "")
-                          }
-                        >
+                        <tr key={b.body} className={"border-t border-gray-100 dark:border-white/10 " + rowBg}>
                           <td
                             className={
                               "sticky left-0 z-10 px-3 py-1.5 text-left font-semibold text-vedic-dark dark:text-white " +
-                              (isAsc ? "bg-primary-50/60 dark:bg-primary-900/20" : "bg-white dark:bg-dark-surface-card")
+                              (rowBg || "bg-white dark:bg-dark-surface-card")
                             }
                           >
                             {b.body}
-                            <span className="ml-1 text-xs font-normal text-gray-400">{PLANET_ABBR[b.body]}</span>
+                            {!isUpa && (
+                              <span className="ml-1 text-xs font-normal text-gray-400">{PLANET_ABBR[b.body]}</span>
+                            )}
                           </td>
                           {b.signs.map((s, i) => (
-                            <td key={i} className="px-2 py-1.5 text-gray-600 dark:text-gray-300">{s}</td>
+                            <td
+                              key={i}
+                              className={
+                                "px-2 py-1.5 " +
+                                (isUpa ? "text-amber-700 dark:text-amber-300" : "text-gray-600 dark:text-gray-300")
+                              }
+                            >
+                              {s}
+                            </td>
                           ))}
                         </tr>
                       );
