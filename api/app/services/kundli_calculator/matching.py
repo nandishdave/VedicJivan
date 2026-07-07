@@ -20,7 +20,7 @@ _NAK_YONI = [
     0, 1, 2, 3, 3, 4, 5, 2, 5, 6, 6, 7, 8, 9, 8, 9, 10, 10, 4, 11, 12, 11, 13, 0, 13, 7, 1,
 ]
 _YONI_NAMES = [
-    "Ashva", "Gaja", "Mesha", "Sarpa", "Shwan", "Marjar", "Mushak",
+    "Ashva", "Gaja", "Mesha", "Sarpa", "Shwan", "Bilav", "Mushak",
     "Gau", "Mahish", "Vyaghra", "Mriga", "Vanar", "Nakul", "Simha",
 ]
 # Gana: 0 Deva, 1 Manushya, 2 Rakshasa.
@@ -87,6 +87,15 @@ _ENEMIES = {
 _TARA_NAMES = ["Ati-mitra", "Janma", "Sampat", "Vipat", "Kshema",
                "Pratyak", "Sadhaka", "Vadha", "Mitra"]  # index = t (0..8)
 
+# Graha-Maitri points by (boy-lord→girl-lord, girl-lord→boy-lord) natural
+# relationship (+1 friend / 0 neutral / −1 enemy). Validated on 5 AstroSage
+# reports (same lord → 5, handled separately).
+_MAITRI_TABLE = {
+    (1, 1): 5, (1, 0): 4, (1, -1): 1,
+    (0, 1): 4, (0, 0): 3, (0, -1): 0.5,
+    (-1, 1): 1, (-1, 0): 0.5, (-1, -1): 0,
+}
+
 
 def _rel(a: str, b: str) -> int:
     """+1 if a sees b as friend, -1 enemy, 0 neutral."""
@@ -127,7 +136,7 @@ def _maitri(b_sign: int, g_sign: int):
     lb, lg = _SIGN_LORD[b_sign], _SIGN_LORD[g_sign]
     if lb == lg:
         return 5, lb, lg
-    pts = max(0, min(5, 3 + _rel(lb, lg) + _rel(lg, lb)))
+    pts = _MAITRI_TABLE[(_rel(lb, lg), _rel(lg, lb))]
     return pts, lb, lg
 
 
