@@ -97,12 +97,16 @@ def test_worldly_reuses_precomputed_dashas(mocker):
 # Golden 17 raw values for the fixed Dhoni chart, captured 2026-07-05. These lock
 # factor_values() exactly, so the M1/M2 refactor (unify with fame_composite.py,
 # hoist shared constants) provably cannot change any number the calibration rests on.
+# Updated 2026-07 for the divisional-chart fixes (D4 kendra formula + Rahu/Ketu
+# mean node — both verified against Astrosage): D4 shifts Vimśopaka slightly
+# (→ top_vim_seat seat flip) and the mean node shifts poison_net; argala_pos
+# moved a hair too. All other factors unchanged.
 _GOLDEN = {
-    "rahu_prime": 18.0, "vimsopaka": 10.357143, "av_10th": 31, "av_1st": 23,
+    "rahu_prime": 18.0, "vimsopaka": 10.364286, "av_10th": 31, "av_1st": 23,
     "upa_occ": 0.6, "raja_late": 6.384333, "dhana_late": 0.0, "av_11th": 36,
     "bright_moon": 0.0, "moon_disp": 0.0, "moon_sav": 23, "sun_disp": 0.0,
-    "argala_pos": 92.6, "purna_tithi": 0.0, "dig_lords": 23.49,
-    "top_vim_seat": 0.0, "nak_mridu_net": 2.0, "poison_net": 2.0,
+    "argala_pos": 92.9, "purna_tithi": 0.0, "dig_lords": 23.49,
+    "top_vim_seat": 1.0, "nak_mridu_net": 2.0, "poison_net": 3.0,
 }
 
 

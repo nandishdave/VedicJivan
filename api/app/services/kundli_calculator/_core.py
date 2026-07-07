@@ -57,7 +57,9 @@ SWE_PLANETS = {
     "Jupiter": 5,  # swe.JUPITER
     "Venus": 3,    # swe.VENUS
     "Saturn": 6,   # swe.SATURN
-    "Rahu": 11,    # swe.MEAN_NODE (North Node)
+    "Rahu": 10,    # swe.MEAN_NODE (North Node) — Vedic standard is the MEAN node
+                   # (code 10). Was 11 (TRUE_NODE) by mistake, which flipped the
+                   # fine vargas (D60 etc.) for Rahu/Ketu vs Astrosage.
     "Uranus": 7,   # swe.URANUS
     "Neptune": 8,  # swe.NEPTUNE
     "Pluto": 9,    # swe.PLUTO

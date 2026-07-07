@@ -107,11 +107,11 @@ def _calc_varga_sign(sign: int, degree: float, chart_type: str) -> int:
     # ── Additional Shodashvarga charts ──────────────────────────────────────
 
     elif chart_type == "D4":
-        # Chaturthamsha: 4 parts (7°30' each)
-        # Odd signs start from same sign; even signs start from 4th sign (sign + 3)
+        # Chaturthamsha: 4 parts (7°30' each). The parts go to the four KENDRAS
+        # from the sign — 1st/4th/7th/10th (Parashara), i.e. sign + 3·part.
+        # Verified against Astrosage (13/13 bodies).
         part = min(int(degree / 7.5), 3)
-        start = sign if is_odd else (sign + 3) % 12
-        return (start + part) % 12
+        return (sign + 3 * part) % 12
 
     elif chart_type == "D6":
         # Shashtiamsha (health variant, 6 parts): 5° each
