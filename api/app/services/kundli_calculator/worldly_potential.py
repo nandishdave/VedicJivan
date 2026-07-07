@@ -71,7 +71,7 @@ Distinct from ``fame.py`` (the weaker Yaśa heuristic). The 18 factors:
                   (seed-stable, all 5 seeds +). Mṛtyu-Bhāga carries it; Vish adds a little. The
                   auspicious counterparts (Pushkara Navāṁśa/Bhāga) were tested and are noise.
 
-Because the composite is a *relative* (z-scored) model, we bake the 303-chart
+Because the composite is a *relative* (z-scored) model, we bake the 321-chart
 reference distribution ``REF = {factor: (famous_mean, ordinary_mean, pooled_std)}``
 so a single chart can be scored without a runtime population. Each factor is
 z-scored against its midpoint, oriented famous-positive, averaged, and squashed
@@ -116,27 +116,29 @@ _NAK_ARC = 360.0 / 27.0
 _MRIDU_NAK = {4, 13, 16, 26}
 _TIKSHNA_NAK = {5, 8, 17, 18}
 
-# Calibration snapshot from the 303-chart study (fame_composite.py):
-# factor -> (famous_mean, ordinary_mean, pooled_std over all 303 charts).
+# Calibration snapshot from the 321-chart study (fame_composite.py), regenerated
+# 2026-07 on the corrected math (D4 kendra formula + Rahu/Ketu mean node) over the
+# current 225 famous + 96 ordinary set.
+# factor -> (famous_mean, ordinary_mean, pooled_std (ddof=0) over all 321 charts).
 REF = {
-    "rahu_prime": (5.2406, 4.0625, 6.4857),
-    "vimsopaka":  (10.0424, 9.8151, 0.6692),
-    "av_10th":    (31.9324, 29.8229, 4.6999),
-    "av_1st":     (28.8502, 29.1875, 4.2607),
-    "upa_occ":    (0.3649, 0.3056, 0.3157),
-    "raja_late":  (1.7283, 1.4760, 1.7269),
-    "dhana_late": (0.6001, 0.3574, 1.0889),
-    "av_11th":    (32.4010, 30.8854, 4.4462),
-    "bright_moon":  (0.5467, 0.4271, 0.5007),
-    "moon_disp":    (0.4844, 0.3021, 0.4958),
-    "moon_sav":     (27.5911, 27.1562, 4.7677),
-    "sun_disp":     (0.4311, 0.2188, 0.4829),
-    "argala_pos":   (781.0587, 604.2046, 495.3215),
-    "purna_tithi":  (0.2267, 0.1146, 0.3954),
-    "dig_lords":    (31.9856, 28.2630, 12.3012),
-    "top_vim_seat": (0.5467, 0.3021, 0.5001),
-    "nak_mridu_net": (0.0400, -0.3438, 1.6319),
-    "poison_net": (1.6444, 2.0104, 1.2274),
+    "rahu_prime": (5.1929, 4.1688, 6.4582),
+    "vimsopaka":  (10.0484, 9.8191, 0.6763),
+    "av_10th":    (31.8311, 29.8229, 4.6541),
+    "av_1st":     (28.8267, 29.1875, 4.2278),
+    "upa_occ":    (0.3593, 0.3024, 0.3172),
+    "raja_late":  (1.6893, 1.4760, 1.6943),
+    "dhana_late": (0.5941, 0.3574, 1.1011),
+    "av_11th":    (32.3022, 30.8854, 4.4281),
+    "bright_moon":  (0.5467, 0.4271, 0.4999),
+    "moon_disp":    (0.4844, 0.3021, 0.4951),
+    "moon_sav":     (27.5911, 27.1562, 4.7602),
+    "sun_disp":     (0.4311, 0.2188, 0.4822),
+    "argala_pos":   (785.8690, 592.6378, 492.9063),
+    "purna_tithi":  (0.2267, 0.1146, 0.3948),
+    "dig_lords":    (32.0009, 28.2630, 12.2771),
+    "top_vim_seat": (0.5467, 0.3125, 0.4995),
+    "nak_mridu_net": (0.0267, -0.2812, 1.6364),
+    "poison_net": (1.6267, 1.9583, 1.2201),
 }
 _ARGALA_MID = (REF["argala_pos"][0] + REF["argala_pos"][1]) / 2.0  # neutral fallback
 _DIG_MID = (REF["dig_lords"][0] + REF["dig_lords"][1]) / 2.0       # neutral fallback
