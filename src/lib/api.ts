@@ -458,6 +458,23 @@ export const kundliApi = {
     });
     return apiRequest<UpagrahaResult>(`/api/kundli/upagraha?${q.toString()}`);
   },
+
+  horoscopeMatching: (data: {
+    boy: { dob: string; tob: string; lat: number; lon: number };
+    girl: { dob: string; tob: string; lat: number; lon: number };
+  }) => {
+    const q = new URLSearchParams({
+      boy_dob: data.boy.dob,
+      boy_tob: data.boy.tob,
+      boy_lat: String(data.boy.lat),
+      boy_lon: String(data.boy.lon),
+      girl_dob: data.girl.dob,
+      girl_tob: data.girl.tob,
+      girl_lat: String(data.girl.lat),
+      girl_lon: String(data.girl.lon),
+    });
+    return apiRequest<MatchingResult>(`/api/kundli/matching?${q.toString()}`);
+  },
 };
 
 // ── Vimśopaka Bala calculator ──
@@ -656,6 +673,26 @@ export interface UpagrahaResult {
   upagrahas: UpagrahaRow[];
   by_sign: Record<string, string[]>;
   lagna_sign: number;
+}
+
+// ── Horoscope Matching (Ashtakoota / Guna Milap) ──
+export interface MatchingKoota {
+  koota: string;
+  max: number;
+  boy: string;
+  girl: string;
+  points: number;
+  area: string;
+  interpretation: string;
+}
+
+export interface MatchingResult {
+  kootas: MatchingKoota[];
+  total: number;
+  max_total: number;
+  boy_mangal: string;
+  girl_mangal: string;
+  verdict: string;
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──

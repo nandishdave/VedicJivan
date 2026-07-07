@@ -470,6 +470,39 @@ async def upagraha_endpoint(
         )
 
 
+@router.get("/matching")
+async def matching_endpoint(
+    boy_dob: str = Query(..., description="Boy birth date YYYY-MM-DD"),
+    boy_tob: str = Query("12:00", description="Boy birth time HH:MM"),
+    boy_lat: float = Query(..., description="Boy birth latitude"),
+    boy_lon: float = Query(..., description="Boy birth longitude"),
+    girl_dob: str = Query(..., description="Girl birth date YYYY-MM-DD"),
+    girl_tob: str = Query("12:00", description="Girl birth time HH:MM"),
+    girl_lat: float = Query(..., description="Girl birth latitude"),
+    girl_lon: float = Query(..., description="Girl birth longitude"),
+):
+    """Ashtakoota (Guna Milap) horoscope matching for two people: the 8 kootas
+    (Varna…Nadi, max 36) with per-koota points + interpretation, the total,
+    each partner's Mangal-Dosha grade (No/Low/High) and the overall verdict.
+    Read-only, no DB write."""
+    from app.services.muhurta import build_muhurta_chart
+    from app.services.kundli_calculator.matching import compute_matching
+
+    def _compute():
+        boy = build_muhurta_chart(dob=boy_dob, tob=boy_tob, lat=boy_lat, lon=boy_lon, with_shadbala=False)
+        girl = build_muhurta_chart(dob=girl_dob, tob=girl_tob, lat=girl_lat, lon=girl_lon, with_shadbala=False)
+        return compute_matching(boy, girl)
+
+    try:
+        return await run_in_threadpool(_compute)
+    except Exception:
+        logger.exception("matching failed")
+        raise HTTPException(
+            status_code=422,
+            detail="Could not compute for these birth details. Please check the inputs.",
+        )
+
+
 @router.get("/degree-analysis/page", response_class=HTMLResponse)
 async def degree_analysis_page():
     """Self-contained calculator page for the degree-analysis endpoint — enter a
