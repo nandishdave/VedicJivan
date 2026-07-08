@@ -686,6 +686,26 @@ export interface MatchingKoota {
   interpretation: string;
 }
 
+export interface PersonSummary {
+  lagna: string;
+  lagna_lord: string;
+  rashi: string;
+  rashi_lord: string;
+  nakshatra: string;
+  pada: number;
+  nakshatra_lord: string;
+  gana: string;
+  nadi: string;
+  yoni: string;
+  varna: string;
+  vasya: string;
+}
+
+export interface MatchChart {
+  asc_sign: number; // sign in house 1
+  by_sign: Record<string, string[]>; // sign index -> body abbreviations
+}
+
 export interface MatchingResult {
   kootas: MatchingKoota[];
   total: number;
@@ -693,6 +713,10 @@ export interface MatchingResult {
   boy_mangal: string;
   girl_mangal: string;
   verdict: string;
+  boy_summary: PersonSummary;
+  girl_summary: PersonSummary;
+  boy_charts: Record<string, MatchChart>; // D1, D9, Moon
+  girl_charts: Record<string, MatchChart>;
 }
 
 // ── Muhurta (Auspicious Birth-Time) ──

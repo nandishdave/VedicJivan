@@ -47,6 +47,12 @@ def test_result_shape():
     assert r["max_total"] == 36
     assert all("interpretation" in k and k["interpretation"] for k in r["kootas"])
     assert isinstance(r["verdict"], str) and r["verdict"]
+    # birth-details summary + the three charts per person
+    for who in ("boy_summary", "girl_summary"):
+        assert {"lagna", "rashi", "nakshatra", "pada", "gana", "nadi", "yoni"} <= set(r[who])
+    for who in ("boy_charts", "girl_charts"):
+        assert set(r[who]) == {"D1", "D9", "Moon"}
+        assert 0 <= r[who]["D1"]["asc_sign"] <= 11 and r[who]["D1"]["by_sign"]
 
 
 def test_mangal_hits_structure():

@@ -4,9 +4,93 @@ import { useState } from "react";
 import { Heart, Loader2, AlertCircle, Sparkles } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PlaceOfBirthAutocomplete } from "@/components/booking/PlaceOfBirthAutocomplete";
-import { kundliApi, type MatchingResult } from "@/lib/api";
+import { kundliApi, type MatchingResult, type MatchChart, type PersonSummary } from "@/lib/api";
 
 type Place = { name: string; lat: number; lon: number };
+
+// North-Indian house polygons on a 0–4 grid (House 1 = top-centre diamond).
+const POLY: Record<number, [number, number][]> = {
+  1: [[2, 0], [3, 1], [2, 2], [1, 1]], 2: [[0, 0], [2, 0], [1, 1]], 3: [[0, 0], [1, 1], [0, 2]],
+  4: [[0, 2], [1, 1], [2, 2], [1, 3]], 5: [[0, 2], [1, 3], [0, 4]], 6: [[0, 4], [1, 3], [2, 4]],
+  7: [[2, 4], [1, 3], [2, 2], [3, 3]], 8: [[2, 4], [3, 3], [4, 4]], 9: [[4, 4], [3, 3], [4, 2]],
+  10: [[4, 2], [3, 3], [2, 2], [3, 1]], 11: [[4, 2], [3, 1], [4, 0]], 12: [[4, 0], [3, 1], [2, 0]],
+};
+const CH_S = 44;
+const CH_W = 4 * CH_S;
+const chCentroid = (pts: [number, number][]): [number, number] => [
+  (pts.reduce((a, p) => a + p[0], 0) / pts.length) * CH_S,
+  (pts.reduce((a, p) => a + p[1], 0) / pts.length) * CH_S,
+];
+
+function NorthChart({ chart, title }: { chart: MatchChart; title: string }) {
+  return (
+    <div className="text-center">
+      <div className="mb-1 text-xs font-bold text-primary-600">{title}</div>
+      <svg viewBox={`0 0 ${CH_W} ${CH_W}`} className="mx-auto aspect-square w-full max-w-[170px]">
+        <rect x={0} y={0} width={CH_W} height={CH_W} fill="#fff" stroke="#334155" strokeWidth={2} />
+        <line x1={0} y1={0} x2={CH_W} y2={CH_W} stroke="#334155" />
+        <line x1={CH_W} y1={0} x2={0} y2={CH_W} stroke="#334155" />
+        <polygon points={`${2 * CH_S},0 ${CH_W},${2 * CH_S} ${2 * CH_S},${CH_W} 0,${2 * CH_S}`} fill="none" stroke="#334155" />
+        {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => {
+          const sign = (chart.asc_sign + h - 1) % 12;
+          const abbrs = chart.by_sign[String(sign)] ?? [];
+          const [cx, cy] = chCentroid(POLY[h]);
+          return (
+            <g key={h}>
+              <text x={cx} y={cy - abbrs.length * 4 - 2} textAnchor="middle" className="fill-gray-300 text-[8px]">
+                {sign + 1}
+              </text>
+              {abbrs.map((a, i) => (
+                <text key={a} x={cx} y={cy + 4 + i * 9} textAnchor="middle" className="fill-vedic-dark text-[9px] font-semibold">
+                  {a}
+                </text>
+              ))}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function SummaryCard({ label, s }: { label: string; s: PersonSummary }) {
+  const rows: [string, string][] = [
+    ["Lagna", `${s.lagna} (${s.lagna_lord})`],
+    ["Rāśi", `${s.rashi} (${s.rashi_lord})`],
+    ["Nakṣatra", `${s.nakshatra} – ${s.pada} (${s.nakshatra_lord})`],
+    ["Gana", s.gana],
+    ["Nadi", s.nadi],
+    ["Yoni", s.yoni],
+    ["Varna", s.varna],
+    ["Vasya", s.vasya],
+  ];
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-dark-surface-card">
+      <div className="mb-3 text-sm font-bold uppercase tracking-wide text-primary-600">{label}</div>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+        {rows.map(([k, v]) => (
+          <div key={k} className="contents">
+            <dt className="text-gray-500 dark:text-gray-400">{k}</dt>
+            <dd className="font-medium text-vedic-dark dark:text-gray-200">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function ChartTrio({ label, charts }: { label: string; charts: Record<string, MatchChart> }) {
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-dark-surface-card">
+      <div className="mb-2 text-sm font-bold uppercase tracking-wide text-primary-600">{label}</div>
+      <div className="grid grid-cols-3 gap-2">
+        <NorthChart chart={charts.D1} title="Lagna" />
+        <NorthChart chart={charts.D9} title="Navāṁśa" />
+        <NorthChart chart={charts.Moon} title="Chandra" />
+      </div>
+    </div>
+  );
+}
 
 function PersonFields({
   label,
@@ -199,6 +283,18 @@ export default function HoroscopeMatchingPage() {
                   <MangalBadge grade={result.girl_mangal} />
                 </div>
                 <p className="max-w-xl text-sm font-medium text-vedic-dark dark:text-gray-200">{result.verdict}</p>
+              </div>
+
+              {/* Birth details */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SummaryCard label="Groom (Boy)" s={result.boy_summary} />
+                <SummaryCard label="Bride (Girl)" s={result.girl_summary} />
+              </div>
+
+              {/* Charts */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <ChartTrio label="Groom (Boy)" charts={result.boy_charts} />
+                <ChartTrio label="Bride (Girl)" charts={result.girl_charts} />
               </div>
 
               {/* Koota table */}

@@ -46,6 +46,21 @@ _SIGN_LORD = ["Mars", "Venus", "Mercury", "Moon", "Sun", "Mercury",
               "Venus", "Mars", "Jupiter", "Saturn", "Saturn", "Jupiter"]
 _SIGN_NAMES = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
                "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+_NAK_NAMES = [
+    "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu",
+    "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta",
+    "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha", "Mula", "Purva Ashadha",
+    "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada",
+    "Uttara Bhadrapada", "Revati",
+]
+# Vimśottari nakṣatra lord (repeats every 9, from Ashwini).
+_NAK_LORD = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"]
+# Bodies shown in the North-Indian charts (+ their glyphs).
+_CHART_BODIES = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn",
+                 "Rahu", "Ketu", "Uranus", "Neptune", "Pluto"]
+_BODY_ABBR = {"Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me", "Jupiter": "Ju",
+              "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke",
+              "Uranus": "Ur", "Neptune": "Ne", "Pluto": "Pl"}
 
 # ── Scoring matrices ────────────────────────────────────────────────────────
 # Yoni 14×14 (standard classical). Diagonal 4; the 7 enemy pairs 0. Anchors
@@ -172,35 +187,143 @@ def mangal_dosha(chart: dict) -> dict:
 
 
 # ── Interpretation text (original, Astrosage-style; tiered by score) ────────
-_KOOTA_THEME = {
-    "Varna": "ego balance and the couple's approach to work and duty",
-    "Vasya": "mutual magnetism, control and how naturally they influence one another",
-    "Tara": "destiny, fortune and each other's well-being",
-    "Yoni": "physical and instinctive compatibility",
-    "Maitri": "mental friendship and psychological rapport",
-    "Gana": "temperament, character and everyday conduct",
-    "Bhakoot": "emotional bonding, love and the welfare of the family",
-    "Nadi": "health, vitality and healthy progeny",
+# Each koota: what it governs + a favourable / moderate / weak outlook paragraph.
+_KOOTA_INFO = {
+    "Varna": {
+        "governs": "the spiritual and mental grade of the two people and the balance of ego, "
+                   "duty and their approach to work and domestic life",
+        "good": "their temperaments blend easily here; each respects the other's way of thinking "
+                "and handling everyday responsibilities, which brings quiet cooperation and mutual "
+                "regard into the home.",
+        "mod": "there is workable understanding, though the two occasionally approach duty and "
+               "domestic matters from different angles; a little give-and-take keeps this in balance.",
+        "weak": "their outlooks on duty and household matters can differ, and one may not readily "
+                "value the other's approach — a source of small friction that patience and respect "
+                "can smooth over.",
+    },
+    "Vasya": {
+        "governs": "mutual magnetism and control — how naturally each partner is drawn to and able "
+                   "to influence the other",
+        "good": "a strong, natural pull draws them together; they influence and win over one another "
+                "with ease, and their bond feels magnetic and mutually devoted.",
+        "mod": "the attraction is present but not effortless; each retains a degree of independence, "
+               "and steady affection is what keeps the pull alive.",
+        "weak": "the natural give of influence is uneven here, so one may feel the other is hard to "
+                "sway or too assertive; conscious effort is needed to keep the dynamic comfortable.",
+    },
+    "Tara": {
+        "governs": "destiny, fortune, health and the auspiciousness each partner brings to the other",
+        "good": "the birth-star energies support one another, favouring health, fortune and a sense "
+                "of shared good luck through the ups and downs of life.",
+        "mod": "the star energies are partly supportive; fortune flows well in some seasons and asks "
+               "for patience in others, but the overall current is workable.",
+        "weak": "the flow of destiny between the stars is not smooth, and the two may struggle to "
+                "fully understand each other's needs — best offset by strength in the other gunas.",
+    },
+    "Yoni": {
+        "governs": "physical and instinctive compatibility — the animal nature, intimacy and bodily "
+                   "rapport of the couple",
+        "good": "they are instinctively in tune, sharing warmth, attraction and a satisfying physical "
+                "understanding that deepens the marital bond.",
+        "mod": "physical rapport is reasonable; with openness and affection the two find a comfortable "
+               "intimate rhythm together.",
+        "weak": "their instinctive natures differ, which can make physical understanding and everyday "
+                "closeness harder to reach; honest communication helps most here.",
+    },
+    "Maitri": {
+        "governs": "mental friendship and psychological rapport, read from the friendship of the two "
+                   "Moon-sign lords",
+        "good": "their minds meet as natural friends — supportive, caring and easy in each other's "
+                "company, which makes the relationship warm and genuinely companionable.",
+        "mod": "there is fair mental rapport; the two think somewhat differently but can meet in the "
+               "middle and enjoy each other's company with a little effort.",
+        "weak": "the ruling planets are not friendly, so the two may need real lifestyle and attitude "
+                "adjustments to find a common wavelength and avoid talking past one another.",
+    },
+    "Gana": {
+        "governs": "temperament and character — the divine, human or demonic disposition that shapes "
+                   "everyday conduct",
+        "good": "they share a compatible temperament, tending to be peace-loving, understanding and "
+                "forbearing with one another, which keeps daily life harmonious.",
+        "mod": "their temperaments are broadly workable, with only occasional differences in conduct "
+               "that mutual tolerance easily absorbs.",
+        "weak": "the temperaments pull in different directions — one gentler, one more forceful — so "
+                "clashes over conduct and small matters are possible unless both stay patient.",
+    },
+    "Bhakoot": {
+        "governs": "emotional bonding, love, prosperity and the welfare of the family, from the "
+                   "relative placement of the two Moon signs",
+        "good": "the Moon signs sit in a supportive relationship, favouring emotional closeness, love "
+                "and the growth and prosperity of the family.",
+        "mod": "emotional bonding is serviceable, though the couple should nurture communication so "
+               "small distances don't widen over time.",
+        "weak": "the Moon signs fall in an inauspicious axis (2-12, 5-9 or 6-8), which can strain "
+                "emotional harmony, finances or family welfare — an area to handle with care, though "
+                "a strong overall match and a good Nadi/Gana can offset it.",
+    },
+    "Nadi": {
+        "governs": "health, vitality, genetic constitution and healthy progeny — considered the most "
+                   "important koota",
+        "good": "the two belong to different nadis, which is excellent for health, vitality and "
+                "healthy children, and strengthens the overall compatibility of the match.",
+        "mod": "the nadi factor is workable here.",
+        "weak": "both partners share the same nadi (Nadi Dosha), which classical texts caution against "
+                "for health and progeny; some schools relax this when the pada or nakshatra differ, "
+                "but it should be reviewed carefully with an astrologer.",
+    },
 }
 
 
 def _interpret(koota: str, points: float, mx: int, boy: str, girl: str) -> str:
     r = points / mx
-    theme = _KOOTA_THEME[koota]
-    same = boy == girl
-    who = (f"Both partners share the {boy} attribute" if same
-           else f"The boy's side is {boy} while the girl's is {girl}")
-    if r >= 0.66:
-        return (f"{who}. For {theme}, this is a favourable and supportive combination "
-                f"({points} of {mx}). The natives understand each other's needs here and it "
-                f"adds harmony and stability to the union.")
-    if r > 0:
-        return (f"{who}. For {theme}, this is a moderate combination ({points} of {mx}) — "
-                f"neither the strongest nor the weakest. With mutual understanding and a little "
-                f"patience the natives can bridge the small differences this factor indicates.")
-    return (f"{who}. For {theme}, this factor scores {points} of {mx}, which is not favourable "
-            f"and points to friction in this area. It should be weighed carefully, though a "
-            f"strong overall match and other well-placed gunas can help offset it.")
+    info = _KOOTA_INFO[koota]
+    tier = "good" if r >= 0.66 else ("mod" if r > 0 else "weak")
+    who = (f"Both partners share the {boy} attribute" if boy == girl
+           else f"The groom's side is {boy} while the bride's is {girl}")
+    return (f"{who}. This koota reflects {info['governs']} ({points} of {mx}). "
+            f"Here {info[tier]}")
+
+
+def _person_summary(chart: dict) -> dict:
+    """Birth-summary for one chart: Lagna/Rāśi/Nakṣatra + their lords and the
+    koota classifications (Gana, Nadi, Yoni, Varna, Vasya)."""
+    lagna = chart["lagna"]["sign"]
+    mlon = chart["planets"]["Moon"]["longitude"]
+    moon = int(mlon // 30)
+    nak = int(mlon // _NAK_ARC)
+    pada = int((mlon % _NAK_ARC) // (_NAK_ARC / 4)) + 1
+    return {
+        "lagna": _SIGN_NAMES[lagna], "lagna_lord": _SIGN_LORD[lagna],
+        "rashi": _SIGN_NAMES[moon], "rashi_lord": _SIGN_LORD[moon],
+        "nakshatra": _NAK_NAMES[nak], "pada": pada, "nakshatra_lord": _NAK_LORD[nak % 9],
+        "gana": _GANA_NAMES[_NAK_GANA[nak]], "nadi": _NADI_NAMES[_NAK_NADI[nak]],
+        "yoni": _YONI_NAMES[_NAK_YONI[nak]], "varna": _VARNA_NAMES[_SIGN_VARNA[moon]],
+        "vasya": _VASYA_NAMES[_vasya_group(moon, mlon)],
+    }
+
+
+def _by_sign(signs: dict) -> dict:
+    out: dict[str, list[str]] = {}
+    for body, s in signs.items():
+        out.setdefault(str(s), []).append(_BODY_ABBR[body])
+    return out
+
+
+def _person_charts(chart: dict) -> dict:
+    """Lagna (D1), Navāṁśa (D9) and Chandra (Moon) charts for one person, each as
+    ``{asc_sign, by_sign}`` for the North-Indian renderer."""
+    from app.services.kundli_calculator.divisional import _calc_varga_sign
+
+    P, lagna = chart["planets"], chart["lagna"]
+    bodies = [b for b in _CHART_BODIES if b in P]
+    natal = {b: P[b]["sign"] for b in bodies}
+    d9 = {b: _calc_varga_sign(P[b]["sign"], P[b]["degree_in_sign"], "D9") for b in bodies}
+    lagna_d9 = _calc_varga_sign(lagna["sign"], lagna["degree"], "D9")
+    return {
+        "D1": {"asc_sign": lagna["sign"], "by_sign": _by_sign(natal)},
+        "D9": {"asc_sign": lagna_d9, "by_sign": _by_sign(d9)},
+        "Moon": {"asc_sign": P["Moon"]["sign"], "by_sign": _by_sign(natal)},
+    }
 
 
 def compute_matching(boy: dict, girl: dict) -> dict:
@@ -263,4 +386,8 @@ def compute_matching(boy: dict, girl: dict) -> dict:
         "boy_mangal": boy_mangal["grade"],
         "girl_mangal": girl_mangal["grade"],
         "verdict": verdict,
+        "boy_summary": _person_summary(boy),
+        "girl_summary": _person_summary(girl),
+        "boy_charts": _person_charts(boy),
+        "girl_charts": _person_charts(girl),
     }
