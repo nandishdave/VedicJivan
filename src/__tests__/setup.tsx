@@ -3,6 +3,19 @@ import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { vi } from "vitest";
 
+// Node 25+ defines its own localStorage/sessionStorage globals (undefined
+// without --localstorage-file), which shadow jsdom's — point them back at jsdom
+declare const jsdom: { window: Window };
+for (const name of ["localStorage", "sessionStorage"] as const) {
+  if (!globalThis[name]) {
+    Object.defineProperty(globalThis, name, {
+      value: jsdom.window[name],
+      writable: true,
+      configurable: true,
+    });
+  }
+}
+
 // Mock window.gtag for analytics tests
 Object.defineProperty(window, "gtag", {
   value: vi.fn(),

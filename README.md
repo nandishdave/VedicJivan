@@ -172,7 +172,7 @@ VedicJivan/
 ## Local Development
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 26 (LTS)
 - Python 3.12+
 - Docker (for local MongoDB)
 

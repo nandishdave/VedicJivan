@@ -153,7 +153,10 @@ describe("BookingSuccessPage", () => {
       expect(screen.getByText("Booking Confirmed!")).toBeInTheDocument();
     });
 
-    expect(localStorage.getItem("vedicjivan_pending_booking_call-consultation")).toBeNull();
+    // The key is cleared in an effect that runs after the confirmed render
+    await waitFor(() => {
+      expect(localStorage.getItem("vedicjivan_pending_booking_call-consultation")).toBeNull();
+    });
   });
 
   it("does not clear unrelated localStorage keys", async () => {
