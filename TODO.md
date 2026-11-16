@@ -32,11 +32,46 @@ The plan is to launch around ONE clear thing and add the rest back one at a time
 - Birth Muhurta / Unshakable finder stay as a **side item**, not the headline:
   people trust a named astrologer rather than a tool, and choosing a birth time
   is a sensitive subject for some.
-- Candidate headline under evaluation: a **daily Panchang + planetary transits**
-  section (in the spirit of Drik Panchang and aaps.space/transits) — factual,
-  checkable, daily-use content, grown through SEO and tested with display ads.
+- Headline: a **daily Panchang + planetary transits** section (in the spirit
+  of Drik Panchang and aaps.space/transits) — factual, checkable, daily-use
+  content, grown through SEO and tested with display ads — plus a
+  **personalised** view against the visitor's own chart, which neither of
+  those sites does well. See "Headline build" below.
 - Anything unfinished is **hidden from the frontend, never deleted**: backend
   code, data and tests stay for future expansion.
+
+## Headline build — Panchang, transits and the sky view
+
+Agreed 2026-11-16. The backend already computes panchang, sunrise/sunset, daily
+planetary positions and transits over a natal chart, so this is mostly
+presentation plus a few new endpoints. Suggested build order:
+
+- [ ] **Static daily Panchang** — tithi, nakshatra, yoga, karana, vara,
+      sunrise/sunset, and the day's planetary positions for a chosen city.
+      One page per date (and per city) so search engines can index them.
+- [ ] **Static transit pages** — for the year: sign changes per planet,
+      retrogrades, nakshatra transits, conjunctions; a "current transits"
+      summary. Per-planet and per-month pages for search.
+- [ ] **Interactive sky view** — a picture of the planets around the zodiac,
+      each labelled with its rashi and degree, with a date slider at the bottom
+      that moves the planets and updates the degrees as the date changes.
+      - Draw it Earth-centred (the astrological view): a true Sun-centred
+        solar-system picture would show different longitudes from the rashi
+        positions and has no place for the Moon, Rahu or Ketu.
+      - Show retrograde motion and mark sign changes on the slider.
+      - For a smooth slider, load a precomputed table of daily positions from
+        the backend engine and interpolate in the browser, so the numbers
+        match the rest of the site exactly.
+- [ ] **Personalised Panchang** (the differentiator) — today's panchang and
+      transits read against the visitor's own chart: transits by house from
+      their Moon sign and Lagna, current dasha, tara bala / chandra bala for
+      the day. Leads to a consultation with the named astrologer.
+- [ ] Decide how date/city pages get indexed: the site is a pre-built static
+      export, so pages must be generated ahead of time or rendered on request.
+- [ ] Languages for the top pages: Hindi and Gujarati first.
+- [ ] Display ads on these information pages only (never on service or
+      booking pages), once the section is live and has content.
+- [ ] Measure: page views, returning visitors and bookmarks per page type.
 
 ## Parked — hide from the frontend, bring back when finished
 
