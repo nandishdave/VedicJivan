@@ -362,6 +362,14 @@ export const adminApi = {
     }>("/api/admin/stats", { token }),
 };
 
+// 202 acknowledgement for the queued flows (kundli / muhurta / unshakable).
+// `preview_url` is only present in local development, where the API runs the
+// job in-process and shows the would-be email as a page.
+export interface QueuedJobAck {
+  message: string;
+  preview_url?: string;
+}
+
 // ── Kundli ──
 export const kundliApi = {
   generate: (data: {
@@ -375,7 +383,7 @@ export const kundliApi = {
     email: string;
     timezone?: string;
   }) =>
-    apiRequest<{ message: string }>("/api/kundli/generate", {
+    apiRequest<QueuedJobAck>("/api/kundli/generate", {
       method: "POST",
       body: data,
     }),
@@ -790,7 +798,7 @@ export const muhurtaApi = {
     priorities?: string[] | null;
     optimize_prominence?: boolean;
   }) =>
-    apiRequest<{ message: string }>("/api/muhurta/birth", { method: "POST", body: data }),
+    apiRequest<QueuedJobAck>("/api/muhurta/birth", { method: "POST", body: data }),
 };
 
 // ── Unshakable Chart Finder ──
@@ -804,5 +812,5 @@ export const unshakableApi = {
     place_name: string;
     email: string;
   }) =>
-    apiRequest<{ message: string }>("/api/unshakable/find", { method: "POST", body: data }),
+    apiRequest<QueuedJobAck>("/api/unshakable/find", { method: "POST", body: data }),
 };

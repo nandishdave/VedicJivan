@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Sparkles, Loader2, AlertCircle, CheckCircle, Mail } from "lucide-react";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { DevPreviewLink } from "@/components/ui/DevPreviewLink";
 import { PlaceOfBirthAutocomplete } from "@/components/booking/PlaceOfBirthAutocomplete";
 import { muhurtaApi } from "@/lib/api";
 
@@ -37,6 +38,7 @@ export default function MuhurtaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const canSubmit = !!date && !!place && !!email && !loading;
 
@@ -54,7 +56,7 @@ export default function MuhurtaPage() {
     setLoading(true);
     setError("");
     try {
-      await muhurtaApi.analyzeBirth({
+      const ack = await muhurtaApi.analyzeBirth({
         date,
         lat: place.lat,
         lon: place.lon,
@@ -64,6 +66,7 @@ export default function MuhurtaPage() {
         priorities: priorities.size ? Array.from(priorities) : null,
         optimize_prominence: prominence,
       });
+      setPreviewUrl(ack.preview_url ?? null);
       setSent(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -91,6 +94,7 @@ export default function MuhurtaPage() {
           <p className="mb-8 text-sm text-gray-500 dark:text-gray-500">
             Please check your inbox (and spam folder). The detailed analysis takes a little time to compute.
           </p>
+          <DevPreviewLink url={previewUrl} />
           <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={() => {

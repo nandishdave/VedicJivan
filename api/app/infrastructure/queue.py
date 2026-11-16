@@ -19,6 +19,7 @@ from typing import Any, Protocol
 
 import boto3
 
+from app.infrastructure import dev_outbox
 from app.infrastructure.logging import get_logger
 
 logger = get_logger(__name__)
@@ -68,3 +69,43 @@ class SqsMessageQueue:
         message_id = response["MessageId"]
         logger.info("Enqueued message id=%s to %s", message_id, self._queue_url)
         return message_id
+
+
+# ── Local-development implementation ────────────────────────────────────────
+
+
+class InProcessMessageQueue:
+    """Local-dev impl — no broker. `send` runs the Lambda worker's record
+    handler as a background task inside the API process, so the queued flows
+    (kundli / muhurta / unshakable) work end to end without AWS.
+
+    Wired by `get_message_queue` only when APP_ENV is "development" and no
+    KUNDLI_QUEUE_URL is set. The returned message id is a dev-outbox job id;
+    the job's outcome is viewable at /api/dev/outbox/jobs/<id>.
+    """
+
+    def __init__(self) -> None:
+        # Hold references so running tasks aren't garbage-collected mid-flight.
+        self._tasks: set[asyncio.Task] = set()
+
+    async def send(self, payload: dict[str, Any]) -> str:
+        job_id = dev_outbox.start_job(payload.get("type", "kundli"))
+        record = {"messageId": job_id, "body": json.dumps(payload, default=str)}
+        task = asyncio.create_task(self._run(job_id, record))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+        logger.info("Running job id=%s in-process (no KUNDLI_QUEUE_URL)", job_id)
+        return job_id
+
+    async def _run(self, job_id: str, record: dict[str, Any]) -> None:
+        # Imported lazily: the worker pulls in the whole PDF/chart stack.
+        from app.workers.kundli_lambda import _process_record
+
+        dev_outbox.current_job.set(job_id)
+        try:
+            await _process_record(record)
+        except Exception as e:
+            logger.exception("In-process job %s failed", job_id)
+            dev_outbox.finish_job(job_id, error=f"{type(e).__name__}: {e}")
+        else:
+            dev_outbox.finish_job(job_id)

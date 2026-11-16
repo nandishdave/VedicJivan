@@ -2,7 +2,8 @@ from fastapi import Depends, Header, HTTPException
 
 from app.config import settings
 from app.database import get_db
-from app.infrastructure.queue import MessageQueue, SqsMessageQueue
+from app.infrastructure import dev_outbox
+from app.infrastructure.queue import InProcessMessageQueue, MessageQueue, SqsMessageQueue
 from app.models.user import UserRole
 from app.repositories.availability_repository import (
     AvailabilityRepository,
@@ -153,6 +154,8 @@ def get_service_repository() -> ServiceRepository:
 # Singleton — boto3 client construction is non-trivial (config loading,
 # credential resolution) and the client itself is thread-safe. Tests
 # substitute a FakeMessageQueue via `app.dependency_overrides`.
+# Local development with no queue configured runs jobs in-process instead;
+# any other environment without KUNDLI_QUEUE_URL still fails loud.
 
 _kundli_queue_singleton: MessageQueue | None = None
 
@@ -160,8 +163,11 @@ _kundli_queue_singleton: MessageQueue | None = None
 def get_message_queue() -> MessageQueue:
     global _kundli_queue_singleton
     if _kundli_queue_singleton is None:
-        _kundli_queue_singleton = SqsMessageQueue(
-            queue_url=settings.KUNDLI_QUEUE_URL,
-            region=settings.AWS_REGION,
-        )
+        if not settings.KUNDLI_QUEUE_URL and dev_outbox.is_dev():
+            _kundli_queue_singleton = InProcessMessageQueue()
+        else:
+            _kundli_queue_singleton = SqsMessageQueue(
+                queue_url=settings.KUNDLI_QUEUE_URL,
+                region=settings.AWS_REGION,
+            )
     return _kundli_queue_singleton

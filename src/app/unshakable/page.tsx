@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Gem, Loader2, AlertCircle, CheckCircle, Mail } from "lucide-react";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { DevPreviewLink } from "@/components/ui/DevPreviewLink";
 import { PlaceOfBirthAutocomplete } from "@/components/booking/PlaceOfBirthAutocomplete";
 import { unshakableApi } from "@/lib/api";
 
@@ -20,6 +21,7 @@ export default function UnshakablePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const canSubmit = !!startDate && !!place && !!email && !loading;
 
@@ -29,7 +31,7 @@ export default function UnshakablePage() {
     setLoading(true);
     setError("");
     try {
-      await unshakableApi.find({
+      const ack = await unshakableApi.find({
         start_date: startDate,
         days,
         lat: place.lat,
@@ -37,6 +39,7 @@ export default function UnshakablePage() {
         place_name: place.name,
         email,
       });
+      setPreviewUrl(ack.preview_url ?? null);
       setSent(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -66,6 +69,7 @@ export default function UnshakablePage() {
           <p className="mb-8 text-sm text-gray-500 dark:text-gray-500">
             This is a deep calculation — it can take a few minutes. Check your inbox (and spam).
           </p>
+          <DevPreviewLink url={previewUrl} />
           <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={() => {

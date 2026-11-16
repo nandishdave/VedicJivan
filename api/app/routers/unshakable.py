@@ -14,6 +14,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from app.config import settings
 from app.dependencies import get_message_queue, get_rate_limit_repository
+from app.infrastructure import dev_outbox
 from app.infrastructure.logging import get_logger
 from app.infrastructure.queue import MessageQueue
 from app.models.unshakable import UnshakableRequest
@@ -43,12 +44,13 @@ async def find_endpoint(
 ) -> dict:
     """Queue a week-scale unshakable search; the worker emails the ranked results."""
     await rate_limit.execute(req.email)  # per-email daily cap → 429 over limit
-    await queue.send({"type": "unshakable", **req.model_dump()})
+    message_id = await queue.send({"type": "unshakable", **req.model_dump()})
     return {
         "message": (
             "Your unshakable birth-time search is running. The ranked results will "
             "arrive in your email within a few minutes."
-        )
+        ),
+        **dev_outbox.preview_fields(message_id),
     }
 
 

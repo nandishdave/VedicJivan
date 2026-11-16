@@ -23,6 +23,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, Response
 
 from app.dependencies import get_kundli_repository, get_message_queue
+from app.infrastructure import dev_outbox
 from app.infrastructure.logging import get_logger
 from app.infrastructure.queue import MessageQueue
 from app.models.kundli import KundliRequest
@@ -92,7 +93,7 @@ async def generate_kundli(
     # surface a 500 to the caller so they know to retry rather than
     # silently dropping the request.
     try:
-        await queue.send({"record_id": str(record_id), **req.model_dump()})
+        message_id = await queue.send({"record_id": str(record_id), **req.model_dump()})
     except Exception:
         logger.exception(
             "Failed to enqueue kundli generation for record_id=%s", record_id
@@ -106,7 +107,8 @@ async def generate_kundli(
         "message": (
             "Your Kundli report is being generated and will arrive in your "
             "email within a minute."
-        )
+        ),
+        **dev_outbox.preview_fields(message_id),
     }
 
 

@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.config import settings
 from app.dependencies import get_message_queue, get_rate_limit_repository
+from app.infrastructure import dev_outbox
 from app.infrastructure.logging import get_logger
 from app.infrastructure.queue import MessageQueue
 from app.models.muhurta import BirthMuhurtaRequest
@@ -46,12 +47,13 @@ async def birth_muhurta(
 ) -> dict:
     """Queue the full birth-muhurta analysis; the worker emails the result."""
     await rate_limit.execute(req.email)  # per-email daily cap → 429 over limit
-    await queue.send({"type": "muhurta", **req.model_dump()})
+    message_id = await queue.send({"type": "muhurta", **req.model_dump()})
     return {
         "message": (
             "Your auspicious birth-time analysis is being prepared and will arrive "
             "in your email within a few minutes."
-        )
+        ),
+        **dev_outbox.preview_fields(message_id),
     }
 
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle, Loader2, Star, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { DevPreviewLink } from "@/components/ui/DevPreviewLink";
 import { DateOfBirthPicker } from "@/components/booking/DateOfBirthPicker";
 import { TimeOfBirthPicker } from "@/components/booking/TimeOfBirthPicker";
 import { PlaceOfBirthAutocomplete } from "@/components/booking/PlaceOfBirthAutocomplete";
@@ -23,6 +24,7 @@ export default function KundliPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const canSubmit = name && gender && email && dob && (tob || tobUnknown) && lat !== null && lon !== null;
 
@@ -43,7 +45,7 @@ export default function KundliPage() {
     }
 
     try {
-      await kundliApi.generate({
+      const ack = await kundliApi.generate({
         name,
         gender,
         email,
@@ -54,6 +56,7 @@ export default function KundliPage() {
         place_name: placeName,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
+      setPreviewUrl(ack.preview_url ?? null);
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: unknown) {
@@ -79,6 +82,7 @@ export default function KundliPage() {
           <p className="mb-8 text-sm text-gray-500 dark:text-gray-500">
             Please check your inbox (and spam folder). The report may take a minute to arrive.
           </p>
+          <DevPreviewLink url={previewUrl} />
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/services"

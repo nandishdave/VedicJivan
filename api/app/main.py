@@ -13,6 +13,7 @@ from app.domain.exceptions import (
     EntityNotFoundError,
     RateLimitExceededError,
 )
+from app.infrastructure import dev_outbox
 from app.infrastructure.logging import configure_root_logging
 from app.repositories.service_repository import MongoServiceRepository
 from app.routers import (
@@ -20,6 +21,7 @@ from app.routers import (
     auth,
     availability,
     bookings,
+    dev,
     internal,
     kundli,
     muhurta,
@@ -83,6 +85,9 @@ app.include_router(kundli.router)
 app.include_router(muhurta.router)
 app.include_router(unshakable.router)
 app.include_router(services.router)
+# Dev outbox pages (in-process job results + captured emails) — local only.
+if dev_outbox.is_dev():
+    app.include_router(dev.router)
 
 
 @app.get("/api/health")

@@ -1,4 +1,5 @@
 from app.config import settings
+from app.infrastructure import dev_outbox
 from app.infrastructure.logging import get_logger
 
 logger = get_logger(__name__)
@@ -29,8 +30,12 @@ def _email_footer() -> str:
 
 
 def _send_email(to: str, subject: str, html: str):
-    """Send an email via Resend. Returns silently if no API key configured."""
+    """Send an email via Resend. Returns silently if no API key configured
+    (in local development the email is captured in the dev outbox instead)."""
     if not settings.RESEND_API_KEY:
+        if dev_outbox.is_dev():
+            dev_outbox.capture_email(to, subject, html)
+            return
         logger.info("Email skip — no RESEND_API_KEY. Would send to=%s subject=%s", to, subject)
         return
 
@@ -240,16 +245,7 @@ async def send_booking_reminder(
 
 async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
     """Send Kundli PDF report as email attachment via Resend."""
-    if not settings.RESEND_API_KEY:
-        logger.info("Kundli email skip — no RESEND_API_KEY. Would send to=%s", to_email)
-        return
-
-    import base64
-
-    import resend
-
-    resend.api_key = settings.RESEND_API_KEY
-
+    filename = f"Kundli_Report_{user_name.replace(' ', '_')}.pdf"
     subject = "Your Free Kundli Report | VedicJivan"
     html = f"""
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
@@ -279,7 +275,26 @@ async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
     </div>
     """
 
+    if not settings.RESEND_API_KEY:
+        if dev_outbox.is_dev():
+            dev_outbox.capture_email(
+                to_email,
+                subject,
+                html,
+                attachments=[
+                    {"filename": filename, "content": pdf_bytes, "media_type": "application/pdf"}
+                ],
+            )
+            return
+        logger.info("Kundli email skip — no RESEND_API_KEY. Would send to=%s", to_email)
+        return
+
     import asyncio
+    import base64
+
+    import resend
+
+    resend.api_key = settings.RESEND_API_KEY
 
     await asyncio.to_thread(
         resend.Emails.send,
@@ -290,7 +305,7 @@ async def send_kundli_report(to_email: str, user_name: str, pdf_bytes: bytes):
             "html": html,
             "attachments": [
                 {
-                    "filename": f"Kundli_Report_{user_name.replace(' ', '_')}.pdf",
+                    "filename": filename,
                     "content": base64.b64encode(pdf_bytes).decode("utf-8"),
                 }
             ],
