@@ -31,12 +31,12 @@ const wellnessServices = services.filter((s) => s.category === "wellness");
 export const metadata: Metadata = {
   title: "Services",
   description:
-    "Explore VedicJivan's astrology and wellness services — consultations, Kundli reports, numerology, Vastu, personal growth coaching, and therapeutic healing.",
+    "Explore VedicJivan's Vedic astrology services — call and video consultations, the Premium Kundli report, and Kundli matching.",
   alternates: { canonical: "/services" },
   openGraph: {
     title: "Services | VedicJivan",
     description:
-      "Explore VedicJivan's astrology and wellness services — consultations, Kundli reports, numerology, Vastu, personal growth coaching, and therapeutic healing.",
+      "Explore VedicJivan's Vedic astrology services — call and video consultations, the Premium Kundli report, and Kundli matching.",
     url: "/services",
   },
 };
@@ -66,13 +66,13 @@ export default function ServicesPage() {
                 Our Services
               </span>
               <h1 className="font-heading text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
-                Astrology & Wellness{" "}
+                Vedic Astrology{" "}
                 <GradientText variant="gold">Services</GradientText>
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
-                From astrology consultations and Kundli reports to personal growth
-                coaching and therapeutic healing — choose the service that supports
-                your journey to clarity and well-being.
+                Personal consultations by call or video, a detailed Kundli report,
+                and Kundli matching — choose the service that supports your journey
+                to clarity.
               </p>
             </div>
           </AnimateOnScroll>
@@ -165,7 +165,8 @@ export default function ServicesPage() {
         </Container>
       </section>
 
-      {/* ===== WELLNESS SERVICES ===== */}
+      {/* ===== WELLNESS SERVICES (only when any are listed) ===== */}
+      {wellnessServices.length > 0 && (
       <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <AnimateOnScroll animation="fadeUp">
@@ -243,6 +244,7 @@ export default function ServicesPage() {
           </div>
         </Container>
       </section>
+      )}
 
       {/* ===== FAQ ===== */}
       <section className="vedic-section bg-cream dark:bg-dark-surface-warm">

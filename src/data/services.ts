@@ -1,3 +1,5 @@
+import { isPublicService, UNLISTED_SERVICE_SLUGS } from "@/config/features";
+
 export interface Service {
   slug: string;
   title: string;
@@ -18,7 +20,9 @@ export interface Service {
   faqs: { question: string; answer: string }[];
 }
 
-export const services: Service[] = [
+// The full catalogue. Only the slugs in src/config/features.ts are shown on
+// the site; the rest stay here (and in the backend) for future expansion.
+const allServices: Service[] = [
   {
     slug: "call-consultation",
     title: "Call Consultation",
@@ -675,8 +679,16 @@ export const services: Service[] = [
   },
 ];
 
+/** Services listed on the site (navigation, listings, sitemap). */
+export const services: Service[] = allServices.filter((s) => isPublicService(s.slug));
+
+/** Services that get a page: the listed ones plus unlisted direct-URL ones. */
+export const routableServices: Service[] = allServices.filter(
+  (s) => isPublicService(s.slug) || UNLISTED_SERVICE_SLUGS.includes(s.slug)
+);
+
 export function getServiceBySlug(slug: string): Service | undefined {
-  return services.find((s) => s.slug === slug);
+  return routableServices.find((s) => s.slug === slug);
 }
 
 export function getRelatedServices(currentSlug: string): Service[] {

@@ -22,7 +22,7 @@ import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { FAQAccordion } from "@/components/ui/FAQAccordion";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { TiltCard } from "@/components/ui/TiltCard";
-import { services, getServiceBySlug, getRelatedServices } from "@/data/services";
+import { routableServices, getServiceBySlug, getRelatedServices } from "@/data/services";
 import { ServiceJsonLd, FAQJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -50,7 +50,7 @@ const iconMapSmall: Record<string, React.ReactNode> = {
 };
 
 export function generateStaticParams() {
-  return services.map((s) => ({ slug: s.slug }));
+  return routableServices.map((s) => ({ slug: s.slug }));
 }
 
 export function generateMetadata({

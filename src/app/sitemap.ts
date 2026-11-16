@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { services } from "@/data/services";
 import { courses } from "@/data/courses";
 import { blogPosts } from "@/data/blog";
+import { features } from "@/config/features";
 
 const BASE_URL = "https://vedicjivan.nandishdave.world";
 
@@ -25,12 +26,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.9,
     },
-    {
-      url: `${BASE_URL}/courses`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
+    ...(features.courses
+      ? [
+          {
+            url: `${BASE_URL}/courses`,
+            lastModified: new Date(),
+            changeFrequency: "weekly" as const,
+            priority: 0.8,
+          },
+        ]
+      : []),
     {
       url: `${BASE_URL}/blog`,
       lastModified: new Date(),
@@ -70,7 +75,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
-  const coursePages: MetadataRoute.Sitemap = courses.map((course) => ({
+  const coursePages: MetadataRoute.Sitemap = (features.courses ? courses : []).map((course) => ({
     url: `${BASE_URL}/courses/${course.slug}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,

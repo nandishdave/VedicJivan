@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { services, getServiceBySlug } from "@/data/services";
+import { routableServices, getServiceBySlug } from "@/data/services";
 import { BookingContent } from "./BookingContent";
 
 export function generateStaticParams() {
-  return services.map((s) => ({ slug: s.slug }));
+  return routableServices.map((s) => ({ slug: s.slug }));
 }
 
 export function generateMetadata({

@@ -50,7 +50,7 @@ export default function ContactPage() {
                 <GradientText variant="gold">Hear From You</GradientText>
               </h1>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
-                Have questions about our services, courses, or need guidance on
+                Have questions about our services, or need guidance on
                 which consultation is right for you? Reach out and we&apos;ll
                 get back to you promptly.
               </p>

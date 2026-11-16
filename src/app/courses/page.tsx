@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   ArrowRight,
   BookOpen,
@@ -17,6 +18,7 @@ import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { GradientText } from "@/components/ui/GradientText";
 import { courses } from "@/data/courses";
+import { features } from "@/config/features";
 
 export const metadata: Metadata = {
   title: "Courses",
@@ -32,6 +34,9 @@ export const metadata: Metadata = {
 };
 
 export default function CoursesPage() {
+  // Hidden until enrolment and delivery exist (see config/features.ts).
+  if (!features.courses) notFound();
+
   return (
     <>
       {/* ===== HERO ===== */}

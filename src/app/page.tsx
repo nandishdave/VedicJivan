@@ -26,8 +26,13 @@ import { TiltCard } from "@/components/ui/TiltCard";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { SectionDivider } from "@/components/ui/SectionDivider";
 import { MagneticWrapper } from "@/components/ui/MagneticWrapper";
+import { features as siteFeatures, isPublicService } from "@/config/features";
 
 export default function HomePage() {
+  // Only the services switched on in config/features.ts are listed.
+  const listedServices = services.filter((s) => isPublicService(s.slug));
+  const listedWellness = wellnessServices.filter((s) => isPublicService(s.slug));
+
   return (
     <>
       {/* ===== HERO SECTION ===== */}
@@ -51,7 +56,7 @@ export default function HomePage() {
 
             <AnimateOnScroll animation="fadeUp" delay={0.6}>
               <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
-                Authentic Vedic astrology consultations, holistic wellness coaching,
+                Authentic Vedic astrology consultations, detailed Kundli reports,
                 and expert guidance for career, relationships, personal growth, and
                 well-being.
               </p>
@@ -79,6 +84,7 @@ export default function HomePage() {
           </div>
 
           {/* Stats Bar */}
+          {siteFeatures.stats && (
           <AnimateOnScroll animation="fadeUp" delay={1.0}>
             <div className="mx-auto mt-16 grid max-w-3xl grid-cols-2 gap-6 sm:grid-cols-4">
               <div className="text-center">
@@ -107,6 +113,7 @@ export default function HomePage() {
               </div>
             </div>
           </AnimateOnScroll>
+          )}
         </Container>
       </section>
 
@@ -123,8 +130,10 @@ export default function HomePage() {
             />
           </AnimateOnScroll>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {services.map((service, i) => (
+          <div
+            className={`grid gap-6 sm:grid-cols-2 ${listedServices.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
+          >
+            {listedServices.map((service, i) => (
               <AnimateOnScroll key={service.slug} animation="fadeUp" delay={i * 0.1}>
                 <Link href={`/services/${service.slug}`} className="group block h-full">
                   <TiltCard className="h-full overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card shadow-sm dark:shadow-black/20 transition-shadow hover:shadow-lg">
@@ -174,7 +183,8 @@ export default function HomePage() {
         </Container>
       </section>
 
-      {/* ===== WELLNESS SERVICES ===== */}
+      {/* ===== WELLNESS SERVICES (only when any are listed) ===== */}
+      {listedWellness.length > 0 && (
       <section className="vedic-section">
         <Container>
           <AnimateOnScroll animation="fadeUp">
@@ -186,7 +196,7 @@ export default function HomePage() {
           </AnimateOnScroll>
 
           <div className="grid gap-8 sm:grid-cols-3">
-            {wellnessServices.map((service, i) => (
+            {listedWellness.map((service, i) => (
               <AnimateOnScroll key={service.slug} animation="fadeUp" delay={i * 0.15}>
                 <Link href={`/services/${service.slug}`} className="group block h-full">
                   <TiltCard className="h-full overflow-hidden rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-dark-surface-card shadow-sm dark:shadow-black/20 transition-shadow hover:shadow-lg" tiltDegree={5}>
@@ -221,6 +231,7 @@ export default function HomePage() {
           </div>
         </Container>
       </section>
+      )}
 
       <SectionDivider variant="dots" />
 
@@ -231,7 +242,7 @@ export default function HomePage() {
             <SectionHeading
               subtitle="Why VedicJivan"
               title="Rooted in Tradition, Powered by Trust"
-              description="Discover what makes VedicJivan the preferred choice for thousands of seekers worldwide."
+              description="Discover what makes VedicJivan a considered choice for authentic Vedic guidance."
             />
           </AnimateOnScroll>
 
@@ -254,6 +265,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== TESTIMONIALS ===== */}
+      {siteFeatures.testimonials && (
       <section className="vedic-section-dark vedic-hero-gradient">
         <Container>
           <AnimateOnScroll animation="fadeUp">
@@ -270,8 +282,10 @@ export default function HomePage() {
           </AnimateOnScroll>
         </Container>
       </section>
+      )}
 
       {/* ===== COURSES PREVIEW ===== */}
+      {siteFeatures.courses && (
       <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <AnimateOnScroll animation="fadeUp">
@@ -320,6 +334,7 @@ export default function HomePage() {
           </div>
         </Container>
       </section>
+      )}
 
       {/* ===== CTA SECTION ===== */}
       <section className="relative overflow-hidden vedic-cta-gradient py-20">
@@ -454,9 +469,9 @@ const wellnessServices = [
 const features = [
   {
     icon: <Briefcase className="h-7 w-7" />,
-    title: "Comprehensive Services",
+    title: "Focused Services",
     description:
-      "9+ specialized services spanning astrology, numerology, Vastu, healing, and personal growth coaching.",
+      "Personal consultations, a detailed Kundli report and Kundli matching — each done thoroughly.",
   },
   {
     icon: <Star className="h-7 w-7" />,
@@ -466,9 +481,9 @@ const features = [
   },
   {
     icon: <Globe className="h-7 w-7" />,
-    title: "Global Clientele",
+    title: "Consult From Anywhere",
     description:
-      "Trusted by clients across 40+ countries for life-transforming guidance.",
+      "Sessions by phone or video, wherever you are and across time zones.",
   },
   {
     icon: <Users className="h-7 w-7" />,

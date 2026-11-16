@@ -17,6 +17,7 @@ import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { AnimatedText } from "@/components/ui/AnimatedText";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { TiltCard } from "@/components/ui/TiltCard";
+import { features } from "@/config/features";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -48,9 +49,9 @@ export default function AboutPage() {
                 className="justify-center text-4xl font-bold text-white sm:text-5xl lg:text-6xl"
               />
               <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
-                For over 15 years, VedicJivan has been a trusted name in Vedic
-                astrology, helping thousands of individuals across 40+ countries
-                find clarity, direction, and purpose in their lives.
+                VedicJivan brings authentic Vedic astrology to seekers
+                everywhere, helping people find clarity, direction, and purpose
+                in their lives.
               </p>
             </div>
           </AnimateOnScroll>
@@ -60,7 +61,7 @@ export default function AboutPage() {
       {/* ===== OUR STORY ===== */}
       <section className="vedic-section">
         <Container>
-          <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div className={`grid items-center gap-12 ${features.stats ? "lg:grid-cols-2" : "mx-auto max-w-3xl"}`}>
             <AnimateOnScroll animation="fadeLeft">
               <div>
                 <span className="mb-3 inline-block text-sm font-semibold uppercase tracking-widest text-gold-600 dark:text-gold-400">
@@ -92,6 +93,7 @@ export default function AboutPage() {
               </div>
             </AnimateOnScroll>
 
+            {features.stats && (
             <AnimateOnScroll animation="fadeRight">
               <div className="grid grid-cols-2 gap-4">
                 {stats.map((stat, i) => (
@@ -111,11 +113,13 @@ export default function AboutPage() {
                 ))}
               </div>
             </AnimateOnScroll>
+            )}
           </div>
         </Container>
       </section>
 
-      {/* ===== JOURNEY / TIMELINE ===== */}
+      {/* ===== JOURNEY / TIMELINE (carries the headline figures) ===== */}
+      {features.stats && (
       <section className="vedic-section bg-cream dark:bg-dark-surface-warm">
         <Container>
           <AnimateOnScroll animation="fadeUp">
@@ -155,6 +159,7 @@ export default function AboutPage() {
           </div>
         </Container>
       </section>
+      )}
 
       {/* ===== PHILOSOPHY ===== */}
       <section className="vedic-section">
@@ -187,7 +192,8 @@ export default function AboutPage() {
         </Container>
       </section>
 
-      {/* ===== CREDENTIALS ===== */}
+      {/* ===== CREDENTIALS (carries the headline figures) ===== */}
+      {features.stats && (
       <section className="vedic-section-dark vedic-hero-gradient">
         <Container>
           <AnimateOnScroll animation="fadeUp">
@@ -215,6 +221,7 @@ export default function AboutPage() {
           </div>
         </Container>
       </section>
+      )}
 
       {/* ===== CTA ===== */}
       <section className="relative overflow-hidden vedic-cta-gradient py-20">

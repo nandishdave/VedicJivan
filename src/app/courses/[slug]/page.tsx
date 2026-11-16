@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/Badge";
 import { AnimateOnScroll } from "@/components/ui/AnimateOnScroll";
 import { courses, getCourseBySlug } from "@/data/courses";
 import { CourseJsonLd, BreadcrumbJsonLd } from "@/components/seo/JsonLd";
+import { features } from "@/config/features";
 
 export function generateStaticParams() {
   return courses.map((c) => ({ slug: c.slug }));
@@ -52,7 +53,8 @@ export default function CourseDetailPage({
   params: { slug: string };
 }) {
   const course = getCourseBySlug(params.slug);
-  if (!course) notFound();
+  // Hidden until enrolment and delivery exist (see config/features.ts).
+  if (!course || !features.courses) notFound();
 
   const totalLessons = course.curriculum.reduce(
     (acc, m) => acc + m.lessons.length,

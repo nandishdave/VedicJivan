@@ -73,22 +73,48 @@ presentation plus a few new endpoints. Suggested build order:
       booking pages), once the section is live and has content.
 - [ ] Measure: page views, returning visitors and bookmarks per page type.
 
-## Parked — hide from the frontend, bring back when finished
+## Parked — hidden from the frontend, bring back when finished
 
 Each item returns only when it works end to end and has a clear reason to exist.
+Hidden on 2026-11-16. Nothing was deleted: pages, data and backend are intact.
+The switches live in `src/config/features.ts` — flip a flag (or add a slug to
+`PUBLIC_SERVICE_SLUGS`) and restore the menu link in `src/config/navigation.ts`.
 
-- [ ] **Courses** — four courses with prices and "Enroll Now" buttons but no
-      enrolment, payment or delivery behind them. Needs the course platform
-      (see Product) before it comes back.
+- [ ] **Courses** (`features.courses`) — four courses with prices and "Enroll
+      Now" buttons but no enrolment, payment or delivery behind them. The
+      `/courses` pages now return "not found" and are out of the menus and the
+      sitemap. Needs the course platform (see Product) before it comes back.
+- [ ] **Headline numbers** (`features.stats`) — "50,000+ consultations, 40+
+      countries, 15+ years, 2,000+ students". Hidden: the homepage stats bar and,
+      on the About page, the stats grid, the milestones timeline and the
+      credentials block (all built on the same figures). Bring back only with
+      real, defensible figures.
+- [ ] **Testimonials** (`features.testimonials`) — the homepage carousel of
+      entries that read like template content. Bring back only with real client
+      testimonials (with permission).
+- [ ] **Five services** — hidden from menus, listings, sitemap and booking;
+      their full descriptions stay in `src/data/services.ts` and the backend
+      catalogue. Bring each back when you are ready to deliver it:
+      - [ ] Numerology Report (`numerology-report`)
+      - [ ] Vastu Consultation (`vastu-consultation`)
+      - [ ] Astrological Consulting (`astrological-consulting`)
+      - [ ] Personal Growth Coaching (`personal-growth-coaching`)
+      - [ ] Therapeutic Healing (`therapeutic-healing`)
 - [ ] **Contact form** — the page only has an email link. Needs a real form
       with an API endpoint and spam protection.
-- [ ] **Homepage numbers** — "50,000+ consultations, 40+ countries, 2,000+
-      students". Bring back only with real, defensible figures.
-- [ ] **Testimonials** — seven entries that read like template content. Bring
-      back only with real client testimonials (with permission).
-- [ ] **Breadth** — nine services (incl. Vastu, coaching, healing), eight
-      calculators, two chart galleries, blog and videos. Decide per item what
-      supports the headline; hide the rest from navigation until then.
+- [ ] **Still visible, to decide** — eight calculators, the celebrity and
+      ordinary chart galleries, blog and videos. Decide per item what supports
+      the headline; hide the rest from navigation until then.
+
+Still visible and worth your review, because only you know what is accurate:
+
+- [ ] About page "Our Story" (founder's training, Guru-Shishya lineage, global
+      reach) and the homepage badge "Trusted Vedic Astrology Since Generations".
+- [ ] Blog posts on numerology and Vastu remain published although those
+      services are hidden.
+- [ ] Terms and Refund Policy still mention courses.
+- [ ] The "Test Payment" service was listed publicly on the Services page; it
+      is now unlisted (direct URL only) for testing the payment flow.
 
 ## Local development
 
