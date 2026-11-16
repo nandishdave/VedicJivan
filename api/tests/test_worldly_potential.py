@@ -7,7 +7,7 @@ from app.services.kundli_calculator.worldly_potential import (
     worldly_potential,
 )
 from app.services.kundli_calculator.chart_strength import (
-    LAYER_WEIGHTS, LAYER_WEIGHTS_WORLDLY, unshakable_score,
+    LAYER_WEIGHTS, LAYER_WEIGHTS_DATED, unshakable_score,
 )
 from app.services.kundli_calculator.vimshottari import calc_vimshottari_dasha
 from app.services.muhurta import build_muhurta_chart
@@ -24,8 +24,8 @@ _MIDPOINTS = {k: (fam + ordm) / 2.0 for k, (fam, ordm, _s) in REF.items()}
 
 def test_weights_sum_to_one():
     assert abs(sum(LAYER_WEIGHTS.values()) - 1.0) < 1e-9
-    assert abs(sum(LAYER_WEIGHTS_WORLDLY.values()) - 1.0) < 1e-9
-    assert LAYER_WEIGHTS_WORLDLY["structural"] >= 0.5  # structural stays dominant
+    assert abs(sum(LAYER_WEIGHTS_DATED.values()) - 1.0) < 1e-9
+    assert LAYER_WEIGHTS_DATED["structural"] >= 0.5  # structural stays dominant
 
 
 def test_midpoint_scores_fifty():

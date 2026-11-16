@@ -579,12 +579,12 @@ def send_muhurta_analysis(to_email: str, result: dict) -> None:
 # ── Unshakable Chart Finder email ────────────────────────────────────────────
 _U_TH = "background:#7c3aed;color:#fff;padding:5px 6px;font-size:11px;text-align:center;"
 
-# Calibrated from the composite's real distribution over 303 diverse charts
-# (min ~46, median ~61, p90 ~67, p99 ~71.5, max ~72.6). A two-point map
-# [floor, ceiling] -> [0, 100]% so a typical chart reads ~59%, a top-decile chart
-# ~81%, and a top-1% chart ~100%; a rare over-achiever legitimately exceeds 100%.
-_POTENTIAL_FLOOR = 45.0
-_POTENTIAL_CEILING = 72.0
+# Calibrated from the composite's real distribution over 321 diverse charts
+# (min ~42, median ~60, p90 ~66, p99 ~70.5, max ~71.2 — with the benefic-dasha
+# layer in the composite). A two-point map [floor, ceiling] -> [0, 100]% so a
+# typical chart reads ~60%, a top-decile chart ~82%, and a top-1% chart ~100%.
+_POTENTIAL_FLOOR = 44.0
+_POTENTIAL_CEILING = 71.0
 
 
 def _potential_pct(score: float) -> int:
@@ -617,6 +617,12 @@ def _u_chart_row(rank, c, bg, dated=False):
                if "score" in bal else "&ndash;")
     w = L.get("worldly")
     w_txt = f'{round(w)}' if w is not None else "&ndash;"
+    # Functional-benefic dasha years (of 80), with the prime 20-50 share beneath.
+    bd = c.get("benefic_dasha")
+    bd_txt = (f'{round(bd["years"])}y'
+              f'<br><span style="font-size:9px;color:#999;font-weight:normal;white-space:nowrap;">'
+              f'20&ndash;50: {round(bd["stages"]["prime"]["years"])}y</span>'
+              if bd else "&ndash;")
     # Per-life-area strengths (0-100, colour-coded) — same transparent view as the
     # muhurta grid; the reader interprets. Absent domains render as neutral dashes.
     doms = bal.get("domains") or {}
@@ -630,6 +636,7 @@ def _u_chart_row(rank, c, bg, dated=False):
         f'<td style="padding:5px 6px;text-align:center;font-weight:bold;font-size:14px;">{_potential_pct(c["score"])}%</td>'
         f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#0f766e;">{bal_txt}</td>'
         f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#7c3aed;">{w_txt}</td>'
+        f'<td style="padding:5px 6px;text-align:center;font-weight:bold;color:#b45309;">{bd_txt}</td>'
         f'<td style="padding:5px 6px;white-space:nowrap;font-size:11px;">{ayu["band"][0]}&ndash;{ayu["band"][1]} {ayu["label"].split()[0]}</td>'
         f'{area_cells}'
         f'</tr>'
@@ -641,7 +648,8 @@ def _u_table(charts, start_rank=1, dated=False):
     area_h = "".join(f'<th style="{_U_TH}">{short}</th>' for _k, short in _MUHURTA_ASPECTS)
     head = (f'<tr><th style="{_U_TH}">#</th>{date_h}<th style="{_U_TH}">Time</th><th style="{_U_TH}">Lagna</th>'
             f'<th style="{_U_TH}">Strength</th><th style="{_U_TH}">Balanced Life</th>'
-            f'<th style="{_U_TH}">Worldly</th><th style="{_U_TH}">Longevity</th>{area_h}</tr>')
+            f'<th style="{_U_TH}">Worldly</th><th style="{_U_TH}">Good Dasha</th>'
+            f'<th style="{_U_TH}">Longevity</th>{area_h}</tr>')
     rows = "".join(_u_chart_row(start_rank + i, c, "#faf9ff" if i % 2 else "#ffffff", dated)
                    for i, c in enumerate(charts))
     return ('<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">'
@@ -713,7 +721,7 @@ def _render_unshakable_html(result: dict) -> str:
 
     body += ('<p style="font-size:11px;color:#888;margin:8px 0 0;line-height:1.6;">'
              '<b>Strength</b> = overall chart strength as a % of the practical ceiling (calibrated from 300+ charts): '
-             '~59% is typical, ~80% top-decile, 100% the top ~1%; a rare chart exceeds 100%. This is what ranks the list. '
+             '~60% is typical, ~80% top-decile, 100% the top ~1%. This is what ranks the list. '
              '<b style="color:#0f766e;">Balanced Life</b> = a single whole-life number: the average of the 13 life-areas, '
              'each judged by house + house-lord + significator + divisional chart. The 13 coloured cells to the right show '
              'each area&rsquo;s strength <b>0&ndash;100</b> (<span style="color:#166534;">&ge;60</span> / '
@@ -722,6 +730,10 @@ def _render_unshakable_html(result: dict) -> str:
              f'Areas: {_MUHURTA_ASPECT_LEGEND}. '
              '<b style="color:#7c3aed;">Worldly</b> = Worldly-Prominence potential (fame/respect/wealth) &mdash; a '
              '<em>separate</em> axis: a chart can be worldly-strong yet unbalanced, or balanced yet ordinary. '
+             '<b style="color:#b45309;">Good Dasha</b> = years, out of the first 80, spent under the mahadasha of a '
+             'functional benefic for that Lagna (the sequence is set by the Moon&rsquo;s nakshatra), with the years '
+             'falling in the prime 20&ndash;50 beneath. Prime years count most toward Strength, 50&ndash;60 less, '
+             'and 0&ndash;20 / 60&ndash;80 least. '
              'Num = Moolank&middot;Bhagyank (the date&rsquo;s root &amp; destiny numbers, 1&ndash;9). '
              f'Longevity = indicative Ayurdaya band (estimates only). &#9733; = genuinely strong (&ge; {bar_pct}% Strength).</p>')
 
@@ -734,7 +746,7 @@ def _render_unshakable_html(result: dict) -> str:
         </p>
         {body}
         <p style="font-size:12px;color:#999;margin:18px 0 0;">Composite of Shadbala, Ashtakavarga, dignity, yogas,
-        longevity &amp; fame (Lahiri ayanamsha, Whole-Sign houses). The yoga/longevity/fame layers are classical
+        longevity, fame &amp; dasha timing (Lahiri ayanamsha, Whole-Sign houses). The yoga/longevity/fame/dasha layers are classical
         heuristics &mdash; indicative, not absolute. Guidance only; consult an astrologer for a final decision.</p>
         <div style="text-align:center;margin:24px 0;">
             <a href="{settings.FRONTEND_URL}/services/" style="background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Book a Consultation</a>

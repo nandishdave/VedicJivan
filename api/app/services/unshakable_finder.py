@@ -35,11 +35,12 @@ def _date_range(start: str, days: int) -> list[str]:
 
 
 # Fixed internal "standout" threshold (flags the ★ charts) — NOT a user-facing
-# knob. Calibrated from the composite's real distribution over 300+ charts: raw
-# 66.5 ≈ the top ~12% (p88), i.e. ~80% of practical potential in the display
+# knob. Calibrated from the composite's real distribution over 321 charts: raw
+# 65.7 ≈ the top ~12% (p88), i.e. ~80% of practical potential in the display
 # scale. In brute-force mode (the production path) every moment is ranked
-# regardless; the threshold only decides which get starred.
-STANDOUT_BAR = 66.5
+# regardless; the threshold only decides which get starred. (Recalibrated when
+# the benefic-dasha layer joined the composite — re-derive if weights change.)
+STANDOUT_BAR = 65.7
 
 
 def _record(dob: str, tob: str, chart: dict, scored: dict, bar: float) -> dict:
@@ -61,6 +62,8 @@ def _record(dob: str, tob: str, chart: dict, scored: dict, bar: float) -> dict:
         "strength_stack": scored["strength_stack"],
         # Balanced-Life axis (whole-life completeness + concern areas).
         "balanced_life": scored["balanced_life"],
+        # Functional-benefic dasha years by life stage (None without a birth date).
+        "benefic_dasha": scored["benefic_dasha"],
     }
 
 

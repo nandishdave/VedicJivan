@@ -172,7 +172,7 @@ export default function UnshakablePage() {
           <div className="sm:col-span-2">
             <p className="text-xs text-gray-500">
               Every rising moment is ranked by a <strong>Potential score</strong> — % of the practical ceiling
-              (calibrated from 300+ charts), where ~59% is typical, 100% is the top ~1%, and a rare chart exceeds
+              (calibrated from 300+ charts), where ~60% is typical, 100% is the top ~1%, and a rare chart exceeds
               100%. Around <strong>80%+</strong> marks a genuinely strong chart — those are starred in your emailed results.
             </p>
           </div>

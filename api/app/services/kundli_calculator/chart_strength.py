@@ -25,6 +25,7 @@ from app.services.kundli_calculator.dignity import (
 # Greatness-layer scorers. These were function-local (cycle avoidance) until the
 # dignity de-dup removed the real cycles — none of these modules import back into
 # chart_strength, so they lift cleanly to module level.
+from app.services.kundli_calculator.benefic_dasha import benefic_dasha
 from app.services.kundli_calculator.dhana_yoga import (
     dhana_yoga_normalized,
     dhana_yoga_score,
@@ -151,11 +152,17 @@ def _placement_score(chart: dict) -> float:
 # Composite "Unshakable" score = Layer-1 structural (rigorous, ~65%) + Layer-2
 # greatness (yoga/longevity/fame, heuristic, ~35%). Tunable.
 LAYER_WEIGHTS = {"structural": 0.65, "yoga": 0.15, "longevity": 0.12, "fame": 0.08}
-# When the chart carries a birth date (so the validated worldly-potential layer
-# can be computed), it takes a small slot and the others make room. The
-# structural anchor stays dominant. Falls back to LAYER_WEIGHTS otherwise, so
-# dob-less callers keep their exact prior behaviour.
-LAYER_WEIGHTS_WORLDLY = {"structural": 0.60, "yoga": 0.13, "longevity": 0.11, "fame": 0.06, "worldly": 0.10}
+# When the chart carries a birth date the two dasha-timed layers can be computed
+# and take small slots while the others make room; the structural anchor stays
+# dominant. Falls back to LAYER_WEIGHTS otherwise, so dob-less callers keep
+# their exact prior behaviour.
+#   worldly       — the validated worldly-potential composite.
+#   benefic_dasha — life-stage placement of functional-benefic mahadashas (a
+#     classical judgment, see benefic_dasha.py). It spreads far wider than the
+#     other layers (sd ~23 vs ~4 for structural), so 8% nominal already moves
+#     the ranking: up to ~6 raw points between the best and worst timing.
+LAYER_WEIGHTS_DATED = {"structural": 0.55, "yoga": 0.12, "longevity": 0.10, "fame": 0.05,
+                       "worldly": 0.10, "benefic_dasha": 0.08}
 
 
 def unshakable_score(chart: dict) -> dict:
@@ -172,9 +179,11 @@ def unshakable_score(chart: dict) -> dict:
     # Validated worldly-potential layer — only when the chart has a birth date to
     # time the dashas. Absent -> keep the original 4-layer weights (unchanged behaviour).
     wp = worldly_potential(chart)
-    if wp is not None:
+    bd = benefic_dasha(chart)  # needs the birth date too, so it is None iff wp is
+    if wp is not None and bd is not None:
         layers["worldly"] = wp["score"]
-        weights = LAYER_WEIGHTS_WORLDLY
+        layers["benefic_dasha"] = bd["score"]
+        weights = LAYER_WEIGHTS_DATED
     else:
         weights = LAYER_WEIGHTS
     score = sum(layers[k] * weights[k] for k in weights)
@@ -214,6 +223,7 @@ def unshakable_score(chart: dict) -> dict:
         "raja": {"score": rj_s, "links": rj_l},
         "strength_stack": {"count": len(strong), "of": len(strength_factors), "strong": strong},
         "worldly_potential": wp,  # None when the chart has no birth date
+        "benefic_dasha": bd,  # {score, years, stages, benefics, periods}; None without a birth date
         "balanced_life": balanced,  # {score, band, concerns, domains} — the whole-life axis
     }
 
@@ -225,14 +235,16 @@ def unshakable_upper_bound(chart: dict) -> float:
     # Match the weight scheme the real score will use: if the chart has a birth
     # date, the worldly layer is present, so the bound must include it (bounded by
     # its max of 100 — we don't compute it here, to keep the pre-filter cheap).
-    has_dob = bool(chart.get("dob"))
-    w = LAYER_WEIGHTS_WORLDLY if has_dob else LAYER_WEIGHTS
+    # The benefic-dasha layer needs no Shadbala and is cheap, so its exact value
+    # is used (tighter than 100, still admissible).
+    bd = benefic_dasha(chart)
+    w = LAYER_WEIGHTS_DATED if bd is not None else LAYER_WEIGHTS
     bound = (w["structural"] * optimistic_upper_bound(chart)
              + w["yoga"] * _yoga_ub(chart)
              + w["longevity"] * _lon_ub(chart)
              + w["fame"] * _fame_ub(chart))
-    if has_dob:
-        bound += w["worldly"] * 100.0
+    if bd is not None:
+        bound += w["worldly"] * 100.0 + w["benefic_dasha"] * bd["score"]
     return bound
 
 
