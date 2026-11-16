@@ -24,6 +24,47 @@ commit history, the docs and the code layout. Tick items off here as they land.
       model and 37 famous charts; the ledger has the current 18-factor model on
       225 famous charts.
 
+## Direction (decided 2026-11-16)
+
+Not ready to go live as-is: too broad, with unfinished pieces a visitor can see.
+The plan is to launch around ONE clear thing and add the rest back one at a time.
+
+- Birth Muhurta / Unshakable finder stay as a **side item**, not the headline:
+  people trust a named astrologer rather than a tool, and choosing a birth time
+  is a sensitive subject for some.
+- Candidate headline under evaluation: a **daily Panchang + planetary transits**
+  section (in the spirit of Drik Panchang and aaps.space/transits) — factual,
+  checkable, daily-use content, grown through SEO and tested with display ads.
+- Anything unfinished is **hidden from the frontend, never deleted**: backend
+  code, data and tests stay for future expansion.
+
+## Parked — hide from the frontend, bring back when finished
+
+Each item returns only when it works end to end and has a clear reason to exist.
+
+- [ ] **Courses** — four courses with prices and "Enroll Now" buttons but no
+      enrolment, payment or delivery behind them. Needs the course platform
+      (see Product) before it comes back.
+- [ ] **Contact form** — the page only has an email link. Needs a real form
+      with an API endpoint and spam protection.
+- [ ] **Homepage numbers** — "50,000+ consultations, 40+ countries, 2,000+
+      students". Bring back only with real, defensible figures.
+- [ ] **Testimonials** — seven entries that read like template content. Bring
+      back only with real client testimonials (with permission).
+- [ ] **Breadth** — nine services (incl. Vastu, coaching, healing), eight
+      calculators, two chart galleries, blog and videos. Decide per item what
+      supports the headline; hide the rest from navigation until then.
+
+## Local development
+
+- [ ] Playwright browser download hangs on this laptop — e2e tests can't run
+      locally yet.
+- [ ] Add a `.gitattributes` rule so `npm run dev` / `npm run build` stop
+      marking `src/data/*-index.json` as modified on Windows (line endings).
+- [ ] Terraform state was lost with the old laptop (it was never in a remote
+      backend). Re-import the existing AWS resources for test and prod, then
+      move state to S3. Do not run `terraform apply` or `switch-env.sh` before.
+
 ## Quality debt
 
 - [ ] Make the ruff lint check blocking in CI (`.github/workflows/test-backend.yml`
